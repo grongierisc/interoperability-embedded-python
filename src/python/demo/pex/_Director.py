@@ -18,7 +18,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        irisobject = iris.cls("EnsLib.PEX.Director","dispatchCreateBusinessService",target)
+        irisobject = iris.cls("EnsLib.PEX.Director").dispatchCreateBusinessService(target)
         service = pex._IRISBusinessService._IRISBusinessService()
         service.irisHandle = irisobject
         return service

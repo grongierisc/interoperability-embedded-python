@@ -85,13 +85,17 @@ class _BusinessHost(_Common):
             i = serial.find(":")
             if (i <=0):
                 raise ValueError("JSON message malformed, must include classname: " + serial)
-            classpath = serial[:i]
-            gateway = iris.GatewayContext.getConnection()._get_gateway()
+            classname = serial[:i]
+
+            j = classname.find(".")
+            if (j <=0):
+                raise ValueError("Classname must include a module: " + classname)
+
             try:
-                klass = gateway._load_class(classpath)
-                msg = klass()
+                module = __import__(classname[:j])
+                msg = getattr(module, classname[j+1:])()
             except Exception:
-                raise ImportError("Class not found: " + classpath)
+                raise ImportError("Class not found: " + classname)
             jdict = json.loads(serial[i+1:])
             for k, v in jdict.items():
                 setattr(msg, k, v)

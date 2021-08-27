@@ -25,7 +25,6 @@ Method OnInit() As %Status
 	try {
 		
         do ..Connect()
-		zw ..%class
 		do ..%class."_dispatchOnInit"($this)
 	} catch ex {
 		set tSC = ex.AsStatus()
@@ -67,7 +66,6 @@ Method Connect() As %Status
 				$$$ThrowOnError(importEx.AsStatus())
 			}
 		}
-		zw "OnInit"
 		;
 		if ..%Extends("EnsLib.PEX.InboundAdapter") || ..%Extends("EnsLib.PEX.OutboundAdapter") {
 			do ..%class."_setIrisHandles"($this,..BusinessHost)
