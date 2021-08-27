@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for x86-64 Containers) 2020.4 (Build 521U)" ts="2021-05-10 07:39:07">
+<Document name="Ens.Config.DefaultSettings.ESD">
+<defaultSettings>
+<item production="dc.Demo.Production" item="*" class="dc.Demo.EmailOperation" setting="SMTPServer" value="smtp.myemailserver.com"><Deployable>true</Deployable></item>
+</defaultSettings>
+</Document></Export>
