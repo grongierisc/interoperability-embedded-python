@@ -12,6 +12,8 @@ Property %classpaths As %String(MAXLEN = "");
 
 Property %classname As %String(MAXLEN = "") [ Internal ];
 
+Property %module As %String(MAXLEN = "") [ Internal ];
+
 Property %settings As %String(MAXLEN = "") [ Internal ];
 
 /// Instance of class
@@ -21,7 +23,9 @@ Method OnInit() As %Status
 {
 	set tSC = $$$OK
 	try {
+		
         do ..Connect()
+		zw ..%class
 		do ..%class."_dispatchOnInit"($this)
 	} catch ex {
 		set tSC = ex.AsStatus()
@@ -33,7 +37,8 @@ Method Connect() As %Status
 {
 	set tSC = $$$OK
 	try {
-		if ..%Extends("EnsLib.PEX.InboundAdapter") || ..%Extends("EnsLib.PEX.OutboundAdapter") {
+		
+		if ..%Extends("Grongier.PEX.InboundAdapter") || ..%Extends("Grongier.PEX.OutboundAdapter") {
 			set container = $s(..%useHostConnection:..BusinessHost,1:$this)
 		} else {
 			set container = $this
@@ -42,11 +47,27 @@ Method Connect() As %Status
 		//TODO Handle container
 		//if container'=$this set ..%gatewayConnection = container.%gatewayConnection
 		;
-		//TODO
 		//set classpass
-		if $isObject(..%class)=0 {
-			set ..%class = ##class(%SYS.Python).Import(..%classname)
+		if ..%classpaths '="" {
+			set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
+			set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
+			for i=1:1:$l(extraClasspaths,"|") {
+				set onePath = $p(extraClasspaths,"|",i)
+				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
+				if onePath'="" do ..SetClassPath(onePath)
+			}
 		}
+		;
+		
+		if $isObject(..%class)=0 {
+			try {
+				set ..%class = ..GetInstanceFromModuleClassName(..%module,..%classname)
+            } catch importEx {
+                do $system.OBJ.Dump(importEx)
+				$$$ThrowOnError(importEx.AsStatus())
+			}
+		}
+		zw "OnInit"
 		;
 		if ..%Extends("EnsLib.PEX.InboundAdapter") || ..%Extends("EnsLib.PEX.OutboundAdapter") {
 			do ..%class."_setIrisHandles"($this,..BusinessHost)
@@ -67,8 +88,22 @@ Method Connect() As %Status
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}
-	if $$$ISERR(tSC) set (..%gatewayConnection,..%class) = $$$NULLOREF
 	quit tSC
+}
+
+/// Set classPath
+Method SetClassPath(classPath As %String) As %Status [ Language = python ]
+{
+import sys
+return sys.path.append(classPath)
+}
+
+/// GetInstanceFromModuleClassName
+Method GetInstanceFromModuleClassName(modulename, classname) As %SYS.Python [ Language = python ]
+{
+import builtins
+module = __import__(modulename)
+return getattr(module, classname)()
 }
 
 Method OnTearDown() As %Status

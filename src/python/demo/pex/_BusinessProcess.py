@@ -1,4 +1,5 @@
 import iris
+import pex
 from pex._BusinessHost import _BusinessHost
 
 class _BusinessProcess(_BusinessHost):
@@ -96,9 +97,9 @@ class _BusinessProcess(_BusinessHost):
         """
         if self._is_message_instance(request):
             serialized = self._serialize(request)
-            self.irisHandle.invokeVoid("dispatchSendRequestAsync",target,serialized,responseRequired,completionKey,description)
+            self.irisHandle.dispatchSendRequestAsync(target,serialized,responseRequired,completionKey,description)
         elif isinstance(request, iris.IRISObject):
-            self.irisHandle.invokeVoid("dispatchSendRequestAsync",target,request,responseRequired,completionKey,description)
+            self.irisHandle.dispatchSendRequestAsync(target,request,responseRequired,completionKey,description)
         else:
             raise TypeError("Message of type: " + str(request.__class__) + " is invalid. Messages must be subclass of Message or IRISObject.")
         return
@@ -112,7 +113,7 @@ class _BusinessProcess(_BusinessHost):
             typ = val.__class__.__name__
             if (typ in ["str","int","float","bool","bytes"]):
                 try:
-                    hostObject.invoke("setPersistentProperty", prop, val)
+                    hostObject.setPersistentProperty(prop, val)
                 except:
                     pass
         return
@@ -123,7 +124,7 @@ class _BusinessProcess(_BusinessHost):
             return
         for prop in self.PERSISTENT_PROPERTY_LIST:
             try:
-                val = hostObject.invoke("getPersistentProperty", prop)
+                val = hostObject.getPersistentProperty(prop)
                 setattr(self, prop, val)
             except:
                 pass
@@ -198,7 +199,7 @@ class _BusinessProcess(_BusinessHost):
         """
         if self._is_message_instance(response):
             response = self._serialize(response)
-        self.irisHandle.invokeVoid("dispatchReply", response)
+        self.irisHandle.dispatchReply(response)
         return
 
     def SetTimer(self, timeout, completionKey=None):
@@ -209,5 +210,5 @@ class _BusinessProcess(_BusinessHost):
             which represents 15 seconds of processor time.
         completionKey: a string that will be returned with the response if the maximum time is exceeded.
         """
-        self.irisHandle.invokeVoid("dispatchSetTimer", timeout, completionKey)
+        self.irisHandle.dispatchSetTimer(timeout, completionKey)
         return

@@ -13,6 +13,5 @@ class _IRISBusinessService:
         Returns:
         the object that is returned from the business service.
         """
-        return (self.irisHandle._iris).classMethodObject("EnsLib.PEX.BusinessService", "dispatchProcessInput", self.irisHandle, input)
+        return (self.irisHandle.cls("EnsLib.PEX.BusinessService","dispatchProcessInput", self.irisHandle, input))
 
-        

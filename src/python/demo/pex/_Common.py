@@ -161,7 +161,7 @@ class _Common():
             currentMethod = frame.name
         except:
             pass
-        self.irisHandle._iris.classMethodVoid("Ens.Util.Log", "LogInfo", currentClass, currentMethod, message)
+        self.irisHandle.cls("Ens.Util.Log", "LogInfo", currentClass, currentMethod, message)
         return
 
     def LOGALERT(self, message):
@@ -177,7 +177,7 @@ class _Common():
             currentMethod = frame.name
         except:
             pass
-        self.irisHandle._iris.classMethodVoid("Ens.Util.Log", "LogAlert", currentClass, currentMethod, message)
+        self.irisHandle.cls("Ens.Util.Log", "LogAlert", currentClass, currentMethod, message)
         return
 
     def LOGWARNING(self, message):
@@ -193,7 +193,7 @@ class _Common():
             currentMethod = frame.name
         except:
             pass
-        self.irisHandle._iris.classMethodVoid("Ens.Util.Log", "LogWarning", currentClass, currentMethod, message)
+        self.irisHandle.cls("Ens.Util.Log", "LogWarning", currentClass, currentMethod, message)
         return
 
     def LOGERROR(self, message):
@@ -209,7 +209,7 @@ class _Common():
             currentMethod = frame.name
         except:
             pass
-        self.irisHandle._iris.classMethodVoid("Ens.Util.Log", "LogError", currentClass, currentMethod, message)
+        self.irisHandle.cls("Ens.Util.Log", "LogError", currentClass, currentMethod, message)
         return
 
     def LOGASSERT(self, message):
@@ -225,7 +225,7 @@ class _Common():
             currentMethod = frame.name
         except:
             pass
-        self.irisHandle._iris.classMethodVoid("Ens.Util.Log", "LogAssert", currentClass, currentMethod, message)
+        self.irisHandle.cls("Ens.Util.Log", "LogAssert", currentClass, currentMethod, message)
         return
 
         

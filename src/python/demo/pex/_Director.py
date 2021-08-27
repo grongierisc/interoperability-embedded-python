@@ -1,4 +1,5 @@
 import iris
+import pex
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -17,8 +18,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        irisInstance = iris.IRIS(connection)
-        irisobject = irisInstance.classMethodObject("EnsLib.PEX.Director","dispatchCreateBusinessService",target)
-        service = iris.pex._IRISBusinessService._IRISBusinessService()
+        irisobject = iris.cls("EnsLib.PEX.Director","dispatchCreateBusinessService",target)
+        service = pex._IRISBusinessService._IRISBusinessService()
         service.irisHandle = irisobject
         return service

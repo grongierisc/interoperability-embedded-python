@@ -1,4 +1,5 @@
 import iris
+import pex
 from pex._Common import _Common
 
 class _OutboundAdapter(_Common):
@@ -26,7 +27,7 @@ class _OutboundAdapter(_Common):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.BusinessHost = iris.pex.IRISBusinessOperation()
+        self.BusinessHost = pex.IRISBusinessOperation()
         self.BusinessHost.irisHandle = handlePartner
         return
 
