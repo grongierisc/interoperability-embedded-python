@@ -29,7 +29,7 @@ class MyCombinedBusinessService(pex.BusinessService):
 		print(StringValue)
 		self.LOGINFO(StringValue)
 		self.LOGINFO("Service OnProcessInput")
-		tRequest = MyRequest()
+		tRequest = MyRequest.MyRequest()
 		tRequest.requestString = "request from my business service"
-		self.SendRequestAsync("MyCombinedBusinessProcess", tRequest)
+		self.SendRequestAsync("Grongier.PEX.BusinessOperation", tRequest)
 		return
