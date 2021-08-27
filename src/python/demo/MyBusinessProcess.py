@@ -1,7 +1,7 @@
-import iris.pex
+import pex
 import demo.MyRequest
 
-class MyBusinessProcess(iris.pex.BusinessProcess):
+class MyBusinessProcess(pex.BusinessProcess):
 
     PERSISTENT_PROPERTY_LIST=["runningTotal", "responses"]
     

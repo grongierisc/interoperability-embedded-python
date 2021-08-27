@@ -1,6 +1,6 @@
-import iris.pex
+import pex
 
-class MyBusinessOperationWithAdapter(iris.pex.BusinessOperation):
+class MyBusinessOperationWithAdapter(pex.BusinessOperation):
     
     def OnInit(self):
         print("[Python] ...MyBusinessOperationWithAdapter:OnInit() is called")

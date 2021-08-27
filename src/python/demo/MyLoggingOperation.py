@@ -1,6 +1,6 @@
-import iris.pex
+import pex
 
-class MyLoggingOperation(iris.pex.BusinessOperation):
+class MyLoggingOperation(pex.BusinessOperation):
     
     def OnInit(self):
         print("[Python] ...MyLoggingOperation:OnInit() is called")

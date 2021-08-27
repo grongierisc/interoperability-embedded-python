@@ -1,6 +1,6 @@
-import iris.pex
+import pex
 
-class MyBusinessService(iris.pex.BusinessService):
+class MyBusinessService(pex.BusinessService):
     
     def OnInit(self):
         print("[Python] ...MyBusinessService:OnInit() is called")

@@ -1,5 +1,5 @@
 import iris
-import iris.pex
+import pex
 
 if __name__ == "__main__":
     connection = iris.createConnection(hostname="localhost", port=51773, namespace="ENSEMBLE",username="_SYSTEM",password="SYS")

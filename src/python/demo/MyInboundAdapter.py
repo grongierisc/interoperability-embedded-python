@@ -1,8 +1,8 @@
 import random
-import iris.pex
+import pex
 import demo.SimpleObject
 
-class MyInboundAdapter(iris.pex.InboundAdapter):
+class MyInboundAdapter(pex.InboundAdapter):
     
     def OnInit(self):
         print("[Python] ...MyInboundAdapter:OnInit() is called")

@@ -1,7 +1,7 @@
-import iris.pex
+import pex
 import demo.MyRequest
 
-class MySyncBusinessProcess(iris.pex.BusinessProcess):
+class MySyncBusinessProcess(pex.BusinessProcess):
 
     PERSISTENT_PROPERTY_LIST="responses"
     

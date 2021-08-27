@@ -1,7 +1,7 @@
-import iris.pex
+import pex
 import demo.MyResponse
 
-class MyCombinedBusinessOperation(iris.pex.BusinessOperation):
+class MyCombinedBusinessOperation(pex.BusinessOperation):
     
     def OnInit(self):
         self.myInt = int(self.myInt)
