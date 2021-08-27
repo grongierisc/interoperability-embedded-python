@@ -43,8 +43,7 @@ Method Connect() As %Status
 			set container = $this
 		}
 		;
-		//TODO Handle container
-		//if container'=$this set ..%gatewayConnection = container.%gatewayConnection
+		if container'=$this set ..%class = container.%class
 		;
 		//set classpass
 		if ..%classpaths '="" {
