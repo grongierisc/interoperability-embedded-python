@@ -2,10 +2,10 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class EnsLib.PEX.BusinessProcess Extends (Ens.BusinessProcess, EnsLib.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.BusinessProcess Extends (Ens.BusinessProcess, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter SETTINGS = "%remoteClassname:Remote BusinessProcess,%remoteSettings:Remote BusinessProcess,%gatewayName:Remote BusinessProcess,%gatewayHost:Remote BusinessProcess,%gatewayPort:Remote BusinessProcess,%gatewayTimeout:Remote BusinessProcess,%gatewayExtraClasspaths:Remote BusinessProcess";
+Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
 
 Property persistentProperties As array Of %String(MAXLEN = "");
 
@@ -36,13 +36,12 @@ Method OnRequest(request As %Persistent, Output response As %Persistent) As %Sta
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..CheckGatewayConnection() quit:$$$ISERR(tSC)
+		set tSC = ..Connect() quit:$$$ISERR(tSC)
 		if $isObject(request),request.%IsA("EnsLib.PEX.Message") set request = ..serialize(request)
-		set response = ..%gatewayProxy."_dispatchOnRequest"($this,request)
+		set response = ..%class."_dispatchOnRequest"($this,request)
 		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
-		do ..CheckGatewayDisconnection()
 	}
 	quit tSC
 }
@@ -52,16 +51,15 @@ Method OnResponse(request As %Persistent, ByRef response As %Persistent, callReq
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..CheckGatewayConnection() quit:$$$ISERR(tSC)
+		set tSC = ..Connect() quit:$$$ISERR(tSC)
 		if $isObject(request),request.%IsA("EnsLib.PEX.Message") set request = ..serialize(request)
 		if $isObject(response),response.%IsA("EnsLib.PEX.Message") set response = ..serialize(response)
 		if $isObject(callRequest),callRequest.%IsA("EnsLib.PEX.Message") set callRequest = ..serialize(callRequest)
 		if $isObject(callResponse),callResponse.%IsA("EnsLib.PEX.Message") set callResponse = ..serialize(callResponse)
-		set response = ..%gatewayProxy."_dispatchOnResponse"($this,request,response,callRequest,callResponse,pCompletionKey)
+		set response = ..%class."_dispatchOnResponse"($this,request,response,callRequest,callResponse,pCompletionKey)
 		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
-		do ..CheckGatewayDisconnection()
 	}
 	quit tSC
 }
@@ -70,14 +68,13 @@ Method OnComplete(request As %Library.Persistent, ByRef response As %Library.Per
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..CheckGatewayConnection() quit:$$$ISERR(tSC)
+		set tSC = ..Connect() quit:$$$ISERR(tSC)
 		if $isObject(request),request.%IsA("EnsLib.PEX.Message") set request = ..serialize(request)
 		if $isObject(response),response.%IsA("EnsLib.PEX.Message") set response = ..serialize(response)
-		set response = ..%gatewayProxy."_dispatchOnComplete"($this,request,response)
+		set response = ..%class."_dispatchOnComplete"($this,request,response)
 		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
-		do ..CheckGatewayDisconnection()
 	}
 	quit tSC
 }
@@ -92,5 +89,33 @@ Method setPersistentProperty(name, value)
 	quit ..persistentProperties.SetAt(value,name)
 }
 
+Storage Default
+{
+<Data name="BusinessProcessDefaultData1">
+<Subscript>"BusinessProcess"</Subscript>
+<Value name="1">
+<Value>%classpaths</Value>
+</Value>
+<Value name="2">
+<Value>%classname</Value>
+</Value>
+<Value name="3">
+<Value>%module</Value>
+</Value>
+<Value name="4">
+<Value>%settings</Value>
+</Value>
+<Value name="5">
+<Value>%class</Value>
+</Value>
+</Data>
+<Data name="persistentProperties">
+<Attribute>persistentProperties</Attribute>
+<Structure>subnode</Structure>
+<Subscript>"Grongier.PEX.BusinessProcess.persistentProperties"</Subscript>
+</Data>
+<DefaultData>BusinessProcessDefaultData1</DefaultData>
+<Type>%Storage.Persistent</Type>
+}
 
 }

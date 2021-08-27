@@ -62,7 +62,6 @@ Method Connect() As %Status
 			try {
 				set ..%class = ..GetInstanceFromModuleClassName(..%module,..%classname)
             } catch importEx {
-                do $system.OBJ.Dump(importEx)
 				$$$ThrowOnError(importEx.AsStatus())
 			}
 		}

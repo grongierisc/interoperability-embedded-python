@@ -2,12 +2,12 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class EnsLib.PEX.BusinessService Extends (Ens.BusinessService, EnsLib.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.BusinessService Extends (Ens.BusinessService, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
 Parameter ADAPTER = "Ens.InboundAdapter";
 
-Parameter SETTINGS = "%remoteClassname:Remote BusinessService,%remoteSettings:Remote BusinessService,%gatewayName:Remote BusinessService,%gatewayHost:Remote BusinessService,%gatewayPort:Remote BusinessService,%gatewayTimeout:Remote BusinessService,%gatewayExtraClasspaths:Remote BusinessService";
+Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
 
 ClassMethod dispatchProcessInput(host As %RegisteredObject, pInput As %RegisteredObject) As %RegisteredObject
 {
@@ -21,17 +21,16 @@ Method OnProcessInput(request As %RegisteredObject, Output response As %Register
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..CheckGatewayConnection() quit:$$$ISERR(tSC)
+		do ..Connect()
 		try {
-			set ..%gatewayProxy."_WaitForNextCallInterval" = ..%WaitForNextCallInterval
+			set ..%class."_WaitForNextCallInterval" = ..%WaitForNextCallInterval
 		} catch {}
-		set response = ..%gatewayProxy.OnProcessInput(request)
+		set response = ..%class.OnProcessInput(request)
 		try {
-			set ..%WaitForNextCallInterval = ..%gatewayProxy."_WaitForNextCallInterval"
+			set ..%WaitForNextCallInterval = ..%class."_WaitForNextCallInterval"
 		} catch {}
 	} catch ex {
 		set tSC = ex.AsStatus()
-		do ..CheckGatewayDisconnection()
 	}
 	quit tSC
 }

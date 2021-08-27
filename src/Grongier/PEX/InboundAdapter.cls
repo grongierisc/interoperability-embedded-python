@@ -2,7 +2,7 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class EnsLib.PEX.InboundAdapter Extends (Ens.InboundAdapter, EnsLib.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.InboundAdapter Extends (Ens.InboundAdapter, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
 Parameter SETTINGS = "%remoteClassname:Remote InboundAdapter,%remoteSettings:Remote InboundAdapter,%gatewayName:Remote InboundAdapter,%gatewayHost:Remote InboundAdapter,%gatewayPort:Remote InboundAdapter,%gatewayTimeout:Remote InboundAdapter,%gatewayExtraClasspaths:Remote InboundAdapter,%useHostConnection:Remote InboundAdapter";
@@ -14,11 +14,10 @@ Method OnTask() As %Status
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..CheckGatewayConnection() quit:$$$ISERR(tSC)
-		do ..%gatewayProxy.OnTask()
+		set tSC = ..Connect() quit:$$$ISERR(tSC)
+		do ..%class.OnTask()
 	} catch ex {
 		set tSC = ex.AsStatus()
-		do ..CheckGatewayDisconnection()
 	}
 	quit tSC
 }

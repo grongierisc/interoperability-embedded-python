@@ -80,9 +80,9 @@ class _BusinessService(_BusinessHost):
         """
         if self._is_message_instance(request):
             serialized = self._serialize(request)
-            self.irisHandle.invokeVoid("dispatchSendRequestAsync",target,serialized,description)
+            self.irisHandle.dispatchSendRequestAsync(target,serialized,description)
         elif isinstance(request, iris.IRISObject):
-            self.irisHandle.invokeVoid("dispatchSendRequestAsync",target,request,description)
+            self.irisHandle.dispatchSendRequestAsync(target,request,description)
         else:
             raise TypeError(type(request))
         return

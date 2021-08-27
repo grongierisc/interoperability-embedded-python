@@ -2,7 +2,7 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class EnsLib.PEX.Director [ Inheritance = right, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.Director [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
 ClassMethod dispatchCreateBusinessService(pTargetDispatchName As %String) As Ens.BusinessService

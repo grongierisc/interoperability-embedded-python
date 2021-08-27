@@ -41,9 +41,9 @@ class _BusinessHost(_Common):
         """
         if self._is_message_instance(request):
             serialized = self._serialize(request)
-            returnObject = self.irisHandle.invoke("dispatchSendRequestSync",target,serialized,timeout,description)
+            returnObject = self.irisHandle.dispatchSendRequestSync(target,serialized,timeout,description)
         elif isinstance(request, iris.IRISObject):
-            returnObject = self.irisHandle.invoke("dispatchSendRequestSync",target,request,timeout,description)
+            returnObject = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
         else:
             raise TypeError
         if isinstance(returnObject, str):

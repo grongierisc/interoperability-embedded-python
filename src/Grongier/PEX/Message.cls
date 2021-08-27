@@ -2,12 +2,12 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class EnsLib.PEX.Message Extends Ens.MessageBody
+Class Grongier.PEX.Message Extends Ens.MessageBody
 {
 
 Property %classname As %String;
 
-Property %jsonObject As %DynamicObject(XMLPROJECTION = "NONE");
+Property %jsonObject As %DynamicObject;
 
 Property %json As %String [ Calculated ];
 
@@ -33,5 +33,21 @@ Method %DispatchSetProperty(property As %String, value)
 	quit
 }
 
+Storage Default
+{
+<Data name="%jsonObject">
+<Attribute>%jsonObject</Attribute>
+<Structure>node</Structure>
+<Subscript>"Grongier.PEX.Message.%jsonObject"</Subscript>
+</Data>
+<Data name="MessageDefaultData">
+<Subscript>"Message"</Subscript>
+<Value name="1">
+<Value>%classname</Value>
+</Value>
+</Data>
+<DefaultData>MessageDefaultData</DefaultData>
+<Type>%Storage.Persistent</Type>
+}
 
 }
