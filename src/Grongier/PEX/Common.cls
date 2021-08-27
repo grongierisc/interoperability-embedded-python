@@ -112,7 +112,7 @@ Method OnTearDown() As %Status
 
 Method SetPropertyValues()
 {
-	set remoteSettings = $tr(..%remoteSettings,$c(13))
+	set remoteSettings = $tr(..%settings,$c(13))
 	for i=1:1:$l(remoteSettings,$c(10)) {
 		set oneLine = $p(remoteSettings,$c(10),i)
 		set property = $p(oneLine,"=",1) continue:property=""

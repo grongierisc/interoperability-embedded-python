@@ -5,7 +5,7 @@
 Class Grongier.PEX.InboundAdapter Extends (Ens.InboundAdapter, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter SETTINGS = "%remoteClassname:Remote InboundAdapter,%remoteSettings:Remote InboundAdapter,%gatewayName:Remote InboundAdapter,%gatewayHost:Remote InboundAdapter,%gatewayPort:Remote InboundAdapter,%gatewayTimeout:Remote InboundAdapter,%gatewayExtraClasspaths:Remote InboundAdapter,%useHostConnection:Remote InboundAdapter";
+Parameter SETTINGS = "%classname:Python InboundAdapter,%module:Python InboundAdapter,%settings:Python InboundAdapter,%classpaths:Python InboundAdapter";
 
 /// Use Host Connection. If set to true, this adapter will use the connection from the host.
 Property %useHostConnection As %Boolean [ Internal ];

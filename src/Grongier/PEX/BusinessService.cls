@@ -7,7 +7,7 @@ Class Grongier.PEX.BusinessService Extends (Ens.BusinessService, Grongier.PEX.Co
 
 Parameter ADAPTER = "Ens.InboundAdapter";
 
-Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
+Parameter SETTINGS = "%classname:Python BusinessService,%module:Python BusinessService,%settings:Python BusinessService,%classpaths:Python BusinessService";
 
 ClassMethod dispatchProcessInput(host As %RegisteredObject, pInput As %RegisteredObject) As %RegisteredObject
 {

@@ -5,7 +5,7 @@
 Class Grongier.PEX.BusinessProcess Extends (Ens.BusinessProcess, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
+Parameter SETTINGS = "%classname:Python BusinessProcess,%module:Python BusinessProcess,%settings:Python BusinessProcess,%classpaths:Python BusinessProcess";
 
 Property persistentProperties As array Of %String(MAXLEN = "");
 
