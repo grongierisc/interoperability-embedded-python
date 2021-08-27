@@ -1,17 +1,30 @@
-ARG IMAGE=store/intersystems/iris-community:2020.1.0.204.0
-ARG IMAGE=intersystemsdc/iris-community:2020.1.0.209.0-zpm
-ARG IMAGE=intersystemsdc/iris-community:2020.2.0.204.0-zpm
-ARG IMAGE=intersystemsdc/irishealth-community:2020.3.0.200.0-zpm
-ARG IMAGE=intersystemsdc/iris-community:2020.3.0.200.0-zpm
-ARG IMAGE=intersystemsdc/iris-community:2020.3.0.221.0-zpm
-ARG IMAGE=intersystemsdc/iris-community:2020.4.0.521.0-zpm
+ARG IMAGE=arti.iscinternal.com/intersystems/iris:2021.1.0PYTHON.300.0
 FROM $IMAGE
 
+COPY key/iris.key /usr/irissys/mgr/iris.key
+
 USER root   
+
+# Update package and install sudo
+RUN apt-get update && apt-get install -y \
+	nano \
+	sudo && \
+	/bin/echo -e ${ISC_PACKAGE_MGRUSER}\\tALL=\(ALL\)\\tNOPASSWD: ALL >> /etc/sudoers && \
+	sudo -u ${ISC_PACKAGE_MGRUSER} sudo echo enabled passwordless sudo-ing for ${ISC_PACKAGE_MGRUSER}
+
         
 WORKDIR /opt/irisapp
 RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} /opt/irisapp
 USER ${ISC_PACKAGE_MGRUSER}
+
+## Python stuff
+ENV IRISUSERNAME "SuperUser"
+ENV IRISPASSWORD "SYS"
+
+ENV PYTHON_PATH=/usr/irissys/bin/irispython
+
+ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
+
 
 COPY  Installer.cls .
 COPY  src src
