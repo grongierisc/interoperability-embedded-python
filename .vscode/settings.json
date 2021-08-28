@@ -5,7 +5,7 @@
         "iris.script": "objectscript"
       },
     "objectscript.conn" :{
-      "ns": "USER",
+      "ns": "IRISAPP",
       "username": "_SYSTEM",
       "password": "SYS",
       "docker-compose": {
