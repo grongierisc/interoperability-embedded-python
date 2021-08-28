@@ -17,6 +17,6 @@ class MyCombinedBusinessOperation(pex.BusinessOperation):
     def OnMessage(self, messageInput):
         # this is called from MyCombinedBusinessProcess which sends an Ens.StringRequest message
         print("[Python] ...MyCombinedBusinessOperation:OnMessage() is called with message: " + messageInput.get("StringValue"))
-        tResponse = demo.MyResponse.MyResponse()
+        tResponse = MyResponse.MyResponse()
         tResponse.responseString = "response from my business operation"
         return tResponse
