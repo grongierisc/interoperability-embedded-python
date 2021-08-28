@@ -1,5 +1,5 @@
 import pex
-import demo.MyResponse
+import MyResponse
 
 class MyCombinedBusinessOperation(pex.BusinessOperation):
     
