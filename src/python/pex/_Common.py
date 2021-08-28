@@ -33,7 +33,7 @@ class _Common():
         This method returns a list of Superclass, Description, InfoURL, and IconURL, and possibly Adapter (if class is a Business Service or Business Operation)
         IconURL is not yet displayed anywhere
         """
-        ret = iris.IRISList()
+        ret = []
         desc = ""
         infoURL = ""
         iconURL = ""
@@ -45,37 +45,37 @@ class _Common():
             classes = inspect.getmro(cls)
             for cl in classes:
                 clName = str(cl)[7:-1]
-                if clName in ["'iris.pex.BusinessService'","'iris.pex.BusinessOperation'"] :
+                if clName in ["'pex.BusinessService'","'pex.BusinessOperation'"] :
                     # Remove the apostrophes and set as superClass, then find if it uses an adapter
                     superClass = clName[1:-1]
                     adapter = cls.getAdapterType()
                     useAdapterConnection = cls.useAdapterConnection()
                     break
-                elif clName in ["'iris.pex.BusinessProcess'","'iris.pex.InboundAdapter'","'iris.pex.OutboundAdapter'"] :
+                elif clName in ["'pex.BusinessProcess'","'pex.InboundAdapter'","'pex.OutboundAdapter'"] :
                     # Remove the apostrophes and set as superClass
                     superClass = clName[1:-1]
                     break
 
             if ""==superClass:
                 return ""
-            ret.add(superClass)
+            ret.append(superClass)
 
             # Get the class documentation, if any
             clsDesc = inspect.getdoc(cls)
             superDesc = inspect.getdoc(classes[1])
             if clsDesc!=superDesc:
                 desc = clsDesc
-            ret.add(str(desc))
+            ret.append(str(desc))
 
             infoURL = inspect.getattr_static(cls,"INFO_URL","")
             iconURL = inspect.getattr_static(cls,"ICON_URL","")
 
-            ret.add(infoURL)
-            ret.add(iconURL)
+            ret.append(infoURL)
+            ret.append(iconURL)
             
             if ""!=adapter:
-                ret.add(adapter)
-                ret.add(useAdapterConnection)
+                ret.append(adapter)
+                ret.append(useAdapterConnection)
         except:
             pass
         return ret
@@ -94,7 +94,7 @@ class _Common():
         If 'IsRequired' is not specified, this will default to false.
         If 'Category' is not specified, the attribute will be added to the Additional category.
         """
-        ret = iris.IRISList()
+        ret = []
         try:
             # getmembers() returns all the members of an object
             for member in inspect.getmembers(cls):
@@ -134,15 +134,15 @@ class _Common():
                                     if default is not None:
                                         val = default
                             # create list of information for this specific property
-                            info = iris.IRISList()
-                            info.add(name)    # Name        
-                            info.add(dataType) # DataType
-                            info.add(val)  # Default Value
-                            info.add(req) # Required
-                            info.add(cat) # Category
-                            info.add(desc) # Description
+                            info = []
+                            info.append(name)    # Name        
+                            info.append(dataType) # DataType
+                            info.append(val)  # Default Value
+                            info.append(req) # Required
+                            info.append(cat) # Category
+                            info.append(desc) # Description
                             # add this property to the list
-                            ret.add(info)
+                            ret.append(info)
         except:
             pass
         return ret
