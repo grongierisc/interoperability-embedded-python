@@ -14,8 +14,7 @@
       },
       "active": true,
       "links": {
-        "Production": "http://localhost:${port}/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=dc.Demo.Production",
-        "Rule": "http://localhost:${port}/csp/irisapp/EnsPortal.RuleEditor.zen?RULE=dc.Demo.FilterPostsRoutingRule"
+        "Production": "http://localhost:${port}/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production",
       }
     },
     "sqltools.connections": [

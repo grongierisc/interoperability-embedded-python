@@ -1,5 +1,5 @@
 import grongier.pex
-import MyResponse
+import iris
 
 class MyCombinedBusinessOperation(grongier.pex.BusinessOperation):
     
@@ -16,7 +16,6 @@ class MyCombinedBusinessOperation(grongier.pex.BusinessOperation):
 
     def OnMessage(self, messageInput):
         # this is called from MyCombinedBusinessProcess which sends an Ens.StringRequest message
-        print("[Python] ...MyCombinedBusinessOperation:OnMessage() is called with message: " + messageInput.get("StringValue"))
-        tResponse = MyResponse.MyResponse()
-        tResponse.responseString = "response from my business operation"
+        print("[Python] ...MyCombinedBusinessOperation:OnMessage() is called with message: " + messageInput.StringValue)
+        tResponse = iris.cls("Ens.StringResponse")._New("response from my business operation with message : "+messageInput.StringValue)
         return tResponse
