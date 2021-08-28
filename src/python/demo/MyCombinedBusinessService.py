@@ -31,5 +31,5 @@ class MyCombinedBusinessService(pex.BusinessService):
 		self.LOGINFO("Service OnProcessInput")
 		tRequest = MyRequest.MyRequest()
 		tRequest.requestString = "request from my business service"
-		self.SendRequestAsync("Grongier.PEX.BusinessOperation", tRequest)
+		tResponse = self.SendRequestSync("Grongier.PEX.BusinessOperation", tRequest)
 		return
