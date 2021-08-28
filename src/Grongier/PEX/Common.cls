@@ -23,8 +23,7 @@ Method OnInit() As %Status
 {
 	set tSC = $$$OK
 	try {
-		
-        do ..Connect()
+        $$$ThrowOnError(..Connect())
 		do ..%class."_dispatchOnInit"($this)
 	} catch ex {
 		set tSC = ex.AsStatus()
@@ -52,17 +51,13 @@ Method Connect() As %Status
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do ..SetClassPath(onePath)
+				if onePath'="" do ##class(Grongier.PEX.Utils).SetClassPath(onePath)
 			}
 		}
 		;
 		
 		if $isObject(..%class)=0 {
-			try {
-				set ..%class = ..GetInstanceFromModuleClassName(..%module,..%classname)
-            } catch importEx {
-				$$$ThrowOnError(importEx.AsStatus())
-			}
+			set ..%class = ##class(Grongier.PEX.Utils).GetInstanceFromModuleClassName(..%module,..%classname)
 		}
 		;
 		if ..%Extends("EnsLib.PEX.InboundAdapter") || ..%Extends("EnsLib.PEX.OutboundAdapter") {
@@ -82,24 +77,10 @@ Method Connect() As %Status
 		}
 		;
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set msg = $System.Status.GetOneStatusText(ex.AsStatus(),1)
+		set tSC = $$$ERROR($$$EnsErrGeneral,msg)
 	}
 	quit tSC
-}
-
-/// Set classPath
-Method SetClassPath(classPath As %String) As %Status [ Language = python ]
-{
-import sys
-return sys.path.append(classPath)
-}
-
-/// GetInstanceFromModuleClassName
-Method GetInstanceFromModuleClassName(modulename, classname) As %SYS.Python [ Language = python ]
-{
-import builtins
-module = __import__(modulename)
-return getattr(module, classname)()
 }
 
 Method OnTearDown() As %Status
