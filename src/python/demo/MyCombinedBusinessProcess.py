@@ -1,8 +1,8 @@
 import iris
-import pex
+import grongier.pex
 import demo.MyResponse
 
-class MyCombinedBusinessProcess(pex.BusinessProcess):
+class MyCombinedBusinessProcess(grongier.pex.BusinessProcess):
     
     def OnInit(self):
         self.val1 = float(self.val1)

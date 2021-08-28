@@ -1,6 +1,6 @@
 import iris
-import pex
-from pex._BusinessHost import _BusinessHost
+import grongier.pex
+from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessProcess(_BusinessHost):
     """ Typically contains most of the logic in a production.

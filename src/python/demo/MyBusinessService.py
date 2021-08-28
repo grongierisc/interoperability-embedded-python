@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 
-class MyBusinessService(pex.BusinessService):
+class MyBusinessService(grongier.pex.BusinessService):
     
     def OnInit(self):
         print("[Python] ...MyBusinessService:OnInit() is called")

@@ -1,7 +1,7 @@
-import pex
+import grongier.pex
 import demo.MyRequest
 
-class MySyncBusinessProcess(pex.BusinessProcess):
+class MySyncBusinessProcess(grongier.pex.BusinessProcess):
 
     PERSISTENT_PROPERTY_LIST="responses"
     

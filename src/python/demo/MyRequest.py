@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 
-class MyRequest(pex.Message):
+class MyRequest(grongier.pex.Message):
 
 	def __init__(self, req=None):
 		super().__init__()

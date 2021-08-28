@@ -1,7 +1,7 @@
-import pex
+import grongier.pex
 import MyRequest
 
-class MyCombinedBusinessService(pex.BusinessService):
+class MyCombinedBusinessService(grongier.pex.BusinessService):
 	
 	def OnInit(self):
 		self.min = int(self.min)

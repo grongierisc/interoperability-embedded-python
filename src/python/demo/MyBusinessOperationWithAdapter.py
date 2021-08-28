@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 
-class MyBusinessOperationWithAdapter(pex.BusinessOperation):
+class MyBusinessOperationWithAdapter(grongier.pex.BusinessOperation):
     
     def OnInit(self):
         print("[Python] ...MyBusinessOperationWithAdapter:OnInit() is called")

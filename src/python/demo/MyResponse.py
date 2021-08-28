@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 
-class MyResponse(pex.Message):
+class MyResponse(grongier.pex.Message):
 
     def __init__(self, res=None):
         super().__init__()

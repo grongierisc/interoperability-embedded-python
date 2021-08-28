@@ -1,8 +1,8 @@
-import pex
+import grongier.pex
 import iris
 import MyResponse
 
-class MyBusinessOperation(pex.BusinessOperation):
+class MyBusinessOperation(grongier.pex.BusinessOperation):
     
     def OnInit(self):
         print("[Python] ...MyBusinessOperation:OnInit() is called")

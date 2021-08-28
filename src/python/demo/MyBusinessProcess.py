@@ -1,7 +1,7 @@
-import pex
+import grongier.pex
 import demo.MyRequest
 
-class MyBusinessProcess(pex.BusinessProcess):
+class MyBusinessProcess(grongier.pex.BusinessProcess):
 
     PERSISTENT_PROPERTY_LIST=["runningTotal", "responses"]
     

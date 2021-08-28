@@ -1,8 +1,8 @@
 import random
-import pex
+import grongier.pex
 import demo.SimpleObject
 
-class MyInboundAdapter(pex.InboundAdapter):
+class MyInboundAdapter(grongier.pex.InboundAdapter):
     
     def OnInit(self):
         print("[Python] ...MyInboundAdapter:OnInit() is called")

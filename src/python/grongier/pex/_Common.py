@@ -22,7 +22,7 @@ class _Common():
     @classmethod
     def _is_message_class(cls, klass):
         name = klass.__module__ + '.' + klass.__qualname__
-        if name == "pex.Message": return True
+        if name == "grongier.pex.Message": return True
         for c in klass.__bases__:
             if cls._is_message_class(c): return True
         return False
@@ -45,13 +45,13 @@ class _Common():
             classes = inspect.getmro(cls)
             for cl in classes:
                 clName = str(cl)[7:-1]
-                if clName in ["'pex.BusinessService'","'pex.BusinessOperation'"] :
+                if clName in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'"] :
                     # Remove the apostrophes and set as superClass, then find if it uses an adapter
                     superClass = clName[1:-1]
                     adapter = cls.getAdapterType()
                     useAdapterConnection = cls.useAdapterConnection()
                     break
-                elif clName in ["'pex.BusinessProcess'","'pex.InboundAdapter'","'pex.OutboundAdapter'"] :
+                elif clName in ["'grongier.pex.BusinessProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
                     # Remove the apostrophes and set as superClass
                     superClass = clName[1:-1]
                     break

@@ -1,6 +1,6 @@
 import iris
-import pex
-from pex._BusinessHost import _BusinessHost
+import grongier.pex
+from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessOperation(_BusinessHost):
     """ This class corresponds to the PEX framework EnsLib.PEX.BusinessOperation class.
@@ -62,7 +62,7 @@ class _BusinessOperation(_BusinessHost):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.Adapter = pex.IRISOutboundAdapter()
+        self.Adapter = grongier.pex.IRISOutboundAdapter()
         self.Adapter.irisHandle = handlePartner
         return
 

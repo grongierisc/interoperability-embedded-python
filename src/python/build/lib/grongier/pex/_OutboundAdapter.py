@@ -1,16 +1,12 @@
 import iris
-import pex
-from pex._Common import _Common
+import grongier.pex
+from grongier.pex._Common import _Common
 
-class _InboundAdapter(_Common):
-    """ Responsible for receiving the data from the external system, validating the data, 
-    and sending it to the business service by calling the BusinessHost.ProcessInput() method.
-    """
+class _OutboundAdapter(_Common):
+    """ Responsible for sending the data to the external system."""
 
     def __init__(self):
-        """ The BusinessHost variable provides access to the business service associated with the inbound adapter.
-        The adapter calls the IRISBusinessService.ProcessInput() method of the business service.
-        """
+        """ The BusinessHost variable provides access to the BusinessOperation associated with the OutboundAdapter."""
         super().__init__()
         self.BusinessHost = None
     
@@ -28,17 +24,10 @@ class _InboundAdapter(_Common):
         """ Called before the component is terminated. Use it to freee any structures."""
         pass
 
-    def OnTask(self):
-        """ Called by the production framework at intervals determined by the business service CallInterval property.
-        It is responsible for receiving the data from the external system, validating the data, and sending it in a message to the business service OnProcessInput method.
-        The message can have any structure agreed upon by the inbound adapter and the business service.
-        """
-        pass
-
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.BusinessHost = pex.IRISBusinessService()
+        self.BusinessHost = grongier.pex.IRISBusinessOperation()
         self.BusinessHost.irisHandle = handlePartner
         return
 

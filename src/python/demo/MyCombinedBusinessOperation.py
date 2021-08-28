@@ -1,7 +1,7 @@
-import pex
+import grongier.pex
 import MyResponse
 
-class MyCombinedBusinessOperation(pex.BusinessOperation):
+class MyCombinedBusinessOperation(grongier.pex.BusinessOperation):
     
     def OnInit(self):
         self.myInt = int(self.myInt)

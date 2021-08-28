@@ -1,6 +1,6 @@
 import iris
-import pex
-from pex._Common import _Common
+import grongier.pex
+from grongier.pex._Common import _Common
 
 class _OutboundAdapter(_Common):
     """ Responsible for sending the data to the external system."""
@@ -27,7 +27,7 @@ class _OutboundAdapter(_Common):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.BusinessHost = pex.IRISBusinessOperation()
+        self.BusinessHost = grongier.pex.IRISBusinessOperation()
         self.BusinessHost.irisHandle = handlePartner
         return
 

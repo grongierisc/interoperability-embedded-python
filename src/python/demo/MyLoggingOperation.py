@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 
-class MyLoggingOperation(pex.BusinessOperation):
+class MyLoggingOperation(grongier.pex.BusinessOperation):
     
     def OnInit(self):
         print("[Python] ...MyLoggingOperation:OnInit() is called")

@@ -1,6 +1,6 @@
-import pex
+import grongier.pex
 import iris
-from pex._BusinessHost import _BusinessHost
+from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessService(_BusinessHost):
     """ This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.
@@ -64,7 +64,7 @@ class _BusinessService(_BusinessHost):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.Adapter = pex.IRISInboundAdapter()
+        self.Adapter = grongier.pex.IRISInboundAdapter()
         self.Adapter.irisHandle = handlePartner
         return
 
