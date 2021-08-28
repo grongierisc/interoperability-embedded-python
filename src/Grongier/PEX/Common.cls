@@ -51,13 +51,13 @@ Method Connect() As %Status
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do ##class(Grongier.PEX.Utils).SetClassPath(onePath)
+				if onePath'="" do ##class(Grongier.PEX.Common).SetClassPath(onePath)
 			}
 		}
 		;
 		
 		if $isObject(..%class)=0 {
-			set ..%class = ##class(Grongier.PEX.Utils).GetInstanceFromModuleClassName(..%module,..%classname)
+			set ..%class = ##class(Grongier.PEX.Common).GetInstanceFromModuleClassName(..%module,..%classname)
 		}
 		;
 		if ..%Extends("EnsLib.PEX.InboundAdapter") || ..%Extends("EnsLib.PEX.OutboundAdapter") {
@@ -141,6 +141,27 @@ ClassMethod deserialize(serialized As %String = "") As EnsLib.PEX.Message
 		set message.%jsonObject = ##class(%DynamicObject).%FromJSON(json)
 	}
 	quit message
+}
+
+/// Set classPath
+ClassMethod SetClassPath(classPath As %String) As %Status [ Language = python ]
+{
+import sys
+return sys.path.append(classPath)
+}
+
+/// GetInstanceFromModuleClassName
+ClassMethod GetInstanceFromModuleClassName(modulename, classname) As %SYS.Python [ Language = python ]
+{
+import builtins
+module = __import__(modulename)
+return getattr(module, classname)()
+}
+
+/// Lenght of python list
+ClassMethod Len(pList) [ Language = python ]
+{
+return len(pList)
 }
 
 }
