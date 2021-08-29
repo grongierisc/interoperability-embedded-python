@@ -5,3 +5,4 @@ src/python/grongier_pex.egg-info/dependency_links.txt
 src/python/grongier_pex.egg-info/top_level.txt
 src/python/grongier_pex.egg-info/SOURCES.txt
 src/python/grongier_pex.egg-info/PKG-INFO
+src/python/build/**
