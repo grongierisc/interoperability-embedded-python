@@ -107,3 +107,8 @@ e.g :
 ```python
 iris.cls("Grongier.PEX.Utils").RegisterComponent("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
+
+## Future work
+
+- Only Service and Operation has been tested.
+- Work in progress on adapter
