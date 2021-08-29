@@ -9,7 +9,7 @@ The register part is from the not released feature form IRIS 2021.3.
 The production has four component :
  - Two Business Services :
    - Grongier.PEX.MyCombinedBusinessService, which sent continually sync messages to an business operation
-     - Thoses messages are python messages cast in Grongier.PEX.Message to be persited
+     - Thoses messages are python classes cast JSON and persoted in Grongier.PEX.Message.
    - Grongier.PEX.MyBusinessService, who basically does nothing, it's a raw business service
  - Two Business Operations :
    - Grongier.PEX.BusinessOperation, which receive message from Grongier.PEX.MyCombinedBusinessService
@@ -60,37 +60,37 @@ It will start running some code sample.
 
 ## How to add a new component
 
-# InboundAdapter
+### InboundAdapter
 
 To implement InboundAdapter in Python, users do the following:
 
-Subclass from iris.pex.InboundAdapter in Python. Override method OnTask().
+Subclass from grongier.pex.InboundAdapter in Python. Override method OnTask().
 
-# OutboundAdapter
+### OutboundAdapter
 
 To implement OutboundAdapter in Python, users do the following:
 
-Subclass from iris.pex.OutboundAdapter in Python. Implement required action methods.
+Subclass from grongier.pex.OutboundAdapter in Python. Implement required action methods.
 
-# BusinessService
+### BusinessService
 
 To implement BusinessService in Python, users do the following:
 
-Subclass from iris.pex.BusinessService in Python. Override method OnProcessInput().
+Subclass from grongier.pex.BusinessService in Python. Override method OnProcessInput().
 
-# BusinessProcess
+### BusinessProcess
 
 To implement BusinessProcess in Python, users do the following:
 
-Subclass from iris.pex.BusinessProcess in Python. Override methods OnRequest(), OnResponse() and OnComplete().
+Subclass from grongier.pex.BusinessProcess in Python. Override methods OnRequest(), OnResponse() and OnComplete().
 
-# BusinessOperation
+### BusinessOperation
 
 To implement BusinessOperation in Python, users do the following:
 
-Subclass from iris.pex.BusinessOperation in Python. Override method OnMessage().
+Subclass from grongier.pex.BusinessOperation in Python. Override method OnMessage().
 
-# Regsiter an component 
+### Regsiter an component 
 
 Start a embedded python shell :
 
