@@ -94,12 +94,12 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do ##class(Grongier.PEX.Common).SetClassPath(onePath)
+				if onePath'="" do ##class(Grongier.PEX.Python).SetClassPath(onePath)
 			}
 		}
 		;
 
-		set tClass = ##class(Grongier.PEX.Common).GetInstanceFromModuleClassName(pModule,pRemoteClassname)
+		set tClass = ##class(Grongier.PEX.Python).GetInstanceFromModuleClassName(pModule,pRemoteClassname)
 
 		If $IsObject(tClass) {
 			#; List of information about the class as a whole - $lb(SuperClass, Description, InfoURL, IconURL, Adapter)
@@ -226,7 +226,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		#dim tCustomProp As %Dictionary.PropertyDefinition
 		#dim tPropInfo,tPropName,tDataType,tDefault,tDesc,tPropCat,tContext As %String
 		#; each remote setting is of form $lb(propName,dataType,defaultVal,required,category,description,editorContext)
-		For i=1:1:##class(Grongier.PEX.Common).Len(pRemoteSettings) {
+		For i=1:1:##class(Grongier.PEX.Python).Len(pRemoteSettings) {
 			Set tPropInfo = pRemoteSettings."__getitem__"(i-1)
 			Continue:""=tPropInfo ; this shouldn't happen, but just in case
 			Set tPropName = tPropInfo."__getitem__"(0)
@@ -274,7 +274,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,:0) {
 			Set tSETTINGSParamValue = tSETTINGSParamValue_",-%useAdapterConnection"
 			
-			If (##class(Grongier.PEX.Common).Len(pClassDetails)>4) {
+			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) {
 				#dim tAdapterClass = pClassDetails."__getitem__"(4)
 				#; May want to issue a warning in the UI if the Adapter class does not exist
 				#; but we don't check here because it does compile and may just be that the user is registering the Service/Operation before the Adapter

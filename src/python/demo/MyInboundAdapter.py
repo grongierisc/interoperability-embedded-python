@@ -1,6 +1,6 @@
 import random
 import grongier.pex
-import demo.SimpleObject
+import SimpleObject
 
 class MyInboundAdapter(grongier.pex.InboundAdapter):
     

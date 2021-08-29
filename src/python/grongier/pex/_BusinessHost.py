@@ -50,6 +50,28 @@ class _BusinessHost(_Common):
             returnObject = self._deserialize(returnObject)
         return returnObject
 
+    def SendRequestAsync(self, target, request, description=None):
+        """ Send the specified message to the target business process or business operation asynchronously.
+
+        Parameters:
+        target: a string that specifies the name of the business process or operation to receive the request. 
+            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
+        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
+            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
+        description: an optional string parameter that sets a description property in the message header. The default is None.
+        
+        Raises:
+        TypeError: if request is not of type Message or IRISObject.
+        """
+        if self._is_message_instance(request):
+            serialized = self._serialize(request)
+            self.irisHandle.dispatchSendRequestAsync(target,serialized,description)
+        elif isinstance(request, iris.IRISObject):
+            self.irisHandle.dispatchSendRequestAsync(target,request,description)
+        else:
+            raise TypeError
+        return
+
     @staticmethod
     def _serialize(message):
         """ Converts a message into json format.

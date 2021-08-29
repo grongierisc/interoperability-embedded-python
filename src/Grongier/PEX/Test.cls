@@ -15,9 +15,9 @@ ClassMethod TestBO() As %Status
 	try {
 	Set sc = $$$OK
 	set mybo = ##class(Grongier.PEX.BusinessOperation).%New("mybo")
-	set mybo.%classpaths = "/irisdev/app/src/python/:/irisdev/app/src/python/demo"
-	set mybo.%module = "MyBusinessOperation"
-	set mybo.%classname = "MyBusinessOperation"
+	set mybo.%classpaths = "/irisdev/app/src/python/demo"
+	set mybo.%module = "MyBusinessOperationWithAdapter"
+	set mybo.%classname = "MyBusinessOperationWithAdapter"
 	$$$ThrowOnError(mybo.OnInit())
 	set request = ##class(Ens.StringRequest).%New("hello")
 	set request = ##class(EnsLib.PEX.Message).%New()

@@ -12,6 +12,12 @@ class MyBusinessOperationWithAdapter(grongier.pex.BusinessOperation):
 
     def OnMessage(self, messageInput):
         # called from ticker service, message is of type MyRequest with property requestString
-        print("[Python] ...MyBusinessOperationWithAdapter:OnMessage() is called with message: " + messageInput.requestString)
-        self.Adapter.invoke("printString", messageInput.requestString)
+        print("[Python] ...MyBusinessOperationWithAdapter:OnMessage() is called with message: " + messageInput.StringValue)
+        self.Adapter.printString(messageInput.StringValue)
         return
+
+    def getAdapterType():
+        """
+        Name of the registred adaptor
+        """
+        return "PEX.MyOutboundAdapter"

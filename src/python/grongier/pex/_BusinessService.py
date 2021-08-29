@@ -53,38 +53,13 @@ class _BusinessService(_BusinessHost):
         """
         return ""
 
-    @staticmethod
-    def useAdapterConnection():
-        """ The useAdapterConnection() method is called when registering the business service in order to instruct the business service on whether to use the
-        the connection information from its adapter.
-        Do not return true if this is an adapterless business service or if the adapter is in a different language.
-        """
-        return False
-
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.Adapter = grongier.pex.IRISInboundAdapter()
-        self.Adapter.irisHandle = handlePartner
-        return
-
-    def SendRequestAsync(self, target, request, description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
-
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
-            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
-        """
-        if self._is_message_instance(request):
-            serialized = self._serialize(request)
-            self.irisHandle.dispatchSendRequestAsync(target,serialized,description)
-        elif isinstance(request, iris.IRISObject):
-            self.irisHandle.dispatchSendRequestAsync(target,request,description)
-        else:
-            raise TypeError(type(request))
+        if handlePartner._IsA("Grongier.PEX.InboundAdapter"):
+            module = __import__(handlePartner.GetModule())
+            handlePartner = getattr(module, handlePartner.GetClassname())()
+        self.Adapter = handlePartner
         return
 
     def _dispatchOnConnected(self, hostObject):

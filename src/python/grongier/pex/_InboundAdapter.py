@@ -38,7 +38,7 @@ class _InboundAdapter(_Common):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        self.BusinessHost = grongier.pex.IRISBusinessService()
+        self.BusinessHost = grongier.pex.BusinessService()
         self.BusinessHost.irisHandle = handlePartner
         return
 

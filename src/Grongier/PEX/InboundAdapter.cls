@@ -7,15 +7,12 @@ Class Grongier.PEX.InboundAdapter Extends (Ens.InboundAdapter, Grongier.PEX.Comm
 
 Parameter SETTINGS = "%classname:Python InboundAdapter,%module:Python InboundAdapter,%settings:Python InboundAdapter,%classpaths:Python InboundAdapter";
 
-/// Use Host Connection. If set to true, this adapter will use the connection from the host.
-Property %useHostConnection As %Boolean [ Internal ];
-
 Method OnTask() As %Status
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..Connect() quit:$$$ISERR(tSC)
-		do ..%class.OnTask()
+		$$$ThrowOnError(..Connect())
+		$$$ThrowOnError(..%class.OnTask())
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}

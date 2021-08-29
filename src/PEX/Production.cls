@@ -29,11 +29,14 @@ max=555</Setting>
   </Item>
   <Item Name="Grongier.PEX.MyCombinedBusinessService" Category="" ClassName="Grongier.PEX.BusinessService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
     <Setting Target="Host" Name="%classname">MyCombinedBusinessService</Setting>
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/demo</Setting>
+    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/:/irisdev/app/src/python/demo</Setting>
     <Setting Target="Host" Name="%module">MyCombinedBusinessService</Setting>
     <Setting Target="Host" Name="%settings">min=111
 mid=333
 max=555</Setting>
+  </Item>
+  <Item Name="PEX.MyBusinessOperationWithAdapter" Category="" ClassName="PEX.MyBusinessOperationWithAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/:/irisdev/app/src/python/demo</Setting>
   </Item>
 </Production>
 }
