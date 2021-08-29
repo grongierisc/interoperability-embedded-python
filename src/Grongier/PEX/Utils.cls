@@ -170,7 +170,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"No PEX superclass found.")
 			Quit
 		}
-		If '$Case($P(tSuperClass,".",1,*-1),"com.intersystems.Grongier.pex":1,"pex":1,"Grongier.PEX.BusinessProcess":1,:0) ||
+		If '$Case($P(tSuperClass,".",1,*-1),"com.intersystems.Grongier.pex":1,"grongier.pex":1,"Grongier.PEX.BusinessProcess":1,:0) ||
 			'$Case($P(tSuperClass,".",*),"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"Invalid superclass")
 			Quit
