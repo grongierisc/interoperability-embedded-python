@@ -96,7 +96,7 @@ Subclass from grongier.pex.BusinessOperation in Python. Override method OnMessag
 
 ### Regsiter an component 
 
-Start a embedded python shell :
+Start an embedded python shell :
 
 ```sh
 /usr/irissys/bin/irispython

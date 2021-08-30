@@ -6,7 +6,7 @@ Class Grongier.PEX.Test
 ClassMethod Register() As %Status
 {
 	Set sc = $$$OK
-	zw ##class(Grongier.PEX.Utils).RegisterComponent("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+	zw ##class(Grongier.PEX.Utils).RegisterComponent("MyBusinessOperationWithIrisAdapter","MyBusinessOperationWithIrisAdapter","/irisdev/app/src/python/demo/",1,"PEX.MyBusinessOperationWithIrisAdapter")
 	Return sc
 }
 

@@ -38,6 +38,9 @@ max=555</Setting>
   <Item Name="PEX.MyBusinessOperationWithAdapter" Category="" ClassName="PEX.MyBusinessOperationWithAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
     <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/:/irisdev/app/src/python/demo</Setting>
   </Item>
+  <Item Name="PEX.MyBusinessOperationWithIrisAdapter" Category="" ClassName="PEX.MyBusinessOperationWithIrisAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Adapter" Name="FilePath">/tmp</Setting>
+  </Item>
 </Production>
 }
 
