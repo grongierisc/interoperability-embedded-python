@@ -15,11 +15,11 @@ The production has four component :
    - Grongier.PEX.BusinessOperation, which receive message from Grongier.PEX.MyCombinedBusinessService
    - Grongier.PEX.CombinedBusinessOperation, it can receive Ens.StringRequest message and response with Ens.StringResponse
 
-<img width="864" alt="Screenshot" src="https://raw.githubusercontent.com/grongierisc/interpeorability-embedded-python/master/misc/interop-screenshot.png"> 
+<img width="1177" alt="interop-screenshot" src="https://user-images.githubusercontent.com/47849411/131305197-d19511fd-6e05-4aec-a525-c88e6ebd0971.png">
 
 New json trace for python native messages :
 
-<img width="864" alt="Screenshot" src="https://raw.githubusercontent.com/grongierisc/interpeorability-embedded-python/master/misc/json-message-trace.png"> 
+<img width="910" alt="json-message-trace" src="https://user-images.githubusercontent.com/47849411/131305211-b8beb2c0-438d-4afc-a6d2-f94d854373ae.png">
 
 ## Prerequisites
 Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker desktop](https://www.docker.com/products/docker-desktop) installed.
@@ -27,20 +27,20 @@ Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installi
 ## Installation: Docker
 Clone/git pull the repo into any local directory
 
-```
-$ git clone https://github.com/grongierisc/interpeorability-embedded-python
+```sh
+git clone https://github.com/grongierisc/interpeorability-embedded-python
 ```
 
 Open the terminal in this directory and run:
 
-```
-$ docker-compose build
+```sh
+docker-compose build
 ```
 
 3. Run the IRIS container with your project:
 
-```
-$ docker-compose up -d
+```sh
+docker-compose up -d
 ```
 
 ## Installation without Docker
