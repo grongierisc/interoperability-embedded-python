@@ -39,7 +39,6 @@ class _Common():
         iconURL = ""
         superClass = ""
         adapter = ""
-        useAdapterConnection = False
         try:
             # Get tuple of the class's base classes and loop through them until we find one of the PEX component classes
             classes = inspect.getmro(cls)
@@ -49,7 +48,6 @@ class _Common():
                     # Remove the apostrophes and set as superClass, then find if it uses an adapter
                     superClass = clName[1:-1]
                     adapter = cls.getAdapterType()
-                    useAdapterConnection = cls.useAdapterConnection()
                     break
                 elif clName in ["'grongier.pex.BusinessProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
                     # Remove the apostrophes and set as superClass
@@ -75,7 +73,6 @@ class _Common():
             
             if ""!=adapter:
                 ret.append(adapter)
-                ret.append(useAdapterConnection)
         except:
             pass
         return ret

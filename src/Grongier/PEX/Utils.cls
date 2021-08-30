@@ -186,10 +186,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		}
 		
 		#; Do not display any of the connection settings
-		#dim tSETTINGSParamValue As %String = "-%classname,-%settings,-%module,-%classpaths"
-		If (tSuperClass [ "Adapter") {
-			Set tSETTINGSParamValue = tSETTINGSParamValue_",-%useHostConnection"
-		}
+		#dim tSETTINGSParamValue As %String = "%classname:Python,%module:Python,%settings:Python,%classpaths:Python"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"
@@ -199,7 +196,6 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Set tSC = tCOSClass.Properties.Insert(tPropClassname)
 		Quit:$$$ISERR(tSC)
 		
-
 		
 		#dim tPropClasspaths As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClasspaths.Name = "%classpaths"
@@ -257,22 +253,13 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 			
 			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
 			Quit:$$$ISERR(tSC)
-			
-			//Set tPropCat = $lg(tPropInfo,5,"Additional")
-			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName //_":"_tPropCat
-			
-			Set tSC = tMethod.Implementation.WriteLine($char(9)_"try {")	Quit:$$$ISERR(tSC)
-			Set tSC = tMethod.Implementation.WriteLine($char(9,9)_"set $property(..%gatewayProxy,"_$$$quote(tPropName)_") = .."_tPropName)	Quit:$$$ISERR(tSC)
-			Set tSC = tMethod.Implementation.WriteLine($char(9)_"} catch ex {")	Quit:$$$ISERR(tSC)
-			Set tSC = tMethod.Implementation.WriteLine($char(9,9)_"$$$LOGWARNING(ex.DisplayString())")	Quit:$$$ISERR(tSC)
-			Set tSC = tMethod.Implementation.WriteLine($char(9)_"}")	Quit:$$$ISERR(tSC)
+		
 		}
 		Quit:$$$ISERR(tSC)
 		#; Avoid possiblity of empty method if no properties to set
 		Set tSC = tMethod.Implementation.WriteLine($char(9)_"quit")	Quit:$$$ISERR(tSC)
 		
 		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,:0) {
-			Set tSETTINGSParamValue = tSETTINGSParamValue_",-%useAdapterConnection"
 			
 			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) {
 				#dim tAdapterClass = pClassDetails."__getitem__"(4)
@@ -283,17 +270,6 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 				Set tADAPTERParam.Default = tAdapterClass
 				Set tSC = tCOSClass.Parameters.Insert(tADAPTERParam)
 				Quit:$$$ISERR(tSC)
-				#; If remote Business Service or Operation specified an Adapter and said to use the Adapter connection, set %useAdapterConnection
-				If (1 = pClassDetails."__getitem__"(5)) {
-					#dim tAdapterConnProp As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
-					Set tAdapterConnProp.Name = "%useAdapterConnection"
-					Set tAdapterConnProp.Type = "%Boolean"
-					Set tAdapterConnProp.Internal = 1
-					Set tAdapterConnProp.InitialExpression = 1
-					Set tAdapterConnProp.Description = "Use Adapter Connection. If set to true, this business host will use the connection from the adapter."
-					Set tSC = tCOSClass.Properties.Insert(tAdapterConnProp)
-					Quit:$$$ISERR(tSC)
-				}
 			}
 		}
 		

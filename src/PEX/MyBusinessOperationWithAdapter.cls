@@ -3,7 +3,7 @@ Class PEX.MyBusinessOperationWithAdapter Extends Grongier.PEX.BusinessOperation 
 
 Parameter ADAPTER = "PEX.MyOutboundAdapter";
 
-Parameter SETTINGS = "-%classname,-%settings,-%module,-%classpaths,-%useAdapterConnection";
+Parameter SETTINGS = "%classname:Python,%module:Python,%settings:Python,%classpaths:Python";
 
 Property %classname As %String [ InitialExpression = "MyBusinessOperationWithAdapter", Internal ];
 
