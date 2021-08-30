@@ -17,6 +17,10 @@ The production has four component :
 
 <img width="864" alt="Screenshot" src="https://raw.githubusercontent.com/grongierisc/interpeorability-embedded-python/master/misc/interop-screenshot.png"> 
 
+New json trace for python native messages :
+
+<img width="864" alt="Screenshot" src="https://raw.githubusercontent.com/grongierisc/interpeorability-embedded-python/master/misc/json-message-trace.png"> 
+
 ## Prerequisites
 Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker desktop](https://www.docker.com/products/docker-desktop) installed.
 
