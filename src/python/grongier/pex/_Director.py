@@ -8,7 +8,7 @@ class _Director():
     """
 
     @staticmethod
-    def CreateBusinessService(connection, target):
+    def CreateBusinessService(target):
         """ The CreateBusinessService() method initiates the specifiied business service.
 
         Parameters:
@@ -18,7 +18,5 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        irisobject = iris.cls("EnsLib.PEX.Director").dispatchCreateBusinessService(target)
-        service = grongier.pex._IRISBusinessService._IRISBusinessService()
-        service.irisHandle = irisobject
-        return service
+        irisobject = iris.cls("Grongier.PEX.Director").dispatchCreateBusinessService(target)
+        return irisobject
