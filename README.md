@@ -94,7 +94,7 @@ To implement BusinessOperation in Python, users do the following:
 
 Subclass from grongier.pex.BusinessOperation in Python. Override method OnMessage().
 
-### Regsiter an component 
+### Regsiter a component 
 
 Start an embedded python shell :
 
@@ -111,6 +111,21 @@ e.g :
 ```python
 iris.cls("Grongier.PEX.Utils").RegisterComponent("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
+
+### Direct use of Grongier.PEX
+
+If you don't want to use the RegisterComponent util. You can add an Grongier.PEX.Business* component and configure the properties :
+- %module :
+  - Module name of your python code
+- %classname :
+  - Classname of you component
+- %classpaths
+  - Path where you component is.
+    - This can one or more Classpaths (separated by '|' character) needed in addition to PYTHON_PATH
+
+e.g :
+
+<img width="800" alt="component-config" src="https://user-images.githubusercontent.com/47849411/131316308-e1898b19-11df-433b-b1c6-7f69d5cc9974.png">
 
 ## Future work
 
