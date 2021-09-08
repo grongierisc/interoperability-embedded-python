@@ -54,7 +54,7 @@ Install the *grongier_pex-1.0.0-py3-none-any.whl* on you local iris instance :
 Then load the ObjectScript classes :
 
 ```ObjectScript
-do $System.OBJ.LoadDir("/opt/irisapp/src","ck",,1)
+do $System.OBJ.LoadDir("/opt/irisapp/src","cubk","*.cls",1)
 ```
 
 ## How to Run the Sample

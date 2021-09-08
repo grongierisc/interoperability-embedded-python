@@ -56,9 +56,10 @@ class _BusinessService(_BusinessHost):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        if handlePartner._IsA("Grongier.PEX.InboundAdapter"):
-            module = __import__(handlePartner.GetModule())
-            handlePartner = getattr(module, handlePartner.GetClassname())()
+        if type(handlePartner).__module__.find('iris') == 0:
+            if handlePartner._IsA("Grongier.PEX.InboundAdapter"):
+                module = __import__(handlePartner.GetModule())
+                handlePartner = getattr(module, handlePartner.GetClassname())()
         self.Adapter = handlePartner
         return
 

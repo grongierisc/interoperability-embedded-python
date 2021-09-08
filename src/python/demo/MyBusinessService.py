@@ -11,5 +11,7 @@ class MyBusinessService(grongier.pex.BusinessService):
         return
 
     def OnProcessInput(self, messageInput):
-        print("[Python] ...MyBusinessService:OnProcessInput() is called")
+        msg = "[Python] ...MyBusinessService:OnProcessInput() is called"
+        print(msg)
+        self.LOGINFO(msg+messageInput)
         return "received input"

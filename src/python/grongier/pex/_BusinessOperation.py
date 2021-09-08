@@ -54,10 +54,11 @@ class _BusinessOperation(_BusinessHost):
     def _setIrisHandles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
-        if handlePartner._IsA("Grongier.PEX.OutboundAdapter"):
-            module = __import__(handlePartner.GetModule())
-            handlePartner = getattr(module, handlePartner.GetClassname())()
-        self.Adapter = handlePartner
+        if type(handlePartner).__module__.find('iris') == 0:
+            if handlePartner._IsA("Grongier.PEX.OutboundAdapter"):
+                module = __import__(handlePartner.GetModule())
+                handlePartner = getattr(module, handlePartner.GetClassname())()
+            self.Adapter = handlePartner
         return
 
     def _dispatchOnConnected(self, hostObject):

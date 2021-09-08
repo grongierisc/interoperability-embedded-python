@@ -1,12 +1,13 @@
 /// Description
-Class Grongier.PEX.Test
+Class Grongier.PEX.Test Extends %Persistent
 {
 
 /// Register
 ClassMethod Register() As %Status
 {
 	Set sc = $$$OK
-	zw ##class(Grongier.PEX.Utils).RegisterComponent("MyBusinessOperationWithIrisAdapter","MyBusinessOperationWithIrisAdapter","/irisdev/app/src/python/demo/",1,"PEX.MyBusinessOperationWithIrisAdapter")
+	zw ##class(Grongier.PEX.Utils).RegisterComponent("MyBusinessOperationWithAdapter","MyBusinessOperationWithAdapter","/irisdev/app/src/python/demo/",1,"PEX.MyBusinessOperationWithAdapter")
+	#dim array as %ArrayOfObjects
 	Return sc
 }
 
@@ -41,6 +42,21 @@ ClassMethod TestBO() As %Status
 ClassMethod PythonList() [ Language = python ]
 {
 return [ 1, 3 ]
+}
+
+Storage Default
+{
+<Data name="TestDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+</Data>
+<DataLocation>^Grongier.PEX.TestD</DataLocation>
+<DefaultData>TestDefaultData</DefaultData>
+<IdLocation>^Grongier.PEX.TestD</IdLocation>
+<IndexLocation>^Grongier.PEX.TestI</IndexLocation>
+<StreamLocation>^Grongier.PEX.TestS</StreamLocation>
+<Type>%Storage.Persistent</Type>
 }
 
 }

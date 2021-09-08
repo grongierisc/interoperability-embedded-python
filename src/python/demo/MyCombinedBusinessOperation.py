@@ -17,5 +17,5 @@ class MyCombinedBusinessOperation(grongier.pex.BusinessOperation):
     def OnMessage(self, messageInput):
         # this is called from MyCombinedBusinessProcess which sends an Ens.StringRequest message
         print("[Python] ...MyCombinedBusinessOperation:OnMessage() is called with message: " + messageInput.StringValue)
-        tResponse = iris.cls("Ens.StringResponse")._New("response from my business operation with message : "+messageInput.StringValue)
+        tResponse = iris.cls("Ens.StringResponse")._New(" message : "+messageInput.StringValue)
         return tResponse

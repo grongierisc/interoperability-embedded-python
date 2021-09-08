@@ -2,7 +2,7 @@
  set sc = ##class(App.Installer).setup() 
 
  zn "IRISAPP"
- do $System.OBJ.LoadDir("/opt/irisapp/src","ck",,1)
+ do $System.OBJ.LoadDir("/opt/irisapp/src","cubk","*.cls",1)
  zpm "install sslclient"
 
  zn "%SYS"
