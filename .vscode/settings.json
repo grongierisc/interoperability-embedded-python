@@ -14,7 +14,7 @@
       },
       "active": true,
       "links": {
-        "Production": "http://localhost:${port}/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production",
+        "Production": "http://localhost:${port}/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production"
       }
     },
     "sqltools.connections": [
