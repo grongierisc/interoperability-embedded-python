@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode-remote.vscode-remote-extensionpack",
+        "intersystems-community.vscode-objectscript",
+        "intersystems.language-server"
+    ]
+}
