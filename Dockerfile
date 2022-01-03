@@ -1,13 +1,15 @@
-ARG IMAGE=arti.iscinternal.com/intersystems/iris:2021.1.0PYTHON.300.0
+ARG IMAGE=containers.intersystems.com/intersystems/iris-community:2021.2.0.617.0
 FROM $IMAGE
 
-COPY key/iris.key /usr/irissys/mgr/iris.key
+#COPY key/iris.key /usr/irissys/mgr/iris.key
 
 USER root   
 
 # Update package and install sudo
 RUN apt-get update && apt-get install -y \
 	nano \
+	python3-pip \
+	python3-venv \
 	sudo && \
 	/bin/echo -e ${ISC_PACKAGE_MGRUSER}\\tALL=\(ALL\)\\tNOPASSWD: ALL >> /etc/sudoers && \
 	sudo -u ${ISC_PACKAGE_MGRUSER} sudo echo enabled passwordless sudo-ing for ${ISC_PACKAGE_MGRUSER}

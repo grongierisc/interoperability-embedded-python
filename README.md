@@ -6,14 +6,18 @@ The register part is from the not released feature form IRIS 2021.3.
 
 ## What The Project Does ?
 
-The production has four component :
+The production has four component in pure python :
  - Two Business Services :
    - Grongier.PEX.MyCombinedBusinessService, which sent continually sync messages to an business operation
-     - Thoses messages are python classes cast JSON and persoted in Grongier.PEX.Message.
-   - Grongier.PEX.MyBusinessService, who basically does nothing, it's a raw business service
+     - Thoses messages are python objects cast JSON and stored in Grongier.PEX.Message.
+     - Python code : src/python/demo/MyCombinedBusinessService.py
+   - Grongier.PEX.MyBusinessService, who basically does nothing, it's a raw business service who writes message logs
+     - Python code : src/python/demo/MyBusinessService.py
  - Two Business Operations :
    - Grongier.PEX.BusinessOperation, which receive message from Grongier.PEX.MyCombinedBusinessService
+     - Python code : src/python/demo/MyBusinessOperation.py
    - Grongier.PEX.CombinedBusinessOperation, it can receive Ens.StringRequest message and response with Ens.StringResponse
+     - Python code : src/python/demo/MyCombinedBusinessOperation.py
 
 <img width="1177" alt="interop-screenshot" src="https://user-images.githubusercontent.com/47849411/131305197-d19511fd-6e05-4aec-a525-c88e6ebd0971.png">
 
