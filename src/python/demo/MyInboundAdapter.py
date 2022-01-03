@@ -18,7 +18,7 @@ class MyInboundAdapter(grongier.pex.InboundAdapter):
         if random.random() < 0.5:
             msg = "this is message # %d" %self.runningCount
             self.runningCount += 1
-            request = demo.SimpleObject.SimpleObject(msg)
+            request = SimpleObject.SimpleObject(msg)
             print("[Python] ...MyInboundAdapter:OnTask() calls ProcessInput() with: " + msg)
             response = self.BusinessHost.ProcessInput(request)
             print("[Python] ...MyInboundAdapter received response: " + response)
