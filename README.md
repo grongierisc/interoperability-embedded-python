@@ -1,8 +1,6 @@
 ## interoperability-embedded-python
 This proof of concept aims to show how the **iris interoperability framework** can be use with **embedded python**.
 This is a hack, this not for production.
-Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
-The register part is from the not released feature form IRIS 2021.3.
 
 ## What The Project Does ?
 
@@ -135,3 +133,8 @@ e.g :
 
 - Only Service and Operation has been tested.
 - Work in progress on adapter
+
+## Credits
+
+Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
+The register part is from the not released feature form IRIS 2021.3.
