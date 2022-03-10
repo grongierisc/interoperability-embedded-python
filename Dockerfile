@@ -29,8 +29,8 @@ ENV PYTHON_PATH=/usr/irissys/bin/
 ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
 
-COPY  Installer.cls .
-COPY  src src
+COPY Installer.cls .
+COPY src src
 COPY iris.script /tmp/iris.script
 
 ## Install grongier-pex wheel
