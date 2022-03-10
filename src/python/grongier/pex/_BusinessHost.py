@@ -39,15 +39,11 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if self._is_message_instance(request):
-            serialized = self._serialize(request)
-            returnObject = self.irisHandle.dispatchSendRequestSync(target,serialized,timeout,description)
-        elif isinstance(request, iris.IRISObject):
-            returnObject = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
-        else:
-            raise TypeError
-        if isinstance(returnObject, str):
-            returnObject = self._deserialize(returnObject)
+        if isinstance(request, str):
+            request = self._deserialize(request)
+        returnObject = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
+        if self._is_message_instance(returnObject):
+            returnObject = self._serialize(returnObject)
         return returnObject
 
     def SendRequestAsync(self, target, request, description=None):
@@ -63,14 +59,11 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if self._is_message_instance(request):
-            serialized = self._serialize(request)
-            self.irisHandle.dispatchSendRequestAsync(target,serialized,description)
-        elif isinstance(request, iris.IRISObject):
-            self.irisHandle.dispatchSendRequestAsync(target,request,description)
-        else:
-            raise TypeError
+        if isinstance(request, str):
+            request = self._deserialize(request)
+        self.irisHandle.dispatchSendRequestSync(target,request,description)
         return
+
 
     @staticmethod
     def _serialize(message):

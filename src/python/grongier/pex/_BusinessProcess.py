@@ -95,13 +95,9 @@ class _BusinessProcess(_BusinessHost):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if self._is_message_instance(request):
-            serialized = self._serialize(request)
-            self.irisHandle.dispatchSendRequestAsync(target,serialized,responseRequired,completionKey,description)
-        elif isinstance(request, iris.IRISObject):
-            self.irisHandle.dispatchSendRequestAsync(target,request,responseRequired,completionKey,description)
-        else:
-            raise TypeError("Message of type: " + str(request.__class__) + " is invalid. Messages must be subclass of Message or IRISObject.")
+        if isinstance(request, str):
+            request = self._deserialize(request)
+        self.irisHandle.dispatchSendRequestAsync(target,request,responseRequired,completionKey,description)
         return
 
     def _savePersistentProperties(self, hostObject):
