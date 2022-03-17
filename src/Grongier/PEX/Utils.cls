@@ -7,7 +7,7 @@ Include Ensemble
 Class Grongier.PEX.Utils
 {
 
-ClassMethod RegisterComponent(pRemoteClassname As %String, pModule As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
+ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -186,7 +186,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		}
 		
 		#; Do not display any of the connection settings
-		#dim tSETTINGSParamValue As %String = "%classname:Python,%module:Python,%settings:Python,%classpaths:Python"
+		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"
@@ -216,52 +216,10 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Set tSC = tCOSClass.Properties.Insert(tPropLanguage)
 		Quit:$$$ISERR(tSC)
 		
-		#dim tMethod As %Dictionary.MethodDefinition = ##class(%Dictionary.MethodDefinition).%New()
-		Set tMethod.Name = "SetPropertyValues"
-		
-		#dim tCustomProp As %Dictionary.PropertyDefinition
-		#dim tPropInfo,tPropName,tDataType,tDefault,tDesc,tPropCat,tContext As %String
-		#; each remote setting is of form $lb(propName,dataType,defaultVal,required,category,description,editorContext)
-		For i=1:1:##class(Grongier.PEX.Python).Len(pRemoteSettings) {
-			Set tPropInfo = pRemoteSettings."__getitem__"(i-1)
-			Continue:""=tPropInfo ; this shouldn't happen, but just in case
-			Set tPropName = tPropInfo."__getitem__"(0)
-			Set tDataType = tPropInfo."__getitem__"(1)
-			If (""=tPropName) || (""=tDataType) {
-				Set tSC = $$$ERROR($$$EnsErrGeneral,"All properties must have a name and datatype defined")
-				Quit
-			}
-			Set tCustomProp = ##class(%Dictionary.PropertyDefinition).%New()
-			Set tCustomProp.Name = tPropName
-			If $Case(tDataType,"String":1,"Integer":1,"Boolean":1,"Numeric":1,:0) {
-				Set tDataType = "%"_tDataType
-			} ElseIf '##class(%Dictionary.ClassDefinition).%ExistsId(tDataType) {
-				Set tDataType = "%String"
-			}
-			Set tCustomProp.Type = tDataType
-			Set tDefault = tPropInfo."__getitem__"(3)
-			If ""'=tDefault {
-				Set tCustomProp.InitialExpression = $$$quote(tDefault)
-			}
-			//Set tCustomProp.Required = $lg(tPropInfo,4,0)
-			Set tDesc = tPropInfo."__getitem__"(5)
-			If ""'=tDesc {
-				Set tDesc = $zstrip($Replace(tDesc,$C(10),$C(13,10)),"<>W")
-				Set:$E(tDesc,*-1,*)=$C(13,10) tDesc = $E(tDesc,1,*-2)
-				Set tCustomProp.Description = tDesc
-			}
-			
-			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
-			Quit:$$$ISERR(tSC)
-		
-		}
-		Quit:$$$ISERR(tSC)
-		#; Avoid possiblity of empty method if no properties to set
-		Set tSC = tMethod.Implementation.WriteLine($char(9)_"quit")	Quit:$$$ISERR(tSC)
-		
 		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,:0) {
 			
-			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) {
+			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) { //Adaptor
+
 				#dim tAdapterClass = pClassDetails."__getitem__"(4)
 				#; May want to issue a warning in the UI if the Adapter class does not exist
 				#; but we don't check here because it does compile and may just be that the user is registering the Service/Operation before the Adapter
@@ -272,14 +230,15 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 				Quit:$$$ISERR(tSC)
 			}
 		}
+
+		set type = ""
+		set:($Case(tSuperClass,"Grongier.PEX.InboundAdapter":1,"Grongier.PEX.OutboundAdapter":1,:0)) type = "Adapter"
+		set tSETTINGSParamValue = $REPLACE(tSETTINGSParamValue,"$type",type)
 		
 		#dim tSETTINGSParam As %Dictionary.ParameterDefinition = ##class(%Dictionary.ParameterDefinition).%New()
 		Set tSETTINGSParam.Name = "SETTINGS"
 		Set tSETTINGSParam.Default = tSETTINGSParamValue
 		Set tSC = tCOSClass.Parameters.Insert(tSETTINGSParam)
-		Quit:$$$ISERR(tSC)
-		
-		Set tSC = tCOSClass.Methods.Insert(tMethod)
 		Quit:$$$ISERR(tSC)
 		
 		Set tSC = tCOSClass.%Save()
