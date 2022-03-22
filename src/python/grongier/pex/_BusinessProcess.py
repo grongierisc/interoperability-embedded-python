@@ -80,26 +80,6 @@ class _BusinessProcess(_BusinessHost):
         self.irisHandle = handleCurrent
         return
 
-    def SendRequestAsync(self, target, request, responseRequired=True, completionKey=None, description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
-
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
-            If the target is a build-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        responseRequired: a boolean value that specifies if the target must send a response message. The default is True.
-        completionKey: A string that will be sent with the response message.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
-        
-        Raises:
-        TypeError: if request is not of type Message or IRISObject.
-        """
-        if isinstance(request, str):
-            request = self._deserialize(request)
-        self.irisHandle.dispatchSendRequestAsync(target,request,responseRequired,completionKey,description)
-        return
-
     def _savePersistentProperties(self, hostObject):
         """ For internal use only. """
         if self.PERSISTENT_PROPERTY_LIST == None:
