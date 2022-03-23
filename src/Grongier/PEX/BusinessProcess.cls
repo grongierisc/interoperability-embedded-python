@@ -38,11 +38,10 @@ Method OnRequest(request As %Persistent, Output response As %Persistent) As %Sta
 }
 
 /// Handle a 'Response'
-Method OnResponse(request As %Persistent, ByRef response As %Persistent, callRequest As %Persistent, callResponse As %Persistent, pCompletionKey As %String) As %Status
+Method OnResponse(request As %Persistent, Output response As %Persistent, callRequest As %Persistent, callResponse As %Persistent, pCompletionKey As %String) As %Status
 {
 	set tSC = $$$OK
 	try {
-		set tSC = ..Connect() quit:$$$ISERR(tSC)
 		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
 		if $isObject(response),response.%IsA("Grongier.PEX.Message") set response = ..serialize(response)
 		if $isObject(callRequest),callRequest.%IsA("Grongier.PEX.Message") set callRequest = ..serialize(callRequest)
