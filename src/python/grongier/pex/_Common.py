@@ -1,5 +1,5 @@
 import traceback
-import sys
+import dataclasses
 import inspect
 import iris
 
@@ -17,7 +17,10 @@ class _Common():
 
     @classmethod
     def _is_message_instance(cls, object):
-        return cls._is_message_class(type(object))
+        if cls._is_message_class(type(object)):
+            if not dataclasses.is_dataclass(object):
+                raise TypeError(type(object).__module__ + '.' + type(object).__qualname__+" must be a dataclass")
+            return True
 
     @classmethod
     def _is_message_class(cls, klass):

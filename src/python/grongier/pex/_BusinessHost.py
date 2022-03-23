@@ -1,6 +1,4 @@
 import json
-import sys
-import iris
 from grongier.pex._Common import _Common
 
 class _BusinessHost(_Common):
@@ -39,11 +37,11 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if isinstance(request, str):
-            request = self._deserialize(request)
+        if self._is_message_instance(request):
+            request = self._serialize(request)
         returnObject = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
         if self._is_message_instance(returnObject):
-            returnObject = self._serialize(returnObject)
+            returnObject = self._deserialize(returnObject)
         return returnObject
 
     def SendRequestAsync(self, target, request, description=None):
@@ -59,9 +57,9 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if isinstance(request, str):
-            request = self._deserialize(request)
-        self.irisHandle.dispatchSendRequestSync(target,request,description)
+        if self._is_message_instance(request):
+            request = self._serialize(request)
+        self.irisHandle.dispatchSendRequestAsync(target,request,description)
         return
 
 
@@ -76,7 +74,7 @@ class _BusinessHost(_Common):
         string: The message in json format.
         """
         if (message != None):
-            jString = json.dumps(message.__dict__) 
+            jString = json.dumps(message, default=lambda message: message.__dict__) 
             module = message.__class__.__module__
             classname = message.__class__.__name__
             return  module + "." + classname + ":" + jString
@@ -96,7 +94,7 @@ class _BusinessHost(_Common):
         Raises:
         ImportError: if the classname does not include a module name to import.
         """
-        if (serial != None):
+        if (serial != None and serial != ""):
             i = serial.find(":")
             if (i <=0):
                 raise ValueError("JSON message malformed, must include classname: " + serial)
@@ -108,13 +106,21 @@ class _BusinessHost(_Common):
 
             try:
                 module = __import__(classname[:j])
-                msg = getattr(module, classname[j+1:])()
+                msg = getattr(module, classname[j+1:])
             except Exception:
                 raise ImportError("Class not found: " + classname)
             jdict = json.loads(serial[i+1:])
-            for k, v in jdict.items():
-                setattr(msg, k, v)
+            msg = _BusinessHost.dataclass_from_dict(msg,jdict)
             return msg
         else:
             return None
-                
+
+    @staticmethod
+    def dataclass_from_dict(klass, dikt):
+        try:
+            fieldtypes = klass.__annotations__
+            return klass(**{f: _BusinessHost.dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
+        except AttributeError:
+            if isinstance(dikt, (tuple, list)):
+                return [_BusinessHost.dataclass_from_dict(klass.__args__[0], f) for f in dikt]
+            return dikt
