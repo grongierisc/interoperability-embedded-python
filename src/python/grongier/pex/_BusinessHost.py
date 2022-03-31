@@ -1,4 +1,5 @@
 import json
+import importlib
 from grongier.pex._Common import _Common
 
 class _BusinessHost(_Common):
@@ -100,12 +101,12 @@ class _BusinessHost(_Common):
                 raise ValueError("JSON message malformed, must include classname: " + serial)
             classname = serial[:i]
 
-            j = classname.find(".")
+            j = classname.rindex(".")
             if (j <=0):
                 raise ValueError("Classname must include a module: " + classname)
 
             try:
-                module = __import__(classname[:j])
+                module = importlib.import_module(classname[:j])
                 msg = getattr(module, classname[j+1:])
             except Exception:
                 raise ImportError("Class not found: " + classname)
