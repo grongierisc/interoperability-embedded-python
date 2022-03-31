@@ -5,7 +5,7 @@
 Class Grongier.PEX.Message Extends Ens.MessageBody
 {
 
-Property %classname As %String;
+Property %classname As %String(MAXLEN="");
 
 Property %jsonObject As %DynamicObject;
 
