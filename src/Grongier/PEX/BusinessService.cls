@@ -7,8 +7,6 @@ Class Grongier.PEX.BusinessService Extends (Ens.BusinessService, Grongier.PEX.Co
 
 Parameter SETTINGS = "%classname:Python BusinessService,%module:Python BusinessService,%settings:Python BusinessService,%classpaths:Python BusinessService";
 
-Parameter ADAPTER = "Ens.InboundAdapter";
-
 ClassMethod dispatchProcessInput(host As %RegisteredObject, pInput As %RegisteredObject) As %RegisteredObject
 {
 	// dispatchProcessInput is a classmethod because it can be called on a BusinessService object that is not PEX enabled
