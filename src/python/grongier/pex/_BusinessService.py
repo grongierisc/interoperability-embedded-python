@@ -79,3 +79,9 @@ class _BusinessService(_BusinessHost):
         self.OnTearDown()
         return
     
+    def _dispatchOnProcessInput(self, request):
+        """ For internal use only. """
+        if isinstance(request, str):
+            request = self._deserialize(request)
+        returnObject = self.OnProcessInput(request)
+        return returnObject
