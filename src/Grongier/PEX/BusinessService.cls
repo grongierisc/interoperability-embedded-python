@@ -7,10 +7,9 @@ Class Grongier.PEX.BusinessService Extends (Ens.BusinessService, Grongier.PEX.Co
 
 Parameter SETTINGS = "%classname:Python BusinessService,%module:Python BusinessService,%settings:Python BusinessService,%classpaths:Python BusinessService";
 
-ClassMethod dispatchProcessInput(host As %RegisteredObject, pInput As %RegisteredObject) As %RegisteredObject
+Method dispatchProcessInput(pInput As %RegisteredObject) As %RegisteredObject
 {
-	// dispatchProcessInput is a classmethod because it can be called on a BusinessService object that is not PEX enabled
-	set tSC = host.ProcessInput(pInput,.tOutput)
+	set tSC = ..ProcessInput(pInput,.tOutput)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit tOutput
 }
@@ -19,11 +18,12 @@ Method OnProcessInput(request As %RegisteredObject, Output response As %Register
 {
 	set tSC = $$$OK
 	try {
-		do ..Connect()
 		try {
 			set ..%class."_WaitForNextCallInterval" = ..%WaitForNextCallInterval
 		} catch {}
-		set response = ..%class.OnProcessInput(request)
+		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
+		set response = ..%class."_dispatchOnProcessInput"(request)
+
 		try {
 			set ..%WaitForNextCallInterval = ..%class."_WaitForNextCallInterval"
 		} catch {}

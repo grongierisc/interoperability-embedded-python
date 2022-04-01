@@ -84,4 +84,6 @@ class _BusinessService(_BusinessHost):
         if isinstance(request, str):
             request = self._deserialize(request)
         returnObject = self.OnProcessInput(request)
+        if isinstance(returnObject, str):
+            returnObject = self._deserialize(returnObject)
         return returnObject
