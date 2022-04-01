@@ -1,5 +1,6 @@
 import grongier.pex
 import iris
+import importlib
 from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessService(_BusinessHost):
@@ -58,7 +59,7 @@ class _BusinessService(_BusinessHost):
         self.irisHandle = handleCurrent
         if type(handlePartner).__module__.find('iris') == 0:
             if handlePartner._IsA("Grongier.PEX.InboundAdapter"):
-                module = __import__(handlePartner.GetModule())
+                module = importlib.import_module(handlePartner.GetModule())
                 handlePartner = getattr(module, handlePartner.GetClassname())()
         self.Adapter = handlePartner
         return

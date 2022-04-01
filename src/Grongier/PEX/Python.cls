@@ -13,7 +13,8 @@ return sys.path.append(classPath)
 ClassMethod GetInstanceFromModuleClassName(modulename, classname) As %SYS.Python [ Language = python ]
 {
 import builtins
-module = __import__(modulename)
+import importlib
+module = importlib.import_module(modulename)
 return getattr(module, classname)()
 }
 
