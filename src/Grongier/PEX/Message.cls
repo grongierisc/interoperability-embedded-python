@@ -5,11 +5,11 @@
 Class Grongier.PEX.Message Extends Ens.MessageBody
 {
 
-Property %classname As %String(MAXLEN="");
+Property %classname As %String(MAXLEN = "");
 
 Property %jsonObject As %DynamicObject;
 
-Property %json As %String [ Calculated ];
+Property %json As %String(MAXLEN = "");
 
 Method %OnNew(classname) As %Status [ Private, ServerOnly = 1 ]
 {
@@ -17,9 +17,20 @@ Method %OnNew(classname) As %Status [ Private, ServerOnly = 1 ]
 	Quit $$$OK
 }
 
+Method toto() [ Language = python ]
+{
+	print('toto')
+}
+
 Method %jsonGet()
 {
 	quit ..%jsonObject.%ToJSON()
+}
+
+Method %jsonSet(value) As %Status
+{
+	set ..%jsonObject = {}.%FromJSON(value)
+	return $$$OK
 }
 
 Method %DispatchGetProperty(property As %String) As %ObjectHandle
@@ -90,6 +101,9 @@ Storage Default
 <Subscript>"Message"</Subscript>
 <Value name="1">
 <Value>%classname</Value>
+</Value>
+<Value name="2">
+<Value>%json</Value>
 </Value>
 </Data>
 <DefaultData>MessageDefaultData</DefaultData>
