@@ -1,5 +1,3 @@
-import grongier.pex
-import iris
 import importlib
 from grongier.pex._BusinessHost import _BusinessHost
 

@@ -1,5 +1,3 @@
-import iris
-import grongier.pex
 from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessProcess(_BusinessHost):

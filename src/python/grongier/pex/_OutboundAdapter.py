@@ -1,5 +1,3 @@
-import iris
-import grongier.pex
 from grongier.pex._Common import _Common
 
 class _OutboundAdapter(_Common):

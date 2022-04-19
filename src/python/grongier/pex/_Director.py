@@ -1,5 +1,4 @@
 import iris
-import grongier.pex
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
