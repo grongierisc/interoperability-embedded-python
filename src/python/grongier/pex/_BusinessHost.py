@@ -1,5 +1,5 @@
-import json
-import importlib
+import datetime,uuid,decimal,base64,json,importlib
+
 from grongier.pex._Common import _Common
 
 class _BusinessHost(_Common):
@@ -75,7 +75,7 @@ class _BusinessHost(_Common):
         string: The message in json format.
         """
         if (message != None):
-            jString = json.dumps(message, default=lambda message: message.__dict__) 
+            jString = json.dumps(message, cls=IrisJSONEncoder)
             module = message.__class__.__module__
             classname = message.__class__.__name__
             return  module + "." + classname + ":" + jString
@@ -110,7 +110,7 @@ class _BusinessHost(_Common):
                 msg = getattr(module, classname[j+1:])
             except Exception:
                 raise ImportError("Class not found: " + classname)
-            jdict = json.loads(serial[i+1:])
+            jdict = json.loads(serial[i+1:], cls=IrisJSONDecoder)
             msg = _BusinessHost.dataclass_from_dict(msg,jdict)
             return msg
         else:
@@ -120,8 +120,71 @@ class _BusinessHost(_Common):
     def dataclass_from_dict(klass, dikt):
         try:
             fieldtypes = klass.__annotations__
+            for f in dikt:
+                test = _BusinessHost.dataclass_from_dict(fieldtypes[f], dikt[f])
             return klass(**{f: _BusinessHost.dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
         except AttributeError:
             if isinstance(dikt, (tuple, list)):
                 return [_BusinessHost.dataclass_from_dict(klass.__args__[0], f) for f in dikt]
             return dikt
+
+class IrisJSONEncoder(json.JSONEncoder):
+    """
+    JSONEncoder subclass that knows how to encode date/time, decimal types, and
+    UUIDs.
+    """
+
+    def default(self, o):
+        if hasattr(o, '__dict__'):
+            return o.__dict__
+        elif isinstance(o, datetime.datetime):
+            r = o.isoformat()
+            if o.microsecond:
+                r = r[:23] + r[26:]
+            if r.endswith("+00:00"):
+                r = r[:-6] + "Z"
+            return 'datetime:'+r
+        elif isinstance(o, datetime.date):
+            return 'date:'+o.isoformat()
+        elif isinstance(o, datetime.time):
+            if is_aware(o):
+                raise ValueError("JSON can't represent timezone-aware times.")
+            r = o.isoformat()
+            if o.microsecond:
+                r = r[:12]
+            return 'time:'+r
+        elif isinstance(o, decimal.Decimal): 
+            return 'decimal:'+str(o)
+        elif isinstance(o, uuid.UUID):
+            return 'uuid:'+str(o)
+        elif isinstance(o, bytes):
+            return 'bytes:'+base64.b64encode(o).decode("UTF-8")
+        else:
+            return super().default(o)
+
+class IrisJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(
+            self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        ret = {}
+        for key, value in obj.items():
+            i = 0
+            if isinstance(value, str):
+                i = value.find(":") 
+            if (i>0):
+                typ = value[:i]
+                if typ in {'datetime', 'time','date'}:
+                    ret[key] = datetime.datetime.fromisoformat(value[i+1:]) 
+                elif typ == 'decimal':
+                    ret[key] = decimal.Decimal(value[i+1:])
+                elif typ == 'uuid':
+                    ret[key] = uuid.UUID(value[i+1:])
+                elif typ == 'bytes':
+                    ret[key] = base64.b64decode((value[i+1:].encode("UTF-8")))
+                else:
+                    ret[key] = value
+            else:
+                ret[key] = value
+        return ret
