@@ -1,4 +1,5 @@
 import importlib
+from inspect import signature
 from grongier.pex._BusinessHost import _BusinessHost
 
 class _BusinessOperation(_BusinessHost):
@@ -8,6 +9,8 @@ class _BusinessOperation(_BusinessHost):
     If the business operation has an adapter, it uses the adapter to send the message to the external system.
     The adapter can either be a PEX adapter or an ObjectScript adapter.
     """
+
+    DISPATCH = []
 
     def __init__(self):
         """ The adapter variable provides access to the outbound adapter associated with the business operation."""
@@ -67,6 +70,7 @@ class _BusinessOperation(_BusinessHost):
 
     def _dispatchOnInit(self, hostObject):
         """ For internal use only. """
+        self._createDispatch()
         self.OnInit()
         return
 
@@ -79,8 +83,43 @@ class _BusinessOperation(_BusinessHost):
         """ For internal use only. """
         if isinstance(request, str):
             request = self._deserialize(request)
-        returnObject = self.OnMessage(request)
+        # method dispachMessage
+        returnObject = self._dispachMessage(request)
         if self._is_message_instance(returnObject):
             returnObject = self._serialize(returnObject)
         return returnObject
+
+    def _dispachMessage(self, request):
+
+        call = 'OnMessage'
+
+        module = request.__class__.__module__
+        classname = request.__class__.__name__
+
+        for msg,method in self.DISPATCH:
+            if msg == module+"."+classname:
+                call = method
+
+        return getattr(self,call)(request)
+
     
+    def _createDispatch(self):
+        if len(self.DISPATCH) == 0:
+            #get all function in current BO
+            method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
+            for method in method_list:
+                #get signature of current function
+                param = signature(getattr(self, method)).parameters
+                #one parameter
+                if (len(param)==1):
+                    #get parameter type
+                    annotation = str(param[list(param)[0]].annotation)
+                    #trim annotation format <class 'toto'>
+                    i = annotation.find("'")
+                    j = annotation.rfind("'")
+                    #if end is not found
+                    if j == -1:
+                        j = None
+                    classname = annotation[i+1:j]
+                    self.DISPATCH.append((classname,method))
+        return
