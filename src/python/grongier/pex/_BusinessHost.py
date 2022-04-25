@@ -128,6 +128,8 @@ class _BusinessHost(_Common):
                 return [_BusinessHost.dataclass_from_dict(klass.__args__[0], f) for f in dikt]
             return dikt
 
+# It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
+# and UUIDs.
 class IrisJSONEncoder(json.JSONEncoder):
     """
     JSONEncoder subclass that knows how to encode date/time, decimal types, and
@@ -162,6 +164,9 @@ class IrisJSONEncoder(json.JSONEncoder):
         else:
             return super().default(o)
 
+# It's a JSON decoder that looks for a colon in the value of a key/value pair. If it finds one, it
+# assumes the value is a string that represents a type and a value. It then converts the value to the
+# appropriate type
 class IrisJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         json.JSONDecoder.__init__(

@@ -90,6 +90,12 @@ class _BusinessOperation(_BusinessHost):
         return returnObject
 
     def _dispachMessage(self, request):
+        """
+        It takes a request object, and returns a response object
+        
+        :param request: The request object
+        :return: The return value is the result of the method call.
+        """
 
         call = 'OnMessage'
 
@@ -104,6 +110,11 @@ class _BusinessOperation(_BusinessHost):
 
     
     def _createDispatch(self):
+        """
+        It creates a list of tuples, where each tuple contains the name of a class and the name of a method
+        that takes an instance of that class as its only argument
+        :return: A list of tuples.
+        """
         if len(self.DISPATCH) == 0:
             #get all function in current BO
             method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
