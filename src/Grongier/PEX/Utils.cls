@@ -6,6 +6,12 @@ Include Ensemble
 
 Class Grongier.PEX.Utils
 {
+ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
+{
+	set tSc = $$$OK
+	$$$ThrowOnError(##class(Grongier.PEX.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pOverwrite , pProxyClassname))
+	return tSc
+}
 
 ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
 {
