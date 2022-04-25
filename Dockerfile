@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 	sudo -u ${ISC_PACKAGE_MGRUSER} sudo echo enabled passwordless sudo-ing for ${ISC_PACKAGE_MGRUSER}
 
         
-WORKDIR /opt/irisapp
+WORKDIR /irisdev/app
 RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} /opt/irisapp
 USER ${ISC_PACKAGE_MGRUSER}
 
@@ -32,9 +32,6 @@ ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sb
 COPY Installer.cls .
 COPY src src
 COPY iris.script /tmp/iris.script
-
-## Install grongier-pex wheel
-RUN /usr/irissys/bin/irispython -m pip install /opt/irisapp/src/python/dist/grongier_pex-1.0.0-py3-none-any.whl
 
 RUN iris start IRIS \
 	&& iris session IRIS < /tmp/iris.script \

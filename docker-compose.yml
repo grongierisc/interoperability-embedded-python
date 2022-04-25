@@ -9,5 +9,6 @@ services:
       - 1972
       - 52795:52773
       - 53773
+    command: --check-caps false
     volumes:
       - ./:/irisdev/app
