@@ -12,10 +12,11 @@
         "service": "iris",
         "internalPort": 52773
       },
-      "active": false,
+      "active": true,
       "links": {
         "Production": "http://localhost:${port}/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production"
-      }
+      },
+      "server": "iris"
     },
     "sqltools.connections": [
       {
