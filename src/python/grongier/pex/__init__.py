@@ -8,6 +8,8 @@ from grongier.pex._OutboundAdapter import _OutboundAdapter
 from grongier.pex._Message import _Message
 from grongier.pex._Director import _Director
 
+import grongier.pex._Utils as Utils
+
 class InboundAdapter(_InboundAdapter): pass
 class OutboundAdapter(_OutboundAdapter): pass
 class BusinessService(_BusinessService): pass
