@@ -113,9 +113,3 @@ def filename_to_module(filename) -> str:
         module = mod
 
     return module
-
-if __name__ == '__main__':
-    # register_component("interop.bo","CrudPerson","/irisdev/app/src/python/person/",1,"Python.CrudPerson")
-    # register_file('interop/bo.py', '/irisdev/app/src/python/person/', 1, 'Test')
-    # register_folder('/irisdev/app/src/python/person/interop/', 1, 'Folder')
-    register_package('interop','/irisdev/app/src/python/person/', 1, 'Package')
