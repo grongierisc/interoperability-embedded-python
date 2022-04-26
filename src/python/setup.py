@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="grongier_pex",
-    version="1.0.0",
+    version="1.2.4",
     author="Guillaume Rongier",
     author_email="guillaume.rongier@intersystems.com",
     url="https://www.intersystems.com/",
