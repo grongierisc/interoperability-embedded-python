@@ -33,36 +33,41 @@ This proof of concept aims to show how the **iris interoperability framework** c
 ## 1.2. Example
 
 ```python
-import grongier.pex
-import iris
-import message
+from grongier.pex import BusinessOperation,Message
 
-class MyBusinessOperation(grongier.pex.BusinessOperation):
+class MyBusinessOperation(BusinessOperation):
     
     def OnInit(self):
-        #OnInit method has it exists in objectscript
         #This method is called when the component is becoming active in the production
         print("[Python] ...MyBusinessOperation:OnInit() is called")
         self.LOGINFO("Operation OnInit")
         return
 
     def OnTeardown(self):
-        #OnTeardown method has it exists in objectscript
         #This method is called when the component is becoming inactive in the production
         print("[Python] ...MyBusinessOperation:OnTeardown() is called")
         return
 
-    def OnMessage(self, messageInput):
-        # called from ticker service, message is of type MyRequest with property requestString
+    def OnMessage(self, messageInput:MyRequest):
+        # called from service/process/operation, message is of type MyRequest with property requestString
         print("[Python] ...MyBusinessOperation:OnMessage() is called with message:"+messageInput.requestString)
         self.LOGINFO("Operation OnMessage")
-        response = MyResponse.MyResponse("...MyBusinessOperation:OnMessage() echos")
+        response = MyResponse("...MyBusinessOperation:OnMessage() echos")
         return response
+
+@dataclass
+class MyRequest(Message):
+
+    requestString:str = None
+
+@dataclass
+class MyResponse(Message):
+
+    myString:str = None
+
 ```
 
 ## 1.3. Regsiter a component 
-
-**No ObjectScript code is needed**.
 
 Thanks to the method Grongier.PEX.Utils.RegisterComponent() : 
 
@@ -74,12 +79,14 @@ Start an embedded python shell :
 
 Then use this class method to add a new py file to the component list for interoperability.
 ```python
-iris.cls("Grongier.PEX.Utils").RegisterComponent(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+from grongier.pex import Utils
+Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
-iris.cls("Grongier.PEX.Utils").RegisterComponent("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+from grongier.pex import Utils
+Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
 This is a hack, this not for production.
