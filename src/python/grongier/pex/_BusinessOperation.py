@@ -26,6 +26,11 @@ class _BusinessOperation(_BusinessHost):
         """ Called before the component is terminated. Use it to freee any structures."""
         pass
 
+    def OnConnected(self):
+        """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
+        Use the OnConnected() method to initialize any structures needed by the component."""
+        pass
+
     def OnMessage(self, request):
         """ Called when the business operation receives a message from another production component.
         Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
