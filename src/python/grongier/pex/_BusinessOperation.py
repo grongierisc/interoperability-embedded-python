@@ -16,11 +16,6 @@ class _BusinessOperation(_BusinessHost):
         """ The adapter variable provides access to the outbound adapter associated with the business operation."""
         super().__init__()
         self.Adapter = None
-    
-    def OnConnected(self):
-        """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
-        Use the OnConnected() method to initialize any structures needed by the component."""
-        pass
 
     def OnInit(self):
         """ The OnInit() method is called when the component is started.
@@ -120,7 +115,11 @@ class _BusinessOperation(_BusinessHost):
             method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
             for method in method_list:
                 #get signature of current function
-                param = signature(getattr(self, method)).parameters
+                try:
+                    param = signature(getattr(self, method)).parameters
+                # Handle staticmethod
+                except ValueError as e:
+                    param=''
                 #one parameter
                 if (len(param)==1):
                     #get parameter type
