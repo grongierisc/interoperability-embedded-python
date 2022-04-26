@@ -3,43 +3,45 @@ Class PEX.Production Extends Ens.Production
 
 XData ProductionDefinition
 {
-<Production Name="PEX.Production" TestingEnabled="true" LogGeneralTraceEvents="true">
+<Production Name="PEX.Production" TestingEnabled="true" LogGeneralTraceEvents="false">
   <Description></Description>
   <ActorPoolSize>2</ActorPoolSize>
-  <Item Name="Grongier.PEX.BusinessOperation" Category="" ClassName="Grongier.PEX.BusinessOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
-    <Setting Target="Host" Name="%classname">MyBusinessOperation</Setting>
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/demo</Setting>
-    <Setting Target="Host" Name="%module">MyBusinessOperation</Setting>
+  <Item Name="Python.FileOperation" Category="" ClassName="Python.FileOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
+    <Setting Target="Adapter" Name="Charset">utf-8</Setting>
+    <Setting Target="Adapter" Name="FilePath">/irisdev/app/output/</Setting>
+    <Setting Target="Host" Name="%settings">Path=/irisdev/app/output/</Setting>
   </Item>
-  <Item Name="Grongier.PEX.CombinedBusinessOperation" Category="" ClassName="Grongier.PEX.BusinessOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
-    <Setting Target="Host" Name="%classname">MyCombinedBusinessOperation</Setting>
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/demo</Setting>
-    <Setting Target="Host" Name="%module">MyCombinedBusinessOperation</Setting>
-    <Setting Target="Host" Name="%settings">myInt=111
-myFloat=333.21
-myString=555</Setting>
+  <Item Name="Python.FileOperationWithIrisAdapter" Category="" ClassName="Python.FileOperationWithIrisAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
+    <Setting Target="Adapter" Name="Charset">utf-8</Setting>
+    <Setting Target="Adapter" Name="FilePath">/irisdev/app/output/</Setting>
+    <Setting Target="Host" Name="%settings">Path=/irisdev/app/output/</Setting>
   </Item>
-  <Item Name="Grongier.PEX.BusinessService" Category="" ClassName="Grongier.PEX.BusinessService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
-    <Setting Target="Host" Name="%classname">MyBusinessService</Setting>
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/demo</Setting>
-    <Setting Target="Host" Name="%module">MyBusinessService</Setting>
-    <Setting Target="Host" Name="%settings">min=111
-mid=333
-max=555</Setting>
+  <Item Name="Python.EmailOperation" Category="" ClassName="Python.EmailOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
+    <Setting Target="Adapter" Name="SMTPPort"></Setting>
+    <Setting Target="Adapter" Name="SMTPServer"></Setting>
+    <Setting Target="Adapter" Name="SSLConfig"></Setting>
+    <Setting Target="Adapter" Name="From"></Setting>
+    <Setting Target="Adapter" Name="Credentials"></Setting>
   </Item>
-  <Item Name="Grongier.PEX.MyCombinedBusinessService" Category="" ClassName="Grongier.PEX.BusinessService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
-    <Setting Target="Host" Name="%classname">MyCombinedBusinessService</Setting>
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/:/irisdev/app/src/python/demo</Setting>
-    <Setting Target="Host" Name="%module">MyCombinedBusinessService</Setting>
-    <Setting Target="Host" Name="%settings">min=111
-mid=333
-max=555</Setting>
+  <Item Name="Python.EmailOperationWithIrisAdapter" Category="" ClassName="Python.EmailOperationWithIrisAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule="">
+    <Setting Target="Adapter" Name="SMTPPort"></Setting>
+    <Setting Target="Adapter" Name="SMTPServer"></Setting>
+    <Setting Target="Adapter" Name="SSLConfig"></Setting>
+    <Setting Target="Adapter" Name="From"></Setting>
+    <Setting Target="Adapter" Name="Credentials"></Setting>
   </Item>
-  <Item Name="PEX.MyBusinessOperationWithAdapter" Category="" ClassName="PEX.MyBusinessOperationWithAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
-    <Setting Target="Host" Name="%classpaths">/irisdev/app/src/python/:/irisdev/app/src/python/demo</Setting>
+  <Item Name="Python.RedditService" Category="" ClassName="Python.RedditService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Host" Name="%settings">Limit=10</Setting>
   </Item>
-  <Item Name="PEX.MyBusinessOperationWithIrisAdapter" Category="" ClassName="PEX.MyBusinessOperationWithIrisAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
-    <Setting Target="Adapter" Name="FilePath">/tmp</Setting>
+  <Item Name="Python.RedditServiceWithIrisAdapter" Category="" ClassName="Python.RedditServiceWithIrisAdapter" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Adapter" Name="Feed">/new/</Setting>
+    <Setting Target="Adapter" Name="Limit">4</Setting>
+    <Setting Target="Adapter" Name="SSLConfig">default</Setting>
+  </Item>
+  <Item Name="Python.RedditServiceWithPexAdapter" Category="" ClassName="Python.RedditServiceWithPexAdapter" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+    <Setting Target="Adapter" Name="%settings">Limit=3</Setting>
+  </Item>
+  <Item Name="Python.FilterPostRoutingRule" Category="" ClassName="Python.FilterPostRoutingRule" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
   </Item>
 </Production>
 }

@@ -35,7 +35,7 @@ This proof of concept aims to show how the **iris interoperability framework** c
 ```python
 import grongier.pex
 import iris
-import MyResponse
+import message
 
 class MyBusinessOperation(grongier.pex.BusinessOperation):
     

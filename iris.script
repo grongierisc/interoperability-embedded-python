@@ -1,22 +1,30 @@
- do $SYSTEM.OBJ.Load("/opt/irisapp/Installer.cls", "ck")
+ do $SYSTEM.OBJ.Load("/irisdev/app/Installer.cls", "ck")
  set sc = ##class(App.Installer).setup() 
- 
- // Install ZPM
- set $namespace="%SYS", name="DefaultSSL" do:'##class(Security.SSLConfigs).Exists(name) ##class(Security.SSLConfigs).Create(name) set url="https://pm.community.intersystems.com/packages/zpm/latest/installer" Do ##class(%Net.URLParser).Parse(url,.comp) set ht = ##class(%Net.HttpRequest).%New(), ht.Server = comp("host"), ht.Port = 443, ht.Https=1, ht.SSLConfiguration=name, st=ht.Get(comp("path")) quit:'st $System.Status.GetErrorText(st) set xml=##class(%File).TempFilename("xml"), tFile = ##class(%Stream.FileBinary).%New(), tFile.Filename = xml do tFile.CopyFromAndSave(ht.HttpResponse.Data) do ht.%Close(), $system.OBJ.Load(xml,"ck") do ##class(%File).Delete(xml)
 
  zn "IRISAPP"
- do $System.OBJ.LoadDir("/irisdev/app/src/Grongier/PEX","cubk","*.cls",1)
- do $System.OBJ.LoadDir("/irisdev/app/src/PEX","cubk","*.cls",1)
+ zpm "load /irisdev/app/ -v" 
  zpm "install sslclient"
- zpm "load /irisdev/app -v"
+ do $System.OBJ.LoadDir("/irisdev/app/src/PEX","ck","*.cls",1)
 
+ //Register Python code
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("adapter","RedditInboundAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditInboundAdapter")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditServiceWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditServiceWithIrisAdapter")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditServiceWithPexAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditServiceWithPexAdapter")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditService","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditService")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bp","FilterPostRoutingRule","/irisdev/app/src/python/demo/reddit/",1,"Python.FilterPostRoutingRule")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","FileOperationWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.FileOperationWithIrisAdapter")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","FileOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.FileOperation")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperation")
+ zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperationWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperationWithIrisAdapter")
+ 
+ set ^EnsPortal.Settings("SuperUser","LastProduction")	= "PEX.Production"
+ 
  zn "%SYS"
  Do ##class(Security.Users).UnExpireUserPasswords("*")
- 
+
  do ##class(Security.Services).Get("%Service_CallIn",.prop)
  set prop("Enabled")=1
  set prop("AutheEnabled")=48
  do ##class(Security.Services).Modify("%Service_CallIn",.prop)
-
 
 halt

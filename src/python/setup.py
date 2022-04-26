@@ -6,7 +6,7 @@ setuptools.setup(
     author="Guillaume Rongier",
     author_email="guillaume.rongier@intersystems.com",
     url="https://www.intersystems.com/",
-    description="Python InterOperability Kit",
+    description="Python Interoperability kit",
     packages=['grongier.pex'],
     python_requires='>=3.6.6',
 )
