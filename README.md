@@ -10,25 +10,26 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [1.3. Regsiter a component](#13-regsiter-a-component)
 - [2. Demo](#2-demo)
 - [3. Prerequisites](#3-prerequisites)
-- [4. Installation with Docker](#4-installation-with-docker)
-- [5. Installation without Docker](#5-installation-without-docker)
-- [6. How to Run the Sample](#6-how-to-run-the-sample)
-- [7. What's inside the repository](#7-whats-inside-the-repository)
-  - [7.1. Dockerfile](#71-dockerfile)
-  - [7.2. .vscode/settings.json](#72-vscodesettingsjson)
-  - [7.3. .vscode/launch.json](#73-vscodelaunchjson)
-  - [7.4. .vscode/extensions.json](#74-vscodeextensionsjson)
-  - [7.5. src folder](#75-src-folder)
-- [8. How to add a new component](#8-how-to-add-a-new-component)
-  - [8.1. InboundAdapter](#81-inboundadapter)
-  - [8.2. OutboundAdapter](#82-outboundadapter)
-  - [8.3. BusinessService](#83-businessservice)
-  - [8.4. BusinessProcess](#84-businessprocess)
-  - [8.5. BusinessOperation](#85-businessoperation)
-  - [8.6. Regsiter a component](#86-regsiter-a-component)
-  - [8.7. Direct use of Grongier.PEX](#87-direct-use-of-grongierpex)
-- [9. Future work](#9-future-work)
-- [10. Credits](#10-credits)
+- [4. Installation](#4-installation)
+  - [4.1. With Docker](#41-with-docker)
+  - [4.2. Without Docker](#42-without-docker)
+  - [4.3. With ZPM](#43-with-zpm)
+- [5. How to Run the Sample](#5-how-to-run-the-sample)
+- [6. What's inside the repository](#6-whats-inside-the-repository)
+  - [6.1. Dockerfile](#61-dockerfile)
+  - [6.2. .vscode/settings.json](#62-vscodesettingsjson)
+  - [6.3. .vscode/launch.json](#63-vscodelaunchjson)
+  - [6.4. .vscode/extensions.json](#64-vscodeextensionsjson)
+  - [6.5. src folder](#65-src-folder)
+- [7. How to add a new component](#7-how-to-add-a-new-component)
+  - [7.1. InboundAdapter](#71-inboundadapter)
+  - [7.2. OutboundAdapter](#72-outboundadapter)
+  - [7.3. BusinessService](#73-businessservice)
+  - [7.4. BusinessProcess](#74-businessprocess)
+  - [7.5. BusinessOperation](#75-businessoperation)
+  - [7.6. Regsiter a component](#76-regsiter-a-component)
+  - [7.7. Direct use of Grongier.PEX](#77-direct-use-of-grongierpex)
+- [8. Credits](#8-credits)
 
 ## 1.2. Example
 
@@ -80,12 +81,14 @@ Start an embedded python shell :
 Then use this class method to add a new py file to the component list for interoperability.
 ```python
 from grongier.pex import Utils
+
 Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
 from grongier.pex import Utils
+
 Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
@@ -114,7 +117,9 @@ New json trace for python native messages :
 # 3. Prerequisites
 Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker desktop](https://www.docker.com/products/docker-desktop) installed.
 
-# 4. Installation with Docker
+# 4. Installation 
+## 4.1. With Docker
+
 Clone/git pull the repo into any local directory
 
 ```sh
@@ -133,12 +138,12 @@ Run the IRIS container with your project:
 docker-compose up -d
 ```
 
-# 5. Installation without Docker
+## 4.2. Without Docker
 
-Install the *grongier_pex-1.0.0-py3-none-any.whl* on you local iris instance :
+Install the *grongier_pex-1.2.4-py3-none-any.whl* on you local iris instance :
 
 ```sh
-/usr/irissys/bin/irispython -m pip install grongier_pex-1.0.0-py3-none-any.whl
+/usr/irissys/bin/irispython -m pip install grongier_pex-1.2.4-py3-none-any.whl
 ```
 
 Then load the ObjectScript classes :
@@ -146,15 +151,20 @@ Then load the ObjectScript classes :
 ```ObjectScript
 do $System.OBJ.LoadDir("/opt/irisapp/src","cubk","*.cls",1)
 ```
+## 4.3. With ZPM 
 
-# 6. How to Run the Sample
+```objectscript
+zpm "install pex-embbeded-python" 
+```
+
+# 5. How to Run the Sample
 
 Open the [production](http://localhost:52795/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production) and start it.
 It will start running some code sample.
 
-# 7. What's inside the repository
+# 6. What's inside the repository
 
-## 7.1. Dockerfile
+## 6.1. Dockerfile
 
 A dockerfile which install some python dependancies (pip, venv) and sudo in the container for conviencies.
 Then it create the dev directory and copy in it this git repository.
@@ -168,16 +178,16 @@ The last part is about installing jupyter notebook and it's kernels.
 
 Use .env/ file to adjust the dockerfile being used in docker-compose.
 
-## 7.2. .vscode/settings.json
+## 6.2. .vscode/settings.json
 
 Settings file to let you immedietly code in VSCode with [VSCode ObjectScript plugin](https://marketplace.visualstudio.com/items?itemName=daimor.vscode-objectscript)
 
-## 7.3. .vscode/launch.json
+## 6.3. .vscode/launch.json
 Config file if you want to debug with VSCode ObjectScript
 
 [Read about all the files in this article](https://community.intersystems.com/post/dockerfile-and-friends-or-how-run-and-collaborate-objectscript-projects-intersystems-iris)
 
-## 7.4. .vscode/extensions.json
+## 6.4. .vscode/extensions.json
 Recommendation file to add extensions if you want to run with VSCode in the container.
 
 [More information here](https://code.visualstudio.com/docs/remote/containers)
@@ -186,7 +196,7 @@ Recommendation file to add extensions if you want to run with VSCode in the cont
 
 This is very useful to work with embedded python.
 
-## 7.5. src folder
+## 6.5. src folder
 
 ```
 src
@@ -204,32 +214,18 @@ src
 │       ├── Test.cls
 │       └── Utils.cls
 ├── PEX // Some example of wrapped classes
-│   ├── MyBusinessOperationWithAdapter.cls
-│   ├── MyBusinessOperationWithIrisAdapter.cls
-│   ├── MyBusinessOperationWithPythonAdapter.cls
-│   ├── MyBusinessService.cls
-│   ├── MyOutboundAdapter.cls
 │   └── Production.cls
 └── python
     ├── demo // Actual python code to rnu this demo
-    │   ├── MyBusinessOperation.py
-    │   ├── MyBusinessOperationWithAdapter.py
-    │   ├── MyBusinessOperationWithIrisAdapter.py
-    │   ├── MyBusinessProcess.py
-    │   ├── MyBusinessService.py
-    │   ├── MyCombinedBusinessOperation.py
-    │   ├── MyCombinedBusinessProcess.py
-    │   ├── MyCombinedBusinessService.py
-    │   ├── MyInboundAdapter.py
-    │   ├── MyLoggingOperation.py
-    │   ├── MyNonPollingStarter.py
-    │   ├── MyOutboundAdapter.py
-    │   ├── MyRequest.py
-    │   ├── MyResponse.py
-    │   ├── MySyncBusinessProcess.py
-    │   └── SimpleObject.py
+    |   `-- reddit
+    |       |-- adapter.py
+    |       |-- bo.py
+    |       |-- bp.py
+    |       |-- bs.py
+    |       |-- message.py
+    |       `-- obj.py
     ├── dist // Wheel used to implement python interoperability components
-    │   └── grongier_pex-1.0.0-py3-none-any.whl
+    │   └── grongier_pex-1.2.4-py3-none-any.whl
     ├── grongier
     │   └── pex // Helper classes to implement interoperability components
     │       ├── _BusinessHost.py
@@ -244,39 +240,39 @@ src
     │       └── __init__.py
     └── setup.py // setup to build the wheel
 ```
-# 8. How to add a new component
+# 7. How to add a new component
 
-## 8.1. InboundAdapter
+## 7.1. InboundAdapter
 
 To implement InboundAdapter in Python, users do the following:
 
 Subclass from grongier.pex.InboundAdapter in Python. Override method OnTask().
 
-## 8.2. OutboundAdapter
+## 7.2. OutboundAdapter
 
 To implement OutboundAdapter in Python, users do the following:
 
 Subclass from grongier.pex.OutboundAdapter in Python. Implement required action methods.
 
-## 8.3. BusinessService
+## 7.3. BusinessService
 
 To implement BusinessService in Python, users do the following:
 
 Subclass from grongier.pex.BusinessService in Python. Override method OnProcessInput().
 
-## 8.4. BusinessProcess
+## 7.4. BusinessProcess
 
 To implement BusinessProcess in Python, users do the following:
 
 Subclass from grongier.pex.BusinessProcess in Python. Override methods OnRequest(), OnResponse() and OnComplete().
 
-## 8.5. BusinessOperation
+## 7.5. BusinessOperation
 
 To implement BusinessOperation in Python, users do the following:
 
 Subclass from grongier.pex.BusinessOperation in Python. Override method OnMessage().
 
-## 8.6. Regsiter a component 
+## 7.6. Regsiter a component 
 
 Start an embedded python shell :
 
@@ -286,15 +282,17 @@ Start an embedded python shell :
 
 Then use this class method to add a new py file to the component list for interoperability.
 ```python
-iris.cls("Grongier.PEX.Utils").RegisterComponent(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+from grongier.pex import Utils
+Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
-iris.cls("Grongier.PEX.Utils").RegisterComponent("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+from grongier.pex import Utils
+Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
-## 8.7. Direct use of Grongier.PEX
+## 7.7. Direct use of Grongier.PEX
 
 If you don't want to use the RegisterComponent util. You can add an Grongier.PEX.Business* component and configure the properties :
 - %module :
@@ -309,12 +307,7 @@ e.g :
 
 <img width="800" alt="component-config" src="https://user-images.githubusercontent.com/47849411/131316308-e1898b19-11df-433b-b1c6-7f69d5cc9974.png">
 
-# 9. Future work
-
-- Only Service and Operation has been tested.
-- Work in progress on adapter
-
-# 10. Credits
+# 8. Credits
 
 Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
 
