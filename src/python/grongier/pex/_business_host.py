@@ -1,4 +1,9 @@
-import datetime,uuid,decimal,base64,json,importlib
+import datetime
+import uuid
+import decimal
+import base64
+import json
+import importlib
 
 from grongier.pex._common import _Common
 
@@ -22,6 +27,19 @@ class _BusinessHost(_Common):
         return None
         
     def SendRequestSync(self, target, request, timeout=-1, description=None):
+        """
+        DECAPRETED : use send_request_sync
+        `SendRequestSync` is a function that sends a request to a target and waits for a response
+        
+        :param target: The target of the request
+        :param request: The request to send
+        :param timeout: The timeout in seconds. If the timeout is negative, the default timeout will be used
+        :param description: A string that describes the request. This is used for logging purposes
+        :return: The return value is a tuple of (response, status).
+        """
+        return self.send_request_sync(target=target,request=request,timeout=timeout,description=description)
+        
+    def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
             
         Parameters:
@@ -31,23 +49,32 @@ class _BusinessHost(_Common):
             If the target is a build-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
         timeout: an optional integer that specifies the number of seconds to wait before treating the send request as a failure. The default value is -1, which means wait forever.
         description: an optional string parameter that sets a description property in the message header. The default is None.
-
         Returns:
             the response object from target.
-
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
         if self._is_message_instance(request):
             request = self._serialize(request)
-        returnObject = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
-        if self._is_message_instance(returnObject):
-            returnObject = self._deserialize(returnObject)
-        return returnObject
+        return_object = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
+        if self._is_message_instance(return_object):
+            return_object = self._deserialize(return_object)
+        return return_object
 
     def SendRequestAsync(self, target, request, description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
+        """
+        DECAPRETED : use send_request_async
+        It takes a target, a request, and a description, and returns a send_request_async function
+        
+        :param target: The target of the request. This is the name of the function you want to call
+        :param request: The request to send
+        :param description: A string that describes the request
+        :return: The return value is a Future object.
+        """
+        return self.send_request_async(target=target,request=request,description=description)
 
+    def send_request_async(self, target, request, description=None):
+        """ Send the specified message to the target business process or business operation asynchronously.
         Parameters:
         target: a string that specifies the name of the business process or operation to receive the request. 
             The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
@@ -75,10 +102,10 @@ class _BusinessHost(_Common):
         string: The message in json format.
         """
         if (message != None):
-            jString = json.dumps(message, cls=IrisJSONEncoder)
+            json_string = json.dumps(message, cls=IrisJSONEncoder)
             module = message.__class__.__module__
             classname = message.__class__.__name__
-            return  module + "." + classname + ":" + jString
+            return  module + "." + classname + ":" + json_string
         else:
             return None
 
@@ -95,7 +122,7 @@ class _BusinessHost(_Common):
         Raises:
         ImportError: if the classname does not include a module name to import.
         """
-        if (serial != None and serial != ""):
+        if (serial is not None and serial != ""):
             i = serial.find(":")
             if (i <=0):
                 raise ValueError("JSON message malformed, must include classname: " + serial)
@@ -111,21 +138,19 @@ class _BusinessHost(_Common):
             except Exception:
                 raise ImportError("Class not found: " + classname)
             jdict = json.loads(serial[i+1:], cls=IrisJSONDecoder)
-            msg = _BusinessHost.dataclass_from_dict(msg,jdict)
+            msg = self._dataclass_from_dict(msg,jdict)
             return msg
         else:
             return None
 
     @staticmethod
-    def dataclass_from_dict(klass, dikt):
+    def _dataclass_from_dict(klass, dikt):
         try:
             fieldtypes = klass.__annotations__
-            for f in dikt:
-                test = _BusinessHost.dataclass_from_dict(fieldtypes[f], dikt[f])
-            return klass(**{f: _BusinessHost.dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
+            return klass(**{f: self._dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
         except AttributeError:
             if isinstance(dikt, (tuple, list)):
-                return [_BusinessHost.dataclass_from_dict(klass.__args__[0], f) for f in dikt]
+                return [self._dataclass_from_dict(klass.__args__[0], f) for f in dikt]
             return dikt
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
@@ -149,8 +174,6 @@ class IrisJSONEncoder(json.JSONEncoder):
         elif isinstance(o, datetime.date):
             return 'date:'+o.isoformat()
         elif isinstance(o, datetime.time):
-            if is_aware(o):
-                raise ValueError("JSON can't represent timezone-aware times.")
             r = o.isoformat()
             if o.microsecond:
                 r = r[:12]
