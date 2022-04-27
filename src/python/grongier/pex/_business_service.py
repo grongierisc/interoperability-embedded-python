@@ -17,7 +17,7 @@ class _BusinessService(_BusinessHost):
         """ The Adapter instance variable provides access to the inbound adapter associated with the business service."""
         super().__init__()
         self.Adapter = None
-        self._WaitForNextCallInterval = False
+        self._wait_for_next_call_interval = False
     
     def OnConnected(self):
         """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
@@ -77,7 +77,7 @@ class _BusinessService(_BusinessHost):
         self.OnTearDown()
         return
     
-    def _dispatchOnProcessInput(self, request):
+    def _dispatch_on_process_input(self, request):
         """ For internal use only. """
         if isinstance(request, str):
             request = self._deserialize(request)

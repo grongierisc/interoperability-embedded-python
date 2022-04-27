@@ -124,7 +124,7 @@ class _BusinessProcess(_BusinessHost):
         self._savePersistentProperties(hostObject)
         return
 
-    def _dispatchOnRequest(self, hostObject, request):
+    def _dispatch_on_request(self, hostObject, request):
         """ For internal use only. """
         self._restorePersistentProperties(hostObject)
         if isinstance(request, str):
@@ -135,7 +135,7 @@ class _BusinessProcess(_BusinessHost):
         self._savePersistentProperties(hostObject)
         return returnObject
     
-    def _dispatchOnResponse(self, hostObject, request, response, callRequest, callResponse, completionKey):
+    def _dispatch_on_response(self, hostObject, request, response, callRequest, callResponse, completionKey):
         """ For internal use only. """
         self._restorePersistentProperties(hostObject)
         if isinstance(request, str):
@@ -152,7 +152,7 @@ class _BusinessProcess(_BusinessHost):
         self._savePersistentProperties(hostObject)
         return returnObject
 
-    def _dispatchOnComplete(self, hostObject, request, response):
+    def _dispatch_on_complete(self, hostObject, request, response):
         """ For internal use only. """
         self._restorePersistentProperties(hostObject)
         if isinstance(request, str):
