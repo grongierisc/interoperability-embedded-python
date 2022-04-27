@@ -91,8 +91,7 @@ class _BusinessHost(_Common):
         return
 
 
-    @staticmethod
-    def _serialize(message):
+    def _serialize(self,message):
         """ Converts a message into json format.
 
         Parameters:
@@ -109,8 +108,7 @@ class _BusinessHost(_Common):
         else:
             return None
 
-    @staticmethod
-    def _deserialize(serial):
+    def _deserialize(self,serial):
         """ Converts a json string into a message of type classname, which is stored in the json string.
 
         Parameters:
@@ -143,8 +141,7 @@ class _BusinessHost(_Common):
         else:
             return None
 
-    @staticmethod
-    def _dataclass_from_dict(klass, dikt):
+    def _dataclass_from_dict(self,klass, dikt):
         try:
             fieldtypes = klass.__annotations__
             return klass(**{f: self._dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
