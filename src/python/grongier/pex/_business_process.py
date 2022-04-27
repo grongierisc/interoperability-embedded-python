@@ -9,9 +9,6 @@ class _BusinessProcess(_BusinessHost):
 
     PERSISTENT_PROPERTY_LIST=None
     """ A list of the variable names of persistent properties."""
-
-    def __init__(self):
-        super().__init__()
     
     def OnConnected(self):
         """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
