@@ -50,7 +50,7 @@ class _BusinessOperation(_BusinessHost):
         """
         return ""
 
-    def _setIrisHandles(self, handle_current, handle_partner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
         self.irisHandle = handle_current
         if type(handle_partner).__module__.find('iris') == 0:

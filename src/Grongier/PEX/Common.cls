@@ -65,11 +65,11 @@ Method Connect() As %Status
 		}
 		;
 		if ..%Extends("Grongier.PEX.InboundAdapter") || ..%Extends("Grongier.PEX.OutboundAdapter") {
-			do ..%class."_setIrisHandles"($this,..BusinessHost)
+			do ..%class."_set_iris_handles"($this,..BusinessHost)
 		} elseif $this.%Extends("Grongier.PEX.BusinessProcess") {
-			do ..%class."_setIrisHandles"($this,$$$NULLOREF)
+			do ..%class."_set_iris_handles"($this,$$$NULLOREF)
 		} else {
-			do ..%class."_setIrisHandles"($this,..Adapter)
+			do ..%class."_set_iris_handles"($this,..Adapter)
 		}
 		;
 		do ..SetPropertyValues()

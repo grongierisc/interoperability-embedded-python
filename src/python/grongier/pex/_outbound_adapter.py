@@ -22,7 +22,7 @@ class _OutboundAdapter(_Common):
         """ Called before the component is terminated. Use it to freee any structures."""
         pass
 
-    def _setIrisHandles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handleCurrent, handlePartner):
         """ For internal use only. """
         self.irisHandle = handleCurrent
         self.BusinessHost = handlePartner
