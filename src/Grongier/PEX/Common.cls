@@ -36,7 +36,7 @@ Method OnInit() As %Status
 	set tSC = $$$OK
 	try {
         $$$ThrowOnError(..Connect())
-		do ..%class."_dispatchOnInit"($this)
+		do ..%class."_dispatch_on_init"($this)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}
@@ -75,7 +75,7 @@ Method Connect() As %Status
 		do ..SetPropertyValues()
 		;
 		try {
-			do ..%class."_dispatchOnConnected"($this)
+			do ..%class."_dispatch_on_connected"($this)
 		} catch ex {
 			$$$LOGWARNING(ex.DisplayString())
 		}
