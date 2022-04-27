@@ -12,28 +12,21 @@ class _BusinessService(_BusinessHost):
     3) Nonpolling business service - The production framework does not initiate the business service. Instead custom code in either a long-running process 
         or one that is started at regular intervals initiates the business service by calling the Director.CreateBusinessService() method.
     """
+    Adapter = None
+    _wait_for_next_call_interval = False
 
-    def __init__(self):
-        """ The Adapter instance variable provides access to the inbound adapter associated with the business service."""
-        super().__init__()
-        self.Adapter = None
-        self._wait_for_next_call_interval = False
-    
-    def OnConnected(self):
-        """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
-        Use the OnConnected() method to initialize any structures needed by the component."""
-        pass
+    def on_init(self):
+        """ The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
 
-    def OnInit(self):
-        """ The OnInit() method is called when the component is started.
-        Use the OnInit() method to initialize any structures needed by the component."""
-        pass
-
-    def OnTearDown(self):
+    def on_tear_down(self):
         """ Called before the component is terminated. Use it to freee any structures."""
-        pass
 
-    def OnProcessInput(self, messageInput):
+    def on_connected(self):
+        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
+
+    def on_process_input(self, message_input):
         """ Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
         If the business service does not specify an adapter, then the default adapter calls this method with no message 
         and the business service is responsible for receiving the data from the external system and validating it.
@@ -42,7 +35,6 @@ class _BusinessService(_BusinessHost):
         messageInput: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
             The message can have any structure agreed upon by the inbound adapter and the business service. 
         """
-        pass
 
     @staticmethod
     def getAdapterType():
@@ -85,3 +77,32 @@ class _BusinessService(_BusinessHost):
         if isinstance(return_object, str):
             return_object = self._deserialize(return_object)
         return return_object
+
+    def OnInit(self):
+        """ DEPRECATED : use on_init
+        The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
+        return self.on_init()
+
+    def OnTearDown(self):
+        """ DEPRECATED : use on_tear_down
+        Called before the component is terminated. Use it to freee any structures.
+        """
+        return self.on_tear_down()
+
+    def OnConnected(self):
+        """ DEPRECATED : use on_connected
+        The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
+        return self.on_connected()
+
+    def OnProcessInput(self, message_input):
+        """ Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
+        If the business service does not specify an adapter, then the default adapter calls this method with no message 
+        and the business service is responsible for receiving the data from the external system and validating it.
+
+        Parameters:
+        messageInput: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
+            The message can have any structure agreed upon by the inbound adapter and the business service. 
+        """
+        return self.on_process_input(message_input)
