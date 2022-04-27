@@ -8,6 +8,21 @@ class _Director():
 
     @staticmethod
     def CreateBusinessService(target):
+        """ 
+        DECAPRETED : use create_business_service
+        The CreateBusinessService() method initiates the specifiied business service.
+
+        Parameters:
+        connection: an IRISConnection object that specifies the connection to an IRIS instance for Java.
+        target: a string that specifies the name of the business service in the production definition.
+
+        Returns:
+            an object that contains an instance of IRISBusinessService
+        """
+        return _Director.create_business_service(target=target)
+
+    @staticmethod
+    def create_business_service(target):
         """ The CreateBusinessService() method initiates the specifiied business service.
 
         Parameters:

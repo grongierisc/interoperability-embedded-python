@@ -6,6 +6,7 @@ Include Ensemble
 
 Class Grongier.PEX.Utils
 {
+
 ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
 {
 	set tSc = $$$OK
@@ -109,10 +110,10 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 
 		If $IsObject(tClass) {
 			#; List of information about the class as a whole - $lb(SuperClass, Description, InfoURL, IconURL, Adapter)
-			Set pClassDetails = tClass."_getInfo"()
+			Set pClassDetails = tClass."_get_info"()
 			#; List of information about the various properties of the class
 			#; List of lists of form $lb(propName,dataType,defaultVal,required,category,description)
-			Set pRemoteSettings = tClass."_getProperties"()
+			Set pRemoteSettings = tClass."_get_properties"()
 		} Else {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Error opening gateway proxy for class '%1'"),pRemoteClassname)
 		}

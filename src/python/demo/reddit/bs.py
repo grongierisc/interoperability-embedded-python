@@ -16,7 +16,7 @@ class RedditService(BusinessService):
         """
         return "Ens.InboundAdapter"
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Feed'):
             self.Feed = "/new/"
@@ -33,19 +33,20 @@ class RedditService(BusinessService):
 
     def OnProcessInput(self,request):
 
-        post = self.OnTask()
+        post = self.on_task()
+        self.log_info('OnProcessInput')
         if post is not None:
             msg = PostMessage()
             msg.Post = post
             self.SendRequestSync(self.Target,msg)
 
-    def OnTask(self) -> PostClass:
+    def on_task(self) -> PostClass:
           
         try:
             server = "https://www.reddit.com"
             requestString = self.Feed+".json?before="+self.LastPostName+"&limit="+self.Limit
 
-            response = requests.get(server+requestString)
+            # response = requests.get(server+requestString)
             # response.raise_for_status()
 
             # data = response.json()
@@ -85,13 +86,14 @@ class RedditServiceWithIrisAdapter(BusinessService):
         """
         return "dc.Reddit.InboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def OnProcessInput(self,  message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
+        msg.Post =  message_input
         return self.SendRequestSync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
+        self.log_info('on init')
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"
         
@@ -105,12 +107,12 @@ class RedditServiceWithPexAdapter(BusinessService):
         """
         return "Python.RedditInboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def OnProcessInput(self,  message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
+        msg.Post =  message_input
         return self.SendRequestSync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"

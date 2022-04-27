@@ -15,7 +15,7 @@ class RedditService(BusinessService):
         """
         return "Ens.InboundAdapter"
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Feed'):
             self.Feed = "/new/"
@@ -32,13 +32,13 @@ class RedditService(BusinessService):
 
     def OnProcessInput(self,request):
 
-        post = self.OnTask()
+        post = self.on_task()
         if post is not None:
             msg = PostMessage()
             msg.Post = post
             self.SendRequestSync(self.Target,msg)
 
-    def OnTask(self) -> PostClass:
+    def on_task(self) -> PostClass:
           
         try:
             server = "https://www.reddit.com"
@@ -84,12 +84,12 @@ class RedditServiceWithIrisAdapter(BusinessService):
         """
         return "dc.Reddit.InboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def OnProcessInput(self,  message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
+        msg.Post =  message_input
         return self.SendRequestSync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"
@@ -104,12 +104,12 @@ class RedditServiceWithPexAdapter(BusinessService):
         """
         return "Python.RedditInboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def OnProcessInput(self,  message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
+        msg.Post =  message_input
         return self.SendRequestSync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"

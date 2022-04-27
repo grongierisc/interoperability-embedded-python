@@ -19,7 +19,7 @@ ClassMethod TestBO() As %Status
 	set mybo.%classpaths = "/irisdev/app/src/python/demo"
 	set mybo.%module = "MyBusinessOperationWithAdapter"
 	set mybo.%classname = "MyBusinessOperationWithAdapter"
-	$$$ThrowOnError(mybo.OnInit())
+	$$$ThrowOnError(mybo."on_init"())
 	set request = ##class(Ens.StringRequest).%New("hello")
 	set request = ##class(EnsLib.PEX.Message).%New()
 	set request.%classname = "MyRequest.MyRequest"

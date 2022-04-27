@@ -8,71 +8,71 @@ class _Common():
 
     INFO_URL: str
     ICON_URL: str
-
-    def __init__(self):
-        self.irisHandle = None
+    iris_handle = None
     
-    def _setIrisHandles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         pass
 
     @classmethod
-    def _is_message_instance(cls, object):
-        if cls._is_message_class(type(object)):
-            if not dataclasses.is_dataclass(object):
-                raise TypeError(type(object).__module__ + '.' + type(object).__qualname__+" must be a dataclass")
+    def _is_message_instance(cls, obj):
+        if cls._is_message_class(type(obj)):
+            if not dataclasses.is_dataclass(obj):
+                raise TypeError(type(obj).__module__ + '.' + type(obj).__qualname__+" must be a dataclass")
             return True
 
     @classmethod
     def _is_message_class(cls, klass):
         name = klass.__module__ + '.' + klass.__qualname__
-        if name == "grongier.pex.Message": return True
+        if name == "grongier.pex.Message": 
+            return True
         for c in klass.__bases__:
-            if cls._is_message_class(c): return True
+            if cls._is_message_class(c): 
+                return True
         return False
 
     @classmethod
-    def _getInfo(cls):
+    def _get_info(cls):
         """ Get class information to display in the Informational Settings expando for Production config items of this Business Host or Adapter.
         This method returns a list of Superclass, Description, InfoURL, and IconURL, and possibly Adapter (if class is a Business Service or Business Operation)
         IconURL is not yet displayed anywhere
         """
         ret = []
         desc = ""
-        infoURL = ""
-        iconURL = ""
-        superClass = ""
+        info_url = ""
+        icon_url = ""
+        super_class = ""
         adapter = ""
         try:
             # Get tuple of the class's base classes and loop through them until we find one of the PEX component classes
             classes = inspect.getmro(cls)
             for cl in classes:
-                clName = str(cl)[7:-1]
-                if clName in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'"] :
-                    # Remove the apostrophes and set as superClass, then find if it uses an adapter
-                    superClass = clName[1:-1]
+                classname = str(cl)[7:-1]
+                if classname in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'"] :
+                    # Remove the apostrophes and set as super_class, then find if it uses an adapter
+                    super_class = classname[1:-1]
                     adapter = cls.getAdapterType()
                     break
-                elif clName in ["'grongier.pex.BusinessProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
-                    # Remove the apostrophes and set as superClass
-                    superClass = clName[1:-1]
+                elif classname in ["'grongier.pex.BusinessProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
+                    # Remove the apostrophes and set as super_class
+                    super_class = classname[1:-1]
                     break
 
-            if ""==superClass:
+            if ""==super_class:
                 return ""
-            ret.append(superClass)
+            ret.append(super_class)
 
             # Get the class documentation, if any
-            clsDesc = inspect.getdoc(cls)
-            superDesc = inspect.getdoc(classes[1])
-            if clsDesc!=superDesc:
-                desc = clsDesc
+            class_desc = inspect.getdoc(cls)
+            super_desc = inspect.getdoc(classes[1])
+            if class_desc!=super_desc:
+                desc = class_desc
             ret.append(str(desc))
 
-            infoURL = inspect.getattr_static(cls,"INFO_URL","")
-            iconURL = inspect.getattr_static(cls,"ICON_URL","")
+            info_url = inspect.getattr_static(cls,"INFO_URL","")
+            icon_url = inspect.getattr_static(cls,"ICON_URL","")
 
-            ret.append(infoURL)
-            ret.append(iconURL)
+            ret.append(info_url)
+            ret.append(icon_url)
             
             if ""!=adapter:
                 ret.append(adapter)
@@ -81,12 +81,12 @@ class _Common():
         return ret
 
     @classmethod
-    def _getProperties(cls):
+    def _get_properties(cls):
         """ Get a list of the Attributes and Properties of this Python class.
-        Return value is a list of lists of form $lb(propName,dataType,defaultVal,required,category,description).
+        Return value is a list of lists of form $lb(propName,data_type,defaultVal,required,category,description).
         which can be used by the Production Configuration to display them as settings.
         This list will only include class attributes (no instance attributes) and properties which are not marked to be private by use of the _ prefix.
-        For class attributes, we will use the value that it is defined with as the defaultVal and its type as the dataType, or "" and String if set to None.
+        For class attributes, we will use the value that it is defined with as the defaultVal and its type as the data_type, or "" and String if set to None.
         Add a function attrName_info() for a attribute or property 'attrName' in order to add more information about that attribute by using the function annotation for the return value.
         The annotation should be a dictionary including any of 'IsRequired', 'Category', 'Description', 'DataType', or 'ExcludeFromSettings' as keys.
         'ExcludeFromSettings' should be a boolean, and if true will exclude an attribute from being returned in the list, and so prevent it from being displayed as a setting in the Production Configuration Page
@@ -96,7 +96,7 @@ class _Common():
         """
         ret = []
         try:
-            # getmembers() returns all the members of an object
+            # getmembers() returns all the members of an obj
             for member in inspect.getmembers(cls):
                 # remove private and protected functions
                 if not member[0].startswith('_'):
@@ -113,7 +113,7 @@ class _Common():
                                 val = ""
                             dt = str(type(val))[8:-2]
                             # get datatype from attribute definition, default to String
-                            dataType = {'int':'Integer','float':'Numeric','complex':'Numeric','bool':'Boolean'}.get(dt,'String')
+                            data_type = {'int':'Integer','float':'Numeric','complex':'Numeric','bool':'Boolean'}.get(dt,'String')
                             # if the user has created a attr_info function, then check the annotation on the return from that for more information about this attribute
                             if hasattr(cls,name + '_info') :
                                 func = getattr(cls,name+'_info')
@@ -129,14 +129,14 @@ class _Common():
                                         dt = annotations.get("DataType")
                                         # only override DataType found 
                                         if (dt is not None) and ("" != dt):
-                                            dataType = {int:'Integer',float:'Number',complex:'Number',bool:'Boolean',str:'String'}.get(dt,str(dt))
+                                            data_type = {int:'Integer',float:'Number',complex:'Number',bool:'Boolean',str:'String'}.get(dt,str(dt))
                                     default = func()
                                     if default is not None:
                                         val = default
                             # create list of information for this specific property
                             info = []
                             info.append(name)    # Name        
-                            info.append(dataType) # DataType
+                            info.append(data_type) # DataType
                             info.append(val)  # Default Value
                             info.append(req) # Required
                             info.append(cat) # Category
@@ -147,85 +147,130 @@ class _Common():
             pass
         return ret
 
-    def LOGINFO(self, message):
+    def log_info(self, message):
         """ Write a log entry of type "info". :og entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
         """
 
-        currentClass = self.__class__.__name__
-        currentMethod = None
+        current_class = self.__class__.__name__
+        current_method = None
         try:
             frame = traceback.extract_stack()[-2]
-            currentMethod = frame.name
+            current_method = frame.name
         except:
             pass
-        iris.cls("Ens.Util.Log").LogInfo(currentClass, currentMethod, message)
+        iris.cls("Ens.Util.Log").LogInfo(current_class, current_method, message)
         return
 
-    def LOGALERT(self, message):
+    def log_alert(self, message):
         """ Write a log entry of type "alert". :og entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
         """
-        currentClass = self.__class__.__name__
-        currentMethod = None
+        current_class = self.__class__.__name__
+        current_method = None
         try:
             frame = traceback.extract_stack()[-2]
-            currentMethod = frame.name
+            current_method = frame.name
         except:
             pass
-        iris.cls("Ens.Util.Log").LogAlert(currentClass, currentMethod, message)
+        iris.cls("Ens.Util.Log").LogAlert(current_class, current_method, message)
         return
 
-    def LOGWARNING(self, message):
+    def log_warning(self, message):
         """ Write a log entry of type "warning". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
         """
-        currentClass = self.__class__.__name__
-        currentMethod = None
+        current_class = self.__class__.__name__
+        current_method = None
         try:
             frame = traceback.extract_stack()[-2]
-            currentMethod = frame.name
+            current_method = frame.name
         except:
             pass
-        iris.cls("Ens.Util.Log").LogWarning(currentClass, currentMethod, message)
+        iris.cls("Ens.Util.Log").LogWarning(current_class, current_method, message)
         return
 
-    def LOGERROR(self, message):
+    def log_error(self, message):
         """ Write a log entry of type "error". :og entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
         """
-        currentClass = self.__class__.__name__
-        currentMethod = None
+        current_class = self.__class__.__name__
+        current_method = None
         try:
             frame = traceback.extract_stack()[-2]
-            currentMethod = frame.name
+            current_method = frame.name
         except:
             pass
-        iris.cls("Ens.Util.Log").LogError(currentClass, currentMethod, message)
+        iris.cls("Ens.Util.Log").LogError(current_class, current_method, message)
         return
 
-    def LOGASSERT(self, message):
+    def log_assert(self, message):
         """ Write a log entry of type "assert". :og entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
         """
-        currentClass = self.__class__.__name__
-        currentMethod = None
+        current_class = self.__class__.__name__
+        current_method = None
         try:
             frame = traceback.extract_stack()[-2]
-            currentMethod = frame.name
+            current_method = frame.name
         except:
             pass
-        iris.cls("Ens.Util.Log").LogAssert(currentClass, currentMethod, message)
+        iris.cls("Ens.Util.Log").LogAssert(current_class, current_method, message)
         return
+
+    def LOGINFO(self, message):
+        """ DECAPRETED : use log_info
+        Write a log entry of type "info". :og entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        return self.log_info(message=message)
+
+    def LOGALERT(self, message):
+        """ DECAPRETED : use log_alert
+        Write a log entry of type "alert". :og entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        return self.log_alert(message)
+
+    def LOGWARNING(self, message):
+        """ DECAPRETED : use log_warning
+        Write a log entry of type "warning". Log entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        return self.log_warning(message)
+
+    def LOGERROR(self, message):
+        """ DECAPRETED : use log_error
+        Write a log entry of type "error". :og entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        return self.log_error(message)
+
+    def LOGASSERT(self, message):
+        """ DECAPRETED : use log_assert
+        Write a log entry of type "assert". :og entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        return self.log_assert(message)
 
         

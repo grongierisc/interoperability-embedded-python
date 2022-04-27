@@ -36,8 +36,8 @@ Method OnInit() As %Status
 	set tSC = $$$OK
 	try {
         $$$ThrowOnError(..Connect())
-		do ..%class."_dispatchOnInit"($this)
-	} catch ex {
+		do ..%class."_dispatch_on_init"($this)
+	}catch ex {
 		set tSC = ex.AsStatus()
 	}
 	quit tSC
@@ -65,17 +65,17 @@ Method Connect() As %Status
 		}
 		;
 		if ..%Extends("Grongier.PEX.InboundAdapter") || ..%Extends("Grongier.PEX.OutboundAdapter") {
-			do ..%class."_setIrisHandles"($this,..BusinessHost)
+			do ..%class."_set_iris_handles"($this,..BusinessHost)
 		} elseif $this.%Extends("Grongier.PEX.BusinessProcess") {
-			do ..%class."_setIrisHandles"($this,$$$NULLOREF)
+			do ..%class."_set_iris_handles"($this,$$$NULLOREF)
 		} else {
-			do ..%class."_setIrisHandles"($this,..Adapter)
+			do ..%class."_set_iris_handles"($this,..Adapter)
 		}
 		;
 		do ..SetPropertyValues()
 		;
 		try {
-			do ..%class."_dispatchOnConnected"($this)
+			do ..%class."_dispatch_on_connected"($this)
 		} catch ex {
 			$$$LOGWARNING(ex.DisplayString())
 		}
@@ -90,7 +90,7 @@ Method Connect() As %Status
 Method OnTearDown() As %Status
 {
 	set tSC = $$$OK
-    do ..%class.OnTearDown()
+    do ..%class."on_tear_down"()
 	quit tSC
 }
 

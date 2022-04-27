@@ -38,10 +38,10 @@ from grongier.pex import BusinessOperation,Message
 
 class MyBusinessOperation(BusinessOperation):
     
-    def OnInit(self):
+    def on_init(self):
         #This method is called when the component is becoming active in the production
-        print("[Python] ...MyBusinessOperation:OnInit() is called")
-        self.LOGINFO("Operation OnInit")
+        print("[Python] ...MyBusinessOperation:on_init() is called")
+        self.log_info("Operation on_init")
         return
 
     def OnTeardown(self):
@@ -49,10 +49,10 @@ class MyBusinessOperation(BusinessOperation):
         print("[Python] ...MyBusinessOperation:OnTeardown() is called")
         return
 
-    def OnMessage(self, messageInput:MyRequest):
+    def OnMessage(self,  message_input:MyRequest):
         # called from service/process/operation, message is of type MyRequest with property requestString
-        print("[Python] ...MyBusinessOperation:OnMessage() is called with message:"+messageInput.requestString)
-        self.LOGINFO("Operation OnMessage")
+        print("[Python] ...MyBusinessOperation:OnMessage() is called with message:"+ message_input.requestString)
+        self.log_info("Operation OnMessage")
         response = MyResponse("...MyBusinessOperation:OnMessage() echos")
         return response
 
@@ -246,7 +246,7 @@ src
 
 To implement InboundAdapter in Python, users do the following:
 
-Subclass from grongier.pex.InboundAdapter in Python. Override method OnTask().
+Subclass from grongier.pex.InboundAdapter in Python. Override method on_task().
 
 ## 7.2. OutboundAdapter
 

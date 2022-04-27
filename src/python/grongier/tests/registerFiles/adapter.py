@@ -5,7 +5,7 @@ import json
 
 class RedditInboundAdapter(grongier.pex.InboundAdapter):
     
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Feed'):
             self.Feed = "/new/"
@@ -17,8 +17,8 @@ class RedditInboundAdapter(grongier.pex.InboundAdapter):
         
         return 1
 
-    def OnTask(self):
-        self.LOGINFO(f"LIMIT:{self.Limit}")
+    def on_task(self):
+        self.log_info(f"LIMIT:{self.Limit}")
         if self.Feed == "" :
             return 1
         
@@ -27,7 +27,7 @@ class RedditInboundAdapter(grongier.pex.InboundAdapter):
         try:
             server = "https://www.reddit.com"
             requestString = self.Feed+".json?before="+self.LastPostName+"&limit="+self.Limit
-            self.LOGINFO(server+requestString)
+            self.log_info(server+requestString)
             response = requests.get(server+requestString)
             response.raise_for_status()
 

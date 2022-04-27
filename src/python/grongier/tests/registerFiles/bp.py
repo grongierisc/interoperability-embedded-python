@@ -4,7 +4,7 @@ from message import PostMessage
 
 class FilterPostRoutingRule(BusinessProcess):
     
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FileOperation"

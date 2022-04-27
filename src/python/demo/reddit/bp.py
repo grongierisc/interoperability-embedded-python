@@ -4,10 +4,10 @@ from message import PostMessage
 
 class FilterPostRoutingRule(BusinessProcess):
     
-    def OnInit(self):
+    def on_init(self):
         
-        if not hasattr(self,'Target'):
-            self.Target = "Python.FileOperation"
+        if not hasattr(self,'target'):
+            self.target = "Python.FileOperation"
         
         return
 
@@ -18,4 +18,4 @@ class FilterPostRoutingRule(BusinessProcess):
         if 'cat'.upper() in request.Post.Selftext.upper():
             request.ToEmailAddress = 'cat@company.com'
             request.Found = 'Cat'
-        return self.SendRequestSync(self.Target,request)
+        return self.SendRequestSync(self.target,request)

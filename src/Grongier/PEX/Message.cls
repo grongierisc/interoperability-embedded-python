@@ -17,11 +17,6 @@ Method %OnNew(classname) As %Status [ Private, ServerOnly = 1 ]
 	Quit $$$OK
 }
 
-Method toto() [ Language = python ]
-{
-	print('toto')
-}
-
 Method %jsonGet()
 {
 	quit ..%jsonObject.%ToJSON()

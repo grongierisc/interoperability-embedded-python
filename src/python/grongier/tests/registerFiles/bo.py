@@ -13,7 +13,7 @@ from email.mime.text import MIMEText
 
 class EmailOperation(BusinessOperation):
 
-    def OnMessage(self, pRequest):
+    def on_message(self, pRequest):
 
         sender = 'admin@example.com'
         receivers = [ pRequest.ToEmailAddress ]
@@ -42,7 +42,7 @@ class EmailOperationWithIrisAdapter(BusinessOperation):
         """
         return "EnsLib.EMail.OutboundAdapter"
 
-    def OnMessage(self, pRequest):
+    def on_message(self, pRequest):
 
         mailMessage = iris.cls("%Net.MailMessage")._New()
         mailMessage.Subject = pRequest.Found+" found"
@@ -64,11 +64,11 @@ class EmailOperationWithIrisAdapter(BusinessOperation):
 
 class FileOperation(BusinessOperation):
 
-    def OnInit(self):
+    def on_init(self):
         if hasattr(self,'Path'):
             os.chdir(self.Path)
 
-    def OnMessage(self, pRequest):
+    def on_message(self, pRequest):
         
         ts = title = author = url = text = ""
 
@@ -105,7 +105,7 @@ class FileOperationWithIrisAdapter(BusinessOperation):
         """
         return "EnsLib.File.OutboundAdapter"
 
-    def OnMessage(self, pRequest):
+    def on_message(self, pRequest):
 
         ts = title = author = url = text = ""
 
@@ -128,8 +128,8 @@ class FileOperationWithIrisAdapter(BusinessOperation):
 
 class MyOperation(BusinessOperation):
 
-    def OnMessage(self, request):
-        self.LOGINFO('hello')
+    def on_message(self, request):
+        self.log_info('hello')
         return MyResponse(request.StringValue)
 
 if __name__ == "__main__":
@@ -137,4 +137,4 @@ if __name__ == "__main__":
     op = FileOperation()
     from message import PostMessage,PostClass
     msg = PostMessage(PostClass('foo','foo','foo','foo',1,'foo'),'bar','bar')
-    op.OnMessage(msg)
+    op.on_message(msg)
