@@ -8,12 +8,11 @@ class _BusinessProcess(_BusinessHost):
     """
 
     PERSISTENT_PROPERTY_LIST=None
-    """ A list of the variable names of persistent properties."""
+    """ A list of the variable names of persistent properties."""        
 
-    def OnRequest(self, request):
+    def on_request(self, request):
         """ Handles requests sent to the business process. A production calls this method whenever an initial request 
         for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
-
         Parameters:
         request: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
         
@@ -21,13 +20,12 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        pass
+        return
 
-    def OnResponse(self, request, response, callRequest, callResponse, completionKey):
+    def on_response(self, request, response, callRequest, callResponse, completionKey):
         """ Handles responses sent to the business process in response to messages that it sent to the target.
         A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
         Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
-
         Parameters:
         request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
         response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
@@ -35,26 +33,23 @@ class _BusinessProcess(_BusinessHost):
         callRequest: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
         callResponse: An instance of IRISObject or subclass of Message that contains the incoming response.
         completionKey: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
-
         Returns:
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        pass
+        return
 
-    def OnComplete(self, request, response):
+    def on_complete(self, request, response):
         """ Called after the business process has received and handled all responses to requests it has sent to targets.
-
         Parameters: 
         request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
         response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
-
         Returns:
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        pass
+        return
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
@@ -169,3 +164,50 @@ class _BusinessProcess(_BusinessHost):
         """
         self.irisHandle.dispatchSetTimer(timeout, completionKey)
         return
+
+    def OnRequest(self, request):
+        """ 
+        DEPRECATED : use on_request
+        Handles requests sent to the business process. A production calls this method whenever an initial request 
+        for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
+        Parameters:
+        request: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
+        
+        Returns:
+        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
+            to the production component that sent the initial message.
+        """
+        return self.on_request(request)
+
+    def OnResponse(self, request, response, callRequest, callResponse, completionKey):
+        """ 
+        DEPRECATED : use on_response
+        Handles responses sent to the business process in response to messages that it sent to the target.
+        A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
+        Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
+        Parameters:
+        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
+        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
+            to the production component that sent the initial message.
+        callRequest: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
+        callResponse: An instance of IRISObject or subclass of Message that contains the incoming response.
+        completionKey: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
+        Returns:
+        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
+            to the production component that sent the initial message.
+        """
+        return self.on_response(request, response, callRequest, callResponse, completionKey)
+
+    def OnComplete(self, request, response):
+        """ 
+        DEPRECATED : use on_complete
+        Called after the business process has received and handled all responses to requests it has sent to targets.
+        Parameters: 
+        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
+        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
+            to the production component that sent the initial message.
+        Returns:
+        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
+            to the production component that sent the initial message.
+        """
+        return self.on_complete(request, response)
