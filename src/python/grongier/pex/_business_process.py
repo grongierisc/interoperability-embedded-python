@@ -117,7 +117,7 @@ class _BusinessProcess(_BusinessHost):
         self._savePersistentProperties(hostObject)
         return
 
-    def _dispatchOnTearDown(self, hostObject):
+    def _dispatch_on_tear_down(self, hostObject):
         """ For internal use only. """
         self._restorePersistentProperties(hostObject)
         self.OnTearDown()

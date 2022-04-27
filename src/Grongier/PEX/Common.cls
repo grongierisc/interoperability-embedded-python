@@ -90,7 +90,7 @@ Method Connect() As %Status
 Method OnTearDown() As %Status
 {
 	set tSC = $$$OK
-    do ..%class.OnTearDown()
+    do ..%class."_dispatch_on_tear_down"()
 	quit tSC
 }
 

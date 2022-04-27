@@ -38,7 +38,7 @@ class _OutboundAdapter(_Common):
         self.OnInit()
         return
 
-    def _dispatchOnTearDown(self, hostObject):
+    def _dispatch_on_tear_down(self, hostObject):
         """ For internal use only. """
         self.OnTearDown()
         return
