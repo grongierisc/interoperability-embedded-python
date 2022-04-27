@@ -11,7 +11,7 @@ class _BusinessOperation(_BusinessHost):
     """
 
     DISPATCH = []
-    adapter = None
+    Adapter = None
 
     def __init__(self):
         """ The adapter variable provides access to the outbound adapter associated with the business operation."""
@@ -152,15 +152,13 @@ class _BusinessOperation(_BusinessHost):
         return self.on_message(request=request)
 
     def OnInit(self):
-        """ 
-        DEPRECATED : use on_init
+        """ DEPRECATED : use on_init
         The on_init() method is called when the component is started.
         Use the on_init() method to initialize any structures needed by the component."""
         return self.on_init()
 
     def OnTearDown(self):
-        """ 
-        DEPRECATED : use on_tear_down
+        """ DEPRECATED : use on_tear_down
         Called before the component is terminated. Use it to freee any structures.
         """
         return self.on_tear_down()
