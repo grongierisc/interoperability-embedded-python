@@ -9,20 +9,6 @@ class _BusinessProcess(_BusinessHost):
 
     PERSISTENT_PROPERTY_LIST=None
     """ A list of the variable names of persistent properties."""
-    
-    def OnConnected(self):
-        """ The OnConnected() method is called when the component is connected or reconnected after being disconnected.
-        Use the OnConnected() method to initialize any structures needed by the component."""
-        pass
-
-    def OnInit(self):
-        """ The OnInit() method is called when the component is started.
-        Use the OnInit() method to initialize any structures needed by the component."""
-        pass
-
-    def OnTearDown(self):
-        """ Called before the component is terminated."""
-        pass
 
     def OnRequest(self, request):
         """ Handles requests sent to the business process. A production calls this method whenever an initial request 

@@ -11,6 +11,17 @@ class _BusinessHost(_Common):
     """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that
     defines common methods. It is a subclass of Common.
     """
+
+    def on_init(self):
+        """ The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
+
+    def on_tear_down(self):
+        """ Called before the component is terminated. Use it to freee any structures."""
+
+    def on_connected(self):
+        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
         
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
@@ -144,6 +155,24 @@ class _BusinessHost(_Common):
         :return: The return value is a Future object.
         """
         return self.send_request_async(target=target,request=request,description=description)
+
+    def OnInit(self):
+        """ DEPRECATED : use on_init
+        The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
+        return self.on_init()
+
+    def OnTearDown(self):
+        """ DEPRECATED : use on_tear_down
+        Called before the component is terminated. Use it to freee any structures.
+        """
+        return self.on_tear_down()
+
+    def OnConnected(self):
+        """ DEPRECATED : use on_connected
+        The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
+        return self.on_connected()
 
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,

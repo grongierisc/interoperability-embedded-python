@@ -13,17 +13,6 @@ class _BusinessOperation(_BusinessHost):
     DISPATCH = []
     Adapter = None
 
-    def on_init(self):
-        """ The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
-
-    def on_tear_down(self):
-        """ Called before the component is terminated. Use it to freee any structures."""
-
-    def on_connected(self):
-        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
-
     def on_message(self, request):
         """ Called when the business operation receives a message from another production component.
         Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
@@ -146,21 +135,3 @@ class _BusinessOperation(_BusinessHost):
         The response object
         """
         return self.on_message(request=request)
-
-    def OnInit(self):
-        """ DEPRECATED : use on_init
-        The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
-        return self.on_init()
-
-    def OnTearDown(self):
-        """ DEPRECATED : use on_tear_down
-        Called before the component is terminated. Use it to freee any structures.
-        """
-        return self.on_tear_down()
-
-    def OnConnected(self):
-        """ DEPRECATED : use on_connected
-        The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
-        return self.on_connected()
