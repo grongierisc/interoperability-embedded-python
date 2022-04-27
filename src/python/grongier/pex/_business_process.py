@@ -73,9 +73,9 @@ class _BusinessProcess(_BusinessHost):
         """
         pass
 
-    def _set_iris_handles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handleCurrent
+        self.irisHandle = handle_current
         return
 
     def _save_persistent_properties(self, host_object):

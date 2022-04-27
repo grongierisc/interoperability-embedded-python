@@ -33,10 +33,10 @@ class _InboundAdapter(_Common):
         """
         pass
 
-    def _set_iris_handles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handleCurrent
-        self.BusinessHost = handlePartner
+        self.irisHandle = handle_current
+        self.BusinessHost = handle_partner
         return
 
     def _dispatch_on_connected(self, host_object):

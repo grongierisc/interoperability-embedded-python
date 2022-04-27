@@ -52,14 +52,14 @@ class _BusinessService(_BusinessHost):
         """
         return ""
 
-    def _set_iris_handles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handleCurrent
-        if type(handlePartner).__module__.find('iris') == 0:
-            if handlePartner._IsA("Grongier.PEX.InboundAdapter"):
-                module = importlib.import_module(handlePartner.GetModule())
-                handlePartner = getattr(module, handlePartner.GetClassname())()
-        self.Adapter = handlePartner
+        self.irisHandle = handle_current
+        if type(handle_partner).__module__.find('iris') == 0:
+            if handle_partner._IsA("Grongier.PEX.InboundAdapter"):
+                module = importlib.import_module(handle_partner.GetModule())
+                handle_partner = getattr(module, handle_partner.GetClassname())()
+        self.Adapter = handle_partner
         return
 
     def _dispatch_on_connected(self, host_object):

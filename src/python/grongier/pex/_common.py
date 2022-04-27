@@ -10,7 +10,7 @@ class _Common():
     ICON_URL: str
     irisHandle = None
 
-    def _set_iris_handles(self, handleCurrent, handlePartner):
+    def _set_iris_handles(self, handle_current, handle_partner):
         pass
 
     @classmethod
