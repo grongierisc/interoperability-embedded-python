@@ -8,7 +8,8 @@ class _Director():
 
     @staticmethod
     def CreateBusinessService(target):
-        """ The CreateBusinessService() method initiates the specifiied business service.
+        """ DECAPRETED : use create_business_service
+        The CreateBusinessService() method initiates the specifiied business service.
 
         Parameters:
         connection: an IRISConnection object that specifies the connection to an IRIS instance for Java.
@@ -17,5 +18,18 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        irisobject = iris.cls("Grongier.PEX.Director").dispatchCreateBusinessService(target)
-        return irisobject
+        return _Director.create_business_service(target)
+
+    @staticmethod
+    def create_business_service(target):
+        """ The create_business_service() method initiates the specifiied business service.
+
+        Parameters:
+        connection: an IRISConnection object that specifies the connection to an IRIS instance for Java.
+        target: a string that specifies the name of the business service in the production definition.
+
+        Returns:
+            an object that contains an instance of IRISBusinessService
+        """
+        iris_object = iris.cls("Grongier.PEX.Director").dispatchCreateBusinessService(target)
+        return iris_object
