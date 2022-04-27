@@ -123,8 +123,7 @@ class _BusinessHost(_Common):
         return None
 
     def SendRequestSync(self, target, request, timeout=-1, description=None):
-        """
-        DECAPRETED : use send_request_sync
+        """ DEPRECATED : use send_request_sync
         `SendRequestSync` is a function that sends a request to a target and waits for a response
         
         :param target: The target of the request
@@ -136,8 +135,7 @@ class _BusinessHost(_Common):
         return self.send_request_sync(target=target,request=request,timeout=timeout,description=description)
         
     def SendRequestAsync(self, target, request, description=None):
-        """
-        DECAPRETED : use send_request_async
+        """ DEPRECATED : use send_request_async
         It takes a target, a request, and a description, and returns a send_request_async function
         
         :param target: The target of the request. This is the name of the function you want to call
