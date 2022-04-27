@@ -25,7 +25,7 @@ class _BusinessOperation(_BusinessHost):
         Returns:
         The response object
         """
-        pass
+        return self.OnMessage(request)
 
     @staticmethod
     def getAdapterType():
@@ -45,20 +45,10 @@ class _BusinessOperation(_BusinessHost):
             self.Adapter = handle_partner
         return
 
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
-        self.on_connected()
-        return
-
     def _dispatch_on_init(self, host_object):
         """ For internal use only. """
         self._create_dispatch()
         self.on_init()
-        return
-
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
-        self.on_tear_down()
         return
 
     def _dispatch_on_message(self, request):
@@ -134,4 +124,4 @@ class _BusinessOperation(_BusinessHost):
         Returns:
         The response object
         """
-        return self.on_message(request=request)
+        return 

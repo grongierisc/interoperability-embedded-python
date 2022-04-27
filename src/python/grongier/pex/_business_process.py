@@ -20,7 +20,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return
+        return self.OnRequest(request)
 
     def on_response(self, request, response, callRequest, callResponse, completionKey):
         """ Handles responses sent to the business process in response to messages that it sent to the target.
@@ -37,7 +37,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return
+        return self.OnResponse(request, response, callRequest, callResponse, completionKey)
 
     def on_complete(self, request, response):
         """ Called after the business process has received and handled all responses to requests it has sent to targets.
@@ -49,7 +49,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return
+        return self.OnComplete(request, response)
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
@@ -84,21 +84,21 @@ class _BusinessProcess(_BusinessHost):
 
     def _dispatch_on_connected(self, host_object):
         """ For internal use only. """
-        self.OnConnected()
+        self.on_connected()
         self._save_persistent_properties(host_object)
         return
 
     def _dispatch_on_init(self, host_object):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        self.OnInit()
+        self.on_init()
         self._save_persistent_properties(host_object)
         return
 
     def _dispatch_on_tear_down(self, host_object):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        self.OnTearDown()
+        self.on_tear_down()
         self._save_persistent_properties(host_object)
         return
 
@@ -107,7 +107,7 @@ class _BusinessProcess(_BusinessHost):
         self._restore_persistent_properties(host_object)
         if isinstance(request, str):
             request = self._deserialize(request)
-        return_object = self.OnRequest(request)
+        return_object = self.on_request(request)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
         self._save_persistent_properties(host_object)
@@ -124,7 +124,7 @@ class _BusinessProcess(_BusinessHost):
             callRequest = self._deserialize(callRequest)
         if isinstance(callResponse, str):
             callResponse = self._deserialize(callResponse)
-        return_object = self.OnResponse(request, response, callRequest, callResponse, completionKey)
+        return_object = self.on_response(request, response, callRequest, callResponse, completionKey)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
         self._save_persistent_properties(host_object)
@@ -137,7 +137,7 @@ class _BusinessProcess(_BusinessHost):
             request = self._deserialize(request)
         if isinstance(response, str):
             response = self._deserialize(response)
-        return_object = self.OnComplete(request, response)
+        return_object = self.on_complete(request, response)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
         self._save_persistent_properties(host_object)
@@ -177,7 +177,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.on_request(request)
+        return 
 
     def OnResponse(self, request, response, callRequest, callResponse, completionKey):
         """ 
@@ -196,7 +196,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.on_response(request, response, callRequest, callResponse, completionKey)
+        return 
 
     def OnComplete(self, request, response):
         """ 
@@ -210,4 +210,4 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.on_complete(request, response)
+        return 

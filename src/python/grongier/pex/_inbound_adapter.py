@@ -11,6 +11,7 @@ class _InboundAdapter(_Common):
         It is responsible for receiving the data from the external system, validating the data, and sending it in a message to the business service OnProcessInput method.
         The message can have any structure agreed upon by the inbound adapter and the business service.
         """
+        return self.OnTask()
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
@@ -18,20 +19,6 @@ class _InboundAdapter(_Common):
         self.BusinessHost = handle_partner
         return
 
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
-        self.OnConnected()
-        return
-
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
-        self.OnInit()
-        return
-
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
-        self.OnTearDown()
-        return
 
     def OnTask(self):
         """  DEPRECATED : use on_task
@@ -39,4 +26,4 @@ class _InboundAdapter(_Common):
         It is responsible for receiving the data from the external system, validating the data, and sending it in a message to the business service OnProcessInput method.
         The message can have any structure agreed upon by the inbound adapter and the business service.
         """
-        return  self.on_task()
+        return 

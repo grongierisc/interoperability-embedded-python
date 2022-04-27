@@ -24,6 +24,7 @@ class _BusinessService(_BusinessHost):
         messageInput: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
             The message can have any structure agreed upon by the inbound adapter and the business service. 
         """
+        return self.OnProcessInput(message_input)
 
     @staticmethod
     def getAdapterType():
@@ -42,27 +43,12 @@ class _BusinessService(_BusinessHost):
                 handle_partner = getattr(module, handle_partner.GetClassname())()
         self.Adapter = handle_partner
         return
-
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
-        self.OnConnected()
-        return
-
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
-        self.OnInit()
-        return
-
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
-        self.OnTearDown()
-        return
     
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
         if isinstance(request, str):
             request = self._deserialize(request)
-        return_object = self.OnProcessInput(request)
+        return_object = self.on_process_input(request)
         if isinstance(return_object, str):
             return_object = self._deserialize(return_object)
         return return_object
@@ -77,4 +63,4 @@ class _BusinessService(_BusinessHost):
         messageInput: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
             The message can have any structure agreed upon by the inbound adapter and the business service. 
         """
-        return self.on_process_input(message_input)
+        return 
