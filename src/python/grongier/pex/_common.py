@@ -8,10 +8,8 @@ class _Common():
 
     INFO_URL: str
     ICON_URL: str
+    irisHandle = None
 
-    def __init__(self):
-        self.irisHandle = None
-    
     def _setIrisHandles(self, handleCurrent, handlePartner):
         pass
 
