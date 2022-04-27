@@ -81,7 +81,7 @@ class _BusinessService(_BusinessHost):
         """ For internal use only. """
         if isinstance(request, str):
             request = self._deserialize(request)
-        returnObject = self.OnProcessInput(request)
-        if isinstance(returnObject, str):
-            returnObject = self._deserialize(returnObject)
-        return returnObject
+        return_object = self.OnProcessInput(request)
+        if isinstance(return_object, str):
+            return_object = self._deserialize(return_object)
+        return return_object

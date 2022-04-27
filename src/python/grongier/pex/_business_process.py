@@ -129,11 +129,11 @@ class _BusinessProcess(_BusinessHost):
         self._restore_persistent_properties(hostObject)
         if isinstance(request, str):
             request = self._deserialize(request)
-        returnObject = self.OnRequest(request)
-        if self._is_message_instance(returnObject):
-            returnObject = self._serialize(returnObject)
+        return_object = self.OnRequest(request)
+        if self._is_message_instance(return_object):
+            return_object = self._serialize(return_object)
         self._save_persistent_properties(hostObject)
-        return returnObject
+        return return_object
     
     def _dispatch_on_response(self, hostObject, request, response, callRequest, callResponse, completionKey):
         """ For internal use only. """
@@ -146,11 +146,11 @@ class _BusinessProcess(_BusinessHost):
             callRequest = self._deserialize(callRequest)
         if isinstance(callResponse, str):
             callResponse = self._deserialize(callResponse)
-        returnObject = self.OnResponse(request, response, callRequest, callResponse, completionKey)
-        if self._is_message_instance(returnObject):
-            returnObject = self._serialize(returnObject)
+        return_object = self.OnResponse(request, response, callRequest, callResponse, completionKey)
+        if self._is_message_instance(return_object):
+            return_object = self._serialize(return_object)
         self._save_persistent_properties(hostObject)
-        return returnObject
+        return return_object
 
     def _dispatch_on_complete(self, hostObject, request, response):
         """ For internal use only. """
@@ -159,11 +159,11 @@ class _BusinessProcess(_BusinessHost):
             request = self._deserialize(request)
         if isinstance(response, str):
             response = self._deserialize(response)
-        returnObject = self.OnComplete(request, response)
-        if self._is_message_instance(returnObject):
-            returnObject = self._serialize(returnObject)
+        return_object = self.OnComplete(request, response)
+        if self._is_message_instance(return_object):
+            return_object = self._serialize(return_object)
         self._save_persistent_properties(hostObject)
-        return returnObject
+        return return_object
 
     def Reply(self, response):
         """ Send the specified response to the production component that sent the initial request to the business process.
