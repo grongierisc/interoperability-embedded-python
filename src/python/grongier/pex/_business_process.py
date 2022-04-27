@@ -1,4 +1,4 @@
-from grongier.pex._BusinessHost import _BusinessHost
+from grongier.pex._business_host import _BusinessHost
 
 class _BusinessProcess(_BusinessHost):
     """ Typically contains most of the logic in a production.

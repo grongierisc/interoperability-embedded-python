@@ -1,6 +1,6 @@
 import datetime,uuid,decimal,base64,json,importlib
 
-from grongier.pex._Common import _Common
+from grongier.pex._common import _Common
 
 class _BusinessHost(_Common):
     """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that

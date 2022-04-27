@@ -1,5 +1,5 @@
 import importlib
-from grongier.pex._BusinessHost import _BusinessHost
+from grongier.pex._business_host import _BusinessHost
 
 class _BusinessService(_BusinessHost):
     """ This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.

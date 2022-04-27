@@ -1,6 +1,6 @@
 import importlib
 from inspect import signature
-from grongier.pex._BusinessHost import _BusinessHost
+from grongier.pex._business_host import _BusinessHost
 
 class _BusinessOperation(_BusinessHost):
     """ This class corresponds to the PEX framework EnsLib.PEX.BusinessOperation class.

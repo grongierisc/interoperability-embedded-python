@@ -1,4 +1,4 @@
-from grongier.pex._Common import _Common
+from grongier.pex._common import _Common
 
 class _InboundAdapter(_Common):
     """ Responsible for receiving the data from the external system, validating the data, 
