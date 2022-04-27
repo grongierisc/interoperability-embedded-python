@@ -8,7 +8,7 @@ class _Director():
 
     @staticmethod
     def CreateBusinessService(target):
-        """ DECAPRETED : use create_business_service
+        """ DEPRECATED : use create_business_service
         The CreateBusinessService() method initiates the specifiied business service.
 
         Parameters:
