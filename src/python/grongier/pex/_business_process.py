@@ -78,7 +78,7 @@ class _BusinessProcess(_BusinessHost):
         self.irisHandle = handleCurrent
         return
 
-    def _save_persistent_properties(self, hostObject):
+    def _save_persistent_properties(self, host_object):
         """ For internal use only. """
         if self.PERSISTENT_PROPERTY_LIST == None:
             return
@@ -87,57 +87,57 @@ class _BusinessProcess(_BusinessHost):
             typ = val.__class__.__name__
             if (typ in ["str","int","float","bool","bytes"]):
                 try:
-                    hostObject.setPersistentProperty(prop, val)
+                    host_object.setPersistentProperty(prop, val)
                 except:
                     pass
         return
 
-    def _restore_persistent_properties(self, hostObject):
+    def _restore_persistent_properties(self, host_object):
         """ For internal use only. """
         if self.PERSISTENT_PROPERTY_LIST == None:
             return
         for prop in self.PERSISTENT_PROPERTY_LIST:
             try:
-                val = hostObject.getPersistentProperty(prop)
+                val = host_object.getPersistentProperty(prop)
                 setattr(self, prop, val)
             except:
                 pass
         return
 
-    def _dispatch_on_connected(self, hostObject):
+    def _dispatch_on_connected(self, host_object):
         """ For internal use only. """
         self.OnConnected()
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return
 
-    def _dispatch_on_init(self, hostObject):
+    def _dispatch_on_init(self, host_object):
         """ For internal use only. """
-        self._restore_persistent_properties(hostObject)
+        self._restore_persistent_properties(host_object)
         self.OnInit()
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return
 
-    def _dispatch_on_tear_down(self, hostObject):
+    def _dispatch_on_tear_down(self, host_object):
         """ For internal use only. """
-        self._restore_persistent_properties(hostObject)
+        self._restore_persistent_properties(host_object)
         self.OnTearDown()
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return
 
-    def _dispatch_on_request(self, hostObject, request):
+    def _dispatch_on_request(self, host_object, request):
         """ For internal use only. """
-        self._restore_persistent_properties(hostObject)
+        self._restore_persistent_properties(host_object)
         if isinstance(request, str):
             request = self._deserialize(request)
         return_object = self.OnRequest(request)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return return_object
     
-    def _dispatch_on_response(self, hostObject, request, response, callRequest, callResponse, completionKey):
+    def _dispatch_on_response(self, host_object, request, response, callRequest, callResponse, completionKey):
         """ For internal use only. """
-        self._restore_persistent_properties(hostObject)
+        self._restore_persistent_properties(host_object)
         if isinstance(request, str):
             request = self._deserialize(request)
         if isinstance(response, str):
@@ -149,12 +149,12 @@ class _BusinessProcess(_BusinessHost):
         return_object = self.OnResponse(request, response, callRequest, callResponse, completionKey)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return return_object
 
-    def _dispatch_on_complete(self, hostObject, request, response):
+    def _dispatch_on_complete(self, host_object, request, response):
         """ For internal use only. """
-        self._restore_persistent_properties(hostObject)
+        self._restore_persistent_properties(host_object)
         if isinstance(request, str):
             request = self._deserialize(request)
         if isinstance(response, str):
@@ -162,7 +162,7 @@ class _BusinessProcess(_BusinessHost):
         return_object = self.OnComplete(request, response)
         if self._is_message_instance(return_object):
             return_object = self._serialize(return_object)
-        self._save_persistent_properties(hostObject)
+        self._save_persistent_properties(host_object)
         return return_object
 
     def Reply(self, response):

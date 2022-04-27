@@ -39,17 +39,17 @@ class _InboundAdapter(_Common):
         self.BusinessHost = handlePartner
         return
 
-    def _dispatch_on_connected(self, hostObject):
+    def _dispatch_on_connected(self, host_object):
         """ For internal use only. """
         self.OnConnected()
         return
 
-    def _dispatch_on_init(self, hostObject):
+    def _dispatch_on_init(self, host_object):
         """ For internal use only. """
         self.OnInit()
         return
 
-    def _dispatch_on_tear_down(self, hostObject):
+    def _dispatch_on_tear_down(self, host_object):
         """ For internal use only. """
         self.OnTearDown()
         return
