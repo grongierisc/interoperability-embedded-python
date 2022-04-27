@@ -68,7 +68,8 @@ class _BusinessService(_BusinessHost):
         return return_object
 
     def OnProcessInput(self, message_input):
-        """ Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
+        """  DEPRECATED : use on_process_input
+        Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
         If the business service does not specify an adapter, then the default adapter calls this method with no message 
         and the business service is responsible for receiving the data from the external system and validating it.
 
