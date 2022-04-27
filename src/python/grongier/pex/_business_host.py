@@ -14,30 +14,6 @@ class _BusinessHost(_Common):
 
     def __init__(self):
         super().__init__()
-
-    @staticmethod
-    def OnGetConnections():
-        """ The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
-        calls for the class. Implement this method to allow connections between components to show up in 
-        the interoperability UI.
-
-        Returns:
-            An IRISList containing all targets for this class. Default is None.
-        """
-        return None
-        
-    def SendRequestSync(self, target, request, timeout=-1, description=None):
-        """
-        DECAPRETED : use send_request_sync
-        `SendRequestSync` is a function that sends a request to a target and waits for a response
-        
-        :param target: The target of the request
-        :param request: The request to send
-        :param timeout: The timeout in seconds. If the timeout is negative, the default timeout will be used
-        :param description: A string that describes the request. This is used for logging purposes
-        :return: The return value is a tuple of (response, status).
-        """
-        return self.send_request_sync(target=target,request=request,timeout=timeout,description=description)
         
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
@@ -60,18 +36,6 @@ class _BusinessHost(_Common):
         if self._is_message_instance(return_object):
             return_object = self._deserialize(return_object)
         return return_object
-
-    def SendRequestAsync(self, target, request, description=None):
-        """
-        DECAPRETED : use send_request_async
-        It takes a target, a request, and a description, and returns a send_request_async function
-        
-        :param target: The target of the request. This is the name of the function you want to call
-        :param request: The request to send
-        :param description: A string that describes the request
-        :return: The return value is a Future object.
-        """
-        return self.send_request_async(target=target,request=request,description=description)
 
     def send_request_async(self, target, request, description=None):
         """ Send the specified message to the target business process or business operation asynchronously.
@@ -149,6 +113,43 @@ class _BusinessHost(_Common):
             if isinstance(dikt, (tuple, list)):
                 return [self._dataclass_from_dict(klass.__args__[0], f) for f in dikt]
             return dikt
+
+    @staticmethod
+    def OnGetConnections():
+        """ The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
+        calls for the class. Implement this method to allow connections between components to show up in 
+        the interoperability UI.
+
+        Returns:
+            An IRISList containing all targets for this class. Default is None.
+        """
+        return None
+
+    def SendRequestSync(self, target, request, timeout=-1, description=None):
+        """
+        DECAPRETED : use send_request_sync
+        `SendRequestSync` is a function that sends a request to a target and waits for a response
+        
+        :param target: The target of the request
+        :param request: The request to send
+        :param timeout: The timeout in seconds. If the timeout is negative, the default timeout will be used
+        :param description: A string that describes the request. This is used for logging purposes
+        :return: The return value is a tuple of (response, status).
+        """
+        return self.send_request_sync(target=target,request=request,timeout=timeout,description=description)
+        
+    def SendRequestAsync(self, target, request, description=None):
+        """
+        DECAPRETED : use send_request_async
+        It takes a target, a request, and a description, and returns a send_request_async function
+        
+        :param target: The target of the request. This is the name of the function you want to call
+        :param request: The request to send
+        :param description: A string that describes the request
+        :return: The return value is a Future object.
+        """
+        return self.send_request_async(target=target,request=request,description=description)
+
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
 # and UUIDs.
