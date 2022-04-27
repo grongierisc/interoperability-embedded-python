@@ -1,9 +1,9 @@
-import grongier.pex
+from grongier.pex import InboundAdapter
 import requests
 import iris
 import json
 
-class RedditInboundAdapter(grongier.pex.InboundAdapter):
+class RedditInboundAdapter(InboundAdapter):
     
     def OnInit(self):
         
