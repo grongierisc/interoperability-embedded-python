@@ -13,10 +13,6 @@ class _BusinessOperation(_BusinessHost):
     DISPATCH = []
     Adapter = None
 
-    def __init__(self):
-        """ The adapter variable provides access to the outbound adapter associated with the business operation."""
-        super().__init__()
-
     def on_init(self):
         """ The on_init() method is called when the component is started.
         Use the on_init() method to initialize any structures needed by the component."""
