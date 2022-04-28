@@ -32,8 +32,6 @@ class EmailOperation(BusinessOperation):
             server.sendmail(sender, receivers, msg.as_string())
             print("Successfully sent email")
 
-
-
 class EmailOperationWithIrisAdapter(BusinessOperation):
 
     def get_adapter_type():
@@ -141,7 +139,8 @@ class MyOperation(BusinessOperation):
 
 
 if __name__ == "__main__":
+    EmailOperationWithIrisAdapter._get_info()
     crud_person = EmailOperationWithIrisAdapter()
-    crud_person._dispatchon_init('')
+    crud_person._dispatch_on_init('')
     request = iris.cls('Ens.StringRequest')._New('toto')
-    response = crud_person._dispatchon_messag(request)
+    response = crud_person._dispatch_on_message(request)

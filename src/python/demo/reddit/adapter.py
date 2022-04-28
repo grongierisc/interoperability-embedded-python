@@ -18,7 +18,7 @@ class RedditInboundAdapter(InboundAdapter):
         return 1
 
     def on_task(self):
-        self.LOGINFO(f"LIMIT:{self.limit}")
+        self.log_info(f"LIMIT:{self.limit}")
         if self.feed == "" :
             return 1
         
