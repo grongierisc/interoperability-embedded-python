@@ -1,21 +1,35 @@
 from grongier.pex import BusinessProcess
 
 from message import PostMessage
+from obj import PostClass
 
 class FilterPostRoutingRule(BusinessProcess):
     
-    def OnInit(self):
+    def on_init(self):
         
-        if not hasattr(self,'Target'):
-            self.Target = "Python.FileOperation"
+        if not hasattr(self,'target'):
+            self.target = "Python.FileOperation"
         
         return
 
-    def OnRequest(self, request: PostMessage):
-        if 'dog'.upper() in request.Post.Selftext.upper():
-            request.ToEmailAddress = 'dog@company.com'
-            request.Found = 'Dog'
-        if 'cat'.upper() in request.Post.Selftext.upper():
-            request.ToEmailAddress = 'cat@company.com'
-            request.Found = 'Cat'
-        return self.SendRequestSync(self.Target,request)
+    def on_request(self, request):
+        # if from iris
+        if type(request).__module__.find('iris') == 0:
+            request = PostMessage(post=PostClass(title=request.Post.Title, 
+                                             selftext=request.Post.Selftext,
+                                             author=request.Post.Author, 
+                                             url=request.Post.Url,
+                                             created_utc=request.Post.CreatedUTC,
+                                             original_json=request.Post.OriginalJSON))
+        
+        if 'dog'.upper() in request.post.selftext.upper():
+            request.to_email_address = 'dog@company.com'
+            request.found = 'Dog'
+        if 'cat'.upper() in request.post.selftext.upper():
+            request.to_email_address = 'cat@company.com'
+            request.found = 'Cat'
+
+        if request.found is not None:
+            return self.send_request_sync(self.target,request)
+        else:
+            return

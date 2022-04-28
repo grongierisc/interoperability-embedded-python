@@ -16,7 +16,7 @@
  zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","FileOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.FileOperation")
  zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperation")
  zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperationWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperationWithIrisAdapter")
- 
+
  set ^EnsPortal.Settings("SuperUser","LastProduction")	= "PEX.Production"
  
  zn "%SYS"

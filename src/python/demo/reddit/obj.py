@@ -4,9 +4,9 @@ from dataclasses_json import LetterCase, dataclass_json, config
 @dataclass_json(letter_case=LetterCase.CAMEL)
 @dataclass
 class PostClass:
-    Title: str
-    Selftext : str
-    Author: str
-    Url: str
-    CreatedUTC: float = field(metadata=config(field_name="created_utc"))
-    OriginalJSON: str = None
+    title: str
+    selftext : str
+    author: str
+    url: str
+    created_utc: float = field(metadata=config(field_name="created_utc"))
+    original_json: str = None

@@ -16,36 +16,36 @@ class RedditService(BusinessService):
         """
         return "Ens.InboundAdapter"
 
-    def OnInit(self):
+    def on_init(self):
         
-        if not hasattr(self,'Feed'):
-            self.Feed = "/new/"
+        if not hasattr(self,'feed'):
+            self.feed = "/new/"
         
-        if not hasattr(self,'Limit'):
-            raise TypeError('no Limit field')
+        if not hasattr(self,'limit'):
+            raise TypeError('no limit field')
 
-        if not hasattr(self,'Target'):
-            self.Target = "Python.FilterPostRoutingRule"
+        if not hasattr(self,'target'):
+            self.target = "Python.FilterPostRoutingRule"
         
-        self.LastPostName = ""
+        self.last_post_name = ""
         
         return 1
 
-    def OnProcessInput(self,request):
+    def on_process_input(self,request):
 
-        post = self.OnTask()
+        post = self.on_task()
         if post is not None:
             msg = PostMessage()
-            msg.Post = post
-            self.SendRequestSync(self.Target,msg)
+            msg.post = post
+            self.send_request_sync(self.target,msg)
 
-    def OnTask(self) -> PostClass:
+    def on_task(self) -> PostClass:
           
         try:
             server = "https://www.reddit.com"
-            requestString = self.Feed+".json?before="+self.LastPostName+"&limit="+self.Limit
+            request_string = self.feed+".json?before="+self.last_post_name+"&limit="+self.limit
 
-            response = requests.get(server+requestString)
+            response = requests.get(server+request_string)
             # response.raise_for_status()
 
             # data = response.json()
@@ -58,20 +58,20 @@ class RedditService(BusinessService):
                 if value['data']['selftext']=="":
                     continue
                 post = PostClass.from_dict(value['data'])
-                post.OriginalJSON = json.dumps(value)
+                post.original_json = json.dumps(value)
                 
                 if not updateLast:
-                    self.LastPostName = value['data']['name']
+                    self.last_post_name = value['data']['name']
                     updateLast = 1
                     return post
 
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 429:
-                self.LOGWARNING(err.__str__())
+                self.log_warning(err.__str__())
             else:
                 raise err
         except Exception as err: 
-            self.LOGERROR(err.__str__())
+            self.log_error(err.__str__())
             raise err
 
         return None
@@ -85,15 +85,15 @@ class RedditServiceWithIrisAdapter(BusinessService):
         """
         return "dc.Reddit.InboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def on_process_input(self, message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
-        return self.SendRequestSync(self.Target,msg)
+        msg.Post = message_input
+        return self.send_request_sync(self.target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
-        if not hasattr(self,'Target'):
-            self.Target = "Python.FilterPostRoutingRule"
+        if not hasattr(self,'target'):
+            self.target = "Python.FilterPostRoutingRule"
         
         return
 
@@ -105,14 +105,14 @@ class RedditServiceWithPexAdapter(BusinessService):
         """
         return "Python.RedditInboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def on_process_input(self, message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
-        msg.Post = messageInput
-        return self.SendRequestSync(self.Target,msg)
+        msg.Post = message_input
+        return self.send_request_sync(self.target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
-        if not hasattr(self,'Target'):
-            self.Target = "Python.FilterPostRoutingRule"
+        if not hasattr(self,'target'):
+            self.target = "Python.FilterPostRoutingRule"
         
         return

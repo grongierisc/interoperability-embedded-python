@@ -13,18 +13,18 @@ from email.mime.text import MIMEText
 
 class EmailOperation(BusinessOperation):
 
-    def OnMessage(self, pRequest):
+    def on_message(self, request):
 
         sender = 'admin@example.com'
-        receivers = [ pRequest.ToEmailAddress ]
+        receivers = [ request.to_email_address ]
 
 
         port = 1025
         msg = MIMEText('This is test mail')
 
-        msg['Subject'] = pRequest.Found+" found"
+        msg['Subject'] = request.found+" found"
         msg['From'] = 'admin@example.com'
-        msg['To'] = pRequest.ToEmailAddress
+        msg['To'] = request.to_email_address
 
         with smtplib.SMTP('localhost', port) as server:
             
@@ -42,55 +42,55 @@ class EmailOperationWithIrisAdapter(BusinessOperation):
         """
         return "EnsLib.EMail.OutboundAdapter"
 
-    def OnMessage(self, pRequest):
+    def on_message(self, request):
 
-        mailMessage = iris.cls("%Net.MailMessage")._New()
-        mailMessage.Subject = pRequest.Found+" found"
-        self.Adapter.AddRecipients(mailMessage,pRequest.ToEmailAddress)
-        mailMessage.Charset="UTF-8"
+        mail_message = iris.cls("%Net.mail_message")._New()
+        mail_message.Subject = request.found+" found"
+        self.Adapter.AddRecipients(mail_message,request.to_email_address)
+        mail_message.Charset="UTF-8"
 
         title = author = url = ""
-        if (pRequest.Post is not None) :
-            title = pRequest.Post.title
-            author = pRequest.Post.author
-            url = pRequest.Post.url
+        if (request.post is not None) :
+            title = request.post.title
+            author = request.post.author
+            url = request.post.url
         
-        mailMessage.TextData.WriteLine("More info:")
-        mailMessage.TextData.WriteLine("Title: "+title)
-        mailMessage.TextData.WriteLine("Author: "+author)
-        mailMessage.TextData.WriteLine("URL: "+url)
+        mail_message.TextData.WriteLine("More info:")
+        mail_message.TextData.WriteLine("title: "+title)
+        mail_message.TextData.WriteLine("author: "+author)
+        mail_message.TextData.WriteLine("URL: "+url)
 
-        return self.Adapter.SendMail(mailMessage)
+        return self.Adapter.SendMail(mail_message)
 
 class FileOperation(BusinessOperation):
 
-    def OnInit(self):
-        if hasattr(self,'Path'):
-            os.chdir(self.Path)
+    def on_init(self):
+        if hasattr(self,'path'):
+            os.chdir(self.path)
 
-    def OnMessage(self, pRequest):
+    def on_message(self, request):
         
         ts = title = author = url = text = ""
 
-        if (pRequest.Post is not None):
-            title = pRequest.Post.Title
-            author = pRequest.Post.Author
-            url = pRequest.Post.Url
-            text = pRequest.Post.Selftext
-            ts = datetime.datetime.fromtimestamp(pRequest.Post.CreatedUTC).__str__()
+        if (request.post is not None):
+            title = request.post.title
+            author = request.post.author
+            url = request.post.url
+            text = request.post.selftext
+            ts = datetime.datetime.fromtimestamp(request.post.created_utc).__str__()
 
         line = ts+" : "+title+" : "+author+" : "+url
-        filename = pRequest.Found+".txt"
+        filename = request.found+".txt"
 
 
-        self.PutLine(filename, line)
-        self.PutLine(filename, "")
-        self.PutLine(filename, text)
-        self.PutLine(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
+        self.put_line(filename, line)
+        self.put_line(filename, "")
+        self.put_line(filename, text)
+        self.put_line(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
 
         return 
 
-    def PutLine(self,filename,string):
+    def put_line(self,filename,string):
         try:
             with open(filename, "a",encoding="utf-8") as outfile:
                 outfile.write(string)
@@ -105,48 +105,43 @@ class FileOperationWithIrisAdapter(BusinessOperation):
         """
         return "EnsLib.File.OutboundAdapter"
 
-    def OnMessage(self, pRequest):
+    def on_message(self, request):
 
         ts = title = author = url = text = ""
 
-        if (pRequest.Post != ""):
-            title = pRequest.Post.Title
-            author = pRequest.Post.Author
-            url = pRequest.Post.Url
-            text = pRequest.Post.Selftext
-            ts = iris.cls("%Library.PosixTime").LogicalToOdbc(iris.cls("%Library.PosixTime").UnixTimeToLogical(pRequest.Post.CreatedUTC))
+        if (request.post != ""):
+            title = request.post.title
+            author = request.post.author
+            url = request.post.url
+            text = request.post.selftext
+            ts = iris.cls("%Library.PosixTime").LogicalToOdbc(iris.cls("%Library.PosixTime").UnixTimeToLogical(request.post.created_utc))
 
         line = ts+" : "+title+" : "+author+" : "+url
-        filename = pRequest.Found+".txt" 
+        filename = request.found+".txt" 
         
-        self.Adapter.PutLine(filename, line)
-        self.Adapter.PutLine(filename, "")
-        self.Adapter.PutLine(filename, text)
-        self.Adapter.PutLine(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
+        self.Adapter.put_line(filename, line)
+        self.Adapter.put_line(filename, "")
+        self.Adapter.put_line(filename, text)
+        self.Adapter.put_line(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
 
         return
 
 class MyOperation(BusinessOperation):
 
-    def OnMessage(self, request):
-        self.LOGINFO('hello')
+    def on_message(self, request):
+        self.log_info('hello')
         return
 
-    def MyRequest(self,request:MyRequest):
-        return iris.cls('Ens.StringResponse')._New(request.maString)
+    def my_request(self,request:MyRequest):
+        return iris.cls('Ens.StringResponse')._New(request.ma_string)
 
-    def MyIrirs(self,pRquest:'iris.Ens.Request'):
-        self.LOGINFO(self.maVar)
+    def my_iris(self,request:'iris.Ens.Request'):
+        self.log_info(self.maVar)
         return MyMessage('toto')
 
 
 if __name__ == "__main__":
-    crudPerson = EmailOperationWithIrisAdapter()
-    crudPerson._dispatchOnInit('')
+    crud_person = EmailOperationWithIrisAdapter()
+    crud_person._dispatchon_init('')
     request = iris.cls('Ens.StringRequest')._New('toto')
-    response = crudPerson._dispatchOnMessage(request)
-
-    # op = FileOperation()
-    # from message import PostMessage,PostClass
-    # msg = PostMessage(PostClass('foo','foo','foo','foo',1,'foo'),'bar','bar')
-    # op.OnMessage(msg)
+    response = crud_person._dispatchon_messag(request)
