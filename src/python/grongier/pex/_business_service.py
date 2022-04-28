@@ -27,8 +27,8 @@ class _BusinessService(_BusinessHost):
         return self.OnProcessInput(message_input)
 
     @staticmethod
-    def getAdapterType():
-        """ The getAdapterType() method is called when registering the business service in order to instruct the business service on what inbound adapter to use.
+    def get_adapter_type():
+        """ The get_adapter_type() method is called when registering the business service in order to instruct the business service on what inbound adapter to use.
         The return value from this method should be the string name of the inbound adapter class.  This may be an ObjectScript class or a PEX adapter class.
         Return the empty string for adapterless business services.
         """

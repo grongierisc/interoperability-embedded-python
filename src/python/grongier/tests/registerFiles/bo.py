@@ -36,7 +36,7 @@ class EmailOperation(BusinessOperation):
 
 class EmailOperationWithIrisAdapter(BusinessOperation):
 
-    def getAdapterType():
+    def get_adapter_type():
         """
         Name of the registred Adapter
         """
@@ -99,7 +99,7 @@ class FileOperation(BusinessOperation):
 
 class FileOperationWithIrisAdapter(BusinessOperation):
 
-    def getAdapterType():
+    def get_adapter_type():
         """
         Name of the registred Adapter
         """

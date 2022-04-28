@@ -145,6 +145,19 @@ class _BusinessHost(_Common):
         """
         return self.send_request_async(target,request,description)
 
+    @staticmethod
+    def getAdapterType():
+        """ DEPRECATED : use get_adapter_type
+        Name of the registred Adapter
+        """
+        return
+        
+    @staticmethod
+    def get_adapter_type():
+        """
+        Name of the registred Adapter
+        """
+        return self.getAdapterType()
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
 # and UUIDs.

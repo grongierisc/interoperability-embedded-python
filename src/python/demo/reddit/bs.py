@@ -10,7 +10,7 @@ from obj import PostClass
 
 class RedditService(BusinessService):
 
-    def getAdapterType():
+    def get_adapter_type():
         """
         Name of the registred Adapter
         """
@@ -79,7 +79,7 @@ class RedditService(BusinessService):
 
 class RedditServiceWithIrisAdapter(BusinessService):
 
-    def getAdapterType():
+    def get_adapter_type():
         """
         Name of the registred Adapter
         """
@@ -99,7 +99,7 @@ class RedditServiceWithIrisAdapter(BusinessService):
 
 class RedditServiceWithPexAdapter(BusinessService):
 
-    def getAdapterType():
+    def get_adapter_type():
         """
         Name of the registred Adapter
         """

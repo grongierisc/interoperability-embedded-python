@@ -79,7 +79,7 @@ class _Common():
                 if classname in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'"] :
                     # Remove the apostrophes and set as super_class, then find if it uses an adapter
                     super_class = classname[1:-1]
-                    adapter = cls.getAdapterType()
+                    adapter = cls.get_adapter_type()
                     break
                 elif classname in ["'grongier.pex.BusinessProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
                     # Remove the apostrophes and set as super_class
