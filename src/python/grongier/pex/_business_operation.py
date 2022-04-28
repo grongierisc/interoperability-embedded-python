@@ -27,14 +27,6 @@ class _BusinessOperation(_BusinessHost):
         """
         return self.OnMessage(request)
 
-    @staticmethod
-    def get_adapter_type():
-        """ The get_adapter_type() method is called when registering the business operation in order to instruct the business operation on what outbout adapter to use.
-        The return value from this method should be the string name of the outbound adapter class.  This may be an ObjectScript class or a PEX adapter class.
-        Return the empty string for adapterless business operations.
-        """
-        return ""
-
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
         self.irisHandle = handle_current

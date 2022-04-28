@@ -157,7 +157,7 @@ class _BusinessHost(_Common):
         """
         Name of the registred Adapter
         """
-        return self.getAdapterType()
+        return 
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
 # and UUIDs.
