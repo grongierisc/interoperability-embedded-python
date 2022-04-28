@@ -10,6 +10,35 @@ class _Common():
     ICON_URL: str
     irisHandle = None
 
+    def on_init(self):
+        """ The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
+        return self.OnInit()
+
+    def on_tear_down(self):
+        """ Called before the component is terminated. Use it to freee any structures."""
+        return self.OnTearDown()
+
+    def on_connected(self):
+        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
+        return self.OnConnected()
+
+    def _dispatch_on_connected(self, host_object):
+        """ For internal use only. """
+        self.on_connected()
+        return
+
+    def _dispatch_on_init(self, host_object):
+        """ For internal use only. """
+        self.on_init()
+        return
+
+    def _dispatch_on_tear_down(self, host_object):
+        """ For internal use only. """
+        self.on_tear_down()
+        return
+
     def _set_iris_handles(self, handle_current, handle_partner):
         pass
 
@@ -272,5 +301,21 @@ class _Common():
         message: a string that is written to the log.
         """
         return self.log_assert(message)
-
         
+    def OnInit(self):
+        """ DEPRECATED : use on_init
+        The on_init() method is called when the component is started.
+        Use the on_init() method to initialize any structures needed by the component."""
+        return 
+
+    def OnTearDown(self):
+        """ DEPRECATED : use on_tear_down
+        Called before the component is terminated. Use it to freee any structures.
+        """
+        return 
+
+    def OnConnected(self):
+        """ DEPRECATED : use on_connected
+        The on_connected() method is called when the component is connected or reconnected after being disconnected.
+        Use the on_connected() method to initialize any structures needed by the component."""
+        return 

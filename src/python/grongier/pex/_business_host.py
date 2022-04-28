@@ -11,35 +11,6 @@ class _BusinessHost(_Common):
     """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that
     defines common methods. It is a subclass of Common.
     """
-
-    def on_init(self):
-        """ The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
-        return self.OnInit()
-
-    def on_tear_down(self):
-        """ Called before the component is terminated. Use it to freee any structures."""
-        return self.OnTearDown()
-
-    def on_connected(self):
-        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
-        return self.OnConnected()
-
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
-        self.on_connected()
-        return
-
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
-        self.on_init()
-        return
-
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
-        self.on_tear_down()
-        return
         
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
@@ -173,24 +144,6 @@ class _BusinessHost(_Common):
         :return: The return value is a Future object.
         """
         return self.send_request_async(target,request,description)
-
-    def OnInit(self):
-        """ DEPRECATED : use on_init
-        The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
-        return 
-
-    def OnTearDown(self):
-        """ DEPRECATED : use on_tear_down
-        Called before the component is terminated. Use it to freee any structures.
-        """
-        return 
-
-    def OnConnected(self):
-        """ DEPRECATED : use on_connected
-        The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
-        return 
 
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
