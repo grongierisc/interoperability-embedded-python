@@ -2,6 +2,15 @@ import iris
 import os
 import ast
 
+def raise_on_error(sc):
+    """
+    If the status code is an error, raise an exception
+    
+    :param sc: The status code returned by the Iris API
+    """
+    if iris.system.Status.IsError(sc):
+        raise RuntimeError(iris.system.Status.GetOneStatusText(sc))
+
 def register_component(module:str,classname:str,path:str,overwrite:int,iris_classname:str):
     """
     It registers a component in the Iris database.
