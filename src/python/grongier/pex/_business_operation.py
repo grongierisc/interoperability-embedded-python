@@ -29,7 +29,7 @@ class _BusinessOperation(_BusinessHost):
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handle_current
+        self.iris_handle = handle_current
         if type(handle_partner).__module__.find('iris') == 0:
             if handle_partner._IsA("Grongier.PEX.OutboundAdapter"):
                 module = importlib.import_module(handle_partner.GetModule())

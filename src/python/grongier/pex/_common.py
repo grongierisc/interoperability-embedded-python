@@ -8,7 +8,7 @@ class _Common():
 
     INFO_URL: str
     ICON_URL: str
-    irisHandle = None
+    iris_handle = None
 
     def on_init(self):
         """ The on_init() method is called when the component is started.

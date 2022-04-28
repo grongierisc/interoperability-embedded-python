@@ -29,7 +29,7 @@ class _BusinessHost(_Common):
         """
         if self._is_message_instance(request):
             request = self._serialize(request)
-        return_object = self.irisHandle.dispatchSendRequestSync(target,request,timeout,description)
+        return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
         if self._is_message_instance(return_object):
             return_object = self._deserialize(return_object)
         return return_object
@@ -48,7 +48,7 @@ class _BusinessHost(_Common):
         """
         if self._is_message_instance(request):
             request = self._serialize(request)
-        self.irisHandle.dispatchSendRequestAsync(target,request,description)
+        self.iris_handle.dispatchSendRequestAsync(target,request,description)
         return
 
 

@@ -53,7 +53,7 @@ class _BusinessProcess(_BusinessHost):
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handle_current
+        self.iris_handle = handle_current
         return
 
     def _save_persistent_properties(self, host_object):
@@ -151,7 +151,7 @@ class _BusinessProcess(_BusinessHost):
         """
         if self._is_message_instance(response):
             response = self._serialize(response)
-        self.irisHandle.dispatchReply(response)
+        self.iris_handle.dispatchReply(response)
         return
 
     def SetTimer(self, timeout, completionKey=None):
@@ -162,7 +162,7 @@ class _BusinessProcess(_BusinessHost):
             which represents 15 seconds of processor time.
         completionKey: a string that will be returned with the response if the maximum time is exceeded.
         """
-        self.irisHandle.dispatchSetTimer(timeout, completionKey)
+        self.iris_handle.dispatchSetTimer(timeout, completionKey)
         return
 
     def OnRequest(self, request):

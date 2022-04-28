@@ -6,6 +6,6 @@ class _OutboundAdapter(_Common):
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
-        self.irisHandle = handle_current
+        self.iris_handle = handle_current
         self.BusinessHost = handle_partner
         return
