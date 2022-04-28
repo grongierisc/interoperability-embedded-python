@@ -124,20 +124,6 @@ class FileOperationWithIrisAdapter(BusinessOperation):
 
         return
 
-class MyOperation(BusinessOperation):
-
-    def on_message(self, request):
-        self.log_info('hello')
-        return
-
-    def my_request(self,request:MyRequest):
-        return iris.cls('Ens.StringResponse')._New(request.ma_string)
-
-    def my_iris(self,request:'iris.Ens.Request'):
-        self.log_info(self.maVar)
-        return MyMessage('toto')
-
-
 if __name__ == "__main__":
     EmailOperationWithIrisAdapter._get_info()
     crud_person = EmailOperationWithIrisAdapter()
