@@ -308,7 +308,7 @@ _utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOpera
 
 ## 7.7. Direct use of Grongier.PEX
 
-If you don't want to use the RegisterComponent util. You can add a Grongier.PEX.Business component and configure the properties :
+If you don't want to use the register_component util. You can add a Grongier.PEX.BusinessService component and configure the properties :
 - %module :
   - Module name of your python code
 - %classname :

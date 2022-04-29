@@ -4,7 +4,12 @@ from message import PostMessage
 from obj import PostClass
 
 class FilterPostRoutingRule(BusinessProcess):
-    
+    """
+    This process receive a PostMessage containing a reddit post.
+    It then understand if the post is about a dog or a cat or nothing and
+    fill the right infomation inside the PostMessage before sending it to
+    the FileOperation operation.
+    """
     def on_init(self):
         
         if not hasattr(self,'target'):

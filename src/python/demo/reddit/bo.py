@@ -12,7 +12,10 @@ import smtplib
 from email.mime.text import MIMEText
 
 class EmailOperation(BusinessOperation):
-
+    """
+    This operation receive a PostMessage and send an email with all the
+    important information to the concerned company ( dog or cat company )
+    """
     def on_message(self, request):
 
         sender = 'admin@example.com'
@@ -33,7 +36,11 @@ class EmailOperation(BusinessOperation):
             print("Successfully sent email")
 
 class EmailOperationWithIrisAdapter(BusinessOperation):
-
+    """
+    This operation receive a PostMessage and send an email with all the
+    important information to the concerned company ( dog or cat company ) using the
+    iris adapter EnsLib.EMail.OutboundAdapter
+    """
     def get_adapter_type():
         """
         Name of the registred Adapter
@@ -61,7 +68,10 @@ class EmailOperationWithIrisAdapter(BusinessOperation):
         return self.Adapter.SendMail(mail_message)
 
 class FileOperation(BusinessOperation):
-
+    """
+    This operation receive a PostMessage and write down in the right company
+    .txt all the important information and the time of the operation
+    """
     def on_init(self):
         if hasattr(self,'path'):
             os.chdir(self.path)
@@ -96,7 +106,11 @@ class FileOperation(BusinessOperation):
             raise e
 
 class FileOperationWithIrisAdapter(BusinessOperation):
-
+    """
+    This operation receive a PostMessage and write down in the right company
+    .txt all the important information and the time of the operation using the iris
+    adapter EnsLib.File.OutboundAdapter
+    """
     def get_adapter_type():
         """
         Name of the registred Adapter
