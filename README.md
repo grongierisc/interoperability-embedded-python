@@ -38,39 +38,39 @@ from grongier.pex import BusinessOperation,Message
 
 class MyBusinessOperation(BusinessOperation):
     
-    def OnInit(self):
+    def on_init(self):
         #This method is called when the component is becoming active in the production
-        print("[Python] ...MyBusinessOperation:OnInit() is called")
-        self.LOGINFO("Operation OnInit")
+        print("[Python] ...MyBusinessOperation:on_init() is called")
+        self.log_info("Operation on_init")
         return
 
-    def OnTeardown(self):
+    def on_teardown(self):
         #This method is called when the component is becoming inactive in the production
-        print("[Python] ...MyBusinessOperation:OnTeardown() is called")
+        print("[Python] ...MyBusinessOperation:on_teardown() is called")
         return
 
-    def OnMessage(self, messageInput:MyRequest):
+    def on_message(self, message_input:MyRequest):
         # called from service/process/operation, message is of type MyRequest with property requestString
-        print("[Python] ...MyBusinessOperation:OnMessage() is called with message:"+messageInput.requestString)
-        self.LOGINFO("Operation OnMessage")
-        response = MyResponse("...MyBusinessOperation:OnMessage() echos")
+        print("[Python] ...MyBusinessOperation:on_message() is called with message:"+message_input.request_string)
+        self.log_info("Operation on_message")
+        response = MyResponse("...MyBusinessOperation:on_message() echos")
         return response
 
 @dataclass
 class MyRequest(Message):
 
-    requestString:str = None
+    request_string:str = None
 
 @dataclass
 class MyResponse(Message):
 
-    myString:str = None
+    my_string:str = None
 
 ```
 
 ## 1.3. Regsiter a component 
 
-Thanks to the method Grongier.PEX.Utils.RegisterComponent() : 
+Thanks to the method grongier.pex._utils.register_component() : 
 
 Start an embedded python shell :
 
@@ -80,38 +80,54 @@ Start an embedded python shell :
 
 Then use this class method to add a new py file to the component list for interoperability.
 ```python
-from grongier.pex import Utils
+from grongier.pex import _utils
 
-Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+_utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
-from grongier.pex import Utils
+from grongier.pex import _utils
 
-Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+_utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
 This is a hack, this not for production.
 # 2. Demo
 
 The production has four component in pure python :
- - Two Business Services :
-   - Grongier.PEX.MyCombinedBusinessService, which sent continually sync messages to an business operation
+ - Two Business `Services` :
+<br>
+<br>
+   - `Grongier.PEX.MyCombinedBusinessService`, which sent continually sync messages to an business operation
      - Thoses messages are python objects cast JSON and stored in Grongier.PEX.Message.
      - Python code : src/python/demo/MyCombinedBusinessService.py
-   - Grongier.PEX.MyBusinessService, who basically does nothing, it's a raw business service who writes message logs
+<br>
+<br>
+   - `Grongier.PEX.MyBusinessService`, who basically does nothing, it's a raw business service who writes message logs
      - Python code : src/python/demo/MyBusinessService.py
- - Two Business Operations :
-   - Grongier.PEX.BusinessOperation, which receive message from Grongier.PEX.MyCombinedBusinessService
+  
+<br>
+<br>
+
+ - Two Business `Operations` :
+<br>
+<br>
+   - `Grongier.PEX.BusinessOperation`, which receive message from Grongier.PEX.MyCombinedBusinessService
      - Python code : src/python/demo/MyBusinessOperation.py
-   - Grongier.PEX.CombinedBusinessOperation, it can receive Ens.StringRequest message and response with Ens.StringResponse
+<br>
+<br>
+   - `Grongier.PEX.CombinedBusinessOperation`, it can receive Ens.StringRequest message and response with Ens.StringResponse
      - Python code : src/python/demo/MyCombinedBusinessOperation.py
 
+<br><br>
+
+Here we can see the production and our pure python services and operations:
 <img width="1177" alt="interop-screenshot" src="https://user-images.githubusercontent.com/47849411/131305197-d19511fd-6e05-4aec-a525-c88e6ebd0971.png">
 
-New json trace for python native messages :
+<br>
 
+New json trace for python native messages :
 <img width="910" alt="json-message-trace" src="https://user-images.githubusercontent.com/47849411/131305211-b8beb2c0-438d-4afc-a6d2-f94d854373ae.png">
 
 # 3. Prerequisites
@@ -169,12 +185,10 @@ It will start running some code sample.
 A dockerfile which install some python dependancies (pip, venv) and sudo in the container for conviencies.
 Then it create the dev directory and copy in it this git repository.
 
-It starts IRIS and imports Titanics csv files, then it activates **%Service_CallIn** for **Python Shell**.
+It starts IRIS and activates **%Service_CallIn** for **Python Shell**.
 Use the related docker-compose.yml to easily setup additional parametes like port number and where you map keys and host folders.
 
 This dockerfile ends with the installation of requirements for python modules.
-
-The last part is about installing jupyter notebook and it's kernels.
 
 Use .env/ file to adjust the dockerfile being used in docker-compose.
 
@@ -212,11 +226,11 @@ src
 │       ├── OutboundAdapter.cls
 │       ├── Python.cls
 │       ├── Test.cls
-│       └── Utils.cls
+│       └── _utils.cls
 ├── PEX // Some example of wrapped classes
 │   └── Production.cls
 └── python
-    ├── demo // Actual python code to rnu this demo
+    ├── demo // Actual python code to run this demo
     |   `-- reddit
     |       |-- adapter.py
     |       |-- bo.py
@@ -258,19 +272,19 @@ Subclass from grongier.pex.OutboundAdapter in Python. Implement required action 
 
 To implement BusinessService in Python, users do the following:
 
-Subclass from grongier.pex.BusinessService in Python. Override method OnProcessInput().
+Subclass from grongier.pex.BusinessService in Python. Override method on_process_input().
 
 ## 7.4. BusinessProcess
 
 To implement BusinessProcess in Python, users do the following:
 
-Subclass from grongier.pex.BusinessProcess in Python. Override methods OnRequest(), OnResponse() and OnComplete().
+Subclass from grongier.pex.BusinessProcess in Python. Override methods on_request(), on_response() and on_complete().
 
 ## 7.5. BusinessOperation
 
 To implement BusinessOperation in Python, users do the following:
 
-Subclass from grongier.pex.BusinessOperation in Python. Override method OnMessage().
+Subclass from grongier.pex.BusinessOperation in Python. Override method on_message().
 
 ## 7.6. Regsiter a component 
 
@@ -282,19 +296,19 @@ Start an embedded python shell :
 
 Then use this class method to add a new py file to the component list for interoperability.
 ```python
-from grongier.pex import Utils
-Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+from grongier.pex import _utils
+_utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
-from grongier.pex import Utils
-Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+from grongier.pex import _utils
+_utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
 ## 7.7. Direct use of Grongier.PEX
 
-If you don't want to use the RegisterComponent util. You can add an Grongier.PEX.Business* component and configure the properties :
+If you don't want to use the RegisterComponent util. You can add a Grongier.PEX.Business component and configure the properties :
 - %module :
   - Module name of your python code
 - %classname :
@@ -304,7 +318,6 @@ If you don't want to use the RegisterComponent util. You can add an Grongier.PEX
     - This can one or more Classpaths (separated by '|' character) needed in addition to PYTHON_PATH
 
 e.g :
-
 <img width="800" alt="component-config" src="https://user-images.githubusercontent.com/47849411/131316308-e1898b19-11df-433b-b1c6-7f69d5cc9974.png">
 
 # 8. Credits
