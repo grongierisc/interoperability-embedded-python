@@ -289,7 +289,7 @@ from grongier.pex import BusinessOperation
 ```
 
 ## 7.2. The `common` class
-The common class shouldn't be called by the user, it defines almost all the other classes that inherit from it.<br>
+The common class shouldn't be called by the user, it defines almost all the other classes.<br>
 This class defines:
 
 `on_init`: The on_init() method is called when the component is started.<br> Use the on_init() method to initialize any structures needed by the component.
@@ -310,8 +310,7 @@ This class defines:
 The business host class shouldn't be called by the user, it is the base class for all the business classes.<br>
 This class defines:
 
-`send_request_sync`: Send the specified message to the target business process or business operation synchronously.
-            
+`send_request_sync`: Send the specified message to the target business process or business operation synchronously.            
 **Parameters**:<br>
 - **target**: a string that specifies the name of the business process or operation to receive the request. <br>
     The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
@@ -324,8 +323,9 @@ description: an optional string parameter that sets a description property in th
 - **Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
-`send_request_async`:Send the specified message to the target business process or business operation asynchronously.
 
+
+`send_request_async`:Send the specified message to the target business process or business operation asynchronously.
 **Parameters**:<br>
 - **target**: a string that specifies the name of the business process or operation to receive the request. <br>
     The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
@@ -334,6 +334,8 @@ TypeError: if request is not of type Message or IRISObject.
 - **description**: an optional string parameter that sets a description property in the message header. The default is None.
 - **Raises**:
 TypeError: if request is not of type Message or IRISObject.
+
+
 
 `get_adapter_type`: Name of the registred Adapter.
 
