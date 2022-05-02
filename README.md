@@ -332,7 +332,7 @@ TypeError: if request is not of type Message or IRISObject.
 - **request**: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.<br>
     If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
 - **description**: an optional string parameter that sets a description property in the message header. The default is None.
-- **Raises**:
+**Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
 
@@ -433,7 +433,7 @@ This class defines:
 
 `on_process_input`: Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.<br>
 If the business service does not specify an adapter, then the default adapter calls this method with no message and the business service is responsible for receiving the data from the external system and validating it.
-**Parameters**:
+**Parameters**:<br>
 - **message_input**: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.<br>
 The message can have any structure agreed upon by the inbound adapter and the business service. 
 
@@ -481,8 +481,8 @@ Business processes in Python are subclass from grongier.pex.BusinessProcess in P
 This class defines:
 
 `on_request`: Handles requests sent to the business process. A production calls this method whenever an initial request for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.<br>
-**Parameters**:
-**request**: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
+**Parameters**:<br>
+- **request**: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
 
 **Returns**:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return
@@ -491,13 +491,14 @@ to the production component that sent the initial message.
 `on_response`: Handles responses sent to the business process in response to messages that it sent to the target.<br>
 A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.<br>
 Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.<br>
-**Parameters**:
+**Parameters**:<br>
 - **request**: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
 - **response**: An instance of IRISObject or subclass of Message that contains the response message that this business process can return to the production component that sent the initial message.
 - **callRequest**: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
 - **callResponse**: An instance of IRISObject or subclass of Message that contains the incoming response.
 - **completionKey**: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
-- **Returns**:
+- 
+**Returns**:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return
 to the production component that sent the initial message.
 
@@ -505,7 +506,8 @@ to the production component that sent the initial message.
 **Parameters**: 
 - **request**: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.<br>
 - **response**: An instance of IRISObject or subclass of Message that contains the response message that this business process can return to the production component that sent the initial message.
-- **Returns**:
+
+**Returns**:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return to the production component that sent the initial message.
 
 Example of a business process ( situated in the src/python/demo/reddit/bp.py file ):
@@ -573,7 +575,8 @@ If the operation has an adapter, it uses the Adapter.invoke() method to call the
 If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method.<br>
 **Parameters**:
 - **request**: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
-- **Returns**:
+- 
+**Returns**:
 The response object
 
 Example of a business operation ( situated in the src/python/demo/reddit/bo.py file ):
@@ -640,7 +643,8 @@ This class defines:
 **Parameters**:
 - **connection**: an IRISConnection object that specifies the connection to an IRIS instance for Java.
 - **target**: a string that specifies the name of the business service in the production definition.
-- **Returns**:
+- 
+**Returns**:
 an object that contains an instance of IRISBusinessService
 
 WIP example
