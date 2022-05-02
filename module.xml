@@ -3,7 +3,7 @@
   <Document name="pex-embbeded-python.ZPM">
     <Module>
       <Name>pex-embbeded-python</Name>
-      <Version>1.3.4</Version>
+      <Version>1.3.5</Version>
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
       <SystemRequirements Version=">=2021.2" Interoperability="enabled" />
