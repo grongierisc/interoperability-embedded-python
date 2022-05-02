@@ -10,7 +10,7 @@ from obj import PostClass
 
 class RedditService(BusinessService):
     """
-    This service use and Ens.InboundAdapter to, on_process_input every 5
+    This service use an Ens.InboundAdapter to, on_process_input every 5
     seconds, use requests to fetch self.limit posts as data from the reddit
     API before calling the FilterPostRoutingRule process.
     """
@@ -83,8 +83,8 @@ class RedditService(BusinessService):
 
 class RedditServiceWithIrisAdapter(BusinessService):
     """
-    This service use our objectscript dc.Reddit.InboundAdapter to receive post from reddit and
-    call the FilterPostRoutingRule process.
+    This service use our objectscript dc.Reddit.InboundAdapter to receive post
+    from reddit and call the FilterPostRoutingRule process.
     """
     def get_adapter_type():
         """
@@ -106,8 +106,8 @@ class RedditServiceWithIrisAdapter(BusinessService):
 
 class RedditServiceWithPexAdapter(BusinessService):
     """
-    This service use our python Python.RedditInboundAdapter to receive post from reddit and
-    call the FilterPostRoutingRule process.
+    This service use our python Python.RedditInboundAdapter to receive post
+    from reddit and call the FilterPostRoutingRule process.
     """
     def get_adapter_type():
         """

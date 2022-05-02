@@ -16,7 +16,7 @@ class _Common():
         return self.OnInit()
 
     def on_tear_down(self):
-        """ Called before the component is terminated. Use it to freee any structures."""
+        """ Called before the component is terminated. Use it to free any structures."""
         return self.OnTearDown()
 
     def on_connected(self):
@@ -179,7 +179,7 @@ class _Common():
         return ret
 
     def log_info(self, message):
-        """ Write a log entry of type "info". :og entries can be viewed in the management portal.
+        """ Write a log entry of type "info". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -196,7 +196,7 @@ class _Common():
         return
 
     def log_alert(self, message):
-        """ Write a log entry of type "alert". :og entries can be viewed in the management portal.
+        """ Write a log entry of type "alert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -228,7 +228,7 @@ class _Common():
         return
 
     def log_error(self, message):
-        """ Write a log entry of type "error". :og entries can be viewed in the management portal.
+        """ Write a log entry of type "error". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -244,7 +244,7 @@ class _Common():
         return
 
     def log_assert(self, message):
-        """ Write a log entry of type "assert". :og entries can be viewed in the management portal.
+        """ Write a log entry of type "assert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -261,7 +261,7 @@ class _Common():
 
     def LOGINFO(self, message):
         """ DECAPRETED : use log_info
-        Write a log entry of type "info". :og entries can be viewed in the management portal.
+        Write a log entry of type "info". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -270,7 +270,7 @@ class _Common():
 
     def LOGALERT(self, message):
         """ DECAPRETED : use log_alert
-        Write a log entry of type "alert". :og entries can be viewed in the management portal.
+        Write a log entry of type "alert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -288,7 +288,7 @@ class _Common():
 
     def LOGERROR(self, message):
         """ DECAPRETED : use log_error
-        Write a log entry of type "error". :og entries can be viewed in the management portal.
+        Write a log entry of type "error". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -297,7 +297,7 @@ class _Common():
 
     def LOGASSERT(self, message):
         """ DECAPRETED : use log_assert
-        Write a log entry of type "assert". :og entries can be viewed in the management portal.
+        Write a log entry of type "assert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.

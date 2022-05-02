@@ -8,7 +8,7 @@ from grongier.pex._outbound_adapter import _OutboundAdapter
 from grongier.pex._message import _Message
 from grongier.pex._director import _Director
 
-import grongier.pex._utils as _utils
+import grongier.pex._utils as Utils
 
 class InboundAdapter(_InboundAdapter): pass
 class OutboundAdapter(_OutboundAdapter): pass
