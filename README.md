@@ -324,7 +324,7 @@ description: an optional string parameter that sets a description property in th
 **Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
-
+<br><br>
 
 `send_request_async`: Send the specified message to the target business process or business operation asynchronously.
 **Parameters**:<br>
@@ -337,7 +337,7 @@ TypeError: if request is not of type Message or IRISObject.
 **Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
-
+<br><br>
 
 `get_adapter_type`: Name of the registred Adapter.
 
@@ -439,6 +439,7 @@ If the business service does not specify an adapter, then the default adapter ca
 - **message_input**: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.<br>
 The message can have any structure agreed upon by the inbound adapter and the business service. 
 
+<br><br>
 
 Example of a business service ( situated in the src/python/demo/reddit/bs.py file ):
 ```python
@@ -490,6 +491,8 @@ This class defines:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return
 to the production component that sent the initial message.
 
+<br><br>
+
 `on_response`: Handles responses sent to the business process in response to messages that it sent to the target.<br>
 A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.<br>
 Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.<br>
@@ -504,6 +507,8 @@ Typically this is a response to an asynchronous request made by the business pro
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return
 to the production component that sent the initial message.
 
+<br><br>
+
 `on_complete`: Called after the business process has received and handled all responses to requests it has sent to targets.<br>
 **Parameters**: 
 - **request**: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.<br>
@@ -511,6 +516,8 @@ to the production component that sent the initial message.
 
 **Returns**:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return to the production component that sent the initial message.
+
+<br><br>
 
 Example of a business process ( situated in the src/python/demo/reddit/bp.py file ):
 ```python
