@@ -30,7 +30,7 @@ class _BusinessHost(_Common):
         if self._is_message_instance(request):
             request = self._serialize(request)
         return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        if self._is_message_instance(return_object):
+        if isinstance(return_object, str):
             return_object = self._deserialize(return_object)
         return return_object
 
