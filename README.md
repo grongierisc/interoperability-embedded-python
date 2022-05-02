@@ -318,20 +318,22 @@ This class defines:
     If the target is a build-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
 - **timeout**: an optional integer that specifies the number of seconds to wait before treating the send request as a failure. The default value is -1, which means wait forever.<br>
 description: an optional string parameter that sets a description property in the message header. The default is None.
-- **Returns**:
+
+**Returns**:
     the response object from target.
-- **Raises**:
+**Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
 
 
-`send_request_async`:Send the specified message to the target business process or business operation asynchronously.
+`send_request_async`: Send the specified message to the target business process or business operation asynchronously.
 **Parameters**:<br>
 - **target**: a string that specifies the name of the business process or operation to receive the request. <br>
     The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
 - **request**: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.<br>
     If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
 - **description**: an optional string parameter that sets a description property in the message header. The default is None.
+
 **Raises**:
 TypeError: if request is not of type Message or IRISObject.
 
@@ -497,7 +499,7 @@ Typically this is a response to an asynchronous request made by the business pro
 - **callRequest**: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
 - **callResponse**: An instance of IRISObject or subclass of Message that contains the incoming response.
 - **completionKey**: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
-- 
+
 **Returns**:
 An instance of IRISObject or subclass of Message that contains the response message that this business process can return
 to the production component that sent the initial message.
@@ -575,7 +577,7 @@ If the operation has an adapter, it uses the Adapter.invoke() method to call the
 If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method.<br>
 **Parameters**:
 - **request**: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
-- 
+
 **Returns**:
 The response object
 
@@ -643,7 +645,7 @@ This class defines:
 **Parameters**:
 - **connection**: an IRISConnection object that specifies the connection to an IRIS instance for Java.
 - **target**: a string that specifies the name of the business service in the production definition.
-- 
+
 **Returns**:
 an object that contains an instance of IRISBusinessService
 
