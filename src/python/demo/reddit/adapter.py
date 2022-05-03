@@ -4,7 +4,10 @@ import iris
 import json
 
 class RedditInboundAdapter(InboundAdapter):
-    
+    """
+    This adapter use requests to fetch self.limit posts as data from the reddit
+    API before calling process_input for each post.
+    """
     def on_init(self):
         
         if not hasattr(self,'feed'):

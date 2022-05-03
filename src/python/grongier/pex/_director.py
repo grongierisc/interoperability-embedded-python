@@ -22,7 +22,7 @@ class _Director():
 
     @staticmethod
     def create_business_service(target):
-        """ The create_business_service() method initiates the specifiied business service.
+        """ The create_business_service() method initiates the specified business service.
 
         Parameters:
         connection: an IRISConnection object that specifies the connection to an IRIS instance for Java.

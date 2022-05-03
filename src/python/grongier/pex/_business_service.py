@@ -21,7 +21,7 @@ class _BusinessService(_BusinessHost):
         and the business service is responsible for receiving the data from the external system and validating it.
 
         Parameters:
-        messageInput: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
+        message_input: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
             The message can have any structure agreed upon by the inbound adapter and the business service. 
         """
         return self.OnProcessInput(message_input)

@@ -9,7 +9,11 @@ from message import PostMessage
 from obj import PostClass
 
 class RedditService(BusinessService):
-
+    """
+    This service use an Ens.InboundAdapter to, on_process_input every 5
+    seconds, use requests to fetch self.limit posts as data from the reddit
+    API before calling the FilterPostRoutingRule process.
+    """
     def get_adapter_type():
         """
         Name of the registred Adapter
@@ -78,7 +82,10 @@ class RedditService(BusinessService):
 
 
 class RedditServiceWithIrisAdapter(BusinessService):
-
+    """
+    This service use our objectscript dc.Reddit.InboundAdapter to receive post
+    from reddit and call the FilterPostRoutingRule process.
+    """
     def get_adapter_type():
         """
         Name of the registred Adapter
@@ -98,7 +105,10 @@ class RedditServiceWithIrisAdapter(BusinessService):
         return
 
 class RedditServiceWithPexAdapter(BusinessService):
-
+    """
+    This service use our python Python.RedditInboundAdapter to receive post
+    from reddit and call the FilterPostRoutingRule process.
+    """
     def get_adapter_type():
         """
         Name of the registred Adapter
