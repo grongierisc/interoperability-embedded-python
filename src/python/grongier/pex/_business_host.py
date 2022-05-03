@@ -105,11 +105,21 @@ class _BusinessHost(_Common):
     def _dataclass_from_dict(self,klass, dikt):
         try:
             fieldtypes = klass.__annotations__
-            return klass(**{f: self._dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
+            ret = klass(
+                        **{
+                            f: (self._dataclass_from_dict(fieldtypes[f], dikt[f])) for f in fieldtypes
+                          }
+                    )
+            # unexpected attr in dikt not in klass fields
+            for key,val in dikt.items():
+                if key not in fieldtypes:
+                    setattr(ret, key, val)
+            return ret
         except AttributeError:
             if isinstance(dikt, (tuple, list)):
-                return [self._dataclass_from_dict(klass.__args__[0], f) for f in dikt]
+                return [self._dataclass_from_dict(klass.__args__[0], f) for f in fieldtypes]
             return dikt
+
 
     @staticmethod
     def OnGetConnections():
