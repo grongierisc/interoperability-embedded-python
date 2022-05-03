@@ -104,7 +104,10 @@ class _BusinessHost(_Common):
 
     def _dataclass_from_dict(self,klass, dikt):
         try:
-            fieldtypes = klass.__annotations__
+            try:
+                fieldtypes = klass.__annotations__
+            except Exception as e:
+                fieldtypes = []
             ret = klass(
                         **{
                             f: (self._dataclass_from_dict(fieldtypes[f], dikt[f])) for f in fieldtypes
