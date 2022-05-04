@@ -5,6 +5,8 @@ import base64
 import json
 import importlib
 
+from grongier.dacite import from_dict
+
 from grongier.pex._common import _Common
 
 class _BusinessHost(_Common):
@@ -103,25 +105,17 @@ class _BusinessHost(_Common):
             return None
 
     def _dataclass_from_dict(self,klass, dikt):
+        ret = from_dict(klass, dikt)
+        
         try:
-            try:
-                fieldtypes = klass.__annotations__
-            except Exception as e:
-                fieldtypes = []
-            ret = klass(
-                        **{
-                            f: (self._dataclass_from_dict(fieldtypes[f], dikt[f])) for f in fieldtypes
-                          }
-                    )
-            # unexpected attr in dikt not in klass fields
-            for key,val in dikt.items():
-                if key not in fieldtypes:
-                    setattr(ret, key, val)
-            return ret
-        except AttributeError:
-            if isinstance(dikt, (tuple, list)):
-                return [self._dataclass_from_dict(klass.__args__[0], f) for f in fieldtypes]
-            return dikt
+            fieldtypes = klass.__annotations__
+        except Exception as e:
+            fieldtypes = []
+        
+        for key,val in dikt.items():
+            if key not in fieldtypes:
+                setattr(ret, key, val)
+        return ret
 
 
     @staticmethod
