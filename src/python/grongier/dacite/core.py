@@ -5,12 +5,10 @@ from grongier.dacite.config import Config
 from grongier.dacite.data import Data
 from grongier.dacite.dataclasses import get_default_value_for_field, create_instance, DefaultValueNotFoundError, get_fields
 from grongier.dacite.exceptions import (
-    WrongTypeError,
     DaciteError,
     UnionMatchError,
     MissingValueError,
     DaciteFieldError,
-    UnexpectedDataError,
     StrictUnionMatchError,
 )
 from grongier.dacite.types import (
@@ -52,8 +50,6 @@ def from_dict(data_class: Type[T], data: Data, config: Optional[Config] = None) 
             except DaciteFieldError as error:
                 error.update_path(field.name)
                 raise
-            if config.check_types and not is_instance(value, field_type):
-                raise WrongTypeError(field_path=field.name, field_type=field_type, value=value)
         except KeyError:
             try:
                 value = get_default_value_for_field(field)
