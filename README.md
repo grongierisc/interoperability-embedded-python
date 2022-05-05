@@ -107,12 +107,15 @@ This is a hack, this not for production.
 # 2. Demo
 
 The demo can be found inside `src/python/demo/reddit/` and is composed of :
-- An `adapter.py` file that holds a `RedditInboundAdapter` that will, given a service, fetch Reddit recent posts
+- An `adapter.py` file that holds a `RedditInboundAdapter` that will, given a service, fetch Reddit recent posts.
 <br>
+
 - A `bs.py` file that holds three `services` that does the same thing, they will call our `Process` and send it reddit post. One work on his own, one use the `RedditInBoundAdapter` we talked about earlier and the last one use a reddit inbound adapter coded in ObjectScript.
 <br>
+
 - A `bp.py` file that holds a `FilterPostRoutingRule` process that will analyze our reddit posts and send it to our `operations` if it contains certain words.
 <br>
+
 - A `bo.py` file that holds :
     - Two **email operations** that will send a mail to a certain company depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
     - Two **file operations** that will write in a text file depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
