@@ -7,7 +7,8 @@ This proof of concept aims to show how the **iris interoperability framework** c
 - [1. interoperability-embedded-python](#1-interoperability-embedded-python)
   - [1.1. Table of Contents](#11-table-of-contents)
   - [1.2. Example](#12-example)
-  - [1.3. Regsiter a component](#13-regsiter-a-component)
+  - [1.3. Register a component](#13-register-a-component)
+- [2. Demo](#2-demo)
 - [3. Prerequisites](#3-prerequisites)
 - [4. Installation](#4-installation)
   - [4.1. With Docker](#41-with-docker)
@@ -83,7 +84,7 @@ class MyResponse(Message):
 
 ```
 
-## 1.3. Regsiter a component 
+## 1.3. Register a component 
 
 Thanks to the method grongier.pex.Utils.register_component() : 
 
@@ -108,6 +109,25 @@ Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperat
 ```
 
 This is a hack, this not for production.
+# 2. Demo
+
+The demo can be found inside `src/python/demo/reddit/` and is composed of :
+- An `adapter.py` file that holds a `RedditInboundAdapter` that will, given a service, fetch Reddit recent posts.
+<br>
+
+- A `bs.py` file that holds three `services` that does the same thing, they will call our `Process` and send it reddit post. One work on his own, one use the `RedditInBoundAdapter` we talked about earlier and the last one use a reddit inbound adapter coded in ObjectScript.
+<br>
+
+- A `bp.py` file that holds a `FilterPostRoutingRule` process that will analyze our reddit posts and send it to our `operations` if it contains certain words.
+<br>
+
+- A `bo.py` file that holds :
+    - Two **email operations** that will send a mail to a certain company depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
+    - Two **file operations** that will write in a text file depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
+<br>
+
+New json trace for python native messages :
+<img width="910" alt="json-message-trace" src="https://user-images.githubusercontent.com/47849411/131305211-b8beb2c0-438d-4afc-a6d2-f94d854373ae.png">
 
 # 3. Prerequisites
 Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker desktop](https://www.docker.com/products/docker-desktop) installed.
