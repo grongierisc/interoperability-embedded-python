@@ -5,6 +5,8 @@ import base64
 import json
 import importlib
 
+from grongier.dacite import from_dict
+
 from grongier.pex._common import _Common
 
 class _BusinessHost(_Common):
@@ -30,7 +32,7 @@ class _BusinessHost(_Common):
         if self._is_message_instance(request):
             request = self._serialize(request)
         return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        if self._is_message_instance(return_object):
+        if isinstance(return_object, str):
             return_object = self._deserialize(return_object)
         return return_object
 
@@ -103,13 +105,18 @@ class _BusinessHost(_Common):
             return None
 
     def _dataclass_from_dict(self,klass, dikt):
+        ret = from_dict(klass, dikt)
+        
         try:
             fieldtypes = klass.__annotations__
-            return klass(**{f: self._dataclass_from_dict(fieldtypes[f], dikt[f]) for f in dikt})
-        except AttributeError:
-            if isinstance(dikt, (tuple, list)):
-                return [self._dataclass_from_dict(klass.__args__[0], f) for f in dikt]
-            return dikt
+        except Exception as e:
+            fieldtypes = []
+        
+        for key,val in dikt.items():
+            if key not in fieldtypes:
+                setattr(ret, key, val)
+        return ret
+
 
     @staticmethod
     def OnGetConnections():
