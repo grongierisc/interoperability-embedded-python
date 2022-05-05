@@ -7,7 +7,7 @@ This proof of concept aims to show how the **iris interoperability framework** c
 - [1. interoperability-embedded-python](#1-interoperability-embedded-python)
   - [1.1. Table of Contents](#11-table-of-contents)
   - [1.2. Example](#12-example)
-  - [1.3. Regsiter a component](#13-regsiter-a-component)
+  - [1.3. Register a component](#13-register-a-component)
 - [2. Demo](#2-demo)
 - [3. Prerequisites](#3-prerequisites)
 - [4. Installation](#4-installation)
@@ -79,7 +79,7 @@ class MyResponse(Message):
 
 ```
 
-## 1.3. Regsiter a component 
+## 1.3. Register a component 
 
 Thanks to the method grongier.pex.Utils.register_component() : 
 
@@ -106,24 +106,16 @@ Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperat
 This is a hack, this not for production.
 # 2. Demo
 
-The production has four component in pure python :
- - Two Business `Services` :<br><br>
-   - `Grongier.PEX.MyCombinedBusinessService`, which sent continually sync messages to an business operation
-     - Thoses messages are python objects cast JSON and stored in Grongier.PEX.Message.
-     - Python code : src/python/demo/MyCombinedBusinessService.py<br><br>
-   - `Grongier.PEX.MyBusinessService`, who basically does nothing, it's a raw business service who writes message logs
-     - Python code : src/python/demo/MyBusinessService.py<br><br>
- - Two Business `Operations` :<br><br>
-   - `Grongier.PEX.BusinessOperation`, which receive message from Grongier.PEX.MyCombinedBusinessService
-     - Python code : src/python/demo/MyBusinessOperation.py<br><br>
-   - `Grongier.PEX.CombinedBusinessOperation`, it can receive Ens.StringRequest message and response with Ens.StringResponse
-     - Python code : src/python/demo/MyCombinedBusinessOperation.py
-
-<br><br>
-
-Here we can see the production and our pure python services and operations:
-<img width="1177" alt="interop-screenshot" src="https://user-images.githubusercontent.com/47849411/131305197-d19511fd-6e05-4aec-a525-c88e6ebd0971.png">
-
+The demo can be found inside `src/python/demo/reddit/` and is composed of :
+- An `adapter.py` file that holds a `RedditInboundAdapter` that will, given a service, fetch Reddit recent posts
+<br>
+- A `bs.py` file that holds three `services` that does the same thing, they will call our `Process` and send it reddit post. One work on his own, one use the `RedditInBoundAdapter` we talked about earlier and the last one use a reddit inbound adapter coded in ObjectScript.
+<br>
+- A `bp.py` file that holds a `FilterPostRoutingRule` process that will analyze our reddit posts and send it to our `operations` if it contains certain words.
+<br>
+- A `bo.py` file that holds :
+    - Two **email operations** that will send a mail to a certain company depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
+    - Two **file operations** that will write in a text file depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
 <br>
 
 New json trace for python native messages :
