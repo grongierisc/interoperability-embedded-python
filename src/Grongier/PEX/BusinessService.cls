@@ -21,9 +21,7 @@ Method OnProcessInput(request As %RegisteredObject, Output response As %Register
 		try {
 			set ..%class."_wait_for_next_call_interval" = ..%WaitForNextCallInterval
 		} catch {}
-		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
 		set response = ..%class."_dispatch_on_process_input"(request)
-
 		try {
 			set ..%WaitForNextCallInterval = ..%class."_wait_for_next_call_interval"
 		} catch {}

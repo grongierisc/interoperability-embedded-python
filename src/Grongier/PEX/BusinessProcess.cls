@@ -11,7 +11,6 @@ Property persistentProperties As array Of %String(MAXLEN = "");
 
 Method dispatchReply(response)
 {
-	if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	set tSC = ..Reply(response)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit
@@ -28,9 +27,7 @@ Method OnRequest(request As %Persistent, Output response As %Persistent) As %Sta
 {
 	set tSC = $$$OK
 	try {
-		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
 		set response = ..%class."_dispatch_on_request"($this,request)
-		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}
@@ -42,12 +39,7 @@ Method OnResponse(request As %Persistent, Output response As %Persistent, callRe
 {
 	set tSC = $$$OK
 	try {
-		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
-		if $isObject(response),response.%IsA("Grongier.PEX.Message") set response = ..serialize(response)
-		if $isObject(callRequest),callRequest.%IsA("Grongier.PEX.Message") set callRequest = ..serialize(callRequest)
-		if $isObject(callResponse),callResponse.%IsA("Grongier.PEX.Message") set callResponse = ..serialize(callResponse)
 		set response = ..%class."_dispatch_on_response"($this,request,response,callRequest,callResponse,pCompletionKey)
-		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}
@@ -59,10 +51,7 @@ Method OnComplete(request As %Library.Persistent, ByRef response As %Library.Per
 	set tSC = $$$OK
 	try {
 		set tSC = ..Connect() quit:$$$ISERR(tSC)
-		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
-		if $isObject(response),response.%IsA("Grongier.PEX.Message") set response = ..serialize(response)
 		set response = ..%class."_dispatch_on_complete"($this,request,response)
-		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}

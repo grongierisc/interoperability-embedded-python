@@ -112,39 +112,16 @@ Method SetPropertyValues()
 
 Method dispatchSendRequestSync(target, request, timeout, description) As %String
 {
-	if request'="",$isObject(request)=0 set request = ..deserialize(request)
 	set tSC = ..SendRequestSync(target,request,.objResponse,timeout,description)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
-	if $isObject($g(objResponse)),objResponse.%IsA("Grongier.PEX.Message") set objResponse = ..serialize(objResponse)
 	quit $g(objResponse)
 }
 
 Method dispatchSendRequestAsync(target, request, description)
 {
-	if request'="",$isObject(request)=0 set request = ..deserialize(request)
 	set tSC = ..SendRequestAsync(target,request,description)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit
-}
-
-ClassMethod serialize(message As Grongier.PEX.Message) As %String
-{
-	if $g(message)=$$$NULLOREF quit ""
-	quit message.%classname_":"_message.%jsonObject.%ToJSON()
-}
-
-ClassMethod deserialize(serialized As %String = "") As Grongier.PEX.Message
-{
-	if serialized = "" {
-		set message = $$$NULLOREF
-	} else {
-		set message = ##class(Grongier.PEX.Message).%New()
-		set message.%classname = $p(serialized,":",1)
-		set json = $p(serialized,":",2,*)
-		if json="" set json = "{}"
-		set message.%jsonObject = ##class(%DynamicObject).%FromJSON(json)
-	}
-	quit message
 }
 
 }

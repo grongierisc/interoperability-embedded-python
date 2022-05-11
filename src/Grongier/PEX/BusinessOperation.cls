@@ -11,9 +11,7 @@ Method OnMessage(request As %Library.Persistent, Output response As %Library.Per
 {
 	set tSC = $$$OK
 	try {
-		if $isObject(request),request.%IsA("Grongier.PEX.Message") set request = ..serialize(request)
 		set response = ..%class."_dispatch_on_message"(request)
-		if response'="",$isObject(response)=0 set response = ..deserialize(response)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}

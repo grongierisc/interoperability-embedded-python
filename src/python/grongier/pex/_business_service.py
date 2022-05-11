@@ -38,11 +38,9 @@ class _BusinessService(_BusinessHost):
     
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
-        if isinstance(request, str):
-            request = self._deserialize(request)
+        request = self._deserialize_message(request)
         return_object = self.on_process_input(request)
-        if isinstance(return_object, str):
-            return_object = self._deserialize(return_object)
+        return_object = self._serialize_message(return_object)
         return return_object
 
     def OnProcessInput(self, message_input):

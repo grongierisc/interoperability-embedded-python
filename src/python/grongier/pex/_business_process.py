@@ -105,41 +105,31 @@ class _BusinessProcess(_BusinessHost):
     def _dispatch_on_request(self, host_object, request):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        if isinstance(request, str):
-            request = self._deserialize(request)
+        request = self._deserialize_message(request)
         return_object = self.on_request(request)
-        if self._is_message_instance(return_object):
-            return_object = self._serialize(return_object)
+        return_object = self._serialize_message(return_object)
         self._save_persistent_properties(host_object)
         return return_object
     
     def _dispatch_on_response(self, host_object, request, response, callRequest, callResponse, completionKey):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        if isinstance(request, str):
-            request = self._deserialize(request)
-        if isinstance(response, str):
-            response = self._deserialize(response)
-        if isinstance(callRequest, str):
-            callRequest = self._deserialize(callRequest)
-        if isinstance(callResponse, str):
-            callResponse = self._deserialize(callResponse)
+        request = self._deserialize_message(request)
+        response = self._deserialize_message(response)
+        callRequest = self._deserialize_message(callRequest)
+        callResponse = self._deserialize_message(callResponse)
         return_object = self.on_response(request, response, callRequest, callResponse, completionKey)
-        if self._is_message_instance(return_object):
-            return_object = self._serialize(return_object)
+        return_object = self._serialize_message(return_object)
         self._save_persistent_properties(host_object)
         return return_object
 
     def _dispatch_on_complete(self, host_object, request, response):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        if isinstance(request, str):
-            request = self._deserialize(request)
-        if isinstance(response, str):
-            response = self._deserialize(response)
+        request = self._deserialize_message(request)
+        response = self._deserialize_message(response)
         return_object = self.on_complete(request, response)
-        if self._is_message_instance(return_object):
-            return_object = self._serialize(return_object)
+        return_object = self._serialize_message(return_object)
         self._save_persistent_properties(host_object)
         return return_object
 
@@ -149,8 +139,8 @@ class _BusinessProcess(_BusinessHost):
         Parameters:
         response: An instance of IRISObject or subclass of Message that contains the response message.
         """
-        if self._is_message_instance(response):
-            response = self._serialize(response)
+
+        response = self._serialize_message(response)
         self.iris_handle.dispatchReply(response)
         return
 

@@ -45,12 +45,10 @@ class _BusinessOperation(_BusinessHost):
 
     def _dispatch_on_message(self, request):
         """ For internal use only. """
-        if isinstance(request, str):
-            request = self._deserialize(request)
+        request = self._deserialize_message(request)
         # method dispachMessage
         return_object = self._dispach_message(request)
-        if self._is_message_instance(return_object):
-            return_object = self._serialize(return_object)
+        return_object = self._serialize_message(return_object)
         return return_object
 
     def _dispach_message(self, request):

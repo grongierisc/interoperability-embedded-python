@@ -4,6 +4,7 @@ import decimal
 import base64
 import json
 import importlib
+import iris
 
 from grongier.dacite import from_dict
 
@@ -30,10 +31,11 @@ class _BusinessHost(_Common):
         TypeError: if request is not of type Message or IRISObject.
         """
         if self._is_message_instance(request):
-            request = self._serialize(request)
+            request = self._serialize_message(request)
         return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        if isinstance(return_object, str):
-            return_object = self._deserialize(return_object)
+        if type(request).__module__.find('iris') == 0:
+            if request._IsA("Grongier.PEX.Message"):
+                return_object = self._deserialize_message(return_object)
         return return_object
 
     def send_request_async(self, target, request, description=None):
@@ -49,10 +51,38 @@ class _BusinessHost(_Common):
         TypeError: if request is not of type Message or IRISObject.
         """
         if self._is_message_instance(request):
-            request = self._serialize(request)
+            request = self._serialize_message(request)
         self.iris_handle.dispatchSendRequestAsync(target,request,description)
         return
 
+    def _serialize_message(self,message):
+        """ Converts a python dataclass message into an iris grongier.pex.message.
+
+        Parameters:
+        message: The message to serialize, an instance of a class that is a subclass of Message.
+
+        Returns:
+        string: The message in json format.
+        """
+        if (message is not None and self._is_message_instance(message)):
+
+            json_string = json.dumps(message, cls=IrisJSONEncoder)
+            module = message.__class__.__module__
+            classname = message.__class__.__name__
+
+            msg = iris.cls('Grongier.PEX.Message')._New()
+            msg.classname = module + "." + classname
+
+            stream = iris.cls('%Stream.GlobalCharacter')._New()
+            n = 36000
+            chunks = [json_string[i:i+n] for i in range(0, len(json_string), n)]
+            for chunk in chunks:
+                stream.Write(chunk)
+            msg.jstr = stream
+
+            return msg
+        else:
+            return message
 
     def _serialize(self,message):
         """ Converts a message into json format.
@@ -63,13 +93,41 @@ class _BusinessHost(_Common):
         Returns:
         string: The message in json format.
         """
-        if (message != None):
+        if (message is not None):
             json_string = json.dumps(message, cls=IrisJSONEncoder)
             module = message.__class__.__module__
             classname = message.__class__.__name__
             return  module + "." + classname + ":" + json_string
         else:
             return None
+
+    def _deserialize_message(self,serial):
+        """ Converts an iris grongier.pex.message into an python dataclass message.
+        
+        """
+        if (type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.Message"):
+            if (serial.classname is None):
+                raise ValueError("JSON message malformed, must include classname")
+            classname = serial.classname
+
+            j = classname.rindex(".")
+            if (j <=0):
+                raise ValueError("Classname must include a module: " + classname)
+            try:
+                module = importlib.import_module(classname[:j])
+                msg = getattr(module, classname[j+1:])
+            except Exception:
+                raise ImportError("Class not found: " + classname)
+
+            string = ""
+            while not serial.jstr.AtEnd:
+                string += serial.jstr.Read(3600)
+
+            jdict = json.loads(string, cls=IrisJSONDecoder)
+            msg = self._dataclass_from_dict(msg,jdict)
+            return msg
+        else:
+            return serial
 
     def _deserialize(self,serial):
         """ Converts a json string into a message of type classname, which is stored in the json string.
