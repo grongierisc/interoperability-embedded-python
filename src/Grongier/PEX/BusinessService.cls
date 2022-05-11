@@ -9,9 +9,8 @@ Parameter SETTINGS = "%classname:Python BusinessService,%module:Python BusinessS
 
 Method dispatchProcessInput(pInput As %RegisteredObject) As %RegisteredObject
 {
-	set tSC = ..ProcessInput(pInput,.tOutput)
-	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
-	quit tOutput
+	
+	quit ..%class."on_process_input"(pInput)
 }
 
 Method OnProcessInput(request As %RegisteredObject, Output response As %RegisteredObject) As %Status
