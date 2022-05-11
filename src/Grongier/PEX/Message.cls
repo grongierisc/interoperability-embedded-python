@@ -27,7 +27,8 @@ Method jsonGet()
 Method jsonSet(value) As %Status
 {
 	set ..jsonObject = {}.%FromJSON(value)
-	set ..jstr = ##class(%Stream.GlobalCharacter).%New(value)
+	set ..jstr = ##class(%Stream.GlobalCharacter).%New()
+    do ..jstr.Write(value)
 	return $$$OK
 }
 
