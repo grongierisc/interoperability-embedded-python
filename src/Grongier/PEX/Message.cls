@@ -43,14 +43,15 @@ Method %DispatchSetProperty(property As %String, value)
 	quit
 }
 
-Method GetObjectJson()
+Method GetObjectJson(ByRef atEnd)
 {
 	set json = ..jsonObject.%ToJSON()
 	if json = "{}" {
 		d ..jstr.Rewind()
-		set json = ..jstr.Read()
+		set json = ..jstr.Read(64000)
+        set atEnd = ..jstr.AtEnd
 	}
-	QUIT json
+    QUIT json
 }
 
 /// This method is called by the Management Portal to determine the content type that will be returned by the <method>%ShowContents</method> method.
@@ -86,7 +87,10 @@ Method %ShowContentsHead(pZenOutput As %Boolean = 0)
 /// The content should match the type returned by the <method>%GetContentType</method> method.<br>
 Method %ShowContents(pZenOutput As %Boolean = 0)
 {
-	set jsonObject = ..QuoteJS(..GetObjectJson())
+	set jsonObject = ..QuoteJS(..GetObjectJson(.atEnd))
+    if 'atEnd {
+        &html<<div>Warning JSON projection is not comptete, it's truncated, 64 000 charaters display</div>>
+    }
 	// https://github.com/bazh/jquery.json-view
 	&html<<div id="element">#(..classname)#</div>>
 	&html<<script>$(function() {$('#element').jsonView(makeCompleteJSON(#(jsonObject)#,false));});</script>>
