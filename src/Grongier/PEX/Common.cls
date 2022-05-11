@@ -19,6 +19,12 @@ Property %settings As %String(MAXLEN = "");
 /// Instance of class
 Property %class As %SYS.Python;
 
+/// Get Class
+Method GetClass() As %SYS.Python
+{
+	Return ..%class
+}
+
 /// Get Classname
 Method GetClassname() As %String
 {
