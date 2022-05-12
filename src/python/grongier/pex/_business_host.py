@@ -50,8 +50,8 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if self._is_message_instance(request):
-            request = self._serialize_message(request)
+
+        request = self._serialize_message(request)
         self.iris_handle.dispatchSendRequestAsync(target,request,description)
         return
 
