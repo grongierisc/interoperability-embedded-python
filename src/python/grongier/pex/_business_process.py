@@ -49,7 +49,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.OnComplete(request, response)
+        pass
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
@@ -186,7 +186,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return 
+        return response
 
     def OnComplete(self, request, response):
         """ 
@@ -200,4 +200,4 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return 
+        return response
