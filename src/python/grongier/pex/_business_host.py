@@ -14,6 +14,8 @@ class _BusinessHost(_Common):
     """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that
     defines common methods. It is a subclass of Common.
     """
+
+    buffer:int = 64000
         
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
@@ -30,12 +32,10 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-        if self._is_message_instance(request):
-            request = self._serialize_message(request)
+
+        request = self._serialize_message(request)
         return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        if type(request).__module__.find('iris') == 0:
-            if request._IsA("Grongier.PEX.Message"):
-                return_object = self._deserialize_message(return_object)
+        return_object = self._deserialize_message(return_object)
         return return_object
 
     def send_request_async(self, target, request, description=None):
@@ -74,7 +74,7 @@ class _BusinessHost(_Common):
             msg.classname = module + "." + classname
 
             stream = iris.cls('%Stream.GlobalCharacter')._New()
-            n = 36000
+            n = self.buffer
             chunks = [json_string[i:i+n] for i in range(0, len(json_string), n)]
             for chunk in chunks:
                 stream.Write(chunk)
@@ -121,7 +121,7 @@ class _BusinessHost(_Common):
 
             string = ""
             while not serial.jstr.AtEnd:
-                string += serial.jstr.Read(3600)
+                string += serial.jstr.Read(self.buffer)
 
             jdict = json.loads(string, cls=IrisJSONDecoder)
             msg = self._dataclass_from_dict(msg,jdict)
