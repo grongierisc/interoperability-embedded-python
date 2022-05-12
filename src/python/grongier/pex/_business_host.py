@@ -120,6 +120,7 @@ class _BusinessHost(_Common):
                 raise ImportError("Class not found: " + classname)
 
             string = ""
+            serial.jstr.Rewind()
             while not serial.jstr.AtEnd:
                 string += serial.jstr.Read(self.buffer)
 
