@@ -5,6 +5,8 @@
 Class Grongier.PEX.Message Extends (Ens.MessageBody, %CSP.Page)
 {
 
+Parameter BUFFER = 64000;
+
 Property classname As %String(MAXLEN = "");
 
 Property jsonObject As %DynamicObject;
@@ -48,7 +50,7 @@ Method GetObjectJson(ByRef atEnd)
 	set json = ..jsonObject.%ToJSON()
 	if json = "{}" {
 		d ..jstr.Rewind()
-		set json = ..jstr.Read(64000)
+		set json = ..jstr.Read(..#BUFFER)
         set atEnd = ..jstr.AtEnd
 	}
     QUIT json
@@ -88,8 +90,9 @@ Method %ShowContentsHead(pZenOutput As %Boolean = 0)
 Method %ShowContents(pZenOutput As %Boolean = 0)
 {
 	set jsonObject = ..QuoteJS(..GetObjectJson(.atEnd))
+	set buffer = ..#BUFFER
     if 'atEnd {
-        &html<<div>Warning JSON projection is not comptete, it's truncated, 64 000 charaters display</div>>
+        &html<<div>Warning JSON projection is not comptete, it's truncated, #(buffer)# charaters display</div>>
     }
 	// https://github.com/bazh/jquery.json-view
 	&html<<div id="element">#(..classname)#</div>>
