@@ -236,6 +236,8 @@ class IrisJSONEncoder(json.JSONEncoder):
     def default(self, o):
         if hasattr(o, '__dict__'):
             return o.__dict__
+        elif o.__class__.__name__ == 'DataFrame':
+            return 'dataframe:'+o.to_json()
         elif isinstance(o, datetime.datetime):
             r = o.isoformat()
             if o.microsecond:
@@ -277,6 +279,10 @@ class IrisJSONDecoder(json.JSONDecoder):
                 typ = value[:i]
                 if typ in {'datetime', 'time','date'}:
                     ret[key] = datetime.datetime.fromisoformat(value[i+1:]) 
+                elif typ == 'dataframe':
+                    module = importlib.import_module('pandas')
+                    pd = getattr(module, 'DataFrame')
+                    ret[key] = pd(value[i+1:])
                 elif typ == 'decimal':
                     ret[key] = decimal.Decimal(value[i+1:])
                 elif typ == 'uuid':
