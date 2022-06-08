@@ -17,16 +17,17 @@ class FilterPostRoutingRule(BusinessProcess):
         
         return
 
-    def on_request(self, request):
-        # if from iris
-        if type(request).__module__.find('iris') == 0:
-            request = PostMessage(post=PostClass(title=request.Post.Title, 
+    def on_message(self, request:'iris.dc.Demo.PostMessage'):
+
+        request = PostMessage(post=PostClass(title=request.Post.Title, 
                                              selftext=request.Post.Selftext,
                                              author=request.Post.Author, 
                                              url=request.Post.Url,
                                              created_utc=request.Post.CreatedUTC,
                                              original_json=request.Post.OriginalJSON))
-        
+        return self.on_python_message(request)
+
+    def on_python_message(self, request: PostMessage):
         if 'dog'.upper() in request.post.selftext.upper():
             request.to_email_address = 'dog@company.com'
             request.found = 'Dog'

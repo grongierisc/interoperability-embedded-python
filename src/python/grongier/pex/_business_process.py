@@ -7,8 +7,24 @@ class _BusinessProcess(_BusinessHost):
     The business process can route a message to a business operation or another business process.
     """
 
+    DISPATCH = []
+
     PERSISTENT_PROPERTY_LIST=None
     """ A list of the variable names of persistent properties."""        
+
+    def on_message(self, request):
+        """ Called when the business operation receives a message from another production component.
+        Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
+        If the operation has an adapter, it uses the Adapter.invoke() method to call the method on the adapter that sends the message to the external system.
+        If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method
+
+        Parameters:
+        request: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
+
+        Returns:
+        The response object
+        """
+        return self.on_request(request)
 
     def on_request(self, request):
         """ Handles requests sent to the business process. A production calls this method whenever an initial request 
@@ -91,6 +107,7 @@ class _BusinessProcess(_BusinessHost):
     def _dispatch_on_init(self, host_object):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
+        self._create_dispatch()
         self.on_init()
         self._save_persistent_properties(host_object)
         return
@@ -106,7 +123,7 @@ class _BusinessProcess(_BusinessHost):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
         request = self._deserialize_message(request)
-        return_object = self.on_request(request)
+        return_object = self._dispach_message(request)
         return_object = self._serialize_message(return_object)
         self._save_persistent_properties(host_object)
         return return_object

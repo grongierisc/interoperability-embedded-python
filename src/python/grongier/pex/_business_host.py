@@ -6,6 +6,8 @@ import json
 import importlib
 import iris
 
+from inspect import signature
+
 from grongier.dacite import from_dict
 
 from grongier.pex._common import _Common
@@ -176,6 +178,55 @@ class _BusinessHost(_Common):
                 setattr(ret, key, val)
         return ret
 
+    def _dispach_message(self, request):
+        """
+        It takes a request object, and returns a response object
+        
+        :param request: The request object
+        :return: The return value is the result of the method call.
+        """
+
+        call = 'on_message'
+
+        module = request.__class__.__module__
+        classname = request.__class__.__name__
+
+        for msg,method in self.DISPATCH:
+            if msg == module+"."+classname:
+                call = method
+
+        return getattr(self,call)(request)
+
+    
+    def _create_dispatch(self):
+        """
+        It creates a list of tuples, where each tuple contains the name of a class and the name of a method
+        that takes an instance of that class as its only argument
+        :return: A list of tuples.
+        """
+        if len(self.DISPATCH) == 0:
+            #get all function in current BO
+            method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
+            for method in method_list:
+                #get signature of current function
+                try:
+                    param = signature(getattr(self, method)).parameters
+                # Handle staticmethod
+                except ValueError as e:
+                    param=''
+                #one parameter
+                if (len(param)==1):
+                    #get parameter type
+                    annotation = str(param[list(param)[0]].annotation)
+                    #trim annotation format <class 'toto'>
+                    i = annotation.find("'")
+                    j = annotation.rfind("'")
+                    #if end is not found
+                    if j == -1:
+                        j = None
+                    classname = annotation[i+1:j]
+                    self.DISPATCH.append((classname,method))
+        return
 
     @staticmethod
     def OnGetConnections():
