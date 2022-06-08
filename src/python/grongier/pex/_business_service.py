@@ -38,9 +38,9 @@ class _BusinessService(_BusinessHost):
     
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
-        request = self._deserialize_message(request)
+        request = self._dispatch_deserializer(request)
         return_object = self.on_process_input(request)
-        return_object = self._serialize_message(return_object)
+        return_object = self._dispatch_serializer(return_object)
         return return_object
 
     def OnProcessInput(self, message_input):

@@ -48,6 +48,13 @@ class _Common():
             if not dataclasses.is_dataclass(obj):
                 raise TypeError(type(obj).__module__ + '.' + type(obj).__qualname__+" must be a dataclass")
             return True
+        return False
+
+    @classmethod
+    def _is_pickle_message_instance(cls, obj):
+        if cls._is_pickel_message_class(type(obj)):
+            return True
+        return False
 
     @classmethod
     def _is_message_class(cls, klass):
@@ -56,6 +63,16 @@ class _Common():
             return True
         for c in klass.__bases__:
             if cls._is_message_class(c): 
+                return True
+        return False
+
+    @classmethod
+    def _is_pickel_message_class(cls, klass):
+        name = klass.__module__ + '.' + klass.__qualname__
+        if name == "grongier.pex.PickleMessage": 
+            return True
+        for c in klass.__bases__:
+            if cls._is_pickel_message_class(c): 
                 return True
         return False
 

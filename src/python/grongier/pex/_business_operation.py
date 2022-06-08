@@ -44,10 +44,10 @@ class _BusinessOperation(_BusinessHost):
 
     def _dispatch_on_message(self, request):
         """ For internal use only. """
-        request = self._deserialize_message(request)
+        request = self._dispatch_deserializer(request)
         # method dispachMessage
         return_object = self._dispach_message(request)
-        return_object = self._serialize_message(return_object)
+        return_object = self._dispatch_serializer(return_object)
         return return_object
 
     def OnMessage(self, request):

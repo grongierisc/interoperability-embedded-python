@@ -65,7 +65,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        pass
+        return self.OnComplete(request, response)
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
@@ -122,31 +122,31 @@ class _BusinessProcess(_BusinessHost):
     def _dispatch_on_request(self, host_object, request):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        request = self._deserialize_message(request)
+        request = self._dispatch_deserializer(request)
         return_object = self._dispach_message(request)
-        return_object = self._serialize_message(return_object)
+        return_object = self._dispatch_serializer(return_object)
         self._save_persistent_properties(host_object)
         return return_object
     
     def _dispatch_on_response(self, host_object, request, response, callRequest, callResponse, completionKey):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        request = self._deserialize_message(request)
-        response = self._deserialize_message(response)
-        callRequest = self._deserialize_message(callRequest)
-        callResponse = self._deserialize_message(callResponse)
+        request = self._dispatch_deserializer(request)
+        response = self._dispatch_deserializer(response)
+        callRequest = self._dispatch_deserializer(callRequest)
+        callResponse = self._dispatch_deserializer(callResponse)
         return_object = self.on_response(request, response, callRequest, callResponse, completionKey)
-        return_object = self._serialize_message(return_object)
+        return_object = self._dispatch_serializer(return_object)
         self._save_persistent_properties(host_object)
         return return_object
 
     def _dispatch_on_complete(self, host_object, request, response):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        request = self._deserialize_message(request)
-        response = self._deserialize_message(response)
+        request = self._dispatch_deserializer(request)
+        response = self._dispatch_deserializer(response)
         return_object = self.on_complete(request, response)
-        return_object = self._serialize_message(return_object)
+        return_object = self._dispatch_serializer(return_object)
         self._save_persistent_properties(host_object)
         return return_object
 
@@ -157,7 +157,7 @@ class _BusinessProcess(_BusinessHost):
         response: An instance of IRISObject or subclass of Message that contains the response message.
         """
 
-        response = self._serialize_message(response)
+        response = self._dispatch_serializer(response)
         self.iris_handle.dispatchReply(response)
         return
 

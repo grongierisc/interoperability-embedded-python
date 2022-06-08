@@ -1,4 +1,6 @@
 import datetime
+import pickle
+import codecs
 import uuid
 import decimal
 import base64
@@ -35,9 +37,9 @@ class _BusinessHost(_Common):
         TypeError: if request is not of type Message or IRISObject.
         """
 
-        request = self._serialize_message(request)
+        request = self._dispatch_serializer(request)
         return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        return_object = self._deserialize_message(return_object)
+        return_object = self._dispatch_deserializer(return_object)
         return return_object
 
     def send_request_async(self, target, request, description=None):
@@ -53,9 +55,44 @@ class _BusinessHost(_Common):
         TypeError: if request is not of type Message or IRISObject.
         """
 
-        request = self._serialize_message(request)
+        request = self._dispatch_serializer(request)
         self.iris_handle.dispatchSendRequestAsync(target,request,description)
         return
+
+    def _serialize_pickle_message(self,message):
+        """ Converts a python dataclass message into an iris grongier.pex.message.
+
+        Parameters:
+        message: The message to serialize, an instance of a class that is a subclass of Message.
+
+        Returns:
+        string: The message in json format.
+        """
+
+        pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
+        module = message.__class__.__module__
+        classname = message.__class__.__name__
+
+        msg = iris.cls('Grongier.PEX.PickleMessage')._New()
+        msg.classname = module + "." + classname
+
+        stream = iris.cls('%Stream.GlobalCharacter')._New()
+        n = self.buffer
+        chunks = [pickle_string[i:i+n] for i in range(0, len(pickle_string), n)]
+        for chunk in chunks:
+            stream.Write(chunk)
+        msg.jstr = stream
+
+        return msg
+
+
+    def _dispatch_serializer(self,message):
+        if (message is not None and self._is_message_instance(message)):
+            return self._serialize_message(message)
+        elif (message is not None and self._is_pickle_message_instance(message)):
+            return self._serialize_pickle_message(message)
+        else:
+            return message
 
     def _serialize_message(self,message):
         """ Converts a python dataclass message into an iris grongier.pex.message.
@@ -66,25 +103,22 @@ class _BusinessHost(_Common):
         Returns:
         string: The message in json format.
         """
-        if (message is not None and self._is_message_instance(message)):
+        json_string = json.dumps(message, cls=IrisJSONEncoder)
+        module = message.__class__.__module__
+        classname = message.__class__.__name__
 
-            json_string = json.dumps(message, cls=IrisJSONEncoder)
-            module = message.__class__.__module__
-            classname = message.__class__.__name__
+        msg = iris.cls('Grongier.PEX.Message')._New()
+        msg.classname = module + "." + classname
 
-            msg = iris.cls('Grongier.PEX.Message')._New()
-            msg.classname = module + "." + classname
+        stream = iris.cls('%Stream.GlobalCharacter')._New()
+        n = self.buffer
+        chunks = [json_string[i:i+n] for i in range(0, len(json_string), n)]
+        for chunk in chunks:
+            stream.Write(chunk)
+        msg.jstr = stream
 
-            stream = iris.cls('%Stream.GlobalCharacter')._New()
-            n = self.buffer
-            chunks = [json_string[i:i+n] for i in range(0, len(json_string), n)]
-            for chunk in chunks:
-                stream.Write(chunk)
-            msg.jstr = stream
+        return msg
 
-            return msg
-        else:
-            return message
 
     def _serialize(self,message):
         """ Converts a message into json format.
@@ -103,34 +137,54 @@ class _BusinessHost(_Common):
         else:
             return None
 
-    def _deserialize_message(self,serial):
-        """ Converts an iris grongier.pex.message into an python dataclass message.
+    def _deserialize_pickle_message(self,serial):
+        """ 
+        Converts an iris grongier.pex.message into an python dataclass message.
         
         """
-        if (type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.Message"):
-            if (serial.classname is None):
-                raise ValueError("JSON message malformed, must include classname")
-            classname = serial.classname
+        string = ""
+        serial.jstr.Rewind()
+        while not serial.jstr.AtEnd:
+            string += serial.jstr.Read(self.buffer)
 
-            j = classname.rindex(".")
-            if (j <=0):
-                raise ValueError("Classname must include a module: " + classname)
-            try:
-                module = importlib.import_module(classname[:j])
-                msg = getattr(module, classname[j+1:])
-            except Exception:
-                raise ImportError("Class not found: " + classname)
+        msg = pickle.loads(codecs.decode(string.encode(), "base64"))
+        return msg
 
-            string = ""
-            serial.jstr.Rewind()
-            while not serial.jstr.AtEnd:
-                string += serial.jstr.Read(self.buffer)
-
-            jdict = json.loads(string, cls=IrisJSONDecoder)
-            msg = self._dataclass_from_dict(msg,jdict)
-            return msg
+    def _dispatch_deserializer(self,serial):
+        if (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.Message"):
+            return self._deserialize_message(serial)
+        elif (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.PickleMessage"):
+            return self._deserialize_pickle_message(serial)
         else:
             return serial
+
+    def _deserialize_message(self,serial):
+        """ 
+        Converts an iris grongier.pex.message into an python dataclass message.
+        """
+
+        if (serial.classname is None):
+            raise ValueError("JSON message malformed, must include classname")
+        classname = serial.classname
+
+        j = classname.rindex(".")
+        if (j <=0):
+            raise ValueError("Classname must include a module: " + classname)
+        try:
+            module = importlib.import_module(classname[:j])
+            msg = getattr(module, classname[j+1:])
+        except Exception:
+            raise ImportError("Class not found: " + classname)
+
+        string = ""
+        serial.jstr.Rewind()
+        while not serial.jstr.AtEnd:
+            string += serial.jstr.Read(self.buffer)
+
+        jdict = json.loads(string, cls=IrisJSONDecoder)
+        msg = self._dataclass_from_dict(msg,jdict)
+        return msg
+
 
     def _deserialize(self,serial):
         """ Converts a json string into a message of type classname, which is stored in the json string.
