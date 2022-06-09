@@ -42,13 +42,11 @@ class _BusinessOperation(_BusinessHost):
         self.on_init()
         return
 
+    @_BusinessHost.input_deserialzer
+    @_BusinessHost.output_serialzer
     def _dispatch_on_message(self, request):
         """ For internal use only. """
-        request = self._dispatch_deserializer(request)
-        # method dispachMessage
-        return_object = self._dispach_message(request)
-        return_object = self._dispatch_serializer(return_object)
-        return return_object
+        return self._dispach_message(request)
 
     def OnMessage(self, request):
         """ DEPRECATED : use on_message

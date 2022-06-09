@@ -36,12 +36,11 @@ class _BusinessService(_BusinessHost):
         self.Adapter = handle_partner
         return
     
+    @_BusinessHost.input_deserialzer
+    @_BusinessHost.output_serialzer
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
-        request = self._dispatch_deserializer(request)
-        return_object = self.on_process_input(request)
-        return_object = self._dispatch_serializer(return_object)
-        return return_object
+        return self.on_process_input(request)
 
     def OnProcessInput(self, message_input):
         """  DEPRECATED : use on_process_input

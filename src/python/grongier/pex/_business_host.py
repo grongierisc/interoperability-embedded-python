@@ -20,7 +20,36 @@ class _BusinessHost(_Common):
     """
 
     buffer:int = 64000
-        
+
+    def input_serialzer(fonction):
+        def dispatch_serializer(self,*params, **param2):
+            serialized=[]
+            for param in params:
+                serialized.append(self._dispatch_serializer(param))
+            return fonction(self,*serialized, **param2)
+        return dispatch_serializer
+
+    def output_deserialzer(fonction):
+        def dispatch_deserializer(self,*params, **param2):
+            return self._dispatch_deserializer(fonction(self,*params, **param2))
+            
+        return dispatch_deserializer
+
+    def input_deserialzer(fonction):
+        def dispatch_deserializer(self,*params, **param2):
+            serialized=[]
+            for param in params:
+                serialized.append(self._dispatch_deserializer(param))
+            return fonction(self,*serialized, **param2)
+        return dispatch_deserializer
+
+    def output_serialzer(fonction):
+        def dispatch_serializer(self,*params, **param2):
+            return self._dispatch_serializer(fonction(self,*params, **param2))
+        return dispatch_serializer
+
+    @input_serialzer
+    @output_deserialzer
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
             
@@ -37,11 +66,9 @@ class _BusinessHost(_Common):
         TypeError: if request is not of type Message or IRISObject.
         """
 
-        request = self._dispatch_serializer(request)
-        return_object = self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
-        return_object = self._dispatch_deserializer(return_object)
-        return return_object
+        return self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
 
+    @input_serialzer
     def send_request_async(self, target, request, description=None):
         """ Send the specified message to the target business process or business operation asynchronously.
         Parameters:
@@ -54,10 +81,8 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-
-        request = self._dispatch_serializer(request)
-        self.iris_handle.dispatchSendRequestAsync(target,request,description)
-        return
+        
+        return self.iris_handle.dispatchSendRequestAsync(target,request,description)
 
     def _serialize_pickle_message(self,message):
         """ Converts a python dataclass message into an iris grongier.pex.message.
