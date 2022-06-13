@@ -3,6 +3,8 @@ from grongier.pex import BusinessProcess
 from message import PostMessage
 from obj import PostClass
 
+import iris
+
 class FilterPostRoutingRule(BusinessProcess):
     """
     This process receive a PostMessage containing a reddit post.
@@ -17,7 +19,7 @@ class FilterPostRoutingRule(BusinessProcess):
         
         return
 
-    def on_message(self, request:'iris.dc.Demo.PostMessage'):
+    def iris_to_python(self, request:'iris.dc.Demo.PostMessage'):
 
         request = PostMessage(post=PostClass(title=request.Post.Title, 
                                              selftext=request.Post.Selftext,
@@ -36,6 +38,8 @@ class FilterPostRoutingRule(BusinessProcess):
             request.found = 'Cat'
 
         if request.found is not None:
-            return self.send_request_sync(self.target,request)
+            self.send_request_sync(self.target,request)
+            rsp = iris.cls('Ens.StringResponse')._New(f"{request.post.title}")
+            return rsp
         else:
             return
