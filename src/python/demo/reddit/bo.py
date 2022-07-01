@@ -1,8 +1,6 @@
 
 from grongier.pex import BusinessOperation
 
-from message import MyRequest,MyMessage
-
 import iris
 
 import os
@@ -130,10 +128,10 @@ class FileOperationWithIrisAdapter(BusinessOperation):
         line = ts+" : "+title+" : "+author+" : "+url
         filename = request.found+".txt" 
         
-        self.Adapter.put_line(filename, line)
-        self.Adapter.put_line(filename, "")
-        self.Adapter.put_line(filename, text)
-        self.Adapter.put_line(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
+        self.Adapter.PutLine(filename, line)
+        self.Adapter.PutLine(filename, "")
+        self.Adapter.PutLine(filename, text)
+        self.Adapter.PutLine(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
 
         return
 
