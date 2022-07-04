@@ -22,6 +22,13 @@ class _BusinessHost(_Common):
     buffer:int = 64000
 
     def input_serialzer(fonction):
+        """
+        It takes a function as an argument, and returns a function that takes the same arguments as the
+        original function, but serializes the arguments before passing them to the original function
+        
+        :param fonction: the function that will be decorated
+        :return: The function dispatch_serializer is being returned.
+        """
         def dispatch_serializer(self,*params, **param2):
             serialized=[]
             for param in params:
@@ -30,12 +37,27 @@ class _BusinessHost(_Common):
         return dispatch_serializer
 
     def output_deserialzer(fonction):
+        """
+        It takes a function as an argument, and returns a function that takes the same arguments as the
+        original function, but returns the result of the original function passed to the
+        `_dispatch_deserializer` function
+        
+        :param fonction: the function that will be decorated
+        :return: The function dispatch_deserializer is being returned.
+        """
         def dispatch_deserializer(self,*params, **param2):
             return self._dispatch_deserializer(fonction(self,*params, **param2))
             
         return dispatch_deserializer
 
     def input_deserialzer(fonction):
+        """
+        It takes a function as input, and returns a function that takes the same arguments as the input
+        function, but deserializes the arguments before passing them to the input function
+        
+        :param fonction: the function that will be decorated
+        :return: The function dispatch_deserializer is being returned.
+        """
         def dispatch_deserializer(self,*params, **param2):
             serialized=[]
             for param in params:
@@ -44,6 +66,14 @@ class _BusinessHost(_Common):
         return dispatch_deserializer
 
     def output_serialzer(fonction):
+        """
+        It takes a function as an argument, and returns a function that takes the same arguments as the
+        original function, and returns the result of the original function, after passing it through the
+        _dispatch_serializer function
+        
+        :param fonction: The function that is being decorated
+        :return: The function dispatch_serializer is being returned.
+        """
         def dispatch_serializer(self,*params, **param2):
             return self._dispatch_serializer(fonction(self,*params, **param2))
         return dispatch_serializer
@@ -112,6 +142,13 @@ class _BusinessHost(_Common):
 
 
     def _dispatch_serializer(self,message):
+        """
+        If the message is a message instance, serialize it as a message, otherwise, if it's a pickle message
+        instance, serialize it as a pickle message, otherwise, return the message
+        
+        :param message: The message to be serialized
+        :return: The serialized message
+        """
         if (message is not None and self._is_message_instance(message)):
             return self._serialize_message(message)
         elif (message is not None and self._is_pickle_message_instance(message)):
@@ -176,6 +213,13 @@ class _BusinessHost(_Common):
         return msg
 
     def _dispatch_deserializer(self,serial):
+        """
+        If the serialized object is a Message, deserialize it as a Message, otherwise deserialize it as a
+        PickleMessage
+        
+        :param serial: The serialized object
+        :return: The return value is a tuple of the form (serial, serial_type)
+        """
         if (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.Message"):
             return self._deserialize_message(serial)
         elif (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("Grongier.PEX.PickleMessage"):
@@ -245,6 +289,13 @@ class _BusinessHost(_Common):
             return None
 
     def _dataclass_from_dict(self,klass, dikt):
+        """
+        > If the field is not in the dataclass, then add it as an attribute
+        
+        :param klass: The dataclass to convert to
+        :param dikt: the dictionary to convert to a dataclass
+        :return: A dataclass object with the fields of the dataclass and the fields of the dictionary.
+        """
         ret = from_dict(klass, dikt)
         
         try:
