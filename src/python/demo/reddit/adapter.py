@@ -1,4 +1,4 @@
-from grongier.pex import InboundAdapter
+from grongier.pex import InboundAdapter,OutboundAdapter
 import requests
 import iris
 import json
@@ -60,3 +60,11 @@ class RedditInboundAdapter(InboundAdapter):
             raise err
 
         return tSC
+
+class TestHeartBeat(OutboundAdapter):
+
+    def on_keepalive(self):
+        self.log_info('beep')
+
+    def on_task(self):
+        self.log_info('on_task')

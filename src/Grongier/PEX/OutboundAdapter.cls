@@ -5,7 +5,9 @@
 Class Grongier.PEX.OutboundAdapter Extends (Ens.OutboundAdapter, Grongier.PEX.Common) [ Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter SETTINGS = "%classname:Python OutboundAdapter,%module:Python OutboundAdapter,%settings:Python OutboundAdapter,%classpaths:Python OutboundAdapter";
+Property KeepaliveInterval As %Numeric [ InitialExpression = 0 ];
+
+Parameter SETTINGS = "KeepaliveInterval:Python CallInterval,%classname:Python OutboundAdapter,%module:Python OutboundAdapter,%settings:Python OutboundAdapter,%classpaths:Python OutboundAdapter";
 
 Method %DispatchMethod(method As %String, args...) As %ObjectHandle
 {
@@ -15,6 +17,18 @@ Method %DispatchMethod(method As %String, args...) As %ObjectHandle
 		do $method($this.%class,method,args...)
 		quit
 	}
+}
+
+Method OnKeepalive(pStatus As %Status = {$$$OK}) As %Status
+{
+	set tSC = $$$OK
+	try {
+		$$$ThrowOnError(##super(pStatus))
+		do ..%class."on_keepalive"()
+	} catch ex {
+		set tSC = ex.AsStatus()
+	}
+	quit tSC
 }
 
 }

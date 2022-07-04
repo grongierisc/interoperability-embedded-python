@@ -135,9 +135,13 @@ class FileOperationWithIrisAdapter(BusinessOperation):
 
         return
 
-if __name__ == "__main__":
-    EmailOperationWithIrisAdapter._get_info()
-    crud_person = EmailOperationWithIrisAdapter()
-    crud_person._dispatch_on_init('')
-    request = iris.cls('Ens.StringRequest')._New('toto')
-    response = crud_person._dispatch_on_message(request)
+class HeartBeatOperation(BusinessOperation):
+
+    def get_adapter_type():
+        return "Python.TestHeartBeat"
+
+    def on_message(self, request):
+        self.Adapter.on_task()
+        return 
+
+
