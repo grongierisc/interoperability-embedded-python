@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-  <Document name="pex-embedded-python.ZPM">
+  <Document name="pex-embbeded-python.ZPM">
     <Module>
-      <Name>pex-embedded-python</Name>
-      <Version>1.6.2</Version>
+      <Name>pex-embbeded-python</Name>
+      <Version>1.6.3</Version>
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
       <SystemRequirements Version=">=2021.2" Interoperability="enabled" />
