@@ -39,6 +39,9 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [7.10. The `objects`](#710-the-objects)
   - [7.11. The `messages`](#711-the-messages)
   - [7.12. How to regsiter a component](#712-how-to-regsiter-a-component)
+    - [7.12.1. register_component](#7121-register_component)
+    - [7.12.2. register_file](#7122-register_file)
+    - [7.12.3. register_folder](#7123-register_folder)
   - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
 - [8. Credits](#8-credits)
 
@@ -426,6 +429,23 @@ class RedditInboundAdapter(InboundAdapter):
 Outbound Adapter in Python are subclass from grongier.pex.OutboundAdapter in Python, that inherit from all the functions of the [common class](#72-the-common-class).<br>
 This class is responsible for sending the data to the external system.
 
+The Outbound Adapter gives the Operation the possibility to have a heartbeat notion.
+To activate this option, the CallInterval parameter of the adapter must be strictly greater than 0.
+
+<img width="301" alt="image" src="https://user-images.githubusercontent.com/47849411/178230243-39806602-a63d-4a89-9563-fcf6836d0515.png">
+
+Example of an outbound adapter ( situated in the src/python/demo/reddit/adapter.py file ):
+
+```python
+class TestHeartBeat(OutboundAdapter):
+
+    def on_keepalive(self):
+        self.log_info('beep')
+
+    def on_task(self):
+        self.log_info('on_task')
+```
+
 ## 7.6. The `business_service` class
 This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.<br>
 The business service can use an adapter to access the external system, which is specified overriding the get_adapter_type method.<br>
@@ -701,6 +721,13 @@ WIP It is to be noted that it is needed to use types when you define an object o
 
 ## 7.12. How to regsiter a component 
 
+You can register a component to iris in many way :
+* Only one component with `register_component` 
+* All the component in a file with `register_file` 
+* All the component in a folder with `register_folder` 
+
+### 7.12.1. register_component
+
 Start an embedded python shell :
 
 ```sh
@@ -708,15 +735,58 @@ Start an embedded python shell :
 ```
 
 Then use this class method to add a new py file to the component list for interoperability.
+
 ```python
-from grongier.pex import _utils
-_utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+from grongier.pex import Utils
+Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
 ```
 
 e.g :
 ```python
-from grongier.pex import _utils
-_utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+from grongier.pex import Utils
+Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+```
+
+### 7.12.2. register_file
+
+Start an embedded python shell :
+
+```sh
+/usr/irissys/bin/irispython
+```
+
+Then use this class method to add a new py file to the component list for interoperability.
+
+```python
+from grongier.pex import Utils
+Utils.register_file(<File>,<OverWrite>,<PackageName>)
+```
+
+e.g :
+```python
+from grongier.pex import Utils
+Utils.register_file("/irisdev/app/src/python/demo/bo.py",1,"PEX")
+```
+
+### 7.12.3. register_folder
+
+Start an embedded python shell :
+
+```sh
+/usr/irissys/bin/irispython
+```
+
+Then use this class method to add a new py file to the component list for interoperability.
+
+```python
+from grongier.pex import Utils
+Utils.register_folder(<Path>,<OverWrite>,<PackageName>)
+```
+
+e.g :
+```python
+from grongier.pex import Utils
+Utils.register_folder("/irisdev/app/src/python/demo/",1,"PEX")
 ```
 
 ## 7.13. Direct use of Grongier.PEX
