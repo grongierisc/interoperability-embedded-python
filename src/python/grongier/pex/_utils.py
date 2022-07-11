@@ -44,12 +44,28 @@ def register_folder(path:str,overwrite:int,iris_package_name:str):
     """
     for filename in os.listdir(path):
         if filename.endswith(".py"): 
-            register_file(filename, path, overwrite, iris_package_name)
+            _register_file(filename, path, overwrite, iris_package_name)
         else:
             continue
 
+def register_file(file:str,overwrite:int,iris_package_name:str):
+    """
+    It takes a file name, a boolean to overwrite existing components, and the name of the Iris
+    package that the file is in. It then opens the file, parses it, and looks for classes that extend
+    BusinessOperation, BusinessProcess, or BusinessService. If it finds one, it calls register_component
+    with the module name, class name, path, overwrite boolean, and the full Iris package name
+    
+    :param file: the name of the file containing the component
+    :type file: str
+    :param overwrite: if the component already exists, overwrite it
+    :type overwrite: int
+    :param iris_package_name: the name of the iris package that you want to register the components to
+    :type iris_package_name: str
+    """
+    head_tail = os.path.split(file)
+    return _register_file(head_tail[1],head_tail[0],overwrite,iris_package_name)
 
-def register_file(filename:str,path:str,overwrite:int,iris_package_name:str):
+def _register_file(filename:str,path:str,overwrite:int,iris_package_name:str):
     """
     It takes a file name, a path, a boolean to overwrite existing components, and the name of the Iris
     package that the file is in. It then opens the file, parses it, and looks for classes that extend
@@ -100,7 +116,7 @@ def register_package(package:str,path:str,overwrite:int,iris_package_name:str):
     """
     for filename in os.listdir(os.path.join(path,package)):
         if filename.endswith(".py"): 
-            register_file(os.path.join(package,filename), path, overwrite, iris_package_name)
+            _register_file(os.path.join(package,filename), path, overwrite, iris_package_name)
         else:
             continue
 
