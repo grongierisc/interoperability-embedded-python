@@ -18,4 +18,16 @@ Method OnMessage(request As %Library.Persistent, Output response As %Library.Per
 	quit tSC
 }
 
+Method OnKeepalive(pStatus As %Status = {$$$OK}) As %Status
+{
+	set tSC = $$$OK
+	try {
+		$$$ThrowOnError(##super(pStatus))
+		do ..%class."on_keepalive"()
+	} catch ex {
+		set tSC = ex.AsStatus()
+	}
+	quit tSC
+}
+
 }

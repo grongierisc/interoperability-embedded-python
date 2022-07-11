@@ -26,6 +26,12 @@ class _BusinessOperation(_BusinessHost):
         """
         return self.OnMessage(request)
 
+    def on_keepalive(self):
+        """
+        > This function is called when the server sends a keepalive message
+        """
+        return
+
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
         self.iris_handle = handle_current
