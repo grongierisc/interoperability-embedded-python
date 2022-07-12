@@ -2,14 +2,14 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class Grongier.PEX.Message Extends (Ens.MessageBody, %CSP.Page)
+Class Grongier.PEX.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor)
 {
 
 Parameter BUFFER = 64000;
 
 Property classname As %String(MAXLEN = "");
 
-Property jsonObject As %DynamicObject;
+Property jsonObject As %DynamicObject(XMLPROJECTION = "None");
 
 Property json As %String(MAXLEN = "");
 
@@ -47,6 +47,7 @@ Method %DispatchSetProperty(property As %String, value)
 
 Method GetObjectJson(ByRef atEnd)
 {
+	set atEnd = 1
 	set json = ..jsonObject.%ToJSON()
 	if json = "{}" {
 		d ..jstr.Rewind()
