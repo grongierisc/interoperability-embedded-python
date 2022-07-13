@@ -10,7 +10,7 @@ class _BusinessOperation(_BusinessHost):
     """
 
     DISPATCH = []
-    Adapter = None
+    Adapter = adapter = None
 
     def on_message(self, request):
         """ Called when the business operation receives a message from another production component.
@@ -39,7 +39,7 @@ class _BusinessOperation(_BusinessHost):
             if handle_partner._IsA("Grongier.PEX.OutboundAdapter"):
                 module = importlib.import_module(handle_partner.GetModule())
                 handle_partner = getattr(module, handle_partner.GetClassname())()
-            self.Adapter = handle_partner
+            self.Adapter = self.adapter = handle_partner
         return
 
     def _dispatch_on_init(self, host_object):

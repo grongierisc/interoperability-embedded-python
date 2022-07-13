@@ -12,7 +12,7 @@ class _BusinessService(_BusinessHost):
     3) Nonpolling business service - The production framework does not initiate the business service. Instead custom code in either a long-running process 
         or one that is started at regular intervals initiates the business service by calling the Director.CreateBusinessService() method.
     """
-    Adapter = None
+    Adapter = adapter = None
     _wait_for_next_call_interval = False
 
     def on_process_input(self, message_input):
@@ -33,7 +33,7 @@ class _BusinessService(_BusinessHost):
             if handle_partner._IsA("Grongier.PEX.InboundAdapter"):
                 module = importlib.import_module(handle_partner.GetModule())
                 handle_partner = getattr(module, handle_partner.GetClassname())()
-        self.Adapter = handle_partner
+        self.Adapter = self.adpater = handle_partner
         return
     
     @_BusinessHost.input_deserialzer
