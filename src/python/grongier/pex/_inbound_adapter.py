@@ -4,7 +4,7 @@ class _InboundAdapter(_Common):
     """ Responsible for receiving the data from the external system, validating the data, 
     and sending it to the business service by calling the BusinessHost.ProcessInput() method.
     """
-    BusinessHost = None
+    BusinessHost = business_host = business_host_python = None
 
     def on_task(self): 
         """ Called by the production framework at intervals determined by the business service CallInterval property.
@@ -17,6 +17,11 @@ class _InboundAdapter(_Common):
         """ For internal use only. """
         self.iris_handle = handle_current
         self.BusinessHost = handle_partner
+        self.business_host = handle_partner
+        try:
+            self.business_host_python = handle_partner.GetClass()
+        except:
+            pass
         return
 
 

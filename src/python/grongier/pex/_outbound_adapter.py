@@ -2,7 +2,7 @@ from grongier.pex._common import _Common
 
 class _OutboundAdapter(_Common):
     """ Responsible for sending the data to the external system."""
-    BusinessHost = None
+    BusinessHost = business_host = business_host_python = None
 
     def on_keepalive(self):
         """
@@ -14,5 +14,10 @@ class _OutboundAdapter(_Common):
         """ For internal use only. """
         self.iris_handle = handle_current
         self.BusinessHost = handle_partner
+        self.business_host = handle_partner
+        try:
+            self.business_host_python = handle_partner.GetClass()
+        except:
+            pass
         return
 
