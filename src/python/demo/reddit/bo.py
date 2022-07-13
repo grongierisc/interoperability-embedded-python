@@ -1,5 +1,5 @@
 
-from grongier.pex import BusinessOperation
+from grongier.pex import BusinessOperation, Utils
 
 import iris
 
@@ -140,8 +140,15 @@ class HeartBeatOperation(BusinessOperation):
     def get_adapter_type():
         return "Python.TestHeartBeat"
 
+    def on_keepalive(self):
+        self.log_info('boop')
+
+    def log(self,message):
+        self.log_info(f'from log function : {message}')
+
     def on_message(self, request):
-        self.Adapter.on_task()
+        self.adapter.on_task()
         return 
 
-
+# Utils.register_component('adapter','TestHeartBeat','/irisdev/app/src/python/demo/',1,'Python.TestHeartBeat')
+# Utils.register_component('bo','HeartBeatOperation','/irisdev/app/src/python/demo/reddit/',1,'Python.HeartBeatOperation')

@@ -49,7 +49,7 @@ class RedditInboundAdapter(InboundAdapter):
                 if not updateLast:
                     self.LastPostName = value['data']['name']
                     updateLast = 1
-                response = self.BusinessHost.ProcessInput(post)
+                self.BusinessHost.ProcessInput(post)
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 429:
                 self.log_warning(err.__str__())
@@ -65,6 +65,7 @@ class TestHeartBeat(OutboundAdapter):
 
     def on_keepalive(self):
         self.log_info('beep')
+        self.business_host_python.log('beep')
 
     def on_task(self):
         self.log_info('on_task')
