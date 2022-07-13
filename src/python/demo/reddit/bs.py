@@ -116,6 +116,7 @@ class RedditServiceWithPexAdapter(BusinessService):
         return "Python.RedditInboundAdapter"
 
     def on_process_input(self, message_input):
+        self._wait_for_next_call_interval = True
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = message_input
         return self.send_request_sync(self.target,msg)
