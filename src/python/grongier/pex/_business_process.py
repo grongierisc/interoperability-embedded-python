@@ -67,6 +67,27 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.OnComplete(request, response)
 
+    @_BusinessHost.input_serialzer
+    def reply(self, response):
+        """ Send the specified response to the production component that sent the initial request to the business process.
+
+        Parameters:
+        response: An instance of IRISObject or subclass of Message that contains the response message.
+        """
+
+        return self.iris_handle.dispatchReply(response)
+
+    def set_timer(self, timeout, completionKey=None):
+        """ Specifies the maximum time the business process will wait for responses.
+
+        Parameters:
+        timeout: an integer that specifies a number of seconds, or a string that specifies a time period such as"PT15s", 
+            which represents 15 seconds of processor time.
+        completionKey: a string that will be returned with the response if the maximum time is exceeded.
+        """
+        self.iris_handle.dispatchSetTimer(timeout, completionKey)
+        return
+
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
         self.iris_handle = handle_current
@@ -145,27 +166,6 @@ class _BusinessProcess(_BusinessHost):
         return_object = self.on_complete(request, response)
         self._save_persistent_properties(host_object)
         return return_object
-
-    @_BusinessHost.input_serialzer
-    def Reply(self, response):
-        """ Send the specified response to the production component that sent the initial request to the business process.
-
-        Parameters:
-        response: An instance of IRISObject or subclass of Message that contains the response message.
-        """
-
-        return self.iris_handle.dispatchReply(response)
-
-    def SetTimer(self, timeout, completionKey=None):
-        """ Specifies the maximum time the business process will wait for responses.
-
-        Parameters:
-        timeout: an integer that specifies a number of seconds, or a string that specifies a time period such as"PT15s", 
-            which represents 15 seconds of processor time.
-        completionKey: a string that will be returned with the response if the maximum time is exceeded.
-        """
-        self.iris_handle.dispatchSetTimer(timeout, completionKey)
-        return
 
     def OnRequest(self, request):
         """ 
