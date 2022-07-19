@@ -6,7 +6,7 @@
 Class Grongier.PEX.PrivateSession.Message.Poll Extends (%Persistent, Ens.Util.MessageBodyMethods) [ ClassType = persistent, Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter DOMAIN = "EnsDICOM";
+Parameter DOMAIN = "PrivateSession";
 
 /// From 'Ens.Util.MessageBodyMethods'
 Method %ShowContents(pZenOutput As %Boolean = 0)

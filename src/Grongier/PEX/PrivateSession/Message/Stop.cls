@@ -6,7 +6,7 @@
 Class Grongier.PEX.PrivateSession.Message.Stop Extends (%Persistent, Ens.Util.MessageBodyMethods) [ ClassType = persistent, Inheritance = right, ProcedureBlock, System = 4 ]
 {
 
-Parameter DOMAIN = "EnsDICOM";
+Parameter DOMAIN = "PrivateSession";
 
 /// The message body
 Property AttachedMessage As %Persistent(CLASSNAME = 1);

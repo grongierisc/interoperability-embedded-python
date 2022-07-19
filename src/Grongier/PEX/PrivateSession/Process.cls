@@ -2,11 +2,11 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class Grongier.PEX.PrivateSession.Process Extends Grongier.PEX.BusinessProcess [ ClassType = persistent, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.PrivateSessionProcess Extends Grongier.PEX.BusinessProcess [ ClassType = persistent, ProcedureBlock, System = 4 ]
 {
 
 /// Domain for Text localization
-Parameter DOMAIN = "EnsDICOM";
+Parameter DOMAIN = "PrivateSession";
 
 /// The Duplex Service name. This property is set at runtime after receiving the primary request
 Property ServiceDuplexName As %String;

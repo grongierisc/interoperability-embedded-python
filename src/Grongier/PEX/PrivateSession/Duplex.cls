@@ -2,11 +2,11 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class Grongier.PEX.PrivateSession.Duplex Extends (Ens.BusinessDuplex, Grongier.PEX.Common) [ Abstract, System = 4 ]
+Class Grongier.PEX.PrivateSessionDuplex Extends (Ens.BusinessDuplex, Grongier.PEX.Common) [ Abstract, System = 4 ]
 {
 
 /// Domain for error messages   
-Parameter DOMAIN = "EnsDICOM";
+Parameter DOMAIN = "PrivateSession";
 
 Parameter SETTINGS = "DuplexTargetConfigName,%classname:Python BusinessProcess,%module:Python BusinessProcess,%settings:Python BusinessProcess,%classpaths:Python BusinessProcess";
 
