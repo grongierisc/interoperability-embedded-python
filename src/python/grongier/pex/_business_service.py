@@ -33,7 +33,7 @@ class _BusinessService(_BusinessHost):
             if handle_partner._IsA("Grongier.PEX.InboundAdapter"):
                 module = importlib.import_module(handle_partner.GetModule())
                 handle_partner = getattr(module, handle_partner.GetClassname())()
-        self.Adapter = self.adpater = handle_partner
+        self.Adapter = self.adapter = handle_partner
         return
     
     @_BusinessHost.input_deserialzer
