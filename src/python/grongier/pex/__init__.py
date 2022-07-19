@@ -9,9 +9,8 @@ from grongier.pex._message import _Message
 from grongier.pex._pickle_message import _PickleMessage
 from grongier.pex._director import _Director
 
-import grongier.pex._utils as _Utils
+import grongier.pex._utils as Utils
 
-class Utils(_Utils): pass
 class InboundAdapter(_InboundAdapter): pass
 class OutboundAdapter(_OutboundAdapter): pass
 class BusinessService(_BusinessService): pass

@@ -1,7 +1,7 @@
 from grongier.pex._business_process import _BusinessProcess
 from grongier.pex._business_host import _BusinessHost
 
-class _PrivateSesssionProcess(_BusinessProcess):
+class _PrivateSessionProcess(_BusinessProcess):
     
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer

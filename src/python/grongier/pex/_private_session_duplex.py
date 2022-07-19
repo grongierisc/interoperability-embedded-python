@@ -1,6 +1,6 @@
 from grongier.pex._business_host import _BusinessHost
 
-class _PrivateSesssionDuplex(_BusinessHost):
+class _PrivateSessionDuplex(_BusinessHost):
     
     @_BusinessHost.input_serialzer
     @_BusinessHost.output_deserialzer
