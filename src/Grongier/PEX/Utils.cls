@@ -224,7 +224,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Set tSC = tCOSClass.Properties.Insert(tPropLanguage)
 		Quit:$$$ISERR(tSC)
 		
-		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.Duplex":1,:0) {
+		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.PrivateSessionDuplex":1,:0) {
 			
 			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) { //Adaptor
 
