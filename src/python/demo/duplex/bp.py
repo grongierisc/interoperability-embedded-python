@@ -2,7 +2,7 @@ from grongier.pex import PrivateSessionProcess
 
 class Process(PrivateSessionProcess):
 
-    def on_document(self,request):
+    def on_document(self,source_config_name,request):
         self.log_info('In on_document')
         return
 
