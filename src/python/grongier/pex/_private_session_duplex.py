@@ -1,7 +1,38 @@
+import importlib
 from grongier.pex._business_host import _BusinessHost
 
 class _PrivateSessionDuplex(_BusinessHost):
     
+    Adapter = adapter = None
+    _wait_for_next_call_interval = False
+
+    def _set_iris_handles(self, handle_current, handle_partner):
+        """ For internal use only. """
+        self.iris_handle = handle_current
+        if type(handle_partner).__module__.find('iris') == 0:
+            if handle_partner._IsA("Grongier.PEX.InboundAdapter") or handle_partner._IsA("Grongier.PEX.OutboundAdapter"):
+                module = importlib.import_module(handle_partner.GetModule())
+                handle_partner = getattr(module, handle_partner.GetClassname())()
+        self.Adapter = self.adapter = handle_partner
+        return
+
+    @_BusinessHost.input_deserialzer
+    @_BusinessHost.output_serialzer
+    def _dispatch_on_process_input(self, request):
+        """ For internal use only. """
+        return self.on_process_input(request)
+
+    def on_process_input(self, message_input):
+        """ Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
+        If the business service does not specify an adapter, then the default adapter calls this method with no message 
+        and the business service is responsible for receiving the data from the external system and validating it.
+
+        Parameters:
+        message_input: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
+            The message can have any structure agreed upon by the inbound adapter and the business service. 
+        """
+        return 
+
     @_BusinessHost.input_serialzer
     @_BusinessHost.output_deserialzer
     def send_document_to_process(self, document):
