@@ -2,7 +2,7 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class Grongier.PEX.PrivateSessionDuplex Extends (Ens.BusinessDuplex, Grongier.PEX.Common) [ Abstract, System = 4 ]
+Class Grongier.PEX.PrivateSessionDuplex Extends (Grongier.PEX.Common, Ens.BusinessDuplex) [ Abstract, System = 4 ]
 {
 
 /// Domain for error messages   
@@ -22,13 +22,19 @@ Property ReceivedDataQueue As list Of %Library.Persistent;
 /// This method is called by the TCP Adapter when a message is received.
 Method OnProcessInput(pInput As %Persistent, Output pOutput As %Persistent, ByRef pHint As %String) As %Status
 {
-    #dim tSC As %Status = $$$OK
-    try {
-        Set tSC=..SendDocumentToProcess(pInput) Quit:$$$ISERR(tSC)
-    } catch {
-        Set tSC=$$$EnsSystemError
-    }
-    Quit tSC
+	set tSC = $$$OK
+	try {
+		try {
+			set ..%class."_wait_for_next_call_interval" = ..%WaitForNextCallInterval
+		} catch {}
+		set pOutput = ..%class."_dispatch_on_process_input"(pInput)
+		try {
+			set ..%WaitForNextCallInterval = ..%class."_wait_for_next_call_interval"
+		} catch {}
+	} catch ex {
+		set tSC = ex.AsStatus()
+	}
+	quit tSC
 }
 
 Method dispatchSendDocumentToProcess(pDocument) As %String
@@ -99,6 +105,45 @@ Method StopPrivateSession(pAttachedMessage As %Persistent = "") As %Status
         Set tSC=$$$EnsSystemError
     }
     Quit tSC
+}
+
+Method RegisterPrivateSession() As %Status
+{
+	If ..%InPrivateSession Quit $$$OK
+	If ..%SessionId="" Set tSC=..ForceSessionId() Quit:$$$ISERR(tSC) tSC
+	Set ..%PrivateSessionId=..%SessionId
+	Set tSC = ##class(Ens.Queue).Create(..QueueName()) Quit:$$$ISERR(tSC) tSC
+
+    try {
+        Set tSC=..Adapter.OpenEventDevice() 
+    }
+    catch {
+
+    }
+	
+	Set $$$ConfigSessionQueueName(..%ConfigName,..%SessionId)=..QueueName()
+	$$$sysTRACE("Registered Private Session '"_..%PrivateSessionId_"'")
+	Quit $$$OK
+}
+
+Method UnRegisterPrivateSession() As %Status
+{
+	If '..%InPrivateSession Quit $$$OK
+	Kill $$$ConfigSessionQueueName(..%ConfigName,..%PrivateSessionId)
+    
+    try {
+        Set tSC=..Adapter.CloseEventDevice()
+    }
+    catch {
+
+    }
+	 
+	Set tSC=##class(Ens.Queue).Delete(..QueueName(),"*") Quit:$$$ISERR(tSC) tSC
+	$$$sysTRACE("Unregistered Private Session '"_..%PrivateSessionId_"'")
+	Set ..%PrivateSessionId=""
+	Set ..%SessionId=""
+	Kill $$$JobSessionId
+	Quit $$$OK
 }
 
 XData MessageMap
