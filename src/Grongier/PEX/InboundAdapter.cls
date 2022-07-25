@@ -12,7 +12,7 @@ Method OnTask() As %Status
 	set tSC = $$$OK
 	try {
 		$$$ThrowOnError(..Connect())
-		$$$ThrowOnError(..%class."on_task"())
+		do ..%class."on_task"()
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}

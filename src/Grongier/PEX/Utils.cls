@@ -14,6 +14,7 @@ ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %S
 	return tSc
 }
 
+/// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
 ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
 {
 	#dim tSC As %Status = $$$OK
@@ -26,8 +27,9 @@ ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, p
 	Quit:(""=pModule) $$$ERROR($$$EnsErrGeneral,"Must specify the module of the remote code.")
 		
 	Try {
+
 		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,.tClassDetails,.tRemoteSettings))
-		
+
 		Set tConnectionSettings("Classpaths") = pCLASSPATHS
 		Set tConnectionSettings("Module") = pModule
 		Set tConnectionSettings("Classname") = pRemoteClassname
@@ -100,6 +102,7 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 			set extraClasspaths = $tr(pClasspaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
+				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
 				if onePath'="" do ##class(Grongier.PEX.Python).SetClassPath(onePath)
 			}
@@ -131,7 +134,7 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 /// Set:(""=pProxyClassname) pProxyClassname = pRemoteClassname
 /// 
 /// Set tSC = ..GenerateProxyClass(pProxyClassname,.tConnectionSettings,tClassDetails,tRemoteSettings,pOverwrite)
-/// "MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python:/irisdev/app/src/python/demo",1,"PEX.MyCombinedBusinessOperation")
+/// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
 ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings, pClassDetails As %String = "", pRemoteSettings As %String = "", pOverwrite As %Boolean = 0) As %Status [ Internal, Private ]
 {
 	#dim tSC As %Status = $$$OK
@@ -172,13 +175,13 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		#dim tCOSClass As %Dictionary.ClassDefinition
 		Set tCOSClass = ##class(%Dictionary.ClassDefinition).%New()
 		Set tCOSClass.Name = pClassname
+
 		#dim tSuperClass As %String = pClassDetails."__getitem__"(0)
 		If (""=tSuperClass) {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"No PEX superclass found.")
 			Quit
 		}
-		If '$Case($P(tSuperClass,".",1,*-1),"com.intersystems.Grongier.pex":1,"grongier.pex":1,"Grongier.PEX.BusinessProcess":1,:0) ||
-			'$Case($P(tSuperClass,".",*),"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
+		If '$Case($P(tSuperClass,".",*),"DuplexProcess":1,"DuplexService":1,"DuplexOperation":1,"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"Invalid superclass")
 			Quit
 		}
@@ -223,7 +226,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Set tSC = tCOSClass.Properties.Insert(tPropLanguage)
 		Quit:$$$ISERR(tSC)
 		
-		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,:0) {
+		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.DuplexService":1,"Grongier.PEX.DuplexOperation":1,:0) {
 			
 			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) { //Adaptor
 
