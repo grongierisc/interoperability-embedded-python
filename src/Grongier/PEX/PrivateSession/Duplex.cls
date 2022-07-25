@@ -26,12 +26,12 @@ Method OnProcessInput(pInput As %Persistent, Output pOutput As %Persistent, ByRe
 	try {
 		try {
 			set ..%class."_wait_for_next_call_interval" = ..%WaitForNextCallInterval
-		} catch {}
-		set pOutput = ..%class."_dispatch_on_process_input"(pInput)
+		}catch {}
+            set pOutput = ..%class."_dispatch_on_process_input"(pInput)
 		try {
 			set ..%WaitForNextCallInterval = ..%class."_wait_for_next_call_interval"
-		} catch {}
-	} catch ex {
+		}catch {}
+} catch ex {
 		set tSC = ex.AsStatus()
 	}
 	quit tSC
@@ -130,7 +130,6 @@ Method UnRegisterPrivateSession() As %Status
 {
 	If '..%InPrivateSession Quit $$$OK
 	Kill $$$ConfigSessionQueueName(..%ConfigName,..%PrivateSessionId)
-    
     try {
         Set tSC=..Adapter.CloseEventDevice()
     }

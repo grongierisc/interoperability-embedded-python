@@ -2,7 +2,7 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class Grongier.PEX.PrivateSessionProcess Extends Grongier.PEX.BusinessProcess [ ClassType = persistent, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.DuplexProcess Extends Grongier.PEX.BusinessProcess [ ClassType = persistent, ProcedureBlock, System = 4 ]
 {
 
 /// Domain for Text localization
