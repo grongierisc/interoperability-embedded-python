@@ -1,13 +1,19 @@
-from grongier.pex import DuplexOperation
+from grongier.pex import DuplexService
 import iris
 
-class Operation(DuplexOperation):
+class Service(DuplexService):
+
+    _wait_for_next_call_interval = True
+
+    def on_init(self):
+        self._wait_for_next_call_interval = True
+        return
     
     def get_adapter_type():
         """
         Name of the registred Adapter
         """
-        return "Duplex.adapter.OperationAdapter"
+        return "Ens.InboundAdapter"
 
     def on_process_input(self,input):
         self.send_document_to_process(iris.cls('Ens.Request')._New())
@@ -21,7 +27,7 @@ class Operation(DuplexOperation):
         return
 
 if __name__ == '__main__':
-    d = Operation()
+    d = Service()
     print('hello')
     print(d._get_info())
     print('hello')

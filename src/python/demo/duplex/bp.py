@@ -1,6 +1,6 @@
-from grongier.pex import PrivateSessionProcess
+from grongier.pex import DuplexProcess
 
-class Process(PrivateSessionProcess):
+class Process(DuplexProcess):
 
     def on_document(self,source_config_name,request):
         self.log_info('In on_document')
