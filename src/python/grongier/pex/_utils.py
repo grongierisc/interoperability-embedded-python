@@ -42,6 +42,7 @@ def register_folder(path:str,overwrite:int,iris_package_name:str):
     :param iris_package_name: The name of the iris package you want to register the file to
     :type iris_package_name: str
     """
+    path = os.path.normpath(path)
     for filename in os.listdir(path):
         if filename.endswith(".py"): 
             _register_file(filename, path, overwrite, iris_package_name)
@@ -82,7 +83,7 @@ def _register_file(filename:str,path:str,overwrite:int,iris_package_name:str):
     :type iris_package_name: str
     """
     #pour chaque classe dans le module, appeler register_component
-    f = path+filename
+    f =  os.path.join(path,filename)
     with open(f) as file:
         node = ast.parse(file.read())
         #list of class in the file
@@ -95,7 +96,7 @@ def _register_file(filename:str,path:str,overwrite:int,iris_package_name:str):
                 else:
                     extend = klass.bases[0].attr
             #if extends BusinessOperation,BusinessProcess,BusinessService
-            if  extend in ('BusinessOperation','BusinessProcess','BusinessService'):
+            if  extend in ('BusinessOperation','BusinessProcess','BusinessService','DuplexService','DuplexProcess','DuplexOperation','InboundAdapter','OutboundAdapter'):
                 module = filename_to_module(filename)
                 register_component(module, klass.name, path, overwrite, f"{iris_package_name}.{module}.{klass.name}")
 

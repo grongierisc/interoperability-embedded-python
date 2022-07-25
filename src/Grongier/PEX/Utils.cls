@@ -27,6 +27,7 @@ ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, p
 	Quit:(""=pModule) $$$ERROR($$$EnsErrGeneral,"Must specify the module of the remote code.")
 		
 	Try {
+
 		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,.tClassDetails,.tRemoteSettings))
 
 		Set tConnectionSettings("Classpaths") = pCLASSPATHS
@@ -101,6 +102,7 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 			set extraClasspaths = $tr(pClasspaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
+				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
 				if onePath'="" do ##class(Grongier.PEX.Python).SetClassPath(onePath)
 			}
@@ -179,7 +181,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"No PEX superclass found.")
 			Quit
 		}
-		If '$Case($P(tSuperClass,".",*),"PrivateSessionProcess":1,"PrivateSessionDuplex":1,"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
+		If '$Case($P(tSuperClass,".",*),"DuplexProcess":1,"DuplexService":1,"DuplexOperation":1,"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,"Invalid superclass")
 			Quit
 		}
@@ -224,7 +226,7 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Set tSC = tCOSClass.Properties.Insert(tPropLanguage)
 		Quit:$$$ISERR(tSC)
 		
-		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.PrivateSessionDuplex":1,:0) {
+		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.DuplexService":1,"Grongier.PEX.DuplexOperation":1,:0) {
 			
 			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) { //Adaptor
 
