@@ -93,14 +93,14 @@ class _Common():
             classes = inspect.getmro(cls)
             for cl in classes:
                 classname = str(cl)[7:-1]
-                if classname in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'","'grongier.pex.PrivateSessionDuplex'"] :
+                if classname in ["'grongier.pex.BusinessService'","'grongier.pex.BusinessOperation'","'grongier.pex.DuplexOperation'","'grongier.pex.DuplexService'"] :
                     # Remove the apostrophes and set as super_class, then find if it uses an adapter
                     super_class = classname[1:-1]
                     adapter = cls.get_adapter_type()
                     if adapter is None:
                         adapter = cls.getAdapterType()
                     break
-                elif classname in ["'grongier.pex.BusinessProcess'","'grongier.pex.PrivateSessionProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
+                elif classname in ["'grongier.pex.BusinessProcess'","'grongier.pex.DuplexProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
                     # Remove the apostrophes and set as super_class
                     super_class = classname[1:-1]
                     break

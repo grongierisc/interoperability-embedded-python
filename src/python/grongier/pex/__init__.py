@@ -16,8 +16,9 @@ class OutboundAdapter(_OutboundAdapter): pass
 class BusinessService(_BusinessService): pass
 class BusinessOperation(_BusinessOperation): pass
 class BusinessProcess(_BusinessProcess): pass
-class PrivateSessionDuplex(_PrivateSessionDuplex): pass
-class PrivateSessionProcess(_PrivateSessionProcess): pass
+class DuplexService(_PrivateSessionDuplex): pass
+class DuplexOperation(_PrivateSessionDuplex): pass
+class DuplexProcess(_PrivateSessionProcess): pass
 class Message(_Message): pass
 class PickleMessage(_PickleMessage): pass
 class Director(_Director): pass
