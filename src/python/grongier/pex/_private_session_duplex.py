@@ -5,6 +5,27 @@ class _PrivateSessionDuplex(_BusinessHost):
     
     Adapter = adapter = None
     _wait_for_next_call_interval = False
+    DISPATCH = []
+
+    def on_message(self, request):
+        """ Called when the business operation receives a message from another production component.
+        Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
+        If the operation has an adapter, it uses the Adapter.invoke() method to call the method on the adapter that sends the message to the external system.
+        If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method
+
+        Parameters:
+        request: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
+
+        Returns:
+        The response object
+        """
+        pass
+
+    @_BusinessHost.input_deserialzer
+    @_BusinessHost.output_serialzer
+    def _dispatch_on_message(self, request):
+        """ For internal use only. """
+        return self._dispach_message(request)
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """
