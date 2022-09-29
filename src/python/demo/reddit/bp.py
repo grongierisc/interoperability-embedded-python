@@ -39,7 +39,4 @@ class FilterPostRoutingRule(BusinessProcess):
 
         if request.found is not None:
             self.send_request_sync(self.target,request)
-            rsp = iris.cls('Ens.StringResponse')._New(f"{request.post.title}")
-            return rsp
-        else:
-            return
+        return
