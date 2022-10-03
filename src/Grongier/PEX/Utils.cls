@@ -263,4 +263,27 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 	Quit tSC
 }
 
+// Thanks to Alex Woodhead for this serializer
+ClassMethod ListFrompyList(ByRef pyList As %SYS.Python = {$$$NULLOREF}, ByRef impBi As %SYS.Python = {##class(%SYS.Python).Import("builtins")}, msgkeys = "") As %SYS.Python [ ProcedureBlock = 1 ]
+{
+	set ret=$LB()
+	// How to get length of list
+	set listlen=impBi.len(pyList)
+	for i=1:1:listlen {
+		set data=##class(Py.Helper).pyListGet(i,pyList)
+		// if data is also a list // TODO
+		if $IsObject(data) {
+			if ..pyListIs(data) {
+			  set data=..ListFrompyList(data,impBi,,msgkeys_"["_i_"]")
+			} else {
+				set $ZE="Class "_..%ClassName(1)_" Method ListFrompyList. Unsupported value type """_..pyTypeName(data)_""" at position "_msgkeys_"["_i_"]"
+				do BACK^%ETN	
+			}
+		}
+		// add string / numeric / IRIS LIST to ret
+		set ret=$LU(ret,i,data)
+	}
+	quit ret
+}
+
 }

@@ -2,6 +2,12 @@ import iris
 import os
 import ast
 
+def iris_list_deserializer(serial):
+    return iris.cls('%SYS.Python').ToList(serial)
+
+def iris_list_serializer(list : list):
+    return iris.cls('Grongier.PEX.Utils').ListFrompyList(list)
+
 def raise_on_error(sc):
     """
     If the status code is an error, raise an exception
