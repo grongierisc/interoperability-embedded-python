@@ -4,7 +4,7 @@
 
 Include Ensemble
 
-Class Grongier.PEX.Utils
+Class Grongier.PEX.Utils [ Abstract ]
 {
 
 ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
