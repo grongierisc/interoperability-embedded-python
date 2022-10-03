@@ -286,4 +286,27 @@ ClassMethod ListFrompyList(ByRef pyList As %SYS.Python = {$$$NULLOREF}, ByRef im
 	quit ret
 }
 
+ClassMethod pyListIs(ByRef pyList As %SYS.Python) As %SYS.Python [ Language = python ]
+{
+	return (type(pyList)==list)
+}
+
+/// Returns empty string on error
+/// position starts at one to keep same as IRIS List
+ClassMethod pyListGet(position As %Integer, ByRef pyList As %SYS.Python) As %SYS.Python [ Language = python ]
+{
+	ret=""
+	try:
+	  ret=(pyList[position-1])
+	except:
+	  print("Error in pyListGet")
+	  
+	return ret
+}
+
+ClassMethod pyTypeName(obj As %SYS.Python) As %String [ Language = python ]
+{
+	return type(obj).__name__
+}
+
 }
