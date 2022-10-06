@@ -3,10 +3,10 @@
   <Document name="pex-embbeded-python.ZPM">
     <Module>
       <Name>pex-embbeded-python</Name>
-      <Version>1.7.5</Version>
+      <Version>1.7.6</Version>
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
-      <SystemRequirements Version=">=2021.2" Interoperability="enabled" />
+      <SystemRequirements Interoperability="enabled" />
       <FileCopy Name="src/python/grongier/pex" Target="${libdir}python/grongier/pex/"/>
       <FileCopy Name="src/python/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
       <Packaging>module</Packaging>
