@@ -270,7 +270,7 @@ ClassMethod ListFrompyList(ByRef pyList As %SYS.Python = {$$$NULLOREF}, ByRef im
 	// How to get length of list
 	set listlen=impBi.len(pyList)
 	for i=1:1:listlen {
-		set data=##class(Py.Helper).pyListGet(i,pyList)
+		set data=..pyListGet(i,pyList)
 		// if data is also a list // TODO
 		if $IsObject(data) {
 			if ..pyListIs(data) {
