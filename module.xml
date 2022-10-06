@@ -11,7 +11,7 @@
       <FileCopy Name="src/python/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
-      <Resource Directory="cls" Name="Grongier.PKG"/>
+      <Resource Name="Grongier.PKG"/>
     </Module>
   </Document>
 </Export>
