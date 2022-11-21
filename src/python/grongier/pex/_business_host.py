@@ -415,10 +415,8 @@ class IrisJSONEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        if hasattr(o, '__dict__'):
-            return o.__dict__
-        elif o.__class__.__name__ == 'DataFrame':
-            return 'dataframe:'+o.to_json()
+        if o.__class__.__name__ == 'DataFrame':
+            return 'dataframe:'+o.to_json(orient="table")
         elif isinstance(o, datetime.datetime):
             r = o.isoformat()
             if o.microsecond:
@@ -439,6 +437,8 @@ class IrisJSONEncoder(json.JSONEncoder):
             return 'uuid:'+str(o)
         elif isinstance(o, bytes):
             return 'bytes:'+base64.b64encode(o).decode("UTF-8")
+        elif hasattr(o, '__dict__'):
+            return o.__dict__
         else:
             return super().default(o)
 
@@ -466,8 +466,7 @@ class IrisJSONDecoder(json.JSONDecoder):
                     ret[key] = datetime.time.fromisoformat(value[i+1:])
                 elif typ == 'dataframe':
                     module = importlib.import_module('pandas')
-                    pd = getattr(module, 'DataFrame')
-                    ret[key] = pd(value[i+1:])
+                    ret[key] = module.read_json(value[i+1:],orient="table")
                 elif typ == 'decimal':
                     ret[key] = decimal.Decimal(value[i+1:])
                 elif typ == 'uuid':
