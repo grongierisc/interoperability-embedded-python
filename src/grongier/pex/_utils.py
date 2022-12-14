@@ -11,6 +11,15 @@ def raise_on_error(sc):
     if iris.system.Status.IsError(sc):
         raise RuntimeError(iris.system.Status.GetOneStatusText(sc))
 
+def setup(path:str = None):
+
+    if path is None:
+        # get the parent directory of the current module
+        # and append 'iris/Grongier/PEX' to it
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'iris/Grongier/PEX')
+
+    raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+
 def register_component(module:str,classname:str,path:str,overwrite:int,iris_classname:str):
     """
     It registers a component in the Iris database.
