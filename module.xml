@@ -10,7 +10,7 @@
       <FileCopy Name="src/grongier/pex" Target="${libdir}python/grongier/pex/"/>
       <FileCopy Name="src/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
       <Packaging>module</Packaging>
-      <SourcesRoot>src/iris</SourcesRoot>
+      <SourcesRoot>src/grongier/iris</SourcesRoot>
       <Resource Name="Grongier.PKG"/>
     </Module>
   </Document>

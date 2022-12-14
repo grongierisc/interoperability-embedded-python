@@ -4,24 +4,14 @@
  zn "IRISAPP"
  zpm "load /irisdev/app/ -v" 
  zpm "install sslclient"
- do $System.OBJ.LoadDir("/irisdev/app/src/PEX","ck","*.cls",1)
-
- //Register Python code
- zw ##class(Grongier.PEX.Utils).RegisterComponent("adapter","RedditInboundAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditInboundAdapter")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditServiceWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditServiceWithIrisAdapter")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditServiceWithPexAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditServiceWithPexAdapter")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bs","RedditService","/irisdev/app/src/python/demo/reddit/",1,"Python.RedditService")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bp","FilterPostRoutingRule","/irisdev/app/src/python/demo/reddit/",1,"Python.FilterPostRoutingRule")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","FileOperationWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.FileOperationWithIrisAdapter")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","FileOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.FileOperation")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperation","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperation")
- zw ##class(Grongier.PEX.Utils).RegisterComponent("bo","EmailOperationWithIrisAdapter","/irisdev/app/src/python/demo/reddit/",1,"Python.EmailOperationWithIrisAdapter")
+ do $System.OBJ.LoadDir("/irisdev/app/demo/iris/PEX","ck","*.cls",1)
 
  set ^EnsPortal.Settings("SuperUser","LastProduction")	= "PEX.Production"
  
  zn "%SYS"
  Do ##class(Security.Users).UnExpireUserPasswords("*")
 
+ // Enable Callin Service for embedded python
  do ##class(Security.Services).Get("%Service_CallIn",.prop)
  set prop("Enabled")=1
  set prop("AutheEnabled")=48

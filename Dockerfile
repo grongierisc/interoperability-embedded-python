@@ -33,6 +33,5 @@ RUN pip3 install -r requirements.txt
 
 RUN iris start IRIS \
 	&& iris session IRIS < /tmp/iris.script \
+	&& /usr/irissys/bin/irispython /irisdev/app/demo/python/register.py \
     && iris stop IRIS quietly
-
-
