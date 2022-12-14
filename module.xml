@@ -3,14 +3,14 @@
   <Document name="pex-embbeded-python.ZPM">
     <Module>
       <Name>pex-embbeded-python</Name>
-      <Version>1.7.9</Version>
+      <Version>2.0.0</Version>
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
       <SystemRequirements Interoperability="enabled" />
-      <FileCopy Name="src/python/grongier/pex" Target="${libdir}python/grongier/pex/"/>
-      <FileCopy Name="src/python/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
+      <FileCopy Name="src/grongier/pex" Target="${libdir}python/grongier/pex/"/>
+      <FileCopy Name="src/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
       <Packaging>module</Packaging>
-      <SourcesRoot>src</SourcesRoot>
+      <SourcesRoot>src/iris</SourcesRoot>
       <Resource Name="Grongier.PKG"/>
     </Module>
   </Document>
