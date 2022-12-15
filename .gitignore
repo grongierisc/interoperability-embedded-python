@@ -9,3 +9,6 @@ src/python/build/**
 iris-main.log
 
 .venv
+*.egg-info
+dist
+build
