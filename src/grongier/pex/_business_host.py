@@ -10,7 +10,7 @@ import iris
 
 from inspect import signature
 
-from grongier.dacite import from_dict
+from dacite import from_dict
 
 from grongier.pex._common import _Common
 
