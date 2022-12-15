@@ -29,7 +29,7 @@ ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sb
 COPY . .
 COPY iris.script /tmp/iris.script
 
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r demo/python/requirements.txt
 
 RUN iris start IRIS \
 	&& iris session IRIS < /tmp/iris.script \
