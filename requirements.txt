@@ -1,2 +1,1 @@
-dataclasses-json==0.5.7
-requests==2.27.1
+iris_pex_embedded_python>=2.0.0
