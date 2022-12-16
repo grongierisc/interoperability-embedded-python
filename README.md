@@ -15,7 +15,7 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [4.2. Without Docker](#42-without-docker)
   - [4.3. With ZPM](#43-with-zpm)
   - [4.4. With PyPI](#44-with-pypi)
-    - [Known issues](#known-issues)
+    - [4.4.1. Known issues](#441-known-issues)
 - [5. How to Run the Sample](#5-how-to-run-the-sample)
   - [5.1. Docker containers](#51-docker-containers)
   - [5.2. Management Portal and VSCode](#52-management-portal-and-vscode)
@@ -190,7 +190,7 @@ from grongier.pex import Utils
 Utils.setup()
 ```
 
-### Known issues
+### 4.4.1. Known issues
 
 If the module is not updated, make sure to remove the old version :
 
