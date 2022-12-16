@@ -10,7 +10,7 @@ import iris
 
 from inspect import signature
 
-from dacite import from_dict
+from dacite import from_dict, Config
 
 from grongier.pex._common import _Common
 
@@ -296,7 +296,7 @@ class _BusinessHost(_Common):
         :param dikt: the dictionary to convert to a dataclass
         :return: A dataclass object with the fields of the dataclass and the fields of the dictionary.
         """
-        ret = from_dict(klass, dikt)
+        ret = from_dict(klass, dikt, Config(check_types=False))
         
         try:
             fieldtypes = klass.__annotations__
