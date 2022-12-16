@@ -14,6 +14,8 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [4.1. With Docker](#41-with-docker)
   - [4.2. Without Docker](#42-without-docker)
   - [4.3. With ZPM](#43-with-zpm)
+  - [4.4. With PyPI](#44-with-pypi)
+    - [Known issues](#known-issues)
 - [5. How to Run the Sample](#5-how-to-run-the-sample)
   - [5.1. Docker containers](#51-docker-containers)
   - [5.2. Management Portal and VSCode](#52-management-portal-and-vscode)
@@ -39,9 +41,9 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [7.10. The `objects`](#710-the-objects)
   - [7.11. The `messages`](#711-the-messages)
   - [7.12. How to regsiter a component](#712-how-to-regsiter-a-component)
-    - [7.12.1. register_component](#7121-register_component)
-    - [7.12.2. register_file](#7122-register_file)
-    - [7.12.3. register_folder](#7123-register_folder)
+    - [7.12.1. register\_component](#7121-register_component)
+    - [7.12.2. register\_file](#7122-register_file)
+    - [7.12.3. register\_folder](#7123-register_folder)
   - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
 - [8. Credits](#8-credits)
 
@@ -173,6 +175,35 @@ do $System.OBJ.LoadDir("/opt/irisapp/src","cubk","*.cls",1)
 
 ```objectscript
 zpm "install pex-embbeded-python" 
+```
+
+## 4.4. With PyPI
+
+```sh
+pip3 install iris_pex_embedded_python
+```
+
+Import the ObjectScript classes, open an embedded python shell and run :
+
+```python
+from grongier.pex import Utils
+Utils.setup()
+```
+
+### Known issues
+
+If the module is not updated, make sure to remove the old version :
+
+```sh
+pip3 uninstall iris_pex_embedded_python
+```
+
+or manually remove the `grongier` folder in `<iris_installation>/lib/python/`
+
+or force the installation with pip :
+
+```sh
+pip3 install --upgrade iris_pex_embedded_python --target <iris_installation>/lib/python/
 ```
 
 # 5. How to Run the Sample
