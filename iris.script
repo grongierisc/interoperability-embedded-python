@@ -3,7 +3,6 @@
 
  zn "IRISAPP"
  zpm "load /irisdev/app/ -v" 
- zpm "install sslclient"
  do $System.OBJ.LoadDir("/irisdev/app/demo/iris/PEX","ck","*.cls",1)
 
  set ^EnsPortal.Settings("SuperUser","LastProduction")	= "PEX.Production"
