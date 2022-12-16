@@ -7,8 +7,6 @@
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
       <SystemRequirements Interoperability="enabled" />
-      <FileCopy Name="src/grongier/pex" Target="${libdir}python/grongier/pex/"/>
-      <FileCopy Name="src/grongier/dacite" Target="${libdir}python/grongier/dacite/"/>
       <Packaging>module</Packaging>
       <SourcesRoot>src/grongier/iris</SourcesRoot>
       <Resource Name="Grongier.PKG"/>
