@@ -26,7 +26,7 @@ def main():
         description='iris_pex_embedded_python',
         long_description=long_description,
         long_description_content_type='text/markdown',
-        version='2.0.1',
+        version='2.0.3',
         author='grongier',
         author_email='guillaume.rongier@intersystems.com',
         keywords='iris_pex_embedded_python',
@@ -37,6 +37,7 @@ def main():
             'Intended Audience :: Developers',
             'License :: OSI Approved :: MIT License',
             'Operating System :: OS Independent',
+            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
@@ -47,7 +48,7 @@ def main():
         package_dir={'': 'src'},
         packages=['grongier.pex','grongier.iris'],
         include_package_data=True,
-        python_requires='>=3.7',
+        python_requires='>=3.6',
         install_requires=[
             "dacite>=1.6.0",
         ]
