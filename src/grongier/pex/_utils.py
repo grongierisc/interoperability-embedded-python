@@ -111,11 +111,12 @@ class _Utils():
                         extend = klass.bases[0].id
                     else:
                         extend = klass.bases[0].attr
-                #if extends BusinessOperation,BusinessProcess,BusinessService
                 if  extend in ('BusinessOperation','BusinessProcess','BusinessService','DuplexService','DuplexProcess','DuplexOperation','InboundAdapter','OutboundAdapter'):
                     module = _Utils.filename_to_module(filename)
-                    _Utils.register_component(module, klass.name, path, overwrite, f"{iris_package_name}.{module}.{klass.name}")
-
+                    iris_class_name = f"{iris_package_name}.{module}.{klass.name}"
+                    # strip "_" for iris class name
+                    iris_class_name = iris_class_name.replace('_','')
+                    _Utils.register_component(module, klass.name, path, overwrite, iris_class_name)
     @staticmethod
     def register_package(package:str,path:str,overwrite:int,iris_package_name:str):
         """
