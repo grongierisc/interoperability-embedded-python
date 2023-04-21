@@ -1,1 +1,1 @@
-iris_pex_embedded_python>=2.0.0
+iris-pex-embedded-python>=2.0.0
