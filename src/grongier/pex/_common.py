@@ -55,6 +55,12 @@ class _Common():
         if cls._is_pickel_message_class(type(obj)):
             return True
         return False
+    
+    @classmethod
+    def _is_iris_object_instance(cls, obj):
+        if (obj is not None and type(obj).__module__.find('iris') == 0) and obj._IsA("%Persistent"):
+            return True
+        return False
 
     @classmethod
     def _is_message_class(cls, klass):

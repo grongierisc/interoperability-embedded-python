@@ -153,8 +153,10 @@ class _BusinessHost(_Common):
             return self._serialize_message(message)
         elif (message is not None and self._is_pickle_message_instance(message)):
             return self._serialize_pickle_message(message)
-        else:
+        elif (message is not None and self._is_iris_object_instance(message)):
             return message
+        else:
+            raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
 
     def _serialize_message(self,message):
         """ Converts a python dataclass message into an iris grongier.pex.message.
