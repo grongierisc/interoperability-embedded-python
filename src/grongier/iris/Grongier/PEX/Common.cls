@@ -58,12 +58,13 @@ Method Connect() As %Status
 		
 		//set classpass
 		if ..%classpaths '="" {
+			set sys = ##class(%SYS.Python).Import("sys")
 			set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
 			set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do ##class(Grongier.PEX.Python).SetClassPath(onePath)
+				if onePath'="" do sys.path.append(onePath)
 			}
 		}
 		if $isObject(..%class)=0 {
@@ -116,14 +117,21 @@ Method SetPropertyValues()
 	quit
 }
 
-Method dispatchSendRequestSync(target, request, timeout, description) As %String
+Method dispatchSendRequestSync(
+	target,
+	request,
+	timeout,
+	description) As %String
 {
 	set tSC = ..SendRequestSync(target,request,.objResponse,timeout,description)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit $g(objResponse)
 }
 
-Method dispatchSendRequestAsync(target, request, description)
+Method dispatchSendRequestAsync(
+	target,
+	request,
+	description)
 {
 	set tSC = ..SendRequestAsync(target,request,description)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
