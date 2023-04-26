@@ -68,7 +68,11 @@ Method Connect() As %Status
 			}
 		}
 		if $isObject(..%class)=0 {
-			set ..%class = ##class(Grongier.PEX.Python).GetInstanceFromModuleClassName(..%module,..%classname)
+			set importlib = ##class(%SYS.Python).Import("importlib")
+			set builtins = ##class(%SYS.Python).Import("builtins")
+			set module = importlib."import_module"(..%module)
+			set class = builtins.getattr(module, ..%classname)
+			set ..%class = class."__new__"(class)
 		}
 		;
 		if ..%Extends("Grongier.PEX.InboundAdapter") || ..%Extends("Grongier.PEX.OutboundAdapter") {
