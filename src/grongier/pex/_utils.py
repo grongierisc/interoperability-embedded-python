@@ -24,7 +24,7 @@ class _Utils():
         _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
     @staticmethod
-    def register_component(module:str,classname:str,path:str,overwrite:int,iris_classname:str):
+    def register_component(module:str,classname:str,path:str,overwrite:int=1,iris_classname:str='Python'):
         """
         It registers a component in the Iris database.
         
@@ -44,7 +44,7 @@ class _Utils():
         return iris.cls('Grongier.PEX.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
 
     @staticmethod
-    def register_folder(path:str,overwrite:int,iris_package_name:str):
+    def register_folder(path:str,overwrite:int=1,iris_package_name:str='Python'):
         """
         > This function takes a path to a folder, and registers all the Python files in that folder as IRIS
         classes
@@ -64,7 +64,7 @@ class _Utils():
                 continue
 
     @staticmethod
-    def register_file(file:str,overwrite:int,iris_package_name:str):
+    def register_file(file:str,overwrite:int=1,iris_package_name:str='Python'):
         """
         It takes a file name, a boolean to overwrite existing components, and the name of the Iris
         package that the file is in. It then opens the file, parses it, and looks for classes that extend
@@ -82,7 +82,7 @@ class _Utils():
         return _Utils._register_file(head_tail[1],head_tail[0],overwrite,iris_package_name)
 
     @staticmethod
-    def _register_file(filename:str,path:str,overwrite:int,iris_package_name:str):
+    def _register_file(filename:str,path:str,overwrite:int=1,iris_package_name:str='Python'):
         """
         It takes a file name, a path, a boolean to overwrite existing components, and the name of the Iris
         package that the file is in. It then opens the file, parses it, and looks for classes that extend
@@ -118,7 +118,7 @@ class _Utils():
                     iris_class_name = iris_class_name.replace('_','')
                     _Utils.register_component(module, klass.name, path, overwrite, iris_class_name)
     @staticmethod
-    def register_package(package:str,path:str,overwrite:int,iris_package_name:str):
+    def register_package(package:str,path:str,overwrite:int=1,iris_package_name:str='Python'):
         """
         It takes a package name, a path to the package, a flag to overwrite existing files, and the name of
         the iris package to register the files to. It then loops through all the files in the package and
