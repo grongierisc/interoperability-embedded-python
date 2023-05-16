@@ -158,3 +158,21 @@ class _Utils():
             module = mod
 
         return module
+
+    @staticmethod
+    def migrate():
+        """ 
+        Read the settings.py file and register all the components
+        settings.py file has two dictionaries:
+            * CLASSES
+                * key: the name of the class
+                * value: an instance of the class
+            * PRODUCTIONS
+                * key: the name of the production
+                * value: a dictionary containing the settings for the production
+        """
+        from settings import CLASSES, PRODUCTIONS
+        for key, value in CLASSES.items():
+            # get the absolute path to current value (the class)
+            path = os.path.dirname(inspect.getfile(value))
+            _Utils.register_component(value.__module__,value.__name__,path,1,key)
