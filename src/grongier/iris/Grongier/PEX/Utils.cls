@@ -4,10 +4,15 @@
 
 Include Ensemble
 
-Class Grongier.PEX.Utils [ Abstract ]
+Class Grongier.PEX.Utils Extends %RegisteredObject
 {
 
-ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
+ClassMethod dispatchRegisterComponent(
+	pModule As %String,
+	pRemoteClassname As %String,
+	pCLASSPATHS As %String = "",
+	pOverwrite As %Boolean = 0,
+	pProxyClassname As %String = "") As %Status
 {
 	set tSc = $$$OK
 	$$$ThrowOnError(##class(Grongier.PEX.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pOverwrite , pProxyClassname))
@@ -15,7 +20,12 @@ ClassMethod dispatchRegisterComponent(pModule As %String, pRemoteClassname As %S
 }
 
 /// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
-ClassMethod RegisterComponent(pModule As %String, pRemoteClassname As %String, pCLASSPATHS As %String = "", pOverwrite As %Boolean = 0, pProxyClassname As %String = "") As %Status
+ClassMethod RegisterComponent(
+	pModule As %String,
+	pRemoteClassname As %String,
+	pCLASSPATHS As %String = "",
+	pOverwrite As %Boolean = 0,
+	pProxyClassname As %String = "") As %Status
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -89,7 +99,12 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 
 // ..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,.tClassDetails,.tRemoteSettings)
 
-ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, pClasspaths As %String, ByRef pClassDetails, ByRef pRemoteSettings) As %Status [ Internal, Private ]
+ClassMethod GetRemoteClassInfo(
+	pRemoteClassname As %String,
+	pModule As %String,
+	pClasspaths As %String,
+	ByRef pClassDetails,
+	ByRef pRemoteSettings) As %Status [ Internal, Private ]
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -98,18 +113,24 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 	
 	Try {
 		if pClasspaths '="" {
+			set sys = ##class(%SYS.Python).Import("sys")
 			set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
 			set extraClasspaths = $tr(pClasspaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do ##class(Grongier.PEX.Python).SetClassPath(onePath)
+				if onePath'="" do sys.path.append(onePath)
 			}
 		}
 		;
 
-		set tClass = ##class(Grongier.PEX.Python).GetInstanceFromModuleClassName(pModule,pRemoteClassname)
+		set importlib = ##class(%SYS.Python).Import("importlib")
+		set builtins = ##class(%SYS.Python).Import("builtins")
+		set module = importlib."import_module"(pModule)
+		set class = builtins.getattr(module, pRemoteClassname)
+		set tClass = class."__new__"(class)
+
 
 		If $IsObject(tClass) {
 			#; List of information about the class as a whole - $lb(SuperClass, Description, InfoURL, IconURL, Adapter)
@@ -135,7 +156,12 @@ ClassMethod GetRemoteClassInfo(pRemoteClassname As %String, pModule As %String, 
 /// 
 /// Set tSC = ..GenerateProxyClass(pProxyClassname,.tConnectionSettings,tClassDetails,tRemoteSettings,pOverwrite)
 /// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
-ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings, pClassDetails As %String = "", pRemoteSettings As %String = "", pOverwrite As %Boolean = 0) As %Status [ Internal, Private ]
+ClassMethod GenerateProxyClass(
+	pClassname As %String,
+	ByRef pConnectionSettings,
+	pClassDetails As %String = "",
+	pRemoteSettings As %String = "",
+	pOverwrite As %Boolean = 0) As %Status [ Internal, Private ]
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -227,8 +253,8 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 		Quit:$$$ISERR(tSC)
 		
 		If $Case(tSuperClass,"Grongier.PEX.BusinessService":1,"Grongier.PEX.BusinessOperation":1,"Grongier.PEX.DuplexService":1,"Grongier.PEX.DuplexOperation":1,:0) {
-			
-			If (##class(Grongier.PEX.Python).Len(pClassDetails)>4) { //Adaptor
+			set builtins = ##class(%SYS.Python).Import("builtins")
+			If (builtins.len(pClassDetails)>4) { //Adaptor
 
 				#dim tAdapterClass = pClassDetails."__getitem__"(4)
 				#; May want to issue a warning in the UI if the Adapter class does not exist
@@ -261,52 +287,6 @@ ClassMethod GenerateProxyClass(pClassname As %String, ByRef pConnectionSettings,
 	}
 	
 	Quit tSC
-}
-
-// Thanks to Alex Woodhead for this serializer
-ClassMethod ListFrompyList(ByRef pyList As %SYS.Python = {$$$NULLOREF}, ByRef impBi As %SYS.Python = {##class(%SYS.Python).Import("builtins")}, msgkeys = "") As %SYS.Python [ ProcedureBlock = 1 ]
-{
-	set ret=$LB()
-	// How to get length of list
-	set listlen=impBi.len(pyList)
-	for i=1:1:listlen {
-		set data=..pyListGet(i,pyList)
-		// if data is also a list // TODO
-		if $IsObject(data) {
-			if ..pyListIs(data) {
-			  set data=..ListFrompyList(data,impBi,,msgkeys_"["_i_"]")
-			} else {
-				set $ZE="Class "_..%ClassName(1)_" Method ListFrompyList. Unsupported value type """_..pyTypeName(data)_""" at position "_msgkeys_"["_i_"]"
-				do BACK^%ETN	
-			}
-		}
-		// add string / numeric / IRIS LIST to ret
-		set ret=$LU(ret,i,data)
-	}
-	quit ret
-}
-
-ClassMethod pyListIs(ByRef pyList As %SYS.Python) As %SYS.Python [ Language = python ]
-{
-	return (type(pyList)==list)
-}
-
-/// Returns empty string on error
-/// position starts at one to keep same as IRIS List
-ClassMethod pyListGet(position As %Integer, ByRef pyList As %SYS.Python) As %SYS.Python [ Language = python ]
-{
-	ret=""
-	try:
-	  ret=(pyList[position-1])
-	except:
-	  print("Error in pyListGet")
-	  
-	return ret
-}
-
-ClassMethod pyTypeName(obj As %SYS.Python) As %String [ Language = python ]
-{
-	return type(obj).__name__
 }
 
 }

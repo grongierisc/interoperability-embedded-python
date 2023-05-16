@@ -63,6 +63,7 @@ Method Connect() As %Status
 			set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
+				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
 				if onePath'="" do sys.path.append(onePath)
 			}
