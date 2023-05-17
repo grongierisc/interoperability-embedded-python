@@ -51,6 +51,7 @@ def main():
         python_requires='>=3.6',
         install_requires=[
             "dacite>=1.6.0",
+            "xmltodict>=0.12.0",
         ]
     )
 
