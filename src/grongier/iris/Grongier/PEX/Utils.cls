@@ -289,4 +289,56 @@ ClassMethod GenerateProxyClass(
 	Quit tSC
 }
 
+ClassMethod CreateProduction(
+	package As %String = "test",
+	name As %String = "AutoCreatedProduction",
+	xdata As %String) As %Status
+{
+  #Dim produtionClassName As %String = package _ "." _ name
+  If ('$ZName(produtionClassName, 4))
+  {
+  Return $System.Status.Error(5001, "Invalid Production package or name.")
+  }
+  #Dim productionDefinition As %Dictionary.ClassDefinition
+  // Check if the production already exists
+  If (##class(%Dictionary.ClassDefinition).%ExistsId(produtionClassName))
+  {
+	// Open the production
+	set productionDefinition = ##class(%Dictionary.ClassDefinition).%OpenId(produtionClassName)
+  }
+  Else
+  {
+	// Create the production definition
+    set productionDefinition = ##Class(%Dictionary.ClassDefinition).%New()
+  }
+  //
+  Set productionDefinition.Name         = produtionClassName
+  Set productionDefinition.Super        = "Ens.Production"
+  Set productionDefinition.ClassVersion = 25
+  //
+  // Check if the XData Definition already exists
+  If (##Class(%Dictionary.XDataDefinition).%ExistsId(produtionClassName_"||ProductionDefinition"))
+  {
+	// delete the XData Definition
+	$$$ThrowOnError(##Class(%Dictionary.XDataDefinition).%DeleteId(produtionClassName_"||ProductionDefinition"))
+  }
+  #Dim xdataDefinition As %Dictionary.XDataDefinition = ##Class(%Dictionary.XDataDefinition).%New()
+  //
+  Set xdataDefinition.Name = "ProductionDefinition"
+  //
+  Do xdataDefinition.Data.Write(xdata)
+  //
+  // Insert XData Definition into Production Definition
+  Do productionDefinition.XDatas.Insert(xdataDefinition)
+  //
+  #Dim statusCode As %Status = productionDefinition.%Save()
+  //
+  If ($System.Status.IsError(statusCode))
+  {
+  Return statusCode
+  }
+  // Compile the production class
+  return $System.OBJ.Compile(produtionClassName,"k-d")
+}
+
 }
