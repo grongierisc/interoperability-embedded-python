@@ -44,6 +44,8 @@ This proof of concept aims to show how the **iris interoperability framework** c
     - [7.12.1. register\_component](#7121-register_component)
     - [7.12.2. register\_file](#7122-register_file)
     - [7.12.3. register\_folder](#7123-register_folder)
+    - [7.12.4. migrate](#7124-migrate)
+      - [7.12.4.1 setting.py file](#71241-settingpy-file)
   - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
 - [8. Credits](#8-credits)
 
@@ -696,7 +698,7 @@ class EmailOperation(BusinessOperation):
 If this operation is called using a MyRequest message, the my_message function will be called thanks to the dispatcher, otherwise the on_message function will be called.
 
 ## 7.9. The `director` class
-The Directorclass is used for nonpolling business services, that is, business services which are not automatically called by the production framework (through the inbound adapter) at the call interval.<br>
+The Director class is used for nonpolling business services, that is, business services which are not automatically called by the production framework (through the inbound adapter) at the call interval.<br>
 Instead these business services are created by a custom application by calling the Director.create_business_service() method.<br>
 This class defines:
 
@@ -704,6 +706,20 @@ This class defines:
 **Parameters**:
 - **connection**: an IRISConnection object that specifies the connection to an IRIS instance for Java.
 - **target**: a string that specifies the name of the business service in the production definition.
+
+`start_production`: The start_production() method starts the production.<br>
+**Parameters**:
+- **production_name**: a string that specifies the name of the production to start.
+
+`stop_production`: The stop_production() method stops the production.<br>
+**Parameters**:
+- **production_name**: a string that specifies the name of the production to stop.
+
+`restart_production`: The restart_production() method restarts the production.<br>
+**Parameters**:
+- **production_name**: a string that specifies the name of the production to restart.
+
+`list_productions`: The list_productions() method returns a dictionary of the names of the productions that are currently running.<br>
 
 **Returns**:
 an object that contains an instance of IRISBusinessService
@@ -818,6 +834,102 @@ e.g :
 ```python
 from grongier.pex import Utils
 Utils.register_folder("/irisdev/app/src/python/demo/",1,"PEX")
+```
+
+### 7.12.4. migrate
+
+Start an embedded python shell :
+
+```sh
+/usr/irissys/bin/irispython
+```
+
+Then use this static method to migrate the settings file to the iris framework.
+
+```python
+from grongier.pex import Utils
+Utils.migrate()
+```
+
+#### 7.12.4.1 setting.py file
+
+This file is used to store the settings of the interoperability components.
+
+It has two sections :
+* `CLASSES` : This section is used to store the classes of the interoperability components.
+* `PRODUCTIONS` : This section is used to store the productions of the interoperability components.
+
+e.g :
+```python
+import bp
+from bo import *
+from bs import *
+
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
+    'Python.FileOperation': FileOperation,
+    'Python.FileOperationWithIrisAdapter': FileOperationWithIrisAdapter,
+}
+
+PRODUCTIONS = [
+    {
+        'dc.Python.Production': {
+        "@Name": "dc.Demo.Production",
+        "@TestingEnabled": "true",
+        "@LogGeneralTraceEvents": "false",
+        "Description": "",
+        "ActorPoolSize": "2",
+        "Item": [
+            {
+                "@Name": "Python.FileOperation",
+                "@Category": "",
+                "@ClassName": "Python.FileOperation",
+                "@PoolSize": "1",
+                "@Enabled": "true",
+                "@Foreground": "false",
+                "@Comment": "",
+                "@LogTraceEvents": "true",
+                "@Schedule": "",
+                "Setting": {
+                    "@Target": "Host",
+                    "@Name": "%settings",
+                    "#text": "path=/tmp"
+                }
+            },
+            {
+                "@Name": "Python.RedditService",
+                "@Category": "",
+                "@ClassName": "Python.RedditService",
+                "@PoolSize": "1",
+                "@Enabled": "true",
+                "@Foreground": "false",
+                "@Comment": "",
+                "@LogTraceEvents": "false",
+                "@Schedule": "",
+                "Setting": [
+                    {
+                        "@Target": "Host",
+                        "@Name": "%settings",
+                        "#text": "limit=10\nother<10"
+                    }
+                ]
+            },
+            {
+                "@Name": "Python.FilterPostRoutingRule",
+                "@Category": "",
+                "@ClassName": "Python.FilterPostRoutingRule",
+                "@PoolSize": "1",
+                "@Enabled": "true",
+                "@Foreground": "false",
+                "@Comment": "",
+                "@LogTraceEvents": "false",
+                "@Schedule": ""
+            }
+        ]
+    }
+    }
+]
 ```
 
 ## 7.13. Direct use of Grongier.PEX
