@@ -52,6 +52,7 @@ def main():
         install_requires=[
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
+            "irissqlcli"
         ]
     )
 
