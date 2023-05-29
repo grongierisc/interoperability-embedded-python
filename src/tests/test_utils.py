@@ -75,14 +75,28 @@ def test_register_package():
 
     assert result == expect
 
-def test_set_classes_settings_by_module():
+def test_set_classes_settings_by_classe():
     # set python path to the registerFiles folder
     path = os.path.dirname(os.path.realpath(__file__))
     # join the registerFolder to the path
     path = os.path.join(path, 'registerFiles')
+
     sys.path.append(path)
+
     from bo import EmailOperation
     CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_module():
+    # this test aim to register a module
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+
+    sys.path.append(path)
+    import bo
+    CLASSES = { 'UnitTest.Module': bo }
     _Utils.set_classes_settings(CLASSES)
 
 def test_set_classes_settings_by_file():
@@ -133,21 +147,16 @@ def test_set_productions_settings():
     PRODUCTIONS = [
         {
             'UnitTest.Production': {
-                "@Name": "dc.Demo.Production",
                 "@TestingEnabled": "true",
                 "Description": "",
                 "ActorPoolSize": "2",
                 "Item": [
                     {
                         "@Name": "Python.FileOperation",
-                        "@Category": "",
                         "@ClassName": "Python.FileOperation",
-                        "@PoolSize": "",
                         "@Enabled": "true",
                         "@Foreground": "false",
-                        "@Comment": "",
                         "@LogTraceEvents": "true",
-                        "@Schedule": "",
                         "Setting": {
                             "@Target": "Host",
                             "@Name": "%settings",
@@ -159,3 +168,5 @@ def test_set_productions_settings():
         } 
     ]
     _Utils.set_productions_settings(PRODUCTIONS)
+
+    
