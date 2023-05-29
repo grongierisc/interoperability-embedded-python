@@ -12,6 +12,7 @@ CLASSES = {
         'module': 'bo',
         'path': 'src/tests/registerFiles'
     },
+    'Python.bp': bp,
 }
 
 PRODUCTIONS = [

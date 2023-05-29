@@ -250,7 +250,12 @@ class _Utils():
         :param json: a json
         :return: an xml
         """
-        return xmltodict.unparse(json)  
+        xml = xmltodict.unparse(json,pretty=True)
+        # remove the xml version tag
+        xml = xml.replace('<?xml version="1.0" encoding="utf-8"?>','')
+        # remove the new line at the beginning of the xml
+        xml = xml[1:]
+        return xml
     
     @staticmethod
     def register_production(production_name,xml):
@@ -277,9 +282,13 @@ class _Utils():
         :param production_name: the name of the production
         :type production_name: str
         """
+        def postprocessor(path, key, value):
+            if value is None:
+                return key, ''
+            return key, value
         # export the production
         xdata = iris.cls('Grongier.PEX.Utils').ExportProduction(production_name)
         # convert the xml to a dictionary
-        data = xmltodict.parse(xdata)
+        data = xmltodict.parse(xdata,postprocessor=postprocessor)
         # return the dictionary
         return data

@@ -169,4 +169,36 @@ def test_set_productions_settings():
     ]
     _Utils.set_productions_settings(PRODUCTIONS)
 
-    
+def test_get_productions_settings():
+    PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                "@TestingEnabled": "true",
+                "Description": "",
+                "ActorPoolSize": "2",
+                "Item": [
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@ClassName": "Python.FileOperation",
+                        "@Enabled": "true",
+                        "@Foreground": "false",
+                        "@LogTraceEvents": "true",
+                        "Setting": {
+                            "@Target": "Host",
+                            "@Name": "%settings",
+                            "#text": "path=/tmp"
+                        }
+                    },
+                    {
+                        "@Name": "Python.EmailOperation",
+                        "@ClassName": "Python.EmailOperation"
+                    }
+                ]
+            }
+        } 
+    ]
+    _Utils.set_productions_settings(PRODUCTIONS)
+    result = _Utils.export_production('UnitTest.Production')
+    expect = PRODUCTIONS[0]
+
+    assert result == expect
