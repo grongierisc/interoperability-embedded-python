@@ -12,27 +12,32 @@
 from grongier.pex._director import _Director
 from grongier.pex._utils import _Utils
 
-import os
+import argparse
 import sys
 
-def parse_args(args):
+def parse_args(argv):
     # parse arguments
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--default', help='set the default production')
+    parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_given')
     parser.add_argument('-l', '--lists', help='list productions', action='store_true')
     parser.add_argument('-s', '--start', help='start a production')
     parser.add_argument('-k', '--kill', help='kill a production')
     parser.add_argument('-r', '--restart', help='restart a production')
     parser.add_argument('-m', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-x', '--export', help='export a production')
-    return parser.parse_args(args=args)
+    return parser.parse_args(argv)
 
-def main(args):
-    # check if args is a list
-    args = parse_args(args)
-    # switch on arguments
-    if args.help:
+def main(argv=None):
+    # build arguments
+    args = parse_args(argv)
+    if args.default:
+        if args.default == 'not_given':
+            # display default production name
+            print(_Director.get_default_production())
+        else:
+            # set default production
+            _Director.set_default_production(args.default)
+    else:
         # display help and default production name
         print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k KILL] [-r RESTART] [-m MIGRATE] [-x EXPORT]")
         print("optional arguments:")
@@ -53,4 +58,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
