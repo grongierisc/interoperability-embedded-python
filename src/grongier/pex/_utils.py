@@ -42,7 +42,9 @@ class _Utils():
         :type iris_classname: str
         :return: The return value is a string.
         """
-
+        path = os.path.normpath(path)
+        # get the absolute path of the folder
+        path = os.path.abspath(path)
         return iris.cls('Grongier.PEX.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
 
     @staticmethod
@@ -59,6 +61,8 @@ class _Utils():
         :type iris_package_name: str
         """
         path = os.path.normpath(path)
+        # get the absolute path of the folder
+        path = os.path.abspath(path)
         for filename in os.listdir(path):
             if filename.endswith(".py"): 
                 _Utils._register_file(filename, path, overwrite, iris_package_name)
@@ -137,7 +141,7 @@ class _Utils():
         """
         for filename in os.listdir(os.path.join(path,package)):
             if filename.endswith(".py"): 
-                _Utils._register_file(os.path.join(package,filename), path, overwrite, iris_package_name)
+                _Utils._register_file(filename, os.path.join(path,package), overwrite, iris_package_name)
             else:
                 continue
 
@@ -194,8 +198,33 @@ class _Utils():
         :return: a dictionary of settings for each class
         """
         for key, value in class_items.items():
-            path = os.path.dirname(inspect.getfile(value))
-            _Utils.register_component(value.__module__,value.__name__,path,1,key)
+            if inspect.isclass(value):
+                path = os.path.dirname(inspect.getfile(value))
+                _Utils.register_component(value.__module__,value.__name__,path,1,key)
+            elif inspect.ismodule(value):
+                path = os.path.dirname(inspect.getfile(value))
+                _Utils.register_package(value.__name__,path,1,key)
+            # if the value is a dict
+            elif isinstance(value,dict):
+                # if the dict has a key 'path' and a key 'module' and a key 'class'
+                if 'path' in value and 'module' in value and 'class' in value:
+                    # register the component
+                    _Utils.register_component(value['module'],value['class'],value['path'],1,key)
+                # if the dict has a key 'path' and a key 'package'
+                elif 'path' in value and 'package' in value:
+                    # register the package
+                    _Utils.register_package(value['package'],value['path'],1,key)
+                # if the dict has a key 'path' and a key 'file'
+                elif 'path' in value and 'file' in value:
+                    # register the file
+                    _Utils._register_file(value['file'],value['path'],1,key)
+                # if the dict has a key 'path'
+                elif 'path' in value:
+                    # register folder
+                    _Utils.register_folder(value['path'],1,key)
+                else:
+                    raise ValueError(f"Invalid value for {key}.")
+
 
     @staticmethod
     def set_productions_settings(production_list):
@@ -239,3 +268,18 @@ class _Utils():
         production_name = production_name.split('.')[-1]
         # register the production
         _Utils.raise_on_error(iris.cls('Grongier.PEX.Utils').CreateProduction(package,production_name,xml))
+
+    @staticmethod
+    def export_production(production_name):
+        """
+        It takes a production name and exports the production
+        
+        :param production_name: the name of the production
+        :type production_name: str
+        """
+        # export the production
+        xdata = iris.cls('Grongier.PEX.Utils').ExportProduction(production_name)
+        # convert the xml to a dictionary
+        data = xmltodict.parse(xdata)
+        # return the dictionary
+        return data

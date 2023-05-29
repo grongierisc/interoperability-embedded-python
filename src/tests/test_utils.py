@@ -1,5 +1,6 @@
 import iris
 import os
+import sys
 
 from grongier.pex._utils import _Utils
 
@@ -73,3 +74,88 @@ def test_register_package():
     expect = None
 
     assert result == expect
+
+def test_set_classes_settings_by_module():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+    sys.path.append(path)
+    from bo import EmailOperation
+    CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_file():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+    CLASSES = { 'UnitTest.File': {
+        'file': 'bo.py',
+        'class': 'EmailOperation',
+        'module': 'bo',
+        'path': path
+    } }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_folder():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+    CLASSES = { 'UnitTest.Path': {
+        'path': path
+    } }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_package():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    CLASSES = { 'UnitTest.Package': {
+        'package': 'registerFiles',
+        'path': path
+    } }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_package_and_module():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+    CLASSES = { 'UnitTest.Package.EmailOperation': {
+        'path': path,
+        'module': 'bo',
+        'class': 'EmailOperation'
+    } }
+    _Utils.set_classes_settings(CLASSES)
+
+def test_set_productions_settings():
+    PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                "@Name": "dc.Demo.Production",
+                "@TestingEnabled": "true",
+                "Description": "",
+                "ActorPoolSize": "2",
+                "Item": [
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@Category": "",
+                        "@ClassName": "Python.FileOperation",
+                        "@PoolSize": "",
+                        "@Enabled": "true",
+                        "@Foreground": "false",
+                        "@Comment": "",
+                        "@LogTraceEvents": "true",
+                        "@Schedule": "",
+                        "Setting": {
+                            "@Target": "Host",
+                            "@Name": "%settings",
+                            "#text": "path=/tmp"
+                        }
+                    }
+                ]
+            }
+        } 
+    ]
+    _Utils.set_productions_settings(PRODUCTIONS)

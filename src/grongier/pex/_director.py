@@ -5,6 +5,7 @@ import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
 import sys
 import asyncio
+import os
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -103,6 +104,19 @@ class _Director():
     @staticmethod
     def list_productions():
         return iris.cls('Grongier.PEX.Director').dispatchListProductions()
+
+    ### set default production
+    @staticmethod
+    def set_default_production(production_name=None):
+        #set ^EnsPortal.Settings("SuperUser","LastProduction")
+        glb = iris.gref("^EnsPortal.Settings")
+        glb[os.getenv("IRISUSERNAME"), "LastProduction"] = production_name
+
+    ### get default production
+    def get_default_production():
+        glb = iris.gref("^EnsPortal.Settings")
+        default_production_name = glb[os.getenv("IRISUSERNAME"), "LastProduction"]
+        return default_production_name
 
     @staticmethod
     def read_log(handler):
