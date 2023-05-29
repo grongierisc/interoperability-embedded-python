@@ -203,7 +203,7 @@ class _Utils():
                 _Utils.register_component(value.__module__,value.__name__,path,1,key)
             elif inspect.ismodule(value):
                 path = os.path.dirname(inspect.getfile(value))
-                _Utils.register_package(value.__name__,path,1,key)
+                _Utils._register_file(value.__name__+'.py',path,1,key)
             # if the value is a dict
             elif isinstance(value,dict):
                 # if the dict has a key 'path' and a key 'module' and a key 'class'
