@@ -341,4 +341,23 @@ ClassMethod CreateProduction(
   return $System.OBJ.Compile(produtionClassName,"k-d")
 }
 
+/// Export a production to an XML string
+ClassMethod ExportProduction(pProductionName As %String) As %String
+{
+	Set sc = $$$OK
+	set xdata = ""
+	// Check if the XData Definition exists
+	If (##Class(%Dictionary.XDataDefinition).%ExistsId(pProductionName_"||ProductionDefinition"))
+	{
+		// Open the XData Definition
+		Set xdataDefinition = ##Class(%Dictionary.XDataDefinition).%OpenId(pProductionName_"||ProductionDefinition")
+		Set xdata = xdataDefinition.Data.Read()
+	}
+	Else
+	{
+		$$$ThrowOnError($System.Status.Error(5001, "Production does not exist."))
+	}
+	Return xdata
+}
+
 }
