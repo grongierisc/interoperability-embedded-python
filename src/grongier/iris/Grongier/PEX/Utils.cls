@@ -292,7 +292,7 @@ ClassMethod GenerateProxyClass(
 ClassMethod CreateProduction(
 	package As %String = "test",
 	name As %String = "AutoCreatedProduction",
-	xdata As %String) As %Status
+	xdata As %CharacterStream) As %Status
 {
   #Dim produtionClassName As %String = package _ "." _ name
   If ('$ZName(produtionClassName, 4))
@@ -326,7 +326,7 @@ ClassMethod CreateProduction(
   //
   Set xdataDefinition.Name = "ProductionDefinition"
   //
-  Do xdataDefinition.Data.Write(xdata)
+  Do xdataDefinition.Data.CopyFrom(xdata)
   //
   // Insert XData Definition into Production Definition
   Do productionDefinition.XDatas.Insert(xdataDefinition)
@@ -351,7 +351,7 @@ ClassMethod ExportProduction(pProductionName As %String) As %String
 	{
 		// Open the XData Definition
 		Set xdataDefinition = ##Class(%Dictionary.XDataDefinition).%OpenId(pProductionName_"||ProductionDefinition")
-		Set xdata = xdataDefinition.Data.Read()
+		Set xdata = xdataDefinition.Data
 	}
 	Else
 	{
