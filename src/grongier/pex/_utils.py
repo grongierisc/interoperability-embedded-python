@@ -166,7 +166,7 @@ class _Utils():
         return module
 
     @staticmethod
-    def migrate():
+    def migrate(filename=None):
         """ 
         Read the settings.py file and register all the components
         settings.py file has two dictionaries:
@@ -180,7 +180,17 @@ class _Utils():
         """
         # try to load the settings file
         try:
-            from settings import CLASSES, PRODUCTIONS
+            if filename:
+                import sys
+                path = None
+                # check if the filename is absolute or relative
+                if os.path.isabs(filename):
+                    path = os.path.dirname(filename)
+                else:
+                    raise ValueError("The filename must be absolute")
+                # add the path to the system path
+                sys.path.append(path)
+                from settings import CLASSES, PRODUCTIONS
         except ImportError:
             # return an error if the settings file is not found
             # and explain how to create it

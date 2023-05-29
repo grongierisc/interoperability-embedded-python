@@ -14,6 +14,7 @@ from grongier.pex._utils import _Utils
 
 import argparse
 import sys
+import json
 
 def parse_args(argv):
     # parse arguments
@@ -23,7 +24,7 @@ def parse_args(argv):
     parser.add_argument('-s', '--start', help='start a production')
     parser.add_argument('-k', '--kill', help='kill a production')
     parser.add_argument('-r', '--restart', help='restart a production')
-    parser.add_argument('-m', '--migrate', help='migrate production and classes with settings file')
+    parser.add_argument('-M', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-x', '--export', help='export a production')
     return parser.parse_args(argv)
 
@@ -37,6 +38,22 @@ def main(argv=None):
         else:
             # set default production
             _Director.set_default_production(args.default)
+    elif args.lists:
+        # display list of productions
+        dikt = _Director.list_productions()
+        print(json.dumps(dikt, indent=4))
+    elif args.start:
+        # start a production
+        _Director.start_production(args.start)
+    elif args.kill:
+        # kill a production
+        _Director.stop_production(args.kill)
+    elif args.restart:
+        # restart a production
+        _Director.restart_production(args.restart)
+    elif args.migrate:
+        # migrate a production
+        _Utils.migrate(args.migrate)
     else:
         # display help and default production name
         print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k KILL] [-r RESTART] [-m MIGRATE] [-x EXPORT]")
@@ -50,7 +67,7 @@ def main(argv=None):
         print("  -k KILL, --kill KILL  kill a production")
         print("  -r RESTART, --restart RESTART")
         print("                        restart a production")
-        print("  -m MIGRATE, --migrate MIGRATE")
+        print("  -M MIGRATE, --migrate MIGRATE")
         print("                        migrate production and classes with settings file")
         print("  -x EXPORT, --export EXPORT")
         print("                        export a production")

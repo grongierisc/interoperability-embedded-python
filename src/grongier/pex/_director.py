@@ -108,14 +108,14 @@ class _Director():
     ### set default production
     @staticmethod
     def set_default_production(production_name=None):
-        #set ^EnsPortal.Settings("SuperUser","LastProduction")
-        glb = iris.gref("^EnsPortal.Settings")
-        glb[os.getenv("IRISUSERNAME"), "LastProduction"] = production_name
+        #set ^Ens.Configuration("SuperUser","LastProduction")
+        glb = iris.gref("^Ens.Configuration")
+        glb['csp', "LastProduction"] = production_name
 
     ### get default production
     def get_default_production():
-        glb = iris.gref("^EnsPortal.Settings")
-        default_production_name = glb[os.getenv("IRISUSERNAME"), "LastProduction"]
+        glb = iris.gref("^Ens.Configuration")
+        default_production_name = glb['csp', "LastProduction"]
         return default_production_name
 
     @staticmethod
