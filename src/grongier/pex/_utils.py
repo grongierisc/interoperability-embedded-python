@@ -140,7 +140,7 @@ class _Utils():
         :type iris_package_name: str
         """
         for filename in os.listdir(os.path.join(path,package)):
-            if filename.endswith(".py"): 
+            if filename.endswith(".py"):
                 _Utils._register_file(filename, os.path.join(path,package), overwrite, iris_package_name)
             else:
                 continue
@@ -247,11 +247,37 @@ class _Utils():
             production_name = list(production.keys())[0]
             # set the first key to 'production'
             production['Production'] = production.pop(production_name)
+            # handle Items
+            production = _Utils.handle_items(production)
             # transform the json as an xml
             xml = _Utils.dict_to_xml(production)
             # register the production
             _Utils.register_production(production_name,xml)
-    
+
+    @staticmethod
+    def handle_items(production):
+        # if an item is a class, register it and replace it with the name of the class
+        if 'Item' in production['Production']:
+            # for each item in the list
+            for i,item in enumerate(production['Production']['Item']):
+                # if the attribute "@ClassName" is a class, register it and replace it with the name of the class
+                if '@ClassName' in item:
+                    if inspect.isclass(item['@ClassName']):
+                        path = os.path.dirname(inspect.getfile(item['@ClassName']))
+                        _Utils.register_component(item['@ClassName'].__module__,item['@ClassName'].__name__,path,1,item['@Name'])
+                        # replace the class with the name of the class
+                        production['Production']['Item'][i]['@ClassName'] = item['@Name']
+                # if the attribute "@ClassName" is a dict
+                elif isinstance(item['@ClassName'],dict):
+                    # create a new dict where the key is the name of the class and the value is the dict
+                    class_dict = {item['@Name']:item['@ClassName']}
+                    # pass the new dict to set_classes_settings
+                    _Utils.set_classes_settings(class_dict)
+                    # replace the class with the name of the class
+                    production['Production']['Item'][i]['@ClassName'] = item['@Name']
+
+        return production
+
     @staticmethod
     def dict_to_xml(json):
         """
