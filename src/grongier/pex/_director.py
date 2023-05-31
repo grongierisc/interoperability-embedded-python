@@ -78,7 +78,7 @@ class _Director():
         while True:
             if handler.SIGINT:
                 print('try to stop production')
-                _Director.stop_production(production_name)
+                _Director.stop_production()
                 print('production stopped')
                 break
             await asyncio.sleep(1)
