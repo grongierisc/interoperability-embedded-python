@@ -147,7 +147,9 @@ class _Director():
                 while True:
                     cursor.execute(sql, (datetime.datetime.now() - datetime.timedelta(seconds=1),))
                     for row in cursor:
-                        yield f'{row[9]} {row[5]} {row[6]} {row[7]} {row[8]}'
+                        #ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
+                        # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,       11
+                        yield f'{row[9]} {row[5]} {row[6]} {row[11]} {row[8]}'
                     time.sleep(1)
                     if handler.SIGINT:
                         break
