@@ -149,7 +149,26 @@ class _Director():
                     for row in cursor:
                         #ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
                         # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,       11
-                        yield f'{row[9]} {row[5]} {row[6]} {row[11]} {row[8]}'
+                        # yield all except stack aand tracecat
+                        # in first position, the timelogged
+                        # cast the result to string
+                        # convert Type to its string value
+                            # Assert,Error,Warning,Info,Trace,Alert
+                            # 1,    2,    3,      4,   5,    6
+                        typ = row[11]
+                        if typ == 1:
+                            typ = 'Assert'
+                        elif typ == 2:
+                            typ = 'Error'
+                        elif typ == 3:
+                            typ = 'Warning'
+                        elif typ == 4:
+                            typ = 'Info'
+                        elif typ == 5:
+                            typ = 'Trace'
+                        elif typ == 6:
+                            typ = 'Alert'
+                        yield str(row[9]) + ' ' + typ + ' ' + str(row[1]) + ' ' + str(row[2]) + ' ' + str(row[3]) + ' ' + str(row[4]) + ' ' + str(row[5]) + ' ' + str(row[6]) + ' ' + str(row[8])
                     time.sleep(1)
                     if handler.SIGINT:
                         break
