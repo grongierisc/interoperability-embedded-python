@@ -1,4 +1,3 @@
-import pytest
 import grongier.pex._cli as _cli
 
 def test_help():

@@ -57,7 +57,9 @@ class _Director():
     ### List of function to manage the production
     ### start production
     @staticmethod
-    def start_production(production_name=None):
+    def start_production(production_name=None): 
+        if production_name is None or production_name == '':
+            production_name = _Director.get_default_production()
         # create two async task
         loop = asyncio.get_event_loop()
         handler = SIGINT_handler()
@@ -69,6 +71,8 @@ class _Director():
 
     @staticmethod
     async def start_production_async(production_name=None, handler=None):
+        if production_name is None or production_name == '':
+            production_name = _Director.get_default_production()
         signal.signal(signal.SIGINT, handler.signal_handler)
         iris.cls('Ens.Director').StartProduction(production_name)
         while True:
@@ -81,28 +85,36 @@ class _Director():
 
     ### stop production
     @staticmethod
-    def stop_production(production_name=None):
+    def stop_production():
         iris.cls('Ens.Director').StopProduction()
 
     ### restart production
     @staticmethod
-    def restart_production(production_name=None):
+    def restart_production():
         iris.cls('Ens.Director').RestartProduction()
 
     ### shutdown production
     @staticmethod
-    def shutdown_production(production_name=None):
+    def shutdown_production():
         iris.cls('Ens.Director').StopProduction(10,1)
 
     ### update production
     @staticmethod
-    def update_production(production_name=None):
+    def update_production():
         iris.cls('Ens.Director').UpdateProduction()
 
     ### list production
     @staticmethod
     def list_productions():
         return iris.cls('Grongier.PEX.Director').dispatchListProductions()
+    
+    ### status production
+    @staticmethod
+    def status_production():
+        dikt = iris.cls('Grongier.PEX.Director').StatusProduction()
+        if dikt['Production'] is None or dikt['Production'] == '':
+            dikt['Production'] = _Director.get_default_production()
+        return dikt
 
     ### set default production
     @staticmethod
