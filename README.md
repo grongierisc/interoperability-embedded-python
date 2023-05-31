@@ -1103,11 +1103,11 @@ e.g :
 
 # 8. Command line
 
-Since version 2.3.0, you can use the command line to register your components and productions.
+Since version 2.3.1, you can use the command line to register your components and productions.
 
 To use it, you have to use the following command :
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex 
+iop 
 ```
 
 output :
@@ -1139,7 +1139,7 @@ default production: PEX.Production
 The help command display the help and the default production name.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -h
+iop -h
 ```
 
 output :
@@ -1156,7 +1156,7 @@ The default command set the default production.
 With no argument, it display the default production.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -d
+iop -d
 ```
 
 output :
@@ -1167,7 +1167,7 @@ default production: PEX.Production
 With an argument, it set the default production.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -d PEX.Production
+iop -d PEX.Production
 ```
 
 ## 8.3. lists
@@ -1175,7 +1175,7 @@ With an argument, it set the default production.
 The lists command list productions.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -l
+iop -l
 ```
 
 output :
@@ -1197,7 +1197,7 @@ The start command start a production.
 To exit the command, you have to press CTRL+C.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -s PEX.Production
+iop -s PEX.Production
 ```
 
 output :
@@ -1217,7 +1217,7 @@ Kill command is the same as stop command but with a force stop.
 Kill command doesn't take an argument because only one production can be running.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -k 
+iop -k 
 ```
 
 ## 8.6. stop
@@ -1227,7 +1227,7 @@ The stop command stop a production.
 Stop command doesn't take an argument because only one production can be running.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -S 
+iop -S 
 ```
 
 ## 8.7. restart
@@ -1237,7 +1237,7 @@ The restart command restart a production.
 Restart command doesn't take an argument because only one production can be running.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -r 
+iop -r 
 ```
 
 ## 8.8. migrate
@@ -1249,7 +1249,7 @@ Migrate command must take the absolute path of the settings file.
 Settings file must be in the same folder as the python code.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -M /tmp/settings.json
+iop -M /tmp/settings.json
 ```
 
 ## 8.9. export
@@ -1259,13 +1259,13 @@ The export command export a production.
 If no argument is given, the export command export the default production.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -e
+iop -e
 ```
 
 If an argument is given, the export command export the production given in argument.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -e PEX.Production
+iop -e PEX.Production
 ```
 
 output :
@@ -1318,7 +1318,7 @@ The status command status a production.
 Status command doesn't take an argument because only one production can be running.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -x 
+iop -x 
 ```
 
 output :
@@ -1340,7 +1340,7 @@ Status can be :
 The version command display the version.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -v
+iop -v
 ```
 
 output :
@@ -1355,7 +1355,7 @@ The log command display the log.
 To exit the command, you have to press CTRL+C.
 
 ```bash
-/usr/irissys/bin/irispython -m grongier.pex -L
+iop -L
 ```
 
 output :
