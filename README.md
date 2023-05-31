@@ -45,7 +45,9 @@ This proof of concept aims to show how the **iris interoperability framework** c
     - [7.12.2. register\_file](#7122-register_file)
     - [7.12.3. register\_folder](#7123-register_folder)
     - [7.12.4. migrate](#7124-migrate)
-      - [7.12.4.1 setting.py file](#71241-settingpy-file)
+      - [7.12.4.1. setting.py file](#71241-settingpy-file)
+        - [7.12.4.1.1. CLASSES section](#712411-classes-section)
+        - [7.12.4.1.2. Productions section](#712412-productions-section)
   - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
 - [8. Credits](#8-credits)
 
@@ -707,6 +709,9 @@ This class defines:
 - **connection**: an IRISConnection object that specifies the connection to an IRIS instance for Java.
 - **target**: a string that specifies the name of the business service in the production definition.
 
+**Returns**:
+an object that contains an instance of IRISBusinessService
+
 `start_production`: The start_production() method starts the production.<br>
 **Parameters**:
 - **production_name**: a string that specifies the name of the production to start.
@@ -720,11 +725,6 @@ This class defines:
 - **production_name**: a string that specifies the name of the production to restart.
 
 `list_productions`: The list_productions() method returns a dictionary of the names of the productions that are currently running.<br>
-
-**Returns**:
-an object that contains an instance of IRISBusinessService
-
-WIP example
 
 ## 7.10. The `objects`
 We will use `dataclass` to hold information in our [messages](#711-the-messages) in a `obj.py` file.
@@ -851,7 +851,7 @@ from grongier.pex import Utils
 Utils.migrate()
 ```
 
-#### 7.12.4.1 setting.py file
+#### 7.12.4.1. setting.py file
 
 This file is used to store the settings of the interoperability components.
 
@@ -930,6 +930,148 @@ PRODUCTIONS = [
     }
     }
 ]
+```
+
+##### 7.12.4.1.1. CLASSES section
+
+This section is used to store the classes of the interoperability components.
+
+It aims to help to register the components.
+
+This dictionary has the following structure :
+* Key : The name of the component
+* Value : 
+  * The class of the component (you have to import it before)
+  * The module of the component (you have to import it before)
+  * Another dictionary with the following structure :
+    * `module` : Name of the module of the component (optional)
+    * `class` : Name of the class of the component (optional)
+    * `path` : The path of the component (mandatory)
+
+e.g :
+
+When Value is a class or a module:
+```python
+import bo
+import bp
+from bs import RedditService
+
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
+    'Python.FileOperation': bo,
+}
+```
+
+When Value is a dictionary :
+```python
+CLASSES = {
+    'Python.RedditService': {
+        'module': 'bs',
+        'class': 'RedditService',
+        'path': '/irisdev/app/src/python/demo/'
+    },
+    'Python.Module': {
+        'module': 'bp',
+        'path': '/irisdev/app/src/python/demo/'
+    },
+    'Python.Package': {
+        'path': '/irisdev/app/src/python/demo/'
+    },
+}
+```
+
+##### 7.12.4.1.2. Productions section
+
+This section is used to store the productions of the interoperability components.
+
+It aims to help to register a production.
+
+This list has the following structure :
+* A list of dictionary with the following structure :
+  * `dc.Python.Production` : The name of the production
+    * `@Name` : The name of the production
+    * `@TestingEnabled` : The testing enabled of the production
+    * `@LogGeneralTraceEvents` : The log general trace events of the production
+    * `Description` : The description of the production
+    * `ActorPoolSize` : The actor pool size of the production
+    * `Item` : The list of the items of the production
+      * `@Name` : The name of the item
+      * `@Category` : The category of the item
+      * `@ClassName` : The class name of the item
+      * `@PoolSize` : The pool size of the item
+      * `@Enabled` : The enabled of the item
+      * `@Foreground` : The foreground of the item
+      * `@Comment` : The comment of the item
+      * `@LogTraceEvents` : The log trace events of the item
+      * `@Schedule` : The schedule of the item
+      * `Setting` : The list of the settings of the item
+        * `@Target` : The target of the setting
+        * `@Name` : The name of the setting
+        * `#text` : The value of the setting
+
+The minimum structure of a production is :
+```python
+PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                "Item": [
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@ClassName": "Python.FileOperation",
+                    },
+                    {
+                        "@Name": "Python.EmailOperation",
+                        "@ClassName": "UnitTest.Package.EmailOperation"
+                    }
+                ]
+            }
+        } 
+    ]
+```
+
+You can also set in `@ClassName` an item from the CLASSES section.
+
+e.g :
+```python
+from bo import FileOperation
+PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                "Item": [
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@ClassName": FileOperation,
+                    }
+                ]
+            }
+        } 
+    ]
+```
+
+As the production is a dictionary, you can add in value of the production dictionary an environment variable.
+
+e.g :
+```python
+import os
+
+PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                "Item": [
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@ClassName": "Python.FileOperation",
+                        "Setting": {
+                            "@Target": "Host",
+                            "@Name": "%settings",
+                            "#text": os.environ['SETTINGS']
+                        }
+                    }
+                ]
+            }
+        } 
+    ]
 ```
 
 ## 7.13. Direct use of Grongier.PEX
