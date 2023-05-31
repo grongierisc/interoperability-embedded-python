@@ -191,7 +191,7 @@ def test_get_productions_settings():
                     },
                     {
                         "@Name": "Python.EmailOperation",
-                        "@ClassName": "Python.EmailOperation"
+                        "@ClassName": "UnitTest.Package.EmailOperation"
                     }
                 ]
             }
