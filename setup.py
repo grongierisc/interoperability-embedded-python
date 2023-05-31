@@ -26,7 +26,7 @@ def main():
         description='iris_pex_embedded_python',
         long_description=long_description,
         long_description_content_type='text/markdown',
-        version='2.3.0',
+        version='2.3.1',
         author='grongier',
         author_email='guillaume.rongier@intersystems.com',
         keywords='iris_pex_embedded_python',
@@ -53,7 +53,13 @@ def main():
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
             "irissqlcli"
-        ]
+        ],
+        entry_points={
+            'console_scripts': [
+                # create an iop command that point to the main of the grongier.pex package
+                'iop = grongier.pex._cli:main',
+            ],
+        }
     )
 
 
