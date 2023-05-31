@@ -49,7 +49,20 @@ This proof of concept aims to show how the **iris interoperability framework** c
         - [7.12.4.1.1. CLASSES section](#712411-classes-section)
         - [7.12.4.1.2. Productions section](#712412-productions-section)
   - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
-- [8. Credits](#8-credits)
+- [8. Command line](#8-command-line)
+  - [8.1. help](#81-help)
+  - [8.2. default](#82-default)
+  - [8.3. lists](#83-lists)
+  - [8.4. start](#84-start)
+  - [8.5. kill](#85-kill)
+  - [8.6. stop](#86-stop)
+  - [8.7. restart](#87-restart)
+  - [8.8. migrate](#88-migrate)
+  - [8.9. export](#89-export)
+  - [8.10. status](#810-status)
+  - [8.11. version](#811-version)
+  - [8.12. log](#812-log)
+- [9. Credits](#9-credits)
 
 ## 1.2. Example
 
@@ -1088,7 +1101,272 @@ If you don't want to use the register_component util. You can add a Grongier.PEX
 e.g :
 <img width="800" alt="component-config" src="https://user-images.githubusercontent.com/47849411/131316308-e1898b19-11df-433b-b1c6-7f69d5cc9974.png">
 
-# 8. Credits
+# 8. Command line
+
+Since version 2.3.0, you can use the command line to register your components and productions.
+
+To use it, you have to use the following command :
+```bash
+/usr/irissys/bin/irispython -m grongier.pex 
+```
+
+output :
+```bash
+usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+optional arguments:
+  -h, --help            display help and default production name
+  -d DEFAULT, --default DEFAULT
+                        set the default production
+  -l, --lists           list productions
+  -s START, --start START
+                        start a production
+  -k, --kill            kill a production (force stop)
+  -S, --stop            stop a production
+  -r, --restart         restart a production
+  -M MIGRATE, --migrate MIGRATE
+                        migrate production and classes with settings file
+  -e EXPORT, --export EXPORT
+                        export a production
+  -x, --status          status a production
+  -v, --version         display version
+  -L, --log             display log
+
+default production: PEX.Production
+```
+
+## 8.1. help
+
+The help command display the help and the default production name.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -h
+```
+
+output :
+```bash
+usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+...
+default production: PEX.Production
+```
+
+## 8.2. default
+
+The default command set the default production.
+
+With no argument, it display the default production.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -d
+```
+
+output :
+```bash
+default production: PEX.Production
+```
+
+With an argument, it set the default production.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -d PEX.Production
+```
+
+## 8.3. lists
+
+The lists command list productions.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -l
+```
+
+output :
+```bash
+{
+    "PEX.Production": {
+        "Status": "Stopped",
+        "LastStartTime": "2023-05-31 11:13:51.000",
+        "LastStopTime": "2023-05-31 11:13:54.153",
+        "AutoStart": 0
+    }
+}
+```
+
+## 8.4. start
+
+The start command start a production.
+
+To exit the command, you have to press CTRL+C.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -s PEX.Production
+```
+
+output :
+```bash
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+...
+```
+
+## 8.5. kill
+
+The kill command kill a production (force stop).
+
+Kill command is the same as stop command but with a force stop.
+
+Kill command doesn't take an argument because only one production can be running.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -k 
+```
+
+## 8.6. stop
+
+The stop command stop a production.
+
+Stop command doesn't take an argument because only one production can be running.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -S 
+```
+
+## 8.7. restart
+
+The restart command restart a production.
+
+Restart command doesn't take an argument because only one production can be running.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -r 
+```
+
+## 8.8. migrate
+
+The migrate command migrate a production and classes with settings file.
+
+Migrate command must take the absolute path of the settings file.
+
+Settings file must be in the same folder as the python code.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -M /tmp/settings.json
+```
+
+## 8.9. export
+
+The export command export a production.
+
+If no argument is given, the export command export the default production.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -e
+```
+
+If an argument is given, the export command export the production given in argument.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -e PEX.Production
+```
+
+output :
+```bash
+{
+    "Production": {
+        "@Name": "PEX.Production",
+        "@TestingEnabled": "true",
+        "@LogGeneralTraceEvents": "false",
+        "Description": "",
+        "ActorPoolSize": "2",
+        "Item": [
+            {
+                "@Name": "Python.FileOperation",
+                "@Category": "",
+                "@ClassName": "Python.FileOperation",
+                "@PoolSize": "1",
+                "@Enabled": "true",
+                "@Foreground": "false",
+                "@Comment": "",
+                "@LogTraceEvents": "true",
+                "@Schedule": "",
+                "Setting": [
+                    {
+                        "@Target": "Adapter",
+                        "@Name": "Charset",
+                        "#text": "utf-8"
+                    },
+                    {
+                        "@Target": "Adapter",
+                        "@Name": "FilePath",
+                        "#text": "/irisdev/app/output/"
+                    },
+                    {
+                        "@Target": "Host",
+                        "@Name": "%settings",
+                        "#text": "path=/irisdev/app/output/"
+                    }
+                ]
+            }
+        ]
+    }
+}
+```
+
+## 8.10. status
+
+The status command status a production.
+
+Status command doesn't take an argument because only one production can be running.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -x 
+```
+
+output :
+```bash
+{
+    "Production": "PEX.Production",
+    "Status": "stopped"
+}
+```
+
+Status can be :
+- stopped
+- running
+- suspended
+- troubled
+
+## 8.11. version
+
+The version command display the version.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -v
+```
+
+output :
+```bash
+2.3.0
+```
+
+## 8.12. log
+
+The log command display the log.
+
+To exit the command, you have to press CTRL+C.
+
+```bash
+/usr/irissys/bin/irispython -m grongier.pex -L
+```
+
+output :
+```bash
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+...
+```
+
+# 9. Credits
 
 Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
 
