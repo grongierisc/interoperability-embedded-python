@@ -13,8 +13,8 @@ from grongier.pex._director import _Director
 from grongier.pex._utils import _Utils
 
 import argparse
-import sys
 import json
+from importlib.metadata import version 
 
 def parse_args(argv):
     # parse arguments
@@ -26,6 +26,8 @@ def parse_args(argv):
     parser.add_argument('-r', '--restart', help='restart a production')
     parser.add_argument('-M', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-x', '--export', help='export a production')
+    parser.add_argument('-v', '--version', help='display version', action='store_true')
+    parser.add_argument('-L', '--log', help='display log', action='store_true')
     return parser.parse_args(argv)
 
 def main(argv=None):
@@ -54,6 +56,12 @@ def main(argv=None):
     elif args.migrate:
         # migrate a production
         _Utils.migrate(args.migrate)
+    elif args.version:
+        # display version
+        print(version('iris-pex-embedded-python'))
+    elif args.log:
+        # display log
+        _Director.start_log_production()
     else:
         # display help and default production name
         print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k KILL] [-r RESTART] [-m MIGRATE] [-x EXPORT]")

@@ -5,7 +5,6 @@ import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
 import sys
 import asyncio
-import os
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -113,6 +112,7 @@ class _Director():
         glb['csp', "LastProduction"] = production_name
 
     ### get default production
+    @staticmethod
     def get_default_production():
         glb = iris.gref("^Ens.Configuration")
         default_production_name = glb['csp', "LastProduction"]
@@ -146,6 +146,15 @@ class _Director():
         for line in _Director.read_log(handler):
             print(line)
             sys.stdout.flush()
+
+    @staticmethod
+    def start_log_production():
+        """ Log production 
+            if ctrl+c is pressed, the log is stopped
+        """
+        loop = asyncio.get_event_loop()
+        handler = SIGINT_handler()
+        loop.run_until_complete(_Director.log_production(handler))
 
             
 
