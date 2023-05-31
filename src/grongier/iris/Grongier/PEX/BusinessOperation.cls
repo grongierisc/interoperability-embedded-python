@@ -7,7 +7,9 @@ Class Grongier.PEX.BusinessOperation Extends (Ens.BusinessOperation, Grongier.PE
 
 Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
 
-Method OnMessage(request As %Library.Persistent, Output response As %Library.Persistent) As %Status
+Method OnMessage(
+	request As %Library.Persistent,
+	Output response As %Library.Persistent) As %Status
 {
 	set tSC = $$$OK
 	try {

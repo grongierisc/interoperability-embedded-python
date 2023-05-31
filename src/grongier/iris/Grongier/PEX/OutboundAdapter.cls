@@ -9,7 +9,9 @@ Property KeepaliveInterval As %Numeric [ InitialExpression = 0 ];
 
 Parameter SETTINGS = "KeepaliveInterval:Python CallInterval,%classname:Python OutboundAdapter,%module:Python OutboundAdapter,%settings:Python OutboundAdapter,%classpaths:Python OutboundAdapter";
 
-Method %DispatchMethod(method As %String, args...) As %ObjectHandle
+Method %DispatchMethod(
+	method As %String,
+	args...) As %ObjectHandle
 {
 	if $quit {
 		quit $method($this.%class,method,args...)

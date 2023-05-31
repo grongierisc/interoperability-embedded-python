@@ -20,7 +20,10 @@ Property DeferredResponseToken As %String;
 Property ReceivedDataQueue As list Of %Library.Persistent;
 
 /// This method is called by the TCP Adapter when a message is received.
-Method OnProcessInput(pInput As %Persistent, Output pOutput As %Persistent, ByRef pHint As %String) As %Status
+Method OnProcessInput(
+	pInput As %Persistent,
+	Output pOutput As %Persistent,
+	ByRef pHint As %String) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -154,7 +157,9 @@ XData MessageMap
 </MapItems>
 }
 
-Method OnMsgPrivateSessionStart(pRequest As Grongier.PEX.PrivateSession.Message.Start, Output pResponse As %Library.Persistent) As %Status
+Method OnMsgPrivateSessionStart(
+	pRequest As Grongier.PEX.PrivateSession.Message.Start,
+	Output pResponse As %Library.Persistent) As %Status
 {
     #dim tSC As %Status = $$$OK
     try {
@@ -168,7 +173,9 @@ Method OnMsgPrivateSessionStart(pRequest As Grongier.PEX.PrivateSession.Message.
     Quit tSC
 }
 
-Method OnMsgPrivateSessionStop(pRequest As Grongier.PEX.PrivateSession.Message.Stop, Output pResponse As %Library.Persistent) As %Status
+Method OnMsgPrivateSessionStop(
+	pRequest As Grongier.PEX.PrivateSession.Message.Stop,
+	Output pResponse As %Library.Persistent) As %Status
 {
     #dim tSC As %Status = $$$OK
     try {
@@ -182,7 +189,9 @@ Method OnMsgPrivateSessionStop(pRequest As Grongier.PEX.PrivateSession.Message.S
     Quit tSC
 }
 
-Method OnMsgPrivateSessionPoll(pPollIn As Grongier.PEX.PrivateSession.Message.Poll, Output pResponse As %Library.Persistent) As %Status
+Method OnMsgPrivateSessionPoll(
+	pPollIn As Grongier.PEX.PrivateSession.Message.Poll,
+	Output pResponse As %Library.Persistent) As %Status
 {
     #dim tSC As %Status = $$$OK
     #dim tToken As %String
@@ -201,7 +210,9 @@ Method OnMsgPrivateSessionPoll(pPollIn As Grongier.PEX.PrivateSession.Message.Po
 }
 
 /// Return an array of connections for drawing lines on the config diagram
-ClassMethod OnGetConnections(Output pArray As %String, pItem As Ens.Config.Item)
+ClassMethod OnGetConnections(
+	Output pArray As %String,
+	pItem As Ens.Config.Item)
 {
     Do ##super(.pArray,pItem)
     If pItem.GetModifiedSetting("DuplexTargetConfigName",.tValue) {
@@ -221,7 +232,9 @@ Method OnPrivateSessionStarted(pSelfGenerated As %Boolean) As %Status
 	quit tSC
 }
 
-Method OnPrivateSessionStopped(pSelfGenerated As %Boolean, pAttachedMessage As %Persistent = "") As %Status
+Method OnPrivateSessionStopped(
+	pSelfGenerated As %Boolean,
+	pAttachedMessage As %Persistent = "") As %Status
 {
 	set tSC = $$$OK
 	try {

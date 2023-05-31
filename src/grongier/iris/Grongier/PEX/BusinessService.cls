@@ -13,7 +13,9 @@ Method dispatchProcessInput(pInput As %RegisteredObject) As %RegisteredObject
 	quit ..%class."on_process_input"(pInput)
 }
 
-Method OnProcessInput(request As %RegisteredObject, Output response As %RegisteredObject) As %Status
+Method OnProcessInput(
+	request As %RegisteredObject,
+	Output response As %RegisteredObject) As %Status
 {
 	set tSC = $$$OK
 	try {

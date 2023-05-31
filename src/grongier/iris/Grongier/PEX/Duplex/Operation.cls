@@ -13,7 +13,9 @@ XData MessageMap
 </MapItems>
 }
 
-Method OnMessage(request As %Library.Persistent, Output response As %Library.Persistent) As %Status
+Method OnMessage(
+	request As %Library.Persistent,
+	Output response As %Library.Persistent) As %Status
 {
 	set tSC = $$$OK
 	try {

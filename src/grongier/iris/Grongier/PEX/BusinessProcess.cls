@@ -16,14 +16,18 @@ Method dispatchReply(response)
 	quit
 }
 
-Method dispatchSetTimer(timeout, completionKey)
+Method dispatchSetTimer(
+	timeout,
+	completionKey)
 {
 	set tSC = ..SetTimer(timeout,$g(completionKey))
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit
 }
 
-Method OnRequest(request As %Persistent, Output response As %Persistent) As %Status
+Method OnRequest(
+	request As %Persistent,
+	Output response As %Persistent) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -35,7 +39,12 @@ Method OnRequest(request As %Persistent, Output response As %Persistent) As %Sta
 }
 
 /// Handle a 'Response'
-Method OnResponse(request As %Persistent, Output response As %Persistent, callRequest As %Persistent, callResponse As %Persistent, pCompletionKey As %String) As %Status
+Method OnResponse(
+	request As %Persistent,
+	Output response As %Persistent,
+	callRequest As %Persistent,
+	callResponse As %Persistent,
+	pCompletionKey As %String) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -46,7 +55,9 @@ Method OnResponse(request As %Persistent, Output response As %Persistent, callRe
 	quit tSC
 }
 
-Method OnComplete(request As %Library.Persistent, ByRef response As %Library.Persistent) As %Status
+Method OnComplete(
+	request As %Library.Persistent,
+	ByRef response As %Library.Persistent) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -63,7 +74,9 @@ Method getPersistentProperty(name)
 	quit ..persistentProperties.GetAt(name)
 }
 
-Method setPersistentProperty(name, value)
+Method setPersistentProperty(
+	name,
+	value)
 {
 	quit ..persistentProperties.SetAt(value,name)
 }

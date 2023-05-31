@@ -39,7 +39,9 @@ Method %DispatchGetProperty(property As %String) As %ObjectHandle
 	quit $property(..jsonObject,property)
 }
 
-Method %DispatchSetProperty(property As %String, value)
+Method %DispatchSetProperty(
+	property As %String,
+	value)
 {
 	set $property(..jsonObject,property) = value
 	quit

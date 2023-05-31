@@ -15,7 +15,9 @@ Property ServiceDuplexName As %String;
 Property %IsInPrivateSession As array Of %Boolean(STORAGEDEFAULT = "list");
 
 /// This method is always called asynchronously ONCE at the beginning of the process
-Method OnRequest(pRequest As %Library.Persistent, Output pResponse As Ens.Response) As %Status
+Method OnRequest(
+	pRequest As %Library.Persistent,
+	Output pResponse As Ens.Response) As %Status
 {
 	#dim tSC As %Status = $$$OK
 	try {
@@ -35,7 +37,12 @@ Method OnRequest(pRequest As %Library.Persistent, Output pResponse As Ens.Respon
 }
 
 /// Handle a 'Response'
-Method OnResponse(request As %Library.Persistent, ByRef response As %Library.Persistent, callrequest As %Library.Persistent, callresponse As %Library.Persistent, pCompletionKey As %String) As %Status
+Method OnResponse(
+	request As %Library.Persistent,
+	ByRef response As %Library.Persistent,
+	callrequest As %Library.Persistent,
+	callresponse As %Library.Persistent,
+	pCompletionKey As %String) As %Status
 {
 	#dim tSC As %Status = $$$OK
 	#dim tSourceConfigName, tOneConfigName As %String
@@ -82,7 +89,9 @@ Method StartPrivateSession(pDuplexConfigName As %String = "") As %Status
 	Quit tSC
 }
 
-Method StopPrivateSession(pDuplexConfigName As %String = "", pAttachedMessage As %Persistent = "") As %Status
+Method StopPrivateSession(
+	pDuplexConfigName As %String = "",
+	pAttachedMessage As %Persistent = "") As %Status
 {
 	#dim tSC As %Status = $$$OK
 	try {
@@ -129,7 +138,9 @@ Method UnRegisterPrivateSession(pDuplexConfigName As %String) As %String
 	Quit tSC
 }
 
-Method IsInPrivateSessionSet(pDuplexConfigName As %String, pInPrivateSession As %Boolean)
+Method IsInPrivateSessionSet(
+	pDuplexConfigName As %String,
+	pInPrivateSession As %Boolean)
 {
 	If pInPrivateSession {
 		Do ..%IsInPrivateSession.SetAt(1,pDuplexConfigName)
@@ -145,7 +156,9 @@ Method IsInPrivateSession(pDuplexConfigName As %String) As %Boolean
 	Quit ..%IsInPrivateSession.IsDefined(pDuplexConfigName)
 }
 
-Method OnDocument(pSourceConfigName As %String, pInput As %Library.Persistent) As %Status
+Method OnDocument(
+	pSourceConfigName As %String,
+	pInput As %Library.Persistent) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -156,7 +169,9 @@ Method OnDocument(pSourceConfigName As %String, pInput As %Library.Persistent) A
 	quit tSC
 }
 
-Method OnPrivateSessionStarted(pSourceConfigName As %String, pSelfGenerated As %Boolean) As %Status
+Method OnPrivateSessionStarted(
+	pSourceConfigName As %String,
+	pSelfGenerated As %Boolean) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -167,7 +182,10 @@ Method OnPrivateSessionStarted(pSourceConfigName As %String, pSelfGenerated As %
 	quit tSC
 }
 
-Method OnPrivateSessionStopped(pSourceConfigName As %String, pSelfGenerated As %Boolean, pAttachedMessage As %Persistent = "") As %Status
+Method OnPrivateSessionStopped(
+	pSourceConfigName As %String,
+	pSelfGenerated As %Boolean,
+	pAttachedMessage As %Persistent = "") As %Status
 {
 	set tSC = $$$OK
 	try {
