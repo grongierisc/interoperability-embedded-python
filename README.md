@@ -1249,7 +1249,7 @@ Migrate command must take the absolute path of the settings file.
 Settings file must be in the same folder as the python code.
 
 ```bash
-iop -M /tmp/settings.json
+iop -M /tmp/settings.py
 ```
 
 ## 8.9. export

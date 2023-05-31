@@ -97,7 +97,7 @@ def main(argv=None):
 
     else:
         # display help and default production name
-        print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]")
+        print("usage: iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]")
         print("optional arguments:")
         print("  -h, --help            display help and default production name")
         print("  -d DEFAULT, --default DEFAULT")
