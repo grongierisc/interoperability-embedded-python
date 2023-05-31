@@ -21,11 +21,11 @@ def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_given')
     parser.add_argument('-l', '--lists', help='list productions', action='store_true')
-    parser.add_argument('-s', '--start', help='start a production')
-    parser.add_argument('-k', '--kill', help='kill a production')
-    parser.add_argument('-r', '--restart', help='restart a production')
+    parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_given')
+    parser.add_argument('-k', '--kill', help='kill a production', nargs='?', const='not_given')
+    parser.add_argument('-r', '--restart', help='restart a production', nargs='?', const='not_given')
     parser.add_argument('-M', '--migrate', help='migrate production and classes with settings file')
-    parser.add_argument('-x', '--export', help='export a production')
+    parser.add_argument('-x', '--export', help='export a production', nargs='?', const='not_given')
     parser.add_argument('-v', '--version', help='display version', action='store_true')
     parser.add_argument('-L', '--log', help='display log', action='store_true')
     return parser.parse_args(argv)
@@ -64,7 +64,7 @@ def main(argv=None):
         _Director.start_log_production()
     else:
         # display help and default production name
-        print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k KILL] [-r RESTART] [-m MIGRATE] [-x EXPORT]")
+        print("usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k KILL] [-r RESTART] [-M MIGRATE] [-x EXPORT] [-v] [-L]")
         print("optional arguments:")
         print("  -h, --help            display help and default production name")
         print("  -d DEFAULT, --default DEFAULT")
@@ -79,6 +79,9 @@ def main(argv=None):
         print("                        migrate production and classes with settings file")
         print("  -x EXPORT, --export EXPORT")
         print("                        export a production")
+        print("  -v, --version         display version")
+        print("  -L, --log             display log")
+        print("")
         print("default production: " + _Director.get_default_production())
 
 

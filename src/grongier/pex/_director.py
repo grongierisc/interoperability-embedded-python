@@ -106,7 +106,7 @@ class _Director():
 
     ### set default production
     @staticmethod
-    def set_default_production(production_name=None):
+    def set_default_production(production_name=''):
         #set ^Ens.Configuration("SuperUser","LastProduction")
         glb = iris.gref("^Ens.Configuration")
         glb['csp', "LastProduction"] = production_name
@@ -116,6 +116,8 @@ class _Director():
     def get_default_production():
         glb = iris.gref("^Ens.Configuration")
         default_production_name = glb['csp', "LastProduction"]
+        if default_production_name is None or default_production_name == '':
+            default_production_name = 'Not defined'
         return default_production_name
 
     @staticmethod
