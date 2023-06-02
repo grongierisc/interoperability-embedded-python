@@ -1,10 +1,10 @@
 import iris
 import datetime
-import time
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
-import sys
+import functools
 import asyncio
+from dataclasses import dataclass
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -57,31 +57,34 @@ class _Director():
     ### List of function to manage the production
     ### start production
     @staticmethod
-    def start_production(production_name=None): 
+    def start_production_with_log(production_name=None):
         if production_name is None or production_name == '':
             production_name = _Director.get_default_production()
         # create two async task
         loop = asyncio.get_event_loop()
-        handler = SIGINT_handler()
-        print('start production')
+        # add signal handler
+        handler = SigintHandler()
+        loop.add_signal_handler(signal.SIGINT, functools.partial(handler.signal_handler, signal.SIGINT, loop))
         loop.run_until_complete(asyncio.gather(
-            _Director.start_production_async(production_name, handler),
-            _Director.log_production(handler)
+            _Director._start_production_async(production_name, handler),
+            _Director._log_production_async(handler)
         ))
+        loop.close()
 
     @staticmethod
-    async def start_production_async(production_name=None, handler=None):
-        if production_name is None or production_name == '':
-            production_name = _Director.get_default_production()
-        signal.signal(signal.SIGINT, handler.signal_handler)
-        iris.cls('Ens.Director').StartProduction(production_name)
+    async def _start_production_async(production_name=None, handler=None):
+        _Director.start_production(production_name)
         while True:
-            if handler.SIGINT:
-                print('try to stop production')
+            if handler.sigint:
                 _Director.stop_production()
-                print('production stopped')
                 break
             await asyncio.sleep(1)
+
+    @staticmethod
+    def start_production(production_name=None):
+        if production_name is None or production_name == '':
+            production_name = _Director.get_default_production()
+        iris.cls('Ens.Director').StartProduction(production_name)
 
     ### stop production
     @staticmethod
@@ -133,7 +136,45 @@ class _Director():
         return default_production_name
 
     @staticmethod
-    def read_log(handler):
+    def format_log(row: list) -> str:
+        # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,       11
+        # ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
+        # yield all except stack aand tracecat
+        # in first position, the timelogged
+        # cast the result to string
+        # convert Type to its string value
+            # Assert,Error,Warning,Info,Trace,Alert
+        typ = row[11]
+        if typ == 1:
+            typ = 'Assert'
+        elif typ == 2:
+            typ = 'Error'
+        elif typ == 3:
+            typ = 'Warning'
+        elif typ == 4:
+            typ = 'Info'
+        elif typ == 5:
+            typ = 'Trace'
+        elif typ == 6:
+            typ = 'Alert'
+        return str(row[9]) + ' ' + typ + ' ' + str(row[1]) + ' ' + str(row[2]) + ' ' + str(row[3]) + ' ' + str(row[4]) + ' ' + str(row[5]) + ' ' + str(row[6]) + ' ' + str(row[8])
+
+    @staticmethod
+    def read_top_log(cursor,top) -> list:
+        sql = """
+        SELECT top ?
+        ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
+        FROM Ens_Util.Log
+        order by id desc
+        """
+        result = []
+        cursor.execute(sql, top)
+        for row in cursor:
+            result.append(_Director.format_log(row))
+        return result
+
+    @staticmethod
+    def read_log(cursor) -> list:
         sql = """
         SELECT 
         ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
@@ -141,61 +182,50 @@ class _Director():
         where TimeLogged >= ?
         order by id desc
         """
-        signal.signal(signal.SIGINT, handler.signal_handler)
-        with irisdbapi.connect(embedded=True) as connection:
-            with connection.cursor() as cursor:
-                while True:
-                    cursor.execute(sql, (datetime.datetime.now() - datetime.timedelta(seconds=1),))
-                    for row in cursor:
-                        #ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
-                        # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,       11
-                        # yield all except stack aand tracecat
-                        # in first position, the timelogged
-                        # cast the result to string
-                        # convert Type to its string value
-                            # Assert,Error,Warning,Info,Trace,Alert
-                            # 1,    2,    3,      4,   5,    6
-                        typ = row[11]
-                        if typ == 1:
-                            typ = 'Assert'
-                        elif typ == 2:
-                            typ = 'Error'
-                        elif typ == 3:
-                            typ = 'Warning'
-                        elif typ == 4:
-                            typ = 'Info'
-                        elif typ == 5:
-                            typ = 'Trace'
-                        elif typ == 6:
-                            typ = 'Alert'
-                        yield str(row[9]) + ' ' + typ + ' ' + str(row[1]) + ' ' + str(row[2]) + ' ' + str(row[3]) + ' ' + str(row[4]) + ' ' + str(row[5]) + ' ' + str(row[6]) + ' ' + str(row[8])
-                    time.sleep(1)
-                    if handler.SIGINT:
-                        break
+        result = []
+        cursor.execute(sql, (datetime.datetime.now() - datetime.timedelta(seconds=1),))
+        for row in cursor:
+            result.append(_Director.format_log(row))
+        return result
 
     @staticmethod
-    async def log_production(handler):
+    async def _log_production_async(handler):
         """ Log production 
             if ctrl+c is pressed, the log is stopped
         """
-        for line in _Director.read_log(handler):
-            print(line)
-            sys.stdout.flush()
+        with irisdbapi.connect(embedded=True) as conn:
+            with conn.cursor() as cursor:
+                while True:
+                    for row in reversed(_Director.read_log(cursor)):
+                        print(row)
+                    if handler.sigint_log:
+                        break
+                    await asyncio.sleep(1)
 
     @staticmethod
-    def start_log_production():
+    def log_production():
         """ Log production 
             if ctrl+c is pressed, the log is stopped
         """
         loop = asyncio.get_event_loop()
-        handler = SIGINT_handler()
-        loop.run_until_complete(_Director.log_production(handler))
+        handler = SigintHandler(log_only=True)
+        loop.add_signal_handler(signal.SIGINT, functools.partial(handler.signal_handler, signal.SIGINT, loop))
+        with irisdbapi.connect(embedded=True) as conn:
+            with conn.cursor() as cursor:
+                for row in reversed(_Director.read_top_log(cursor, 10)):
+                    print(row)
+        loop.run_until_complete(_Director._log_production_async(handler))
+        loop.close()
 
             
-
-class SIGINT_handler():
-    def __init__(self):
-        self.SIGINT = False
+@dataclass
+class SigintHandler():
+    
+    sigint: bool = False
+    sigint_log: bool = False
+    log_only: bool = False
 
     def signal_handler(self, signal, frame):
-        self.SIGINT = True
+        if self.sigint or self.log_only:
+            self.sigint_log = True
+        self.sigint = True

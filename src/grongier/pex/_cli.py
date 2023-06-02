@@ -52,10 +52,8 @@ def main(argv=None):
     elif args.start:
         if args.start == 'not_set':
             # start default production
-            _Director.start_production(_Director.get_default_production())
-        else:
-            # start a production
-            _Director.start_production(args.start)
+            args.start = _Director.get_default_production()
+        _Director.start_production_with_log(args.start)
 
     elif args.kill:
         # kill a production
@@ -75,7 +73,7 @@ def main(argv=None):
 
     elif args.log:
         # display log
-        _Director.start_log_production()
+        _Director.log_production()
 
     elif args.stop:
         # stop a production
@@ -86,13 +84,12 @@ def main(argv=None):
         print(json.dumps(dikt, indent=4))
 
     elif args.export:
-        dikt = {}
+
         if args.export == 'not_set':
             # export default production
-            dikt = _Utils.export_production(_Director.get_default_production())
-        else:
-            # export a production
-            dikt = _Utils.export_production(args.export)
+            args.export= _Director.get_default_production()
+
+        dikt = _Utils.export_production(args.export)
         print(json.dumps(dikt, indent=4))
 
     else:
