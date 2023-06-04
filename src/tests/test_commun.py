@@ -2,28 +2,10 @@ import iris
 
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 
-from dataclasses import dataclass
+from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage
 
 from grongier.pex._common import _Common
-from grongier.pex import Message, PickleMessage
 
-@dataclass
-class TestSimpleMessage(Message):
-    integer : int 
-    string : str
-
-class TestSimpleMessageNotDataclass(Message):
-    integer : int 
-    string : str
-
-class TestSimpleMessageNotMessage:
-    integer : int 
-    string : str
-
-@dataclass
-class TestPickledMessage(PickleMessage):
-    integer : int 
-    string : str
 
 def test_is_message_class():
     # test if the message is an grongier.pex.Message instance
