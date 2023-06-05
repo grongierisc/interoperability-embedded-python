@@ -1,10 +1,16 @@
 import iris
 import pickle
 import codecs
+from datetime import datetime, date, time
 
 from grongier.pex._business_host import _BusinessHost
 
-from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage
+from grongier.pex import Message
+
+from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage, FullMessage, PostMessage, MyResponse
+
+from registerFiles.obj import PostClass
+
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
@@ -44,9 +50,38 @@ def test_deseialize_pickled_message():
     bh = _BusinessHost()
     msg = TestPickledMessage(integer=1, string='test')
     result = bh._serialize_pickle_message(msg)
-    # convert TestPickledMessage to a pickle and encode it in base64
-    pickled = pickle.dumps(msg)
-    pickled = codecs.encode(pickled, "base64").decode()
+    # way around 
     msg = bh._deserialize_pickle_message(result)
     assert msg.integer == 1
     assert msg.string == 'test'
+
+def test_fullmessage():
+    postclass = PostClass(
+        Selftext='test',
+        Title='test',
+        Url='test',
+        Author='test',
+    )
+    msg = FullMessage(
+        embedded=postclass,
+        embedded_list=['test'],
+        embedded_dict={'test':postclass},
+        embedded_list_dict={'test':[postclass]},
+        string='test',
+        integer=1,
+        float=1.0,
+        boolean=True,
+        list=['test'],
+        dict={'test':'test'},
+        list_dict={'_list':['test']},
+        dict_list={'_dict':{'test':'test'}},
+        list_dict_list={'_list_dict':{'test':['test']}},
+        date=date(2020, 1, 1),
+        datetime=datetime(2020, 1, 1, 1, 1, 1),
+        time=time(1, 1, 1)
+    )
+    bh = _BusinessHost()
+    tmp = bh._serialize_message(msg)
+    result = bh._deserialize_message(tmp)
+    assert result.embedded.Selftext == 'test'
+

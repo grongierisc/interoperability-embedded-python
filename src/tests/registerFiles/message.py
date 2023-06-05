@@ -1,8 +1,32 @@
+from typing import List, Dict
 from grongier.pex import Message, PickleMessage
 
 from dataclasses import dataclass
 
 from obj import PostClass
+
+from datetime import datetime, date, time
+
+@dataclass
+class FullMessage(Message):
+
+    embedded:PostClass
+    embedded_list:List[PostClass]
+    embedded_dict:Dict[str,PostClass]
+    embedded_list_dict:List[Dict[str,PostClass]]
+    string:str
+    integer:int
+    float:float
+    boolean:bool
+    list:list
+    dict:dict
+    list_dict:List[dict]
+    dict_list:Dict[str,list]
+    list_dict_list:List[Dict[str,list]]
+    date:date
+    datetime:datetime
+    time:time
+
 
 
 @dataclass
