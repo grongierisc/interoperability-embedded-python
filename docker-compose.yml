@@ -12,3 +12,4 @@ services:
     command: --check-caps false
     volumes:
       - ./:/irisdev/app
+      - ./src/grongier:/usr/irissys/mgr/python/grongier

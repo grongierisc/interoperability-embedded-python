@@ -73,6 +73,9 @@ class FileOperation(BusinessOperation):
         if hasattr(self,'path'):
             os.chdir(self.path)
 
+    def say_hello(self, request:'iris.Ens.StringRequest'):
+        self.log_info("Hello "+request.StringValue)
+
     def on_message(self, request):
         
         ts = title = author = url = text = ""
@@ -152,3 +155,8 @@ class HeartBeatOperation(BusinessOperation):
 
 # Utils.register_component('adapter','TestHeartBeat','/irisdev/app/src/python/demo/',1,'Python.TestHeartBeat')
 # Utils.register_component('bo','HeartBeatOperation','/irisdev/app/src/python/demo/reddit/',1,'Python.HeartBeatOperation')
+
+if __name__ == '__main__':
+    bo = FileOperation()
+
+    bo.say_hello(iris.cls("Ens.StringRequest")._New("World"))
