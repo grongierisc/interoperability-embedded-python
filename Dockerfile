@@ -34,7 +34,7 @@ RUN pip3 install -r demo/python/requirements.txt
 # create the namespace and install the application
 RUN iris start IRIS \
     && iris session IRIS < /tmp/iris.script \
-    && iop -M /irisdev/app/demo/python/reddit/settings.py \
+    && /usr/irissys/bin/irispython -m grongier.pex -M /irisdev/app/demo/python/reddit/settings.py \
     && iris stop IRIS quietly
 
 FROM $IMAGE as final
