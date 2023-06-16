@@ -2,8 +2,9 @@ import traceback
 import dataclasses
 import inspect
 import iris
+import abc
 
-class _Common():
+class _Common(metaclass=abc.ABCMeta):
     """ This is a common superclass for all component types that defines common methods."""
 
     INFO_URL: str
@@ -130,8 +131,8 @@ class _Common():
             
             if ""!=adapter:
                 ret.append(adapter)
-        except:
-            pass
+        except Exception as e:
+            raise e
         return ret
 
     @classmethod
