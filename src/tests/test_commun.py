@@ -1,5 +1,8 @@
 import iris
 
+import os
+import sys
+
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 
 from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage
@@ -48,3 +51,19 @@ def test_log_info():
             cursor.execute(sql, (random_string,))
             rs = cursor.fetchall()
             assert len(rs) == 1
+
+def test_get_info():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+
+    sys.path.append(path)
+
+    from bs_error import BS
+
+    result = BS._get_info()
+
+    expect = ['grongier.pex.BusinessService','','','', 'EnsLib.File.InboundAdapter']
+
+    assert result == expect
