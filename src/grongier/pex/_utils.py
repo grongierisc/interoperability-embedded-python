@@ -3,6 +3,7 @@ import ast
 import iris
 import inspect
 import xmltodict
+import pkg_resources
 
 class _Utils():
     @staticmethod
@@ -19,9 +20,8 @@ class _Utils():
     def setup(path:str = None):
 
         if path is None:
-            # get the parent directory of the current module
-            # and append 'iris/Grongier/PEX' to it
-            path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'iris/Grongier/PEX')
+            # get the path of the data folder with pkg_resources
+            path = pkg_resources.resource_filename(__name__, 'data')
 
         _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 

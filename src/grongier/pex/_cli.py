@@ -26,10 +26,11 @@ def parse_args(argv):
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
     parser.add_argument('-r', '--restart', help='restart a production', action='store_true')
     parser.add_argument('-x', '--status', help='status a production', action='store_true')
-    parser.add_argument('-M', '--migrate', help='migrate production and classes with settings file')
+    parser.add_argument('-M', '-m', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-e', '--export', help='export a production', nargs='?', const='not_set')
     parser.add_argument('-v', '--version', help='display version', action='store_true')
     parser.add_argument('-L', '--log', help='display log', action='store_true')
+    parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     return parser.parse_args(argv)
 
 def main(argv=None):
@@ -54,6 +55,12 @@ def main(argv=None):
             # start default production
             args.start = _Director.get_default_production()
         _Director.start_production_with_log(args.start)
+
+    elif args.init:
+        if args.init == 'not_set':
+            # set arg to None
+            args.init = None
+        _Utils.setup(args.start)
 
     elif args.kill:
         # kill a production
@@ -112,6 +119,7 @@ def main(argv=None):
         print("  -x, --status          status a production")
         print("  -v, --version         display version")
         print("  -L, --log             display log")
+        print("  -i, --init            init the pex module in iris")
         print("")
         print("default production: " + _Director.get_default_production())
 
