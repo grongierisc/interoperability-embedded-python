@@ -2,9 +2,13 @@
 
 set -m
 
-/iris-main "$@" &
-
 /usr/irissys/dev/Cloud/ICM/waitISC.sh
+
+# init iop
+iop --init
+
+# load production
+iop -m /irisdev/app/demo/python/reddit/settings.py
 
 # set default production
 iop --default PEX.Production

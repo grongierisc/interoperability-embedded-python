@@ -5,11 +5,15 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
+    environment:
+      - ISC_CPF_MERGE_FILE=/irisdev/app/merge.cpf
     ports: 
       - 1972
       - 52795:52773
       - 53773
-    command: --check-caps false
+    command: 
+      - --check-caps false
     volumes:
       - ./:/irisdev/app
+      - ./entrypoint.sh:/docker-entrypoint-initdb.d/entrypoint.sh
       - ./src/grongier:/usr/irissys/mgr/python/grongier
