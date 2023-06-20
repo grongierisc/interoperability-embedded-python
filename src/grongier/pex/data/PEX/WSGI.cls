@@ -1,0 +1,89 @@
+Class Grongier.PEX.WSGI Extends (%RegisteredObject, %CSP.REST) [ ServerOnly = 1 ]
+{
+
+Parameter UseSession = 1;
+
+Parameter NOCHARSETCONVERT = 1;
+
+Parameter CLASSPATHS;
+
+Parameter MODULENAME;
+
+Parameter APPNAME;
+
+/// Instance of class
+Property app As %SYS.Python;
+
+/// Helper method to write data to the output stream
+ClassMethod write(data)
+{
+    w data
+}
+
+/// Helper to build the environ
+ClassMethod GetEnviron() As %SYS.Python
+{
+    //set builtins
+    set builtins = ##class(%SYS.Python).Import("builtins")
+
+    //import dict to create environ
+    set dict = builtins.dict()
+
+    #dim %request As %CSP.Request
+
+    //set environ 
+    do dict."__setitem__"("SERVER_NAME", $System.INetInfo.LocalHostName())
+    do dict."__setitem__"("SERVER_PORT", "")
+    do dict."__setitem__"("SERVER_PROTOCOL", "HTTP/1.1")
+    do dict."__setitem__"("SERVER_SOFTWARE", "IRIS")
+    do dict."__setitem__"("SCRIPT_NAME", "")
+    do dict."__setitem__"("REQUEST_METHOD", %request.Method)
+
+    return dict
+}
+
+ClassMethod Page(skipheader As %Boolean = 1) As %Status [ Internal, ServerOnly = 1 ]
+{
+    Try {
+    //set classpass
+    if ..#CLASSPATHS '="" {
+        set sys = ##class(%SYS.Python).Import("sys")
+        set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
+        set extraClasspaths = $tr(..#CLASSPATHS,delimiter,"|")
+        for i=1:1:$l(extraClasspaths,"|") {
+            set onePath = $p(extraClasspaths,"|",i)
+            set onePath = ##class(%File).NormalizeDirectory(onePath)
+            if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
+            if onePath'="" do sys.path.append(onePath)
+        }
+    }
+
+    //set environ
+    set environ = ..GetEnviron()
+
+    //import sys
+    set sys = ##class(%SYS.Python).Import("sys")
+
+    //set handler
+    set handler = ##class(%SYS.Python).Import("grongier.pex.wsgi.handlers").IrisHandler(sys.stdin, sys.stdout, sys.stderr,environ)
+
+    //set module
+    set module = ##class(%SYS.Python).Import(..#MODULENAME)
+
+    //set builtins
+    set builtins = ##class(%SYS.Python).Import("builtins")
+
+    //set app
+    set application = builtins.getattr(module, ..#APPNAME)
+
+    do handler.run(application)
+
+    }
+    Catch ex {
+        return ex.AsStatus()
+    }
+
+    quit $$$OK
+}
+
+}

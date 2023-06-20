@@ -13,3 +13,4 @@ iris-main.log
 dist
 build
 waitISC.log
+.env
