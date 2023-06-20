@@ -56,11 +56,11 @@ def test_get_info():
     # set python path to the registerFiles folder
     path = os.path.dirname(os.path.realpath(__file__))
     # join the registerFolder to the path
-    path = os.path.join(path, 'registerFiles')
+    path = os.path.join(path, 'registerFiles/edge')
 
     sys.path.append(path)
 
-    from bs_error import BS
+    from bs_underscore import BS
 
     result = BS._get_info()
 
