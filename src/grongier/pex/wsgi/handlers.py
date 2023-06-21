@@ -1,5 +1,6 @@
 from wsgiref.handlers import BaseHandler
 import iris
+import io
 
 class IrisHandler(BaseHandler):
     """Handler that's just initialized with streams, environment, etc.
@@ -28,7 +29,13 @@ class IrisHandler(BaseHandler):
         self.wsgi_multiprocess = multiprocess
 
     def get_stdin(self):
-        return self.stdin
+        if not self.stdin:
+            return None
+        else:
+            self.environ["wsgi.input"] = io.BytesIO(self.stdin)
+            self.environ["CONTENT_LENGTH"] = str(len(self.stdin))
+            return io.BytesIO(self.stdin)
+
 
     def get_stderr(self):
         return self.stderr

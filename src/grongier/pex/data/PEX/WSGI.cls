@@ -1,10 +1,6 @@
 Class Grongier.PEX.WSGI Extends (%RegisteredObject, %CSP.REST) [ ServerOnly = 1 ]
 {
 
-Parameter UseSession = 1;
-
-Parameter NOCHARSETCONVERT = 1;
-
 Parameter CLASSPATHS;
 
 Parameter MODULENAME;
@@ -36,8 +32,10 @@ ClassMethod GetEnviron() As %SYS.Python
     do dict."__setitem__"("SERVER_PORT", "")
     do dict."__setitem__"("SERVER_PROTOCOL", "HTTP/1.1")
     do dict."__setitem__"("SERVER_SOFTWARE", "IRIS")
-    do dict."__setitem__"("SCRIPT_NAME", "")
+    do dict."__setitem__"("SCRIPT_NAME", ..#APPNAME)
     do dict."__setitem__"("REQUEST_METHOD", %request.Method)
+    do dict."__setitem__"("CONTENT_TYPE", %request.ContentType)
+    do dict."__setitem__"("CHARSET", %request.CharSet)
 
     return dict
 }
@@ -45,38 +43,46 @@ ClassMethod GetEnviron() As %SYS.Python
 ClassMethod Page(skipheader As %Boolean = 1) As %Status [ Internal, ServerOnly = 1 ]
 {
     Try {
-    //set classpass
-    if ..#CLASSPATHS '="" {
-        set sys = ##class(%SYS.Python).Import("sys")
-        set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
-        set extraClasspaths = $tr(..#CLASSPATHS,delimiter,"|")
-        for i=1:1:$l(extraClasspaths,"|") {
-            set onePath = $p(extraClasspaths,"|",i)
-            set onePath = ##class(%File).NormalizeDirectory(onePath)
-            if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-            if onePath'="" do sys.path.append(onePath)
+        //set classpass
+        if ..#CLASSPATHS '="" {
+            set sys = ##class(%SYS.Python).Import("sys")
+            set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
+            set extraClasspaths = $tr(..#CLASSPATHS,delimiter,"|")
+            for i=1:1:$l(extraClasspaths,"|") {
+                set onePath = $p(extraClasspaths,"|",i)
+                set onePath = ##class(%File).NormalizeDirectory(onePath)
+                if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
+                if onePath'="" do sys.path.append(onePath)
+            }
         }
-    }
+        w "test"
+        //set environ
+        set environ = ..GetEnviron()
 
-    //set environ
-    set environ = ..GetEnviron()
+        //import sys
+        set sys = ##class(%SYS.Python).Import("sys")
 
-    //import sys
-    set sys = ##class(%SYS.Python).Import("sys")
+        //set stdin
+        set builtins = ##class(%SYS.Python).Import("builtins")
+        set ba = builtins.bytearray()
+        
+        while %request.Content.AtEnd = 0 {
+            do ba.extend(##class(%SYS.Python).Bytes(%request.Content.Read()))
+        }
+        //set handler
+        set handler = ##class(%SYS.Python).Import("grongier.pex.wsgi.handlers").IrisHandler(ba, sys.stdout, sys.stderr,environ)
 
-    //set handler
-    set handler = ##class(%SYS.Python).Import("grongier.pex.wsgi.handlers").IrisHandler(sys.stdin, sys.stdout, sys.stderr,environ)
+        //set module
+        set module = ##class(%SYS.Python).Import(..#MODULENAME)
 
-    //set module
-    set module = ##class(%SYS.Python).Import(..#MODULENAME)
+        //set builtins
+        set builtins = ##class(%SYS.Python).Import("builtins")
 
-    //set builtins
-    set builtins = ##class(%SYS.Python).Import("builtins")
+        //set app
+        set application = builtins.getattr(module, ..#APPNAME)
 
-    //set app
-    set application = builtins.getattr(module, ..#APPNAME)
-
-    do handler.run(application)
+        //run app
+        do handler.run(application)
 
     }
     Catch ex {
