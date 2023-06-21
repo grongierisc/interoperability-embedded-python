@@ -36,6 +36,8 @@ ClassMethod GetEnviron() As %SYS.Python
     do dict."__setitem__"("REQUEST_METHOD", %request.Method)
     do dict."__setitem__"("CONTENT_TYPE", %request.ContentType)
     do dict."__setitem__"("CHARSET", %request.CharSet)
+    Set app=$$getapp^%SYS.cspServer(%request.URL,.path,.match,.updatedurl)
+    do dict."__setitem__"("PATH_INFO", $extract(updatedurl,$length(path),*))
 
     return dict
 }
@@ -55,7 +57,7 @@ ClassMethod Page(skipheader As %Boolean = 1) As %Status [ Internal, ServerOnly =
                 if onePath'="" do sys.path.append(onePath)
             }
         }
-        w "test"
+
         //set environ
         set environ = ..GetEnviron()
 

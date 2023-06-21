@@ -10,6 +10,14 @@ def hello_world():
     """
     return 'Hello, World!'
 
+# add a route to say hello to any name
+@app.route('/name/<name>')
+def hello_name(name):
+    """
+    Returns a greeting message with a name.
+    """
+    return f'Hello, {name}!'
+
 # add a post route
 @app.route('/', methods=['POST'])
 def post():
