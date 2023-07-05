@@ -4,6 +4,8 @@ import sys
 
 from grongier.pex._utils import _Utils
 
+from unittest.mock import patch, MagicMock
+
 def test_filename_to_module():
     # test filename_to_module
     file = 'bo.py'
@@ -202,3 +204,14 @@ def test_get_productions_settings():
     expect = PRODUCTIONS[0]
 
     assert result == expect
+
+
+def test_migrate_only_classes():
+    # Arrange
+    mock_settings = MagicMock()
+    mock_settings.CLASSES = {'MyClass': MagicMock()}
+    with patch.dict('sys.modules', {'settings': mock_settings}):
+        # Act
+        _Utils.migrate('/path/to/settings/settings.py')
+        # Assert
+        assert True # if no exception is raised, the test is ok

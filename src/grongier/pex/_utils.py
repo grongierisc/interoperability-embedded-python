@@ -190,13 +190,22 @@ class _Utils():
                     raise ValueError("The filename must be absolute")
                 # add the path to the system path
                 sys.path.append(path)
-                from settings import CLASSES, PRODUCTIONS
+            import settings
         except ImportError:
             # return an error if the settings file is not found
             # and explain how to create it
             raise ImportError("settings.py file not found. Please create it in the same directory as the main.py file. See the documentation for more information.")
-        _Utils.set_classes_settings(CLASSES)
-        _Utils.set_productions_settings(PRODUCTIONS)
+        try:
+            # set the classes settings
+            _Utils.set_classes_settings(settings.CLASSES)
+        except AttributeError:
+            print("No classes to register")
+        try:
+            # set the productions settings
+            _Utils.set_productions_settings(settings.PRODUCTIONS)
+        except AttributeError:
+            print("No productions to register")
+
 
 
     @staticmethod
