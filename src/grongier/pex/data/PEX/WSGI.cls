@@ -39,6 +39,8 @@ ClassMethod GetEnviron() As %SYS.Python
     Set app=$$getapp^%SYS.cspServer(%request.URL,.path,.match,.updatedurl)
     do dict."__setitem__"("PATH_INFO", $extract(updatedurl,$length(path),*))
 
+    // to extract the query string
+
     return dict
 }
 
