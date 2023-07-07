@@ -26,7 +26,7 @@ def main():
         description='iris_pex_embedded_python',
         long_description=long_description,
         long_description_content_type='text/markdown',
-        version='2.3.5',
+        version='2.3.7',
         author='grongier',
         author_email='guillaume.rongier@intersystems.com',
         keywords='iris_pex_embedded_python',
@@ -46,8 +46,8 @@ def main():
             'Topic :: Utilities'
         ],
         package_dir={'': 'src'},
-        packages=['grongier.pex','grongier.pex.data'],
-        package_data={'grongier.pex.data': ['**/*.cls']},
+        packages=['grongier.pex','grongier.pex.data.Grongier'],
+        package_data={'grongier.pex.data.Grongier': ['**/*.cls']},
         python_requires='>=3.6',
         install_requires=[
             "dacite>=1.6.0",

@@ -21,7 +21,7 @@ class _Utils():
 
         if path is None:
             # get the path of the data folder with pkg_resources
-            path = pkg_resources.resource_filename(__name__, 'data')
+            path = pkg_resources.resource_filename(__name__, 'Grongier')
 
         _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
