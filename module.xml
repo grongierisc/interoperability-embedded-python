@@ -3,13 +3,13 @@
   <Document name="pex-embbeded-python.ZPM">
     <Module>
       <Name>pex-embbeded-python</Name>
-      <Version>2.3.7</Version>
+      <Version>2.3.8</Version>
       <Description>Hack of PEX Python but for Embedded Python</Description>
       <Keywords>python</Keywords>
       <SystemRequirements Interoperability="enabled" />
       <Packaging>module</Packaging>
-      <SourcesRoot>src/grongier/pex/</SourcesRoot>
-      <Resource Name="data.PKG"/>
+      <SourcesRoot>src/grongier/cls</SourcesRoot>
+      <Resource Name="Grongier.PKG"/>
       <SystemRequirements Version=">=2021.2" Interoperability="enabled" />
     </Module>
   </Document>
