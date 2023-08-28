@@ -316,11 +316,7 @@ class _Utils():
         # the production name is the last part of the string
         package = '.'.join(production_name.split('.')[:-1])
         production_name = production_name.split('.')[-1]
-        stream = iris.cls('%Stream.GlobalCharacter')._New()
-        # for each chunk of 1024 characters
-        for i in range(0, len(xml), 1024):
-            # write the chunk to the stream
-            stream.Write(xml[i:i+1024])
+        stream = _Utils.string_to_stream(xml)
         # register the production
         _Utils.raise_on_error(iris.cls('Grongier.PEX.Utils').CreateProduction(package,production_name,stream))
 
@@ -339,11 +335,25 @@ class _Utils():
         # export the production
         xdata = iris.cls('Grongier.PEX.Utils').ExportProduction(production_name)
         # for each chunk of 1024 characters
-        string = ""
-        xdata.Rewind()
-        while not xdata.AtEnd:
-            string += xdata.Read(1024)
+        string = _Utils.stream_to_string(xdata)
         # convert the xml to a dictionary
         data = xmltodict.parse(string,postprocessor=postprocessor)
         # return the dictionary
         return data
+
+    @staticmethod
+    def stream_to_string(stream)-> str:
+        string = ""
+        stream.Rewind()
+        while not stream.AtEnd:
+            string += stream.Read(4092)
+        return string
+    
+    @staticmethod
+    def string_to_stream(string:str):
+        stream = iris.cls('%Stream.GlobalCharacter')._New()
+        n = 4092
+        chunks = [string[i:i+n] for i in range(0, len(string), n)]
+        for chunk in chunks:
+            stream.Write(chunk)
+        return stream

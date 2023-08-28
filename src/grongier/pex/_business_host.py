@@ -13,6 +13,7 @@ from inspect import signature
 from dacite import from_dict, Config
 
 from grongier.pex._common import _Common
+from grongier.pex._utils import _Utils
 
 class _BusinessHost(_Common):
     """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that
@@ -131,11 +132,7 @@ class _BusinessHost(_Common):
         msg = iris.cls('Grongier.PEX.PickleMessage')._New()
         msg.classname = module + "." + classname
 
-        stream = iris.cls('%Stream.GlobalCharacter')._New()
-        n = self.buffer
-        chunks = [pickle_string[i:i+n] for i in range(0, len(pickle_string), n)]
-        for chunk in chunks:
-            stream.Write(chunk)
+        stream = _Utils.string_to_stream(pickle_string)
         msg.jstr = stream
 
         return msg
@@ -176,11 +173,7 @@ class _BusinessHost(_Common):
         msg = iris.cls('Grongier.PEX.Message')._New()
         msg.classname = module + "." + classname
 
-        stream = iris.cls('%Stream.GlobalCharacter')._New()
-        n = self.buffer
-        chunks = [json_string[i:i+n] for i in range(0, len(json_string), n)]
-        for chunk in chunks:
-            stream.Write(chunk)
+        stream = _Utils.string_to_stream(json_string)
         msg.jstr = stream
 
         return msg
@@ -208,10 +201,7 @@ class _BusinessHost(_Common):
         Converts an iris grongier.pex.message into an python dataclass message.
         
         """
-        string = ""
-        serial.jstr.Rewind()
-        while not serial.jstr.AtEnd:
-            string += serial.jstr.Read(self.buffer)
+        string = _Utils.stream_to_string(serial.jstr)
 
         msg = pickle.loads(codecs.decode(string.encode(), "base64"))
         return msg
@@ -249,10 +239,7 @@ class _BusinessHost(_Common):
         except Exception:
             raise ImportError("Class not found: " + classname)
 
-        string = ""
-        serial.jstr.Rewind()
-        while not serial.jstr.AtEnd:
-            string += serial.jstr.Read(self.buffer)
+        string = _Utils.stream_to_string(serial.jstr)
 
         jdict = json.loads(string, cls=IrisJSONDecoder)
         msg = self._dataclass_from_dict(msg,jdict)
