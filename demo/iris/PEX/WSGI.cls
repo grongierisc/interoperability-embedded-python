@@ -1,4 +1,4 @@
-Class Demo.PEX.WSGI Extends Grongier.PEX.WSGI
+Class Demo.PEX.WSGI Extends Grongier.Service.WSGI
 {
 
 Parameter CLASSPATHS = "/irisdev/app/demo/python/reddit/";

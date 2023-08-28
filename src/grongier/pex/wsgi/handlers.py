@@ -1,6 +1,6 @@
 from wsgiref.handlers import BaseHandler
-import iris
 import io
+import iris
 
 class IrisHandler(BaseHandler):
     """Handler that's just initialized with streams, environment, etc.
@@ -44,7 +44,7 @@ class IrisHandler(BaseHandler):
         self.environ.update(self.base_env)
 
     def _write(self,data):
-        iris.cls('Grongier.PEX.WSGI').write(data)
+        iris.cls('Grongier.Service.WSGI').write(data)
 
     def _flush(self):
         self.stdout.flush()
