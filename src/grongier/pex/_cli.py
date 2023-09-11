@@ -91,10 +91,9 @@ def main(argv=None):
         print(json.dumps(dikt, indent=4))
 
     elif args.export:
-
         if args.export == 'not_set':
             # export default production
-            args.export= _Director.get_default_production()
+            args.export=_Director.get_default_production()
 
         dikt = _Utils.export_production(args.export)
         print(json.dumps(dikt, indent=4))
