@@ -49,6 +49,24 @@ Method OnInit() As %Status
 	quit tSC
 }
 
+ClassMethod SetPythonPath(pClasspaths)
+{
+    set sys = ##class(%SYS.Python).Import("sys")
+
+    for i=0:1:(sys.path."__len__"()-1) {
+        Try {
+            if sys.path."__getitem__"(i) = pClasspaths {
+                do sys.path."__delitem__"(i)
+            }
+        }
+        Catch ex {
+            // do nothing
+        }
+
+    }
+    do sys.path.insert(0, pClasspaths)
+}
+
 Method Connect() As %Status
 {
 	set tSC = $$$OK
@@ -58,14 +76,12 @@ Method Connect() As %Status
 		
 		//set classpass
 		if ..%classpaths '="" {
-			set sys = ##class(%SYS.Python).Import("sys")
 			set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
 			set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
 			for i=1:1:$l(extraClasspaths,"|") {
 				set onePath = $p(extraClasspaths,"|",i)
 				set onePath = ##class(%File).NormalizeDirectory(onePath)
-				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do sys.path.append(onePath)
+				do ..SetPythonPath(onePath)
 			}
 		}
 		if $isObject(..%class)=0 {
