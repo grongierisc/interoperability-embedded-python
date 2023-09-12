@@ -179,22 +179,17 @@ class _Utils():
                 * value: a dictionary containing the settings for the production
         """
         # try to load the settings file
-        try:
-            if filename:
-                import sys
-                path = None
-                # check if the filename is absolute or relative
-                if os.path.isabs(filename):
-                    path = os.path.dirname(filename)
-                else:
-                    raise ValueError("The filename must be absolute")
-                # add the path to the system path
-                sys.path.append(path)
-            import settings
-        except ImportError:
-            # return an error if the settings file is not found
-            # and explain how to create it
-            raise ImportError("settings.py file not found. Please create it in the same directory as the main.py file. See the documentation for more information.")
+        if filename:
+            import sys
+            path = None
+            # check if the filename is absolute or relative
+            if os.path.isabs(filename):
+                path = os.path.dirname(filename)
+            else:
+                raise ValueError("The filename must be absolute")
+            # add the path to the system path
+            sys.path.append(path)
+        import settings
         try:
             # set the classes settings
             _Utils.set_classes_settings(settings.CLASSES)
