@@ -166,7 +166,7 @@ class _Utils():
         return module
 
     @staticmethod
-    def migrate(filename=None):
+    def migrate(filename=None,root_path=None):
         """ 
         Read the settings.py file and register all the components
         settings.py file has two dictionaries:
@@ -190,21 +190,23 @@ class _Utils():
             # add the path to the system path
             sys.path.append(path)
         import settings
+        # get the path of the settings file
+        path = os.path.dirname(inspect.getfile(settings))
         try:
             # set the classes settings
-            _Utils.set_classes_settings(settings.CLASSES)
+            _Utils.set_classes_settings(settings.CLASSES,path)
         except AttributeError:
             print("No classes to register")
         try:
             # set the productions settings
-            _Utils.set_productions_settings(settings.PRODUCTIONS)
+            _Utils.set_productions_settings(settings.PRODUCTIONS,path)
         except AttributeError:
             print("No productions to register")
 
 
 
     @staticmethod
-    def set_classes_settings(class_items):
+    def set_classes_settings(class_items,root_path=None):
         """
         It takes a dictionary of classes and returns a dictionary of settings for each class
         
@@ -213,10 +215,18 @@ class _Utils():
         """
         for key, value in class_items.items():
             if inspect.isclass(value):
-                path = os.path.dirname(inspect.getfile(value))
+                path = None
+                if root_path:
+                    path = root_path
+                else:
+                    path = os.path.dirname(inspect.getfile(value))
                 _Utils.register_component(value.__module__,value.__name__,path,1,key)
             elif inspect.ismodule(value):
-                path = os.path.dirname(inspect.getfile(value))
+                path = None
+                if root_path:
+                    path = root_path
+                else:
+                    path = os.path.dirname(inspect.getfile(value))
                 _Utils._register_file(value.__name__+'.py',path,1,key)
             # if the value is a dict
             elif isinstance(value,dict):
@@ -239,9 +249,8 @@ class _Utils():
                 else:
                     raise ValueError(f"Invalid value for {key}.")
 
-
     @staticmethod
-    def set_productions_settings(production_list):
+    def set_productions_settings(production_list,root_path=None):
         """
         It takes a list of dictionaries and registers the productions
         """
@@ -252,14 +261,14 @@ class _Utils():
             # set the first key to 'production'
             production['Production'] = production.pop(production_name)
             # handle Items
-            production = _Utils.handle_items(production)
+            production = _Utils.handle_items(production,root_path)
             # transform the json as an xml
             xml = _Utils.dict_to_xml(production)
             # register the production
             _Utils.register_production(production_name,xml)
 
     @staticmethod
-    def handle_items(production):
+    def handle_items(production,root_path=None):
         # if an item is a class, register it and replace it with the name of the class
         if 'Item' in production['Production']:
             # for each item in the list
@@ -267,7 +276,11 @@ class _Utils():
                 # if the attribute "@ClassName" is a class, register it and replace it with the name of the class
                 if '@ClassName' in item:
                     if inspect.isclass(item['@ClassName']):
-                        path = os.path.dirname(inspect.getfile(item['@ClassName']))
+                        path = None
+                        if root_path:
+                            path = root_path
+                        else:
+                            path = os.path.dirname(inspect.getfile(item['@ClassName']))
                         _Utils.register_component(item['@ClassName'].__module__,item['@ClassName'].__name__,path,1,item['@Name'])
                         # replace the class with the name of the class
                         production['Production']['Item'][i]['@ClassName'] = item['@Name']
@@ -279,6 +292,8 @@ class _Utils():
                     _Utils.set_classes_settings(class_dict)
                     # replace the class with the name of the class
                     production['Production']['Item'][i]['@ClassName'] = item['@Name']
+                else:
+                    raise ValueError(f"Invalid value for {item['@Name']}.")
 
         return production
 

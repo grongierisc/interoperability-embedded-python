@@ -89,6 +89,18 @@ def test_set_classes_settings_by_classe():
     CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
     _Utils.set_classes_settings(CLASSES)
 
+def test_set_classes_settings_by_class_with_rootpath():
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+
+    sys.path.append(path)
+
+    from bo import EmailOperation
+    CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
+    _Utils.set_classes_settings(CLASSES,path)
+
 def test_set_classes_settings_by_module():
     # this test aim to register a module
     # set python path to the registerFiles folder
@@ -100,6 +112,18 @@ def test_set_classes_settings_by_module():
     import bo
     CLASSES = { 'UnitTest.Module': bo }
     _Utils.set_classes_settings(CLASSES)
+
+def test_set_classes_settings_by_module_with_rootpath():
+    # this test aim to register a module
+    # set python path to the registerFiles folder
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFiles')
+
+    sys.path.append(path)
+    import bo
+    CLASSES = { 'UnitTest.Module': bo }
+    _Utils.set_classes_settings(CLASSES,path)
 
 def test_set_classes_settings_by_file():
     # set python path to the registerFiles folder
@@ -210,6 +234,10 @@ def test_migrate_only_classes():
     # Arrange
     mock_settings = MagicMock()
     mock_settings.CLASSES = {'MyClass': MagicMock()}
+    mock_settings.__file__ = '/path/to/settings/settings.py'
+    # set magic mock as an object
+    mock_settings.__class__ = type
+    # add mock_settings to sys.modules and __file__ to mock_settings
     with patch.dict('sys.modules', {'settings': mock_settings}):
         # Act
         _Utils.migrate('/path/to/settings/settings.py')
