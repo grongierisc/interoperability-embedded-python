@@ -20,7 +20,7 @@ def parse_args(argv):
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_set')
-    parser.add_argument('-l', '--lists', help='list productions', action='store_true')
+    parser.add_argument('-l', '--list', help='list productions', action='store_true')
     parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_set')
     parser.add_argument('-S', '--stop', help='stop a production', action='store_true')
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
