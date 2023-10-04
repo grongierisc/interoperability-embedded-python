@@ -24,7 +24,6 @@ def parse_args():
     parser.add_argument('-l', '--list', help='list productions', action='store_true')
     parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_set')
     start = main_parser.add_argument_group('start arguments')
-    start.add_argument('-n', '--name', help='start a production with name', nargs='?', const='not_set')
     start.add_argument('-D', '--detach', help='start a production in detach mode', action='store_true')
     parser.add_argument('-S', '--stop', help='stop a production', action='store_true')
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
@@ -66,15 +65,15 @@ def main(argv=None):
         if args.start == 'not_set':
             # start default production
             production_name = _Director.get_default_production()
-        if args.name:
+        else:
             # start production with name
-            production_name = args.name
+            production_name = args.start
         if args.detach:
             # start production in detach mode
             _Director.start_production(production_name)
+            print(f"Production {production_name} started")
         else:
             _Director.start_production_with_log(production_name)
-        print(f"Production {production_name} started")
 
     elif args.init:
         if args.init == 'not_set':
