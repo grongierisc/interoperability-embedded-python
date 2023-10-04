@@ -23,5 +23,9 @@ def test_default_without_name():
     except SystemExit as e:
         assert e.code == 0
 
-
+def test_cli_namespace():
+    try:
+        _cli.main([])
+    except SystemExit as e:
+        assert e.code == 0
 

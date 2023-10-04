@@ -46,7 +46,7 @@ def main(argv=None):
         else:
             _Director.set_default_production(args.default)
 
-    elif args.lists:
+    elif args.list:
         # display list of productions
         dikt = _Director.list_productions()
         print(json.dumps(dikt, indent=4))
