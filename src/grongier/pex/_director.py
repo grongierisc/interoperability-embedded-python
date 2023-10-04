@@ -221,18 +221,34 @@ class _Director():
         loop.close()
 
     @staticmethod
-    def test_component(target,message=None):
+    def test_component(target,message=None,classname=None,body=None):
+        """ 
+        Test a component
+        Parameters:
+        target: the name of the component
+        classname: the name of the class to test
+        body: the body of the message
         """
-        It takes a target and a message and returns the response
-        
-        :param target: the name of the component
-        :type target: str
-        :param message: the message to send to the component
-        :type message: str
-        :return: the response
-        """
-        if message is None:
+        if not message:
             message = iris.cls('Ens.Request')._New()
+        if classname:
+            # if classname start with 'iris.' then create an iris object
+            if classname.startswith('iris.'):
+                # strip the iris. prefix
+                classname = classname[5:]
+                if body:
+                    message = iris.cls(classname)._New(body)
+                else:
+                    message = iris.cls(classname)._New()
+            # else create a python object
+            else:
+                # python message are casted to Grongier.PEX.Message
+                message = iris.cls("Grongier.PEX.Message")._New()
+                message.classname = classname
+                if body:
+                    message.jstr = _Utils.string_to_stream(body)
+                else:
+                    message.jstr = _Utils.string_to_stream("{}")
         # serialize the message
         business_host = _BusinessHost()
         serial_message = business_host._dispatch_serializer(message)

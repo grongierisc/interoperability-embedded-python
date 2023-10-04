@@ -36,6 +36,11 @@ def parse_args():
     parser.add_argument('-L', '--log', help='display log', action='store_true')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
+    test = main_parser.add_argument_group('test arguments')
+    # add classname argument
+    test.add_argument('-C', '--classname', help='test classname', nargs='?', const='not_set')
+    # body argument
+    test.add_argument('-B', '--body', help='test body', nargs='?', const='not_set')
     return main_parser
 
 def main(argv=None):
@@ -69,6 +74,7 @@ def main(argv=None):
             _Director.start_production(production_name)
         else:
             _Director.start_production_with_log(production_name)
+        print(f"Production {production_name} started")
 
     elif args.init:
         if args.init == 'not_set':
@@ -99,13 +105,24 @@ def main(argv=None):
     elif args.stop:
         # stop a production
         _Director.stop_production()
+        print(f"Production {_Director.get_default_production()} stopped")
 
     elif args.status:
         dikt=_Director.status_production()
         print(json.dumps(dikt, indent=4))
 
     elif args.test:
-        _Director.test_component(args.test)
+        classname = None
+        body = None
+        if args.test == 'not_set':
+            # set arg to None
+            args.test = None
+        if args.classname:
+            classname = args.classname
+        if args.body:
+            body = args.body
+        response = _Director.test_component(args.test, classname=classname, body=body)
+        print(response)
 
     elif args.export:
         if args.export == 'not_set':
