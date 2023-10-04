@@ -7,6 +7,7 @@ import asyncio
 from dataclasses import dataclass
 
 from grongier.pex._business_host import _BusinessHost
+from grongier.pex._utils import _Utils
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -236,7 +237,12 @@ class _Director():
         business_host = _BusinessHost()
         serial_message = business_host._dispatch_serializer(message)
         response = iris.cls('Grongier.PEX.Utils').dispatchTestComponent(target,serial_message)
-        return business_host._dispatch_deserializer(response)
+        try:
+            deserialized_response = business_host._dispatch_deserializer(response)
+        except ImportError as e:
+            # can't import the class, return the string
+            deserialized_response = f'{response.classname} : {_Utils.stream_to_string(response.jstr)}'
+        return deserialized_response
 
             
 @dataclass
