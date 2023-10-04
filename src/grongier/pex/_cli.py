@@ -16,12 +16,16 @@ import argparse
 import json
 from importlib.metadata import version 
 
-def parse_args(argv):
+def parse_args():
     # parse arguments
-    parser = argparse.ArgumentParser()
+    main_parser = argparse.ArgumentParser()
+    parser = main_parser.add_mutually_exclusive_group()
     parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_set')
     parser.add_argument('-l', '--list', help='list productions', action='store_true')
     parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_set')
+    start = main_parser.add_argument_group('start arguments')
+    start.add_argument('-n', '--name', help='start a production with name', nargs='?', const='not_set')
+    start.add_argument('-D', '--detach', help='start a production in detach mode', action='store_true')
     parser.add_argument('-S', '--stop', help='stop a production', action='store_true')
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
     parser.add_argument('-r', '--restart', help='restart a production', action='store_true')
@@ -32,11 +36,12 @@ def parse_args(argv):
     parser.add_argument('-L', '--log', help='display log', action='store_true')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
-    return parser.parse_args(argv)
+    return main_parser
 
 def main(argv=None):
     # build arguments
-    args = parse_args(argv)
+    parser = parse_args()
+    args = parser.parse_args(argv)
 
     if args.default:
         # set default production
@@ -52,10 +57,18 @@ def main(argv=None):
         print(json.dumps(dikt, indent=4))
 
     elif args.start:
+        production_name = None
         if args.start == 'not_set':
             # start default production
-            args.start = _Director.get_default_production()
-        _Director.start_production_with_log(args.start)
+            production_name = _Director.get_default_production()
+        if args.name:
+            # start production with name
+            production_name = args.name
+        if args.detach:
+            # start production in detach mode
+            _Director.start_production(production_name)
+        else:
+            _Director.start_production_with_log(production_name)
 
     elif args.init:
         if args.init == 'not_set':
@@ -103,32 +116,10 @@ def main(argv=None):
         print(json.dumps(dikt, indent=4))
 
     else:
-        # display help and default production name
-        print("usage: python3 -m grongier.pex [-h] [-d [DEFAULT]] [-l] [-s [START]] [-S] [-k] [-r] [-x] [-m [MIGRATE]] [-e [EXPORT]] [-v] [-L] [-i [INIT]] [-t [TEST]]")
-        print("")
-        print("optional arguments:")
-        print("  -h, --help            show this help message and exit")
-        print("  -d [DEFAULT], --default [DEFAULT]")
-        print("                        set the default production")
-        print("  -l, --list            list productions")
-        print("  -s [START], --start [START]")
-        print("                        start a production")
-        print("  -S, --stop            stop a production")
-        print("  -k, --kill            kill a production")
-        print("  -r, --restart         restart a production")
-        print("  -x, --status          status a production")
-        print("  -m [MIGRATE], --migrate [MIGRATE]")
-        print("                        migrate production and classes with settings file")
-        print("  -e [EXPORT], --export [EXPORT]")
-        print("                        export a production")
-        print("  -v, --version         display version")
-        print("  -L, --log             display log")
-        print("  -i , --init")
-        print("                        init the pex module in iris")
-        print("  -t [TEST], --test [TEST]")
-        print("                        test the pex module in iris")
-        print("")
-        print("default production: " + _Director.get_default_production())
+        # display help
+        parser.print_help()
+        print()
+        print("Default production : " + _Director.get_default_production())
 
 
 if __name__ == '__main__':
