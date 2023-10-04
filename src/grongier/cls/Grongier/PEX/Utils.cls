@@ -360,4 +360,15 @@ ClassMethod ExportProduction(pProductionName As %String) As %String
 	Return xdata
 }
 
+ClassMethod dispatchTestComponent(
+	pTargetName As %String,
+	pInput As Ens.Request) As Ens.Response
+{
+    #dim tService as EnsLib.Testing.Service
+	set tOutput = ""
+    $$$ThrowOnError(##class(Ens.Director).CreateBusinessService("EnsLib.Testing.Service", .tService))
+    $$$ThrowOnError(tService.SendTestRequest(pTargetName, pInput, .tOutput, .sessionID , 1))
+	Quit tOutput
+}
+
 }

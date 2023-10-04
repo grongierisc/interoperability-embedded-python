@@ -26,11 +26,12 @@ def parse_args(argv):
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
     parser.add_argument('-r', '--restart', help='restart a production', action='store_true')
     parser.add_argument('-x', '--status', help='status a production', action='store_true')
-    parser.add_argument('-M', '-m', '--migrate', help='migrate production and classes with settings file')
+    parser.add_argument('-m', '-M', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-e', '--export', help='export a production', nargs='?', const='not_set')
     parser.add_argument('-v', '--version', help='display version', action='store_true')
     parser.add_argument('-L', '--log', help='display log', action='store_true')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
+    parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
     return parser.parse_args(argv)
 
 def main(argv=None):
@@ -90,6 +91,9 @@ def main(argv=None):
         dikt=_Director.status_production()
         print(json.dumps(dikt, indent=4))
 
+    elif args.test:
+        _Director.test_component(args.test)
+
     elif args.export:
         if args.export == 'not_set':
             # export default production
@@ -100,25 +104,29 @@ def main(argv=None):
 
     else:
         # display help and default production name
-        print("usage: iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]")
+        print("usage: python3 -m grongier.pex [-h] [-d [DEFAULT]] [-l] [-s [START]] [-S] [-k] [-r] [-x] [-m [MIGRATE]] [-e [EXPORT]] [-v] [-L] [-i [INIT]] [-t [TEST]]")
+        print("")
         print("optional arguments:")
-        print("  -h, --help            display help and default production name")
-        print("  -d DEFAULT, --default DEFAULT")
+        print("  -h, --help            show this help message and exit")
+        print("  -d [DEFAULT], --default [DEFAULT]")
         print("                        set the default production")
-        print("  -l, --lists           list productions")
-        print("  -s START, --start START")
+        print("  -l, --list            list productions")
+        print("  -s [START], --start [START]")
         print("                        start a production")
-        print("  -k, --kill            kill a production (force stop)")
         print("  -S, --stop            stop a production")
+        print("  -k, --kill            kill a production")
         print("  -r, --restart         restart a production")
-        print("  -M MIGRATE, --migrate MIGRATE")
-        print("                        migrate production and classes with settings file")
-        print("  -e EXPORT, --export EXPORT")
-        print("                        export a production")
         print("  -x, --status          status a production")
+        print("  -m [MIGRATE], --migrate [MIGRATE]")
+        print("                        migrate production and classes with settings file")
+        print("  -e [EXPORT], --export [EXPORT]")
+        print("                        export a production")
         print("  -v, --version         display version")
         print("  -L, --log             display log")
-        print("  -i, --init            init the pex module in iris")
+        print("  -i , --init")
+        print("                        init the pex module in iris")
+        print("  -t [TEST], --test [TEST]")
+        print("                        test the pex module in iris")
         print("")
         print("default production: " + _Director.get_default_production())
 

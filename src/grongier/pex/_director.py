@@ -6,6 +6,8 @@ import functools
 import asyncio
 from dataclasses import dataclass
 
+from grongier.pex._business_host import _BusinessHost
+
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
     called by the production framework (through the inbound adapter) at the call interval.
@@ -216,6 +218,25 @@ class _Director():
                     print(row)
         loop.run_until_complete(_Director._log_production_async(handler))
         loop.close()
+
+    @staticmethod
+    def test_component(target,message=None):
+        """
+        It takes a target and a message and returns the response
+        
+        :param target: the name of the component
+        :type target: str
+        :param message: the message to send to the component
+        :type message: str
+        :return: the response
+        """
+        if message is None:
+            message = iris.cls('Ens.Request')._New()
+        # serialize the message
+        business_host = _BusinessHost()
+        serial_message = business_host._dispatch_serializer(message)
+        response = iris.cls('Grongier.PEX.Utils').dispatchTestComponent(target,serial_message)
+        return business_host._dispatch_deserializer(response)
 
             
 @dataclass
