@@ -1,0 +1,22 @@
+name: pytest-iris
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: intersystemsdc/iris-community:latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run merge
+        run: |
+          iris merge merge.cpf
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest -v
+
+
+
+
+
