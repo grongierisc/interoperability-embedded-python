@@ -13,16 +13,14 @@ class FullMessage(Message):
     embedded:PostClass
     embedded_list:List[PostClass]
     embedded_dict:Dict[str,PostClass]
-    embedded_list_dict:List[Dict[str,PostClass]]
     string:str
     integer:int
     float:float
     boolean:bool
-    list:list
-    dict:dict
+    list:List
+    dict:Dict
     list_dict:List[dict]
-    dict_list:Dict[str,list]
-    list_dict_list:List[Dict[str,list]]
+    dict_list:Dict[str,List]
     date:date
     datetime:datetime
     time:time

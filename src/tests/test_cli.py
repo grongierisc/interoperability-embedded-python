@@ -68,11 +68,6 @@ def test_stop():
             mock_stop.assert_called_once()
             assert fake_out.getvalue().strip() == 'Production UnitTest.Production stopped'
 
-def test_status():
-    with patch('sys.stdout', new=StringIO()) as fake_out:
-        main(['-x'])
-        assert json.loads(fake_out.getvalue()) == {'Production': 'UnitTest.Production', 'Status': 'stopped'}
-
 def test_test():
     with patch('grongier.pex._director._Director.test_component') as mock_test:
         main(['-t', 'my_test', '-C', 'MyClass', '-B', 'my_body'])

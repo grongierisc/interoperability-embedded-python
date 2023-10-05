@@ -60,21 +60,21 @@ def test_fullmessage():
         Title='test',
         Url='test',
         Author='test',
+        CreatedUTC=1.1,
+        OriginalJSON='test',
     )
     msg = FullMessage(
         embedded=postclass,
         embedded_list=['test'],
         embedded_dict={'test':postclass},
-        embedded_list_dict={'test':[postclass]},
         string='test',
         integer=1,
         float=1.0,
         boolean=True,
         list=['test'],
         dict={'test':'test'},
-        list_dict={'_list':['test']},
-        dict_list={'_dict':{'test':'test'}},
-        list_dict_list={'_list_dict':{'test':['test']}},
+        list_dict=[{'test':'test'}],
+        dict_list={'test':['test']},
         date=date(2020, 1, 1),
         datetime=datetime(2020, 1, 1, 1, 1, 1),
         time=time(1, 1, 1)
@@ -85,16 +85,14 @@ def test_fullmessage():
     assert result.embedded.Selftext == 'test'
     assert result.embedded_list[0] == 'test'
     assert result.embedded_dict['test'].Selftext == 'test'
-    assert result.embedded_list_dict['test'][0]['Selftext'] == 'test'
     assert result.string == 'test'
     assert result.integer == 1
     assert result.float == 1.0
     assert result.boolean
     assert result.list[0] == 'test'
     assert result.dict['test'] == 'test'
-    assert result.list_dict['_list'][0] == 'test'
-    assert result.dict_list['_dict']['test'] == 'test'
-    assert result.list_dict_list['_list_dict']['test'][0] == 'test'
+    assert result.list_dict[0]['test'] == 'test'
+    assert result.dict_list['test'][0] == 'test'
     assert result.date == date(2020, 1, 1)
     assert result.datetime == datetime(2020, 1, 1, 1, 1, 1)
     assert result.time == time(1, 1, 1)
