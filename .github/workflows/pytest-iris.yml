@@ -5,22 +5,20 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: 
-      image: intersystemsdc/iris-community:latest
-      env: 
-        LD_LIBRARY_PATH: ${ISC_PACKAGE_INSTALLDIR}/bin:${LD_LIBRARY_PATH}
-      options: --user root
     steps:
       - uses: actions/checkout@v4
-      - name: Run merge
+      # build the docker image
+      - name: Build the Docker image
+        run: docker build -t pytest-iris .
+      # run the container
+      - name: Run the Docker container
+        run: docker run pytest-iris 
+      # attach a shell to the container
+      - name: Attach a shell to the Docker container
         run: |
-          su irisowner 
-          iris merge iris merge.cpf
-      - name: Run tests
-        run: |
+          docker exec -it $(docker ps -q) /bin/bash
           pip install pytest
-          pytest -v
-
+          pytest
 
 
 
