@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: intersystemsdc/iris-community:latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - name: Run merge
         run: |
           iris merge merge.cpf
