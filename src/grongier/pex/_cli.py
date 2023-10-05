@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument('-m', '-M', '--migrate', help='migrate production and classes with settings file')
     parser.add_argument('-e', '--export', help='export a production', nargs='?', const='not_set')
     parser.add_argument('-v', '--version', help='display version', action='store_true')
-    parser.add_argument('-L', '--log', help='display log', action='store_true')
+    parser.add_argument('-L', '--log', help='display log', nargs='?', const='not_set')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
     test = main_parser.add_argument_group('test arguments')
@@ -99,7 +99,11 @@ def main(argv=None):
 
     elif args.log:
         # display log
-        _Director.log_production()
+        if args.log == 'not_set':
+            # display default production log
+            _Director.log_production()
+        else:
+            _Director.log_production_top(args.log)
 
     elif args.stop:
         # stop a production

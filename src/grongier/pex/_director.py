@@ -206,6 +206,18 @@ class _Director():
                     await asyncio.sleep(1)
 
     @staticmethod
+    def log_production_top(top):
+        """ 
+        Log the top N logs of the production
+        Parameters:
+        top: the number of log to display
+        """
+        with irisdbapi.connect(embedded=True) as conn:
+            with conn.cursor() as cursor:
+                for row in reversed(_Director.read_top_log(cursor, top)):
+                    print(row)
+
+    @staticmethod
     def log_production():
         """ Log production 
             if ctrl+c is pressed, the log is stopped
