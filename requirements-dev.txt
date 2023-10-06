@@ -1,0 +1,4 @@
+pytest
+dacite
+xmltodict
+irissqlcli

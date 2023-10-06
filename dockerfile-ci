@@ -13,6 +13,6 @@ ENV PYTHON_PATH=/usr/irissys/bin/
 ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin:${LD_LIBRARY_PATH}
 ENV PATH "/home/irisowner/.local/bin:/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
-RUN pip install pytest
+RUN pip install -r requirements-dev.txt
 
 ENTRYPOINT /irisdev/app/test-in-docker.sh
