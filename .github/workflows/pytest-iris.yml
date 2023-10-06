@@ -12,11 +12,15 @@ jobs:
         run: docker build -t pytest-iris .
       # run the container
       - name: Run the Docker container
-        run: docker run pytest-iris 
+        run: docker run --rm -d pytest-iris 
       # attach a shell to the container
       - name: Attach a shell to the Docker container
         run: |
+          echo "Attaching a shell to the Docker container"
           docker exec -it $(docker ps -q) /bin/bash
+          echo "Waiting for IRIS to start"
+          /usr/irissys/dev/Cloud/ICM/waitISC.sh
+          echo "Running pytest"
           pip install pytest
           pytest
 

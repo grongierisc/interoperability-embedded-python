@@ -14,6 +14,4 @@ iop -m /irisdev/app/demo/python/reddit/settings.py
 iop --default PEX.Production
 
 # start production
-iop --start &
-
-fg %1
+iop --start --detach
