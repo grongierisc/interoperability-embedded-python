@@ -18,7 +18,7 @@ jobs:
     - run: docker pull $IMAGE
     - name: Run Tests
       run: | 
-        docker build --build-arg BASE=$IMAGE -t pytest-iris dockerfile-ci
+        docker build --build-arg BASE=$IMAGE -t pytest-iris -f dockerfile-ci
         docker run -i --rm pytest-iris
 
 
