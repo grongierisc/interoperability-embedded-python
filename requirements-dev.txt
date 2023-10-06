@@ -2,3 +2,4 @@ pytest
 dacite
 xmltodict
 irissqlcli
+requests
