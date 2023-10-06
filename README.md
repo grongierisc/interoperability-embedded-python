@@ -15,63 +15,61 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [1.2. Example](#12-example)
   - [1.3. Register a component](#13-register-a-component)
 - [2. Demo](#2-demo)
-- [3. Prerequisites](#3-prerequisites)
-- [4. Installation](#4-installation)
-  - [4.1. With Docker](#41-with-docker)
-  - [4.2. Without Docker](#42-without-docker)
-  - [4.3. With ZPM](#43-with-zpm)
-  - [4.4. With PyPI](#44-with-pypi)
-    - [4.4.1. Known issues](#441-known-issues)
-- [5. How to Run the Sample](#5-how-to-run-the-sample)
-  - [5.1. Docker containers](#51-docker-containers)
-  - [5.2. Management Portal and VSCode](#52-management-portal-and-vscode)
-  - [5.3. Open the production](#53-open-the-production)
-- [6. What's inside the repository](#6-whats-inside-the-repository)
-  - [6.1. Dockerfile](#61-dockerfile)
-  - [6.2. .vscode/settings.json](#62-vscodesettingsjson)
-  - [6.3. .vscode/launch.json](#63-vscodelaunchjson)
-  - [6.4. .vscode/extensions.json](#64-vscodeextensionsjson)
-  - [6.5. src folder](#65-src-folder)
-- [7. How it works](#7-how-it-works)
-  - [7.1. The `__init__.py`file](#71-the-__init__pyfile)
-  - [7.2. The `common` class](#72-the-common-class)
-  - [7.3. The `business_host` class](#73-the-business_host-class)
-  - [7.4. The `inbound_adapter` class](#74-the-inbound_adapter-class)
-  - [7.5. The `outbound_adapter` class](#75-the-outbound_adapter-class)
-  - [7.6. The `business_service` class](#76-the-business_service-class)
-  - [7.7. The `business_process` class](#77-the-business_process-class)
-  - [7.8. The `business_operation` class](#78-the-business_operation-class)
-    - [7.8.1. The dispacth system](#781-the-dispacth-system)
-    - [7.8.2. The methods](#782-the-methods)
-  - [7.9. The `director` class](#79-the-director-class)
-  - [7.10. The `objects`](#710-the-objects)
-  - [7.11. The `messages`](#711-the-messages)
-  - [7.12. How to regsiter a component](#712-how-to-regsiter-a-component)
-    - [7.12.1. register\_component](#7121-register_component)
-    - [7.12.2. register\_file](#7122-register_file)
-    - [7.12.3. register\_folder](#7123-register_folder)
-    - [7.12.4. migrate](#7124-migrate)
-      - [7.12.4.1. setting.py file](#71241-settingpy-file)
-        - [7.12.4.1.1. CLASSES section](#712411-classes-section)
-        - [7.12.4.1.2. Productions section](#712412-productions-section)
-  - [7.13. Direct use of Grongier.PEX](#713-direct-use-of-grongierpex)
-- [8. Command line](#8-command-line)
-  - [8.1. help](#81-help)
-  - [8.2. default](#82-default)
-  - [8.3. lists](#83-lists)
-  - [8.4. start](#84-start)
-  - [8.5. kill](#85-kill)
-  - [8.6. stop](#86-stop)
-  - [8.7. restart](#87-restart)
-  - [8.8. migrate](#88-migrate)
-  - [8.9. export](#89-export)
-  - [8.10. status](#810-status)
-  - [8.11. version](#811-version)
-  - [8.12. log](#812-log)
-- [9. Credits](#9-credits)
+- [3. Installation](#3-installation)
+  - [3.1. With ZPM](#31-with-zpm)
+  - [3.2. With PyPI](#32-with-pypi)
+    - [3.2.1. Known issues](#321-known-issues)
+- [4. How to Run the Sample](#4-how-to-run-the-sample)
+  - [4.1. Docker containers](#41-docker-containers)
+  - [4.2. Management Portal and VSCode](#42-management-portal-and-vscode)
+  - [4.3. Open the production](#43-open-the-production)
+- [5. What's inside the repository](#5-whats-inside-the-repository)
+  - [5.1. Dockerfile](#51-dockerfile)
+  - [5.2. .vscode/settings.json](#52-vscodesettingsjson)
+  - [5.3. .vscode/launch.json](#53-vscodelaunchjson)
+  - [5.4. .vscode/extensions.json](#54-vscodeextensionsjson)
+  - [5.5. src folder](#55-src-folder)
+- [6. How it works](#6-how-it-works)
+  - [6.1. The `__init__.py`file](#61-the-__init__pyfile)
+  - [6.2. The `common` class](#62-the-common-class)
+  - [6.3. The `business_host` class](#63-the-business_host-class)
+  - [6.4. The `inbound_adapter` class](#64-the-inbound_adapter-class)
+  - [6.5. The `outbound_adapter` class](#65-the-outbound_adapter-class)
+  - [6.6. The `business_service` class](#66-the-business_service-class)
+  - [6.7. The `business_process` class](#67-the-business_process-class)
+  - [6.8. The `business_operation` class](#68-the-business_operation-class)
+    - [6.8.1. The dispacth system](#681-the-dispacth-system)
+    - [6.8.2. The methods](#682-the-methods)
+  - [6.9. The `director` class](#69-the-director-class)
+  - [6.10. The `objects`](#610-the-objects)
+  - [6.11. The `messages`](#611-the-messages)
+  - [6.12. How to regsiter a component](#612-how-to-regsiter-a-component)
+    - [6.12.1. register\_component](#6121-register_component)
+    - [6.12.2. register\_file](#6122-register_file)
+    - [6.12.3. register\_folder](#6123-register_folder)
+    - [6.12.4. migrate](#6124-migrate)
+      - [6.12.4.1. setting.py file](#61241-settingpy-file)
+        - [6.12.4.1.1. CLASSES section](#612411-classes-section)
+        - [6.12.4.1.2. Productions section](#612412-productions-section)
+  - [6.13. Direct use of Grongier.PEX](#613-direct-use-of-grongierpex)
+- [7. Command line](#7-command-line)
+  - [7.1. help](#71-help)
+  - [7.2. default](#72-default)
+  - [7.3. lists](#73-lists)
+  - [7.4. start](#74-start)
+  - [7.5. kill](#75-kill)
+  - [7.6. stop](#76-stop)
+  - [7.7. restart](#77-restart)
+  - [7.8. migrate](#78-migrate)
+  - [7.9. export](#79-export)
+  - [7.10. status](#710-status)
+  - [7.11. version](#711-version)
+  - [7.12. log](#712-log)
+- [8. Credits](#8-credits)
 
 ## 1.2. Example
 
+bo.py
 ```python
 from grongier.pex import BusinessOperation,Message
 
@@ -114,96 +112,51 @@ class MyResponse(Message):
 
 ## 1.3. Register a component 
 
-Thanks to the method grongier.pex.Utils.register_component() : 
+To register a component, you need to create a `setting.py` file in the root of your project.<br>
 
-Start an embedded python shell :
+This file will be used to register your classes and productions.<br>
+
+e.g.:
+setting.py
+```python
+from grongier.pex import Utils
+
+import bo
+
+CLASSES = {
+    "Python.MyBusinessOperation": bo.MyBusinessOperation
+}
+```
+
+Then you can use the `iop` command line to register your component.
 
 ```sh
-/usr/irissys/bin/irispython
+iop --migrate /path/to/your/project/setting.py
 ```
 
-Then use this class method to add a python class to the component list for interoperability.
-```python
-from grongier.pex import Utils
-
-Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
-```
-
-e.g :
-```python
-from grongier.pex import Utils
-
-Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
-```
-
-This is a hack, this not for production.
 # 2. Demo
 
-The demo can be found inside `src/python/demo/reddit/` and is composed of :
-- An `adapter.py` file that holds a `RedditInboundAdapter` that will, given a service, fetch Reddit recent posts.
-<br>
+You can find a demo in the [src/python/demo](src/python/demo) folder.
 
-- A `bs.py` file that holds three `services` that does the same thing, they will call our `Process` and send it reddit post. One work on his own, one use the `RedditInBoundAdapter` we talked about earlier and the last one use a reddit inbound adapter coded in ObjectScript.
-<br>
+Other demos are aviailable in those repositories:
 
-- A `bp.py` file that holds a `FilterPostRoutingRule` process that will analyze our reddit posts and send it to our `operations` if it contains certain words.
-<br>
+  - [training](https://github.com/grongierisc/formation-template-python)
+  - [template](https://github.com/grongierisc/iris-python-interoperability-template)
+  - [falsk](https://github.com/grongierisc/iris-python-flask-api-template)
+  - [rest-to-dicom](https://github.com/grongierisc/RestToDicom)
 
-- A `bo.py` file that holds :
-    - Two **email operations** that will send a mail to a certain company depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
-    - Two **file operations** that will write in a text file depending on the words analyzed before, one works on his own and the other one works with an OutBoundAdapter.
-<br>
+# 3. Installation
 
-New json trace for python native messages :
-<img width="910" alt="json-message-trace" src="https://user-images.githubusercontent.com/47849411/131305211-b8beb2c0-438d-4afc-a6d2-f94d854373ae.png">
-
-# 3. Prerequisites
-Make sure you have [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker desktop](https://www.docker.com/products/docker-desktop) installed.
-
-# 4. Installation 
-## 4.1. With Docker
-
-Clone/git pull the repo into any local directory
-
-```sh
-git clone https://github.com/grongierisc/interpeorability-embedded-python
-```
-
-Open the terminal in this directory and run:
-
-```sh
-docker-compose build
-```
-
-Run the IRIS container with your project:
-
-```sh
-docker-compose up -d
-```
-
-## 4.2. Without Docker
-
-Install the *grongier_pex-1.2.4-py3-none-any.whl* on you local iris instance :
-
-```sh
-/usr/irissys/bin/irispython -m pip install grongier_pex-1.2.4-py3-none-any.whl
-```
-
-Then load the ObjectScript classes :
-
-```ObjectScript
-do $System.OBJ.LoadDir("/opt/irisapp/src","cubk","*.cls",1)
-```
-## 4.3. With ZPM 
+## 3.1. With ZPM 
 
 ```objectscript
 zpm "install pex-embbeded-python" 
 ```
 
-## 4.4. With PyPI
+## 3.2. With PyPI
 
 ```sh
-pip3 install iris_pex_embedded_python
+pip3 install iris-pex-embedded-python
 ```
 
 Import the ObjectScript classes, open an embedded python shell and run :
@@ -213,12 +166,18 @@ from grongier.pex import Utils
 Utils.setup()
 ```
 
-### 4.4.1. Known issues
+or use `iop` command line :
+
+```sh
+iop --init
+```
+
+### 3.2.1. Known issues
 
 If the module is not updated, make sure to remove the old version :
 
 ```sh
-pip3 uninstall iris_pex_embedded_python
+pip3 uninstall iris-pex-embedded-python
 ```
 
 or manually remove the `grongier` folder in `<iris_installation>/lib/python/`
@@ -226,19 +185,19 @@ or manually remove the `grongier` folder in `<iris_installation>/lib/python/`
 or force the installation with pip :
 
 ```sh
-pip3 install --upgrade iris_pex_embedded_python --target <iris_installation>/lib/python/
+pip3 install --upgrade iris-pex-embedded-python --target <iris_installation>/lib/python/
 ```
 
-# 5. How to Run the Sample
+# 4. How to Run the Sample
 
-## 5.1. Docker containers
+## 4.1. Docker containers
 
 
 In order to have access to the InterSystems images, we need to go to the following url: http://container.intersystems.com. After connecting with our InterSystems credentials, we will get our password to connect to the registry. In the docker VScode addon, in the image tab, by pressing connect registry and entering the same url as before (http://container.intersystems.com) as a generic registry, we will be asked to give our credentials. The login is the usual one but the password is the one we got from the website.
 
 From there, we should be able to build and compose our containers (with the `docker-compose.yml` and `Dockerfile` files given).
 
-## 5.2. Management Portal and VSCode
+## 4.2. Management Portal and VSCode
 
 This repository is ready for [VS Code](https://code.visualstudio.com/).
 
@@ -252,7 +211,7 @@ By opening the folder remote you enable VS Code and any terminals you open withi
 
 <img width="1614" alt="PythonInterpreter" src="https://user-images.githubusercontent.com/47849411/145864423-2de24aaa-036c-4beb-bda0-3a73fe15ccbd.png">
 
-## 5.3. Open the production
+## 4.3. Open the production
 To open the production you can go to [production](http://localhost:52773/csp/irisapp/EnsPortal.ProductionConfig.zen?PRODUCTION=PEX.Production).<br>
 You can also click on the bottom on the `127.0.0.1:52773[IRISAPP]` button and select `Open Management Portal` then, click on [Interoperability] and [Configure] menus then click [productions] and [Go].
 
@@ -266,9 +225,9 @@ Here we can see the production and our pure python services and operations:
 New json trace for python native messages :
 <img width="910" alt="json-message-trace" src="https://user-images.githubusercontent.com/47849411/131305211-b8beb2c0-438d-4afc-a6d2-f94d854373ae.png">
 
-# 6. What's inside the repository
+# 5. What's inside the repository
 
-## 6.1. Dockerfile
+## 5.1. Dockerfile
 
 A dockerfile which install some python dependancies (pip, venv) and sudo in the container for conviencies.
 Then it create the dev directory and copy in it this git repository.
@@ -280,25 +239,23 @@ This dockerfile ends with the installation of requirements for python modules.
 
 Use .env/ file to adjust the dockerfile being used in docker-compose.
 
-## 6.2. .vscode/settings.json
+## 5.2. .vscode/settings.json
 
 Settings file to let you immedietly code in VSCode with [VSCode ObjectScript plugin](https://marketplace.visualstudio.com/items?itemName=daimor.vscode-objectscript)
 
-## 6.3. .vscode/launch.json
+## 5.3. .vscode/launch.json
 Config file if you want to debug with VSCode ObjectScript
 
 [Read about all the files in this article](https://community.intersystems.com/post/dockerfile-and-friends-or-how-run-and-collaborate-objectscript-projects-intersystems-iris)
 
-## 6.4. .vscode/extensions.json
+## 5.4. .vscode/extensions.json
 Recommendation file to add extensions if you want to run with VSCode in the container.
 
 [More information here](https://code.visualstudio.com/docs/remote/containers)
 
-![Archiecture](https://code.visualstudio.com/assets/docs/remote/containers/architecture-containers.png)
-
 This is very useful to work with embedded python.
 
-## 6.5. src folder
+## 5.5. src folder
 
 ```
 src
@@ -343,9 +300,9 @@ src
     │       └── _utils.py
     └── setup.py // setup to build the wheel
 ```
-# 7. How it works
+# 6. How it works
 
-## 7.1. The `__init__.py`file
+## 6.1. The `__init__.py`file
 This file will allow us to create the classes to import in the code.<br>
 It gets from the multiple files seen earlier the classes and make them into callable classes.
 That way, when you wish to create a business operation, for example, you can just do:
@@ -353,7 +310,7 @@ That way, when you wish to create a business operation, for example, you can jus
 from grongier.pex import BusinessOperation
 ```
 
-## 7.2. The `common` class
+## 6.2. The `common` class
 The common class shouldn't be called by the user, it defines almost all the other classes.<br>
 This class defines:
 
@@ -371,7 +328,7 @@ This class defines:
 
 `log_error`: Write a log entry of type "error". :log entries can be viewed in the management portal.
 
-## 7.3. The `business_host` class
+## 6.3. The `business_host` class
 The business host class shouldn't be called by the user, it is the base class for all the business classes.<br>
 This class defines:
 
@@ -408,7 +365,7 @@ TypeError: if request is not of type Message or IRISObject.
 `get_adapter_type`: Name of the registred Adapter.
 
 
-## 7.4. The `inbound_adapter` class
+## 6.4. The `inbound_adapter` class
 Inbound Adapter in Python are subclass from grongier.pex.InboundAdapter in Python, that inherit from all the functions of the [common class](#72-the-common-class).<br>
 This class is responsible for receiving the data from the external system, validating the data, and sending it to the business service by calling the BusinessHost process_input method.
 This class defines:
@@ -479,7 +436,7 @@ class RedditInboundAdapter(InboundAdapter):
         return tSC
 ```
 
-## 7.5. The `outbound_adapter` class
+## 6.5. The `outbound_adapter` class
 Outbound Adapter in Python are subclass from grongier.pex.OutboundAdapter in Python, that inherit from all the functions of the [common class](#72-the-common-class).<br>
 This class is responsible for sending the data to the external system.
 
@@ -500,7 +457,7 @@ class TestHeartBeat(OutboundAdapter):
         self.log_info('on_task')
 ```
 
-## 7.6. The `business_service` class
+## 6.6. The `business_service` class
 This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.<br>
 The business service can use an adapter to access the external system, which is specified overriding the get_adapter_type method.<br>
 There are three ways of implementing a business service:<br>
@@ -558,7 +515,7 @@ class RedditServiceWithPexAdapter(BusinessService):
 ```
 
 
-## 7.7. The `business_process` class
+## 6.7. The `business_process` class
 Typically contains most of the logic in a production.<br>
 A business process can receive messages from a business service, another business process, or a business operation.<br>
 It can modify the message, convert it to a different format, or route it based on the message contents.<br>
@@ -638,19 +595,19 @@ class FilterPostRoutingRule(BusinessProcess):
             return
 ```
 
-## 7.8. The `business_operation` class
+## 6.8. The `business_operation` class
 This class is responsible for sending the data to an external system or a local system such as an iris database.<br>
 The business operation can optionally use an adapter to handle the outgoing message which is specified overriding the get_adapter_type method.<br>
 If the business operation has an adapter, it uses the adapter to send the message to the external system.<br>
 The adapter can either be a PEX adapter, an ObjectScript adapter or a [python adapter](#75-the-outbound_adapter-class).<br>
 Business operation in Python are subclass from grongier.pex.BusinessOperation in Python, that inherit from all the functions of the [business host](#73-the-business_host-class).<br>
 
-### 7.8.1. The dispacth system
+### 6.8.1. The dispacth system
 In a business operation it is possbile to create any number of function [similar to the on_message method](#782-the-methods) that will take as argument a [typed request](#711-the-messages) like this `my_special_message_method(self,request: MySpecialMessage)`.
 
 The dispatch system will automatically analyze any request arriving to the operation and dispacth the requests depending of their type. If the type of the request is not recognized or is not specified in any **on_message like function**, the dispatch system will send it to the `on_message` function.
 
-### 7.8.2. The methods
+### 6.8.2. The methods
 This class defines:
 
 `on_message`: Called when the business operation receives a message from another production component [that can not be dispatched to another function](#781-the-dispacth-system).<br>
@@ -718,7 +675,7 @@ class EmailOperation(BusinessOperation):
 ```
 If this operation is called using a MyRequest message, the my_message function will be called thanks to the dispatcher, otherwise the on_message function will be called.
 
-## 7.9. The `director` class
+## 6.9. The `director` class
 The Director class is used for nonpolling business services, that is, business services which are not automatically called by the production framework (through the inbound adapter) at the call interval.<br>
 Instead these business services are created by a custom application by calling the Director.create_business_service() method.<br>
 This class defines:
@@ -745,7 +702,7 @@ an object that contains an instance of IRISBusinessService
 
 `list_productions`: The list_productions() method returns a dictionary of the names of the productions that are currently running.<br>
 
-## 7.10. The `objects`
+## 6.10. The `objects`
 We will use `dataclass` to hold information in our [messages](#711-the-messages) in a `obj.py` file.
 
 Example of an object ( situated in the src/python/demo/reddit/obj.py file ):
@@ -762,7 +719,7 @@ class PostClass:
     original_json: str = None
 ```
 
-## 7.11. The `messages`
+## 6.11. The `messages`
 The messages will contain one or more [objects](#710-the-objects), located in the `obj.py` file.<br>
 Messages, requests and responses all inherit from the `grongier.pex.Message` class.
 
@@ -785,14 +742,14 @@ class PostMessage(Message):
 
 WIP It is to be noted that it is needed to use types when you define an object or a message.
 
-## 7.12. How to regsiter a component 
+## 6.12. How to regsiter a component 
 
 You can register a component to iris in many way :
 * Only one component with `register_component` 
 * All the component in a file with `register_file` 
 * All the component in a folder with `register_folder` 
 
-### 7.12.1. register_component
+### 6.12.1. register_component
 
 Start an embedded python shell :
 
@@ -813,7 +770,7 @@ from grongier.pex import Utils
 Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
 ```
 
-### 7.12.2. register_file
+### 6.12.2. register_file
 
 Start an embedded python shell :
 
@@ -834,7 +791,7 @@ from grongier.pex import Utils
 Utils.register_file("/irisdev/app/src/python/demo/bo.py",1,"PEX")
 ```
 
-### 7.12.3. register_folder
+### 6.12.3. register_folder
 
 Start an embedded python shell :
 
@@ -855,7 +812,7 @@ from grongier.pex import Utils
 Utils.register_folder("/irisdev/app/src/python/demo/",1,"PEX")
 ```
 
-### 7.12.4. migrate
+### 6.12.4. migrate
 
 Start an embedded python shell :
 
@@ -870,7 +827,7 @@ from grongier.pex import Utils
 Utils.migrate()
 ```
 
-#### 7.12.4.1. setting.py file
+#### 6.12.4.1. setting.py file
 
 This file is used to store the settings of the interoperability components.
 
@@ -951,7 +908,7 @@ PRODUCTIONS = [
 ]
 ```
 
-##### 7.12.4.1.1. CLASSES section
+##### 6.12.4.1.1. CLASSES section
 
 This section is used to store the classes of the interoperability components.
 
@@ -1000,7 +957,7 @@ CLASSES = {
 }
 ```
 
-##### 7.12.4.1.2. Productions section
+##### 6.12.4.1.2. Productions section
 
 This section is used to store the productions of the interoperability components.
 
@@ -1093,7 +1050,7 @@ PRODUCTIONS = [
     ]
 ```
 
-## 7.13. Direct use of Grongier.PEX
+## 6.13. Direct use of Grongier.PEX
 
 If you don't want to use the register_component util. You can add a Grongier.PEX.BusinessService component directly into the management portal and configure the properties :
 - %module :
@@ -1107,7 +1064,7 @@ If you don't want to use the register_component util. You can add a Grongier.PEX
 e.g :
 <img width="800" alt="component-config" src="https://user-images.githubusercontent.com/47849411/131316308-e1898b19-11df-433b-b1c6-7f69d5cc9974.png">
 
-# 8. Command line
+# 7. Command line
 
 Since version 2.3.1, you can use the command line to register your components and productions.
 
@@ -1140,7 +1097,7 @@ optional arguments:
 default production: PEX.Production
 ```
 
-## 8.1. help
+## 7.1. help
 
 The help command display the help and the default production name.
 
@@ -1155,7 +1112,7 @@ usage: python3 -m grongier.pex [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] 
 default production: PEX.Production
 ```
 
-## 8.2. default
+## 7.2. default
 
 The default command set the default production.
 
@@ -1176,7 +1133,7 @@ With an argument, it set the default production.
 iop -d PEX.Production
 ```
 
-## 8.3. lists
+## 7.3. lists
 
 The lists command list productions.
 
@@ -1196,7 +1153,7 @@ output :
 }
 ```
 
-## 8.4. start
+## 7.4. start
 
 The start command start a production.
 
@@ -1214,7 +1171,7 @@ output :
 ...
 ```
 
-## 8.5. kill
+## 7.5. kill
 
 The kill command kill a production (force stop).
 
@@ -1226,7 +1183,7 @@ Kill command doesn't take an argument because only one production can be running
 iop -k 
 ```
 
-## 8.6. stop
+## 7.6. stop
 
 The stop command stop a production.
 
@@ -1236,7 +1193,7 @@ Stop command doesn't take an argument because only one production can be running
 iop -S 
 ```
 
-## 8.7. restart
+## 7.7. restart
 
 The restart command restart a production.
 
@@ -1246,7 +1203,7 @@ Restart command doesn't take an argument because only one production can be runn
 iop -r 
 ```
 
-## 8.8. migrate
+## 7.8. migrate
 
 The migrate command migrate a production and classes with settings file.
 
@@ -1258,7 +1215,7 @@ Settings file must be in the same folder as the python code.
 iop -M /tmp/settings.py
 ```
 
-## 8.9. export
+## 7.9. export
 
 The export command export a production.
 
@@ -1317,7 +1274,7 @@ output :
 }
 ```
 
-## 8.10. status
+## 7.10. status
 
 The status command status a production.
 
@@ -1341,7 +1298,7 @@ Status can be :
 - suspended
 - troubled
 
-## 8.11. version
+## 7.11. version
 
 The version command display the version.
 
@@ -1354,7 +1311,7 @@ output :
 2.3.0
 ```
 
-## 8.12. log
+## 7.12. log
 
 The log command display the log.
 
@@ -1372,7 +1329,7 @@ output :
 ...
 ```
 
-# 9. Credits
+# 8. Credits
 
 Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
 
