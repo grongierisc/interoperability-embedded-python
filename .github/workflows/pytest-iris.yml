@@ -1,6 +1,10 @@
 name: pytest-iris
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+
 
 jobs:
   test:
