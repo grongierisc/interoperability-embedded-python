@@ -52,6 +52,20 @@ def test_log_info():
             rs = cursor.fetchall()
             assert len(rs) == 1
 
+def test_log_info_japanese():
+    commun = _Common()
+    # generate a random string of 10 characters which contains japanese characters
+    import random
+    letters = 'あいうえお'
+    random_string = ''.join(random.choice(letters) for i in range(10))
+    commun.log_info(random_string)
+    sql = "SELECT * FROM Ens_Util.Log where SourceClass = '_Common' and SourceMethod = 'test_log_info_japanese' and Text = ? order by id desc"
+    with irisdbapi.connect(embedded=True) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, (random_string,))
+            rs = cursor.fetchall()
+            assert len(rs) == 1
+
 def test_get_info():
     # set python path to the registerFiles folder
     path = os.path.dirname(os.path.realpath(__file__))

@@ -166,7 +166,7 @@ class _BusinessHost(_Common):
         Returns:
         string: The message in json format.
         """
-        json_string = json.dumps(message, cls=IrisJSONEncoder)
+        json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
         module = message.__class__.__module__
         classname = message.__class__.__name__
 
@@ -177,24 +177,6 @@ class _BusinessHost(_Common):
         msg.jstr = stream
 
         return msg
-
-
-    def _serialize(self,message):
-        """ Converts a message into json format.
-
-        Parameters:
-        message: The message to serialize, an instance of a class that is a subclass of Message.
-
-        Returns:
-        string: The message in json format.
-        """
-        if (message is not None):
-            json_string = json.dumps(message, cls=IrisJSONEncoder)
-            module = message.__class__.__module__
-            classname = message.__class__.__name__
-            return  module + "." + classname + ":" + json_string
-        else:
-            return None
 
     def _deserialize_pickle_message(self,serial):
         """ 
@@ -244,40 +226,6 @@ class _BusinessHost(_Common):
         jdict = json.loads(string, cls=IrisJSONDecoder)
         msg = self._dataclass_from_dict(msg,jdict)
         return msg
-
-
-    def _deserialize(self,serial):
-        """ Converts a json string into a message of type classname, which is stored in the json string.
-
-        Parameters:
-        serial: The json string to deserialize.
-
-        Returns:
-        Message: The message as an instance of the class specified in the json string, which is a subclass of Message.
-
-        Raises:
-        ImportError: if the classname does not include a module name to import.
-        """
-        if (serial is not None and serial != ""):
-            i = serial.find(":")
-            if (i <=0):
-                raise ValueError("JSON message malformed, must include classname: " + serial)
-            classname = serial[:i]
-
-            j = classname.rindex(".")
-            if (j <=0):
-                raise ValueError("Classname must include a module: " + classname)
-
-            try:
-                module = importlib.import_module(classname[:j])
-                msg = getattr(module, classname[j+1:])
-            except Exception:
-                raise ImportError("Class not found: " + classname)
-            jdict = json.loads(serial[i+1:], cls=IrisJSONDecoder)
-            msg = self._dataclass_from_dict(msg,jdict)
-            return msg
-        else:
-            return None
 
     def _dataclass_from_dict(self,klass, dikt):
         """

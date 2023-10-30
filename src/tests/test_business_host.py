@@ -33,6 +33,15 @@ def test_deseialize_message():
     assert msg.integer == 1
     assert msg.string == 'test'
 
+def test_deseialize_message_japanese():
+    bh = _BusinessHost()
+    msg = TestSimpleMessage(integer=1, string='あいうえお')
+    result = bh._serialize_message(msg)
+    assert result.json == '{"integer": 1, "string": "あいうえお"}'
+    msg = bh._deserialize_message(result)
+    assert msg.integer == 1
+    assert msg.string == 'あいうえお'
+
 def test_serialize_pickled_message():
     bh = _BusinessHost()
     msg = TestPickledMessage(integer=1, string='test')
