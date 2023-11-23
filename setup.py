@@ -26,7 +26,7 @@ def main():
         description='iris_pex_embedded_python',
         long_description=long_description,
         long_description_content_type='text/markdown',
-        version='2.3.16',
+        version='2.3.17',
         author='grongier',
         author_email='guillaume.rongier@intersystems.com',
         keywords='iris_pex_embedded_python',
@@ -52,7 +52,8 @@ def main():
         install_requires=[
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
-            "irissqlcli"
+            "https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.0/intersystems_iris-3.7.0-py3-none-any.whl",
+            "https://github.com/grongierisc/iris-embedded-python-wrapper/releases/download/v0.0.5/iris-0.0.5-py3-none-any.whl"
         ],
         entry_points={
             'console_scripts': [

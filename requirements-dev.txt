@@ -1,5 +1,6 @@
 pytest
 dacite
 xmltodict
-irissqlcli
+intersystems_iris@ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.0/intersystems_iris-3.7.0-py3-none-any.whl
+iris@ https://github.com/grongierisc/iris-embedded-python-wrapper/releases/download/v0.0.5/iris-0.0.5-py3-none-any.whl
 requests
