@@ -14,6 +14,7 @@ from grongier.pex._utils import _Utils
 
 import argparse
 import json
+import os
 from importlib.metadata import version 
 
 def parse_args():
@@ -90,8 +91,13 @@ def main(argv=None):
         _Director.restart_production()
 
     elif args.migrate:
-        # migrate a production
-        _Utils.migrate(args.migrate)
+        # check if migrate is absolute path
+        if os.path.isabs(args.migrate):
+            # migrate a production with absolute path
+            _Utils.migrate(args.migrate)
+        else:
+            # migrate a production with relative path
+            _Utils.migrate(os.path.join(os.getcwd(), args.migrate))
 
     elif args.version:
         # display version

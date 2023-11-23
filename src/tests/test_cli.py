@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 from io import StringIO
 import json
+import os
 from grongier.pex._cli import main
 
 def test_help():
@@ -56,10 +57,15 @@ def test_restart():
         main(['-r'])
         mock_restart.assert_called_once()
 
-def test_migrate():
+def test_migrate_relative():
     with patch('grongier.pex._utils._Utils.migrate') as mock_migrate:
         main(['-m', 'settings.json'])
-        mock_migrate.assert_called_once_with('settings.json')
+        mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
+
+def test_migrate_absolute():
+    with patch('grongier.pex._utils._Utils.migrate') as mock_migrate:
+        main(['-m', '/tmp/settings.json'])
+        mock_migrate.assert_called_once_with('/tmp/settings.json')
 
 def test_stop():
     with patch('grongier.pex._director._Director.stop_production') as mock_stop:
@@ -73,3 +79,7 @@ def test_test():
         main(['-t', 'my_test', '-C', 'MyClass', '-B', 'my_body'])
         mock_test.assert_called_once_with('my_test', classname='MyClass', body='my_body')
 
+def test_test_japanese():
+    with patch('grongier.pex._director._Director.test_component') as mock_test:
+        main(['-t', 'my_test', '-C', 'MyClass', '-B', 'あいうえお'])
+        mock_test.assert_called_once_with('my_test', classname='MyClass', body='あいうえお')
