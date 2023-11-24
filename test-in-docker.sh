@@ -30,8 +30,23 @@ exit_on_error
 # back to workdir
 cd ..
 
-# Test
+# Unit tests
 python3 -m pytest
+exit_on_error
+
+# Integration tests
+iop --migrate demo/reddit/settings.py
+exit_on_error
+
+iop --default PEX.Production
+exit_on_error
+
+iop --start PEX.Production --detach
+exit_on_error
+
+iop --log 10
+
+iop -S
 exit_on_error
 
 iris_stop
