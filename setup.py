@@ -46,13 +46,12 @@ def main():
             'Topic :: Utilities'
         ],
         package_dir={'': 'src'},
-        packages=['grongier','grongier.pex','grongier.cls'],
+        packages=['grongier','grongier.pex','grongier.cls','iris','irisnative','intersystems_iris'],
         package_data={'grongier.cls': ['**/*.cls']},
         python_requires='>=3.6',
         install_requires=[
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
-            "intersystems-iris @https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.1/intersystems_iris-3.7.1-py3-none-any.whl",
         ],
         entry_points={
             'console_scripts': [
