@@ -3,16 +3,7 @@
 
 import os
 
-from setuptools import setup
-
-def package_files(directory):
-    paths = []
-    for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            paths.append(os.path.join('.', path, filename))
-    return paths
-
-extra_files = package_files('src/grongier/iris')
+from setuptools import setup, find_packages
 
 def main():
     # Read the readme for use as the long description
@@ -46,7 +37,7 @@ def main():
             'Topic :: Utilities'
         ],
         package_dir={'': 'src'},
-        packages=['grongier','grongier.pex','grongier.cls','iris','irisnative','intersystems_iris'],
+        packages=find_packages(where='src'),
         package_data={'grongier.cls': ['**/*.cls']},
         python_requires='>=3.6',
         install_requires=[

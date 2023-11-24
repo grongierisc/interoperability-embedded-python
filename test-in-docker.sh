@@ -36,6 +36,7 @@ exit_on_error
 
 # install main package
 pip install git+https://github.com/grongierisc/interoperability-embedded-python
+# install dependencies
 pip install dataclasses_json requests
 
 # Integration tests
