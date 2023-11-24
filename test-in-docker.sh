@@ -35,7 +35,7 @@ python3 -m pytest
 exit_on_error
 
 # install main package
-pip install -e .
+pip install git+https://github.com/grongierisc/interoperability-embedded-python
 
 # Integration tests
 iop --migrate demo/reddit/settings.py
