@@ -52,7 +52,7 @@ def main():
         install_requires=[
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
-            "https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.0/intersystems_iris-3.7.0-py3-none-any.whl",
+            "https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.1/intersystems_iris-3.7.1-py3-none-any.whl",
         ],
         entry_points={
             'console_scripts': [
