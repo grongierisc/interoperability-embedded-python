@@ -34,6 +34,9 @@ cd ..
 python3 -m pytest
 exit_on_error
 
+# install main package
+pip3 install -e .
+
 # Integration tests
 iop --migrate demo/reddit/settings.py
 exit_on_error
