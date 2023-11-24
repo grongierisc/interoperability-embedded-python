@@ -38,7 +38,7 @@ exit_on_error
 pip install git+https://github.com/grongierisc/interoperability-embedded-python
 
 # Integration tests
-iop --migrate demo/reddit/settings.py
+iop --migrate demo/python/reddit/settings.py
 exit_on_error
 
 iop --default PEX.Production
