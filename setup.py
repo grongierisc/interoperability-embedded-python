@@ -53,7 +53,6 @@ def main():
             "dacite>=1.6.0",
             "xmltodict>=0.12.0",
             "https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.0/intersystems_iris-3.7.0-py3-none-any.whl",
-            "https://github.com/grongierisc/iris-embedded-python-wrapper/releases/download/v0.0.5/iris-0.0.5-py3-none-any.whl"
         ],
         entry_points={
             'console_scripts': [
