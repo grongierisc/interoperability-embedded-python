@@ -1,6 +1,7 @@
 import pickle
 import codecs
 from datetime import datetime, date, time
+from unittest.mock import MagicMock
 
 from grongier.pex._business_host import _BusinessHost
 
@@ -10,9 +11,20 @@ from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage
 
 from registerFiles.obj import PostClass
 
-
 def test_dispatch_serializer():
     bh = _BusinessHost()
+
+def test_serialize_message_decorator():
+    bh = _BusinessHost()
+    msg = TestSimpleMessage(integer=1, string='test')
+    msg_serialized = bh._serialize_message(msg)
+    # Mock iris_handler
+    bh.iris_handle = MagicMock()
+
+    bh.send_request_sync(target='test', request=msg)
+    bh.iris_handle.dispatchSendRequestSync.assert_called_once()
+    assert bh.iris_handle.dispatchSendRequestSync.call_args[0][0] == 'test'
+    assert type(bh.iris_handle.dispatchSendRequestSync.call_args[0][1]) == type(msg_serialized)
 
 def test_serialize_message():
     bh = _BusinessHost()

@@ -31,9 +31,13 @@ class _BusinessHost(_Common):
         :return: The function dispatch_serializer is being returned.
         """
         def dispatch_serializer(self,*params, **param2):
+            # Handle positional arguments
             serialized=[]
             for param in params:
                 serialized.append(self._dispatch_serializer(param))
+            # Handle keyword arguments
+            for key, value in param2.items():
+                param2[key] = self._dispatch_serializer(value)
             return fonction(self,*serialized, **param2)
         return dispatch_serializer
 
@@ -60,9 +64,13 @@ class _BusinessHost(_Common):
         :return: The function dispatch_deserializer is being returned.
         """
         def dispatch_deserializer(self,*params, **param2):
+            # Handle positional arguments
             serialized=[]
             for param in params:
-                serialized.append(self._dispatch_deserializer(param))
+                serialized.append(self._dispatch_serializer(param))
+            # Handle keyword arguments
+            for key, value in param2.items():
+                param2[key] = self._dispatch_serializer(value)
             return fonction(self,*serialized, **param2)
         return dispatch_deserializer
 
