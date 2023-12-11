@@ -2,17 +2,24 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug Unit Test",
+      "type": "python",
+      "request": "test",
+      "justMyCode": false,
+    },
+    {
       "name": "Python: Current File",
       "type": "python",
       "request": "launch",
       "program": "${file}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "justMyCode": false
     },
     {
       "type": "objectscript",
       "request": "launch",
       "name": "ObjectScript Debug Class",
-      "program": "##class(PackageSample.ObjectScript).Test()",
+      "program": "##class(Grongier.PEX.Utils).Test()",
     },
     {
       "type": "objectscript",
