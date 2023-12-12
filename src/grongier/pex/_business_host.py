@@ -354,7 +354,7 @@ class _BusinessHost(_Common):
         """
         return 
     
-    def _dispatch_on_get_connections(self) -> list:
+    def on_get_connections(self) -> list:
         """
         The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
         calls for the class. Implement this method to allow connections between components to show up in 
@@ -369,7 +369,7 @@ class _BusinessHost(_Common):
         # get the source code of the class
         source = getsource(self.__class__)
         # find all invocations of send_request_sync and send_request_async
-        for method in ['send_request_sync','send_request_async']:
+        for method in ['send_request_sync','send_request_async','SendRequestSync','SendRequestAsync']:
             i = source.find(method)
             while i != -1:
                 j = source.find("(",i)
@@ -377,11 +377,34 @@ class _BusinessHost(_Common):
                     k = source.find(",",j)
                     if k != -1:
                         target = source[j+1:k]
-                        # trim " and ' from target
-                        target = target.strip('\'').strip('\"')
+                        if target.find("=") != -1:
+                            # it's a keyword argument, remove the keyword
+                            target = target[target.find("=")+1:].strip()
                         if target not in targer_list:
                             targer_list.append(target)
                 i = source.find(method,i+1)
+
+        for target in targer_list:
+            # if target is a string, remove the quotes
+            if target[0] == "'" and target[-1] == "'":
+                targer_list[targer_list.index(target)] = target[1:-1]
+            elif target[0] == '"' and target[-1] == '"':
+                targer_list[targer_list.index(target)] = target[1:-1]
+            # if target is a variable, try to find the value of the variable
+            else:
+                self.on_init()
+                try:
+                    if target.find("self.") != -1:
+                        # it's a class variable
+                        targer_list[targer_list.index(target)] = getattr(self,target[target.find(".")+1:])
+                    elif target.find(".") != -1:
+                        # it's a class variable
+                        targer_list[targer_list.index(target)] = getattr(getattr(self,target[:target.find(".")]),target[target.find(".")+1:])
+                    else:
+                        targer_list[targer_list.index(target)] = getattr(self,target)
+                except Exception as e:
+                    pass
+
         return targer_list
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,

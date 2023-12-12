@@ -189,11 +189,12 @@ ClassMethod OnGetConnections(
     set class = builtins.getattr(module, tClassname)
     set tClass = class."__new__"(class)
 
-    set tPythonList = tClass."_dispatch_on_get_connections"()
+    set tPythonList = tClass."on_get_connections"()
     set tPythonListLen = tPythonList."__len__"()
     for i=0:1:(tPythonListLen-1) {
         set tPythonItem = tPythonList."__getitem__"(i)
         set pArray(tPythonItem) = ""
+		#; set ^AALog(pItem.Name,tPythonItem) = ""
     }
 
     quit
