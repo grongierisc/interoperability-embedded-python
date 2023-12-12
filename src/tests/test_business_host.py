@@ -124,7 +124,7 @@ def test_dispatch_on_get_connections():
     bs = RedditService()
     bs.Limit = 1
     bs.on_init()
-    _list = bs._dispatch_on_get_connections()
+    _list = bs.on_get_connections()
     _list_len = _list.__len__()
     for i in range(0, _list_len):
         print(_list.__getitem__(i))
