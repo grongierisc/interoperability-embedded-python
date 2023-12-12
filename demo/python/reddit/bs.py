@@ -41,7 +41,7 @@ class RedditService(BusinessService):
         if post is not None:
             msg = PostMessage()
             msg.post = post
-            self.send_request_sync(self.target,msg)
+            self.send_request_sync("Python.FilterPostRoutingRule",msg)
 
     def on_task(self) -> PostClass:
           
@@ -95,7 +95,7 @@ class RedditServiceWithIrisAdapter(BusinessService):
     def on_process_input(self, message_input):
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = message_input
-        return self.send_request_sync(self.target,msg)
+        return self.send_request_sync(target=self.target,request=msg)
 
     def on_init(self):
         
@@ -124,6 +124,6 @@ class RedditServiceWithPexAdapter(BusinessService):
     def on_init(self):
         
         if not hasattr(self,'target'):
-            self.target = "Python.FilterPostRoutingRule"
+            self.target = "Python.FitlterPostRoutingRule"
         
         return
