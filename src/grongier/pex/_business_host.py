@@ -8,7 +8,7 @@ import json
 import importlib
 import iris
 
-from inspect import signature
+from inspect import signature, getsource
 
 from dacite import from_dict, Config
 
@@ -21,6 +21,7 @@ class _BusinessHost(_Common):
     """
 
     buffer:int = 64000
+    DISPATCH = []
 
     def input_serialzer(fonction):
         """
@@ -352,6 +353,36 @@ class _BusinessHost(_Common):
         Name of the registred Adapter
         """
         return 
+    
+    def _dispatch_on_get_connections(self) -> list:
+        """
+        The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
+        calls for the class. Implement this method to allow connections between components to show up in 
+        the interoperability UI.
+
+        Returns:
+            An IRISList containing all targets for this class. Default is None.
+        """
+        ## Parse the class code to find all invocations of send_request_sync and send_request_async
+        ## and return the targets
+        targer_list = []
+        # get the source code of the class
+        source = getsource(self.__class__)
+        # find all invocations of send_request_sync and send_request_async
+        for method in ['send_request_sync','send_request_async']:
+            i = source.find(method)
+            while i != -1:
+                j = source.find("(",i)
+                if j != -1:
+                    k = source.find(",",j)
+                    if k != -1:
+                        target = source[j+1:k]
+                        # trim " and ' from target
+                        target = target.strip('\'').strip('\"')
+                        if target not in targer_list:
+                            targer_list.append(target)
+                i = source.find(method,i+1)
+        return targer_list
 
 # It's a subclass of the standard JSONEncoder class that knows how to encode date/time, decimal types,
 # and UUIDs.
