@@ -1,8 +1,11 @@
 #!/bin/bash
 
-set -m
+# start iris
+/iris-main "$@" &
 
 /usr/irissys/dev/Cloud/ICM/waitISC.sh
+
+alias iop='irispython -m grongier.pex._cli'
 
 # init iop
 iop --init
@@ -14,4 +17,5 @@ iop -m /irisdev/app/demo/python/reddit/settings.py
 iop --default PEX.Production
 
 # start production
-iop --start --detach
+iop --start 
+

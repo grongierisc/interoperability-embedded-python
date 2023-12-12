@@ -15,5 +15,5 @@ services:
       - --check-caps false
     volumes:
       - ./:/irisdev/app
-      - ./entrypoint.sh:/docker-entrypoint-initdb.d/entrypoint.sh
       - ./src/grongier:/usr/irissys/mgr/python/grongier
+    entrypoint: ["sh", "/irisdev/app/entrypoint.sh"]
