@@ -34,10 +34,14 @@ cd ..
 python3 -m pytest
 exit_on_error
 
+# install pip
+pip install --upgrade pip
 # install main package
 pip install git+https://github.com/grongierisc/interoperability-embedded-python
 # install dependencies
-pip install dataclasses_json requests
+c dataclasses_json requests
+# install test dependencies
+pip install -r https://raw.githubusercontent.com/grongierisc/interoperability-embedded-python/master/requirements-dev.txt
 
 # Integration tests
 iop --migrate demo/python/reddit/settings.py
