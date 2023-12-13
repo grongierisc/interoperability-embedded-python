@@ -41,7 +41,7 @@ jobs:
         NAME="iris_pex_embedded_python"-${VERSION}-py3-none-any
         echo name=$NAME >> $GITHUB_OUTPUT
     - name: Build package
-      run: sh build-dist.sh
+      run: /usr/bash build-dist.sh
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
