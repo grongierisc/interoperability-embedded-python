@@ -30,10 +30,10 @@ jobs:
     - name: Install dependencies
       id: set-version
       run: |
-        VERSION=$(grep version pyproject.toml | cut -d=  -f2 | tr -d '[:blank:]')
+        VERSION=$(grep version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
         [ $GITHUB_EVENT_NAME == 'release' ] && VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
         [ $GITHUB_EVENT_NAME == 'push' ] && VERSION+=b && VERSION+=$(($(git tag -l "*$VERSION*" | cut -db -f2 | sort -n | tail -1)+1)) 
-        sed -ie "s/version = .*/version = $VERSION/" pyproject.toml
+        sed -ie "s/version = .*/version = \"$VERSION\"/" pyproject.toml
         python -m pip install --upgrade pip
         pip install -U pip setuptools
         pip install -r requirements-dev.txt
