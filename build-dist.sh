@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf ./build
+
 packages=("iris" "intersystems_iris" "irisnative")
 for package in ${packages[@]};
 do
