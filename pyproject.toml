@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "iris_pex_embedded_python"
+version = "2.3.20"
+description = "Iris Interoperability based on Embedded Python"
+readme = "README.md"
+authors = [
+    { name = "grongier", email = "guillaume.rongier@intersystems.com" },
+]
+keywords = ["iris", "intersystems", "python", "embedded"]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Utilities"
+]
+
+dependencies = [
+    "dacite >=1.6.0",
+    "xmltodict>=0.12.0"
+]
+
+license = { file = "LICENSE" }
+
+[project.urls]
+homepage = "https://github.com/grongierisc/interoperability-embedded-python"
+documentation = "https://github.com/grongierisc/interoperability-embedded-python/blob/master/README.md"
+repository = "https://github.com/grongierisc/interoperability-embedded-python"
+issues = "https://github.com/grongierisc/interoperability-embedded-python/issues"
+
+[project.scripts]
+iop = "grongier.pex._cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.cls"]
