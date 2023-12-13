@@ -8,6 +8,7 @@
 
 name: Upload Python Package
 
+
 on:
   release:
     types: [published]
@@ -18,6 +19,9 @@ jobs:
   deploy:
 
     runs-on: ubuntu-latest
+
+    environment:
+      name: secrets
 
     steps:
     - uses: actions/checkout@v3
