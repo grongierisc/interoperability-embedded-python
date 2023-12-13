@@ -1,0 +1,71 @@
+# This workflow will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Upload Python Package
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      if: github.event_name == 'push'
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      id: set-version
+      run: |
+        VERSION=$(grep version pyproject.toml | cut -d=  -f2 | tr -d '[:blank:]')
+        [ $GITHUB_EVENT_NAME == 'release' ] && VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
+        [ $GITHUB_EVENT_NAME == 'push' ] && VERSION+=b && VERSION+=$(($(git tag -l "*$VERSION*" | cut -db -f2 | sort -n | tail -1)+1)) 
+        sed -ie "s/version = .*/version = $VERSION/" pyproject.toml
+        python -m pip install --upgrade pip
+        pip install -U pip setuptools
+        pip install -r requirements-dev.txt
+        echo version=$VERSION >> $GITHUB_OUTPUT
+        NAME="iris_pex_embedded_python"-${VERSION}-py3-none-any
+        echo name=$NAME >> $GITHUB_OUTPUT
+    - name: Build package
+      run: ./build-dist.sh
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Create Beta Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.set-version.outputs.version }}
+        prerelease: ${{ github.event_name != 'release' }}
+        files: dist/${{ steps.set-version.outputs.name }}.whl
+    - uses: actions/checkout@v3
+      if: github.event_name == 'release'
+      with:
+        ref: main
+    - name: Bump version
+      if: github.event_name == 'release'
+      run: |
+        git config --global user.name 'ProjectBot'
+        git config --global user.email 'bot@users.noreply.github.com'
+        VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
+        VERSION=`echo $VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`
+        sed -ie "s/version = .*/version = $VERSION/" pyproject.toml
+        git add pyproject.toml
+        git commit -m 'auto bump version with release'
+        git push
