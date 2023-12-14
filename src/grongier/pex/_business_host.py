@@ -68,10 +68,10 @@ class _BusinessHost(_Common):
             # Handle positional arguments
             serialized=[]
             for param in params:
-                serialized.append(self._dispatch_serializer(param))
+                serialized.append(self._dispatch_deserializer(param))
             # Handle keyword arguments
             for key, value in param2.items():
-                param2[key] = self._dispatch_serializer(value)
+                param2[key] = self._dispatch_deserializer(value)
             return fonction(self,*serialized, **param2)
         return dispatch_deserializer
 
