@@ -68,7 +68,7 @@ jobs:
         git config --global user.email 'bot@users.noreply.github.com'
         VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
         VERSION=`echo $VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`
-        sed -ie "s/version = .*/version = $VERSION/" pyproject.toml
+        sed -ie "s/version = .*/version = \"$VERSION\"/" pyproject.toml
         git add pyproject.toml
         git commit -m 'auto bump version with release'
         git push
