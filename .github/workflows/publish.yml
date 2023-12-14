@@ -48,6 +48,8 @@ jobs:
       run: ./build-dist.sh
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        skip_existing: true
     - name: Create Beta Release
       id: create_release
       uses: softprops/action-gh-release@v1
