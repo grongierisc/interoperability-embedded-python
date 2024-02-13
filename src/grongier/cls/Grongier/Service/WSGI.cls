@@ -1,4 +1,4 @@
-Class Grongier.Service.WSGI Extends (%RegisteredObject, %CSP.REST) [ ServerOnly = 1 ]
+Class Grongier.Service.WSGI Extends %CSP.REST [ ServerOnly = 1 ]
 {
 
 Parameter CLASSPATHS;
@@ -7,99 +7,304 @@ Parameter MODULENAME;
 
 Parameter APPNAME;
 
-/// Helper method to write data to the output stream
-ClassMethod write(data)
+Parameter DEVMODE = 1;
+
+/// This method matches the request and method and calls the dispatcher
+ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
 {
-    w data
-}
-
-/// Helper to build the environ
-ClassMethod GetEnviron() As %SYS.Python
-{
-    //set builtins
-    set builtins = ##class(%SYS.Python).Import("builtins")
-
-    //import dict to create environ
-    set dict = builtins.dict()
-
-    #dim %request As %CSP.Request
-
-    //set environ 
-    do dict."__setitem__"("SERVER_NAME", $System.INetInfo.LocalHostName())
-    do dict."__setitem__"("SERVER_PORT", "")
-    do dict."__setitem__"("SERVER_PROTOCOL", "HTTP/1.1")
-    do dict."__setitem__"("SERVER_SOFTWARE", "IRIS")
-    do dict."__setitem__"("SCRIPT_NAME", ..#APPNAME)
-    do dict."__setitem__"("REQUEST_METHOD", %request.Method)
-    do dict."__setitem__"("CONTENT_TYPE", %request.ContentType)
-    do dict."__setitem__"("CHARSET", %request.CharSet)
-    Set app=$$getapp^%SYS.cspServer(%request.URL,.path,.match,.updatedurl)
-    do dict."__setitem__"("PATH_INFO", $extract(updatedurl,$length(path),*))
-
-    // to extract the query string
-
-    return dict
-}
-
-/// Implement a singleton pattern to get the python app
-ClassMethod GetPyhonApp() As %SYS.Python
-{
-    if ..#CLASSPATHS '="" {
-        set sys = ##class(%SYS.Python).Import("sys")
-        set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
-        set extraClasspaths = $tr(..#CLASSPATHS,delimiter,"|")
-        for i=1:1:$l(extraClasspaths,"|") {
-            set onePath = $p(extraClasspaths,"|",i)
-            set onePath = ##class(%File).NormalizeDirectory(onePath)
-            if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-            if onePath'="" do sys.path.append(onePath)
-        }
-    }
-
-    //import module
-    set module = ##class(%SYS.Python).Import(..#MODULENAME)
-
-    //set builtins
-    set builtins = ##class(%SYS.Python).Import("builtins")
-
-    //set app
-    set application = builtins.getattr(module, ..#APPNAME)
-
-    Return application
-}
-
-ClassMethod Page(skipheader As %Boolean = 1) As %Status [ Internal, ServerOnly = 1 ]
-{
+    #dim tSC As %Status = $$$OK
+    #dim e As %Exception.AbstractException
+    
+    #dim tAuthorized,tRedirected As %Boolean
+    #dim tRedirectRoutine,tURL As %String = ""
+    #dim %response As %CSP.Response
+        
     Try {
-        
-        //set environ
-        set environ = ..GetEnviron()
 
-        //import sys
-        set sys = ##class(%SYS.Python).Import("sys")
+        #; Ensure that we honor the requested charset 
+        Set %response.CharSet=..#CHARSET
 
-        //set stdin
-        set builtins = ##class(%SYS.Python).Import("builtins")
-        set ba = builtins.bytearray()
+        #; Ensure that we honor the requested CONTENTTYPE
+        If ..#CONTENTTYPE'="" Set %response.ContentType=..#CONTENTTYPE 
+
+        #; Ensure that we honor the requested HTTP_ACCEPT_LANGUAGE 
+        Set %response.Domain = ..#DOMAIN
+        Do %response.MatchLanguage() 
         
-        while %request.Content.AtEnd = 0 {
-            do ba.extend(##class(%SYS.Python).Bytes(%request.Content.Read()))
+        #; Record if device re-direction is already active
+        Set tRedirected=##class(%Library.Device).ReDirectIO()
+        
+        #; Record the redirect routine
+        Set tRedirectRoutine=$System.Device.GetMnemonicRoutine()
+        
+        if ..#DEVMODE {
+            #; Not so pretty but help to for reload the WSGI application
+            do outputError^%SYS.cspServer2("","","","")
         }
-        //set handler
-        set handler = ##class(%SYS.Python).Import("grongier.pex.wsgi.handlers").IrisHandler(ba, sys.stdout, sys.stderr,environ)
+        else {
+            #; Now switch to using THIS routine for device redirection
+            Use $io::("^%SYS.cspServer2")
 
-        // get a singleton app
-        set application = ..GetPyhonApp()
+            #; Switch device redirection on (may already be on but thats ok)
+            Do ##class(%Library.Device).ReDirectIO(1)
+        }
 
-        //run app
-        do handler.run(application)
+        #; Ensure that the application is defined (security check)
+        If $$$GetSecurityApplicationsDispatchClass(%request.AppData)="" {
+             
+             #; Report not authorized
+             Set tSC=..Http403()
+             
+             #; Done
+             Quit
+        }
+        
+        #; GgiEnvs are not defined in the CSP shell
+        Set tURL=$Get(%request.CgiEnvs("CSPLIB"))
+        If tURL="" Set tURL=%request.URL
+          
+        #; Do an access check
+        Set tSC=..AccessCheck(.tAuthorized)
+        If $$$ISERR(tSC) Quit
 
+        If tAuthorized=0 {
+            
+            #; Don't want the session token
+            Set %response.OutputSessionToken=0
+            
+            #; Set the Http Status
+            Set %response.Status=..#HTTP403FORBIDDEN
+            
+            #; Done
+            Quit
+        }
+        
+        #; Extract the match url from the application name
+        Set tMatchUrl = "/"_$Extract(tURL,$Length(%request.Application)+1,*)
+
+        #; Dispatch the request
+        Set tSC=..DispatchRequest(tMatchUrl,%request.Method)
+        
+    } Catch (e) {
+        Set tSC=e.AsStatus()
     }
-    Catch ex {
-        return ex.AsStatus()
+    
+    If $$$ISERR(tSC) {
+        
+        #; Don't want the session token
+        Set %response.OutputSessionToken=0
+        
+        Do ..Http500(##class(%Exception.StatusException).CreateFromStatus(tSC))
     }
+    
+    #; Ensure that at least something is written out as the body
+    #; This will trigger the device redirect capture and force headers to be written
+    #; (if not already done)
+    Write ""
+    
+    #; Reset redirect device if necessary
+    If tRedirected {
+        
+        #; Use the original redirected routine
+        Use $io::("^"_tRedirectRoutine)
+        
+        #; Switch device redirection on
+        Do ##class(%Library.Device).ReDirectIO(1)
+    }
+    
+    #; Any errors should have been caught and reported
+    Quit $$$OK
+}
 
-    quit $$$OK
+ClassMethod OnPreDispatch(
+	pUrl As %String,
+	pMethod As %String,
+	ByRef pContinue As %Boolean) As %Status
+{
+         Set path = ..#CLASSPATHS
+         Set appName = ..#APPNAME
+         Set module = ..#MODULENAME
+         Set devmode = ..#DEVMODE
+         Set pContinue = 1
+         Do ..DispatchREST(pUrl, path, appName, module, devmode)
+         Quit $$$OK
+}
+
+ClassMethod DispatchREST(
+	PathInfo As %String,
+	appPath As %String,
+	appName As %String,
+	module As %String,
+	devmode As %Boolean = 1) As %Status
+{
+           Set builtins = ##CLASS(%SYS.Python).Builtins()
+           Set interface = ##CLASS(%SYS.Python).Import("grongier.pex.wsgi.handlers")
+           Set rawformdata = ""
+           Set environ = builtins.dict()
+           Set key = %request.NextCgiEnv("")
+
+           // Let's check if the WSGI application has been loaded or not for this session.
+           
+           If (($DATA(%session.Data("application")) && $ISOBJECT(%session.Data("application"))) && 'devmode) {
+            Set application = %session.Data("Application")
+           }
+           Else{
+
+            Set application = ..GetPythonClass(appName, module, appPath)
+            If application = "" {
+                throw ##class(%Exception.General).%New("Error loading WSGI application: "_module_"."_appName_" from "_appPath)
+            }
+            Else {
+               Set %session.Data("Application") = application
+            }
+           }
+
+           // Editing some CGI variables that may be incorrect in %request
+           // Also filling in environ with as many CGI variables as possible from %request
+           // WSGI states that all CGI variables are valid and should be included if possible
+           While (key'="") {
+              Set value = %request.GetCgiEnv(key)
+              If key = "PATH_INFO" {
+               Set app=$$getapp^%SYS.cspServer(%request.URL,.path,.match,.updatedurl)
+               Set value = $EXTRACT(updatedurl,$LENGTH(path),*)
+              }
+              If key = "SCRIPT_NAME" {
+               //%request will sometimes have Script_name include Path_info
+               Set value = $PIECE(%request.Application, "/",1,*-1)
+              }
+              Do environ."__setitem__"(key,value)
+              Set key = %request.NextCgiEnv(key)
+           }
+
+           //Have to set up a correct wsgi.input stream from %request
+           Set stream = %request.Content
+           
+           Set contentType = %request.ContentType
+           Set contentLength = 0
+
+           If contentType = "application/x-www-form-urlencoded" {
+            Set formdict = builtins.dict()
+            Set key = $ORDER(%request.Data(""))
+            While (key'="") {
+               Set value = $GET(%request.Data(key,1))
+               Do formdict."__setitem__"(key,value)
+               Set key = $ORDER(%request.Data(key))
+            }
+            Do environ."__setitem__"("formdata", formdict)
+           }
+           ElseIf contentType = "multipart/form-data" {
+            Set boundary = $PIECE(%request.GetCgiEnv("CONTENT_TYPE"), "=",2)
+            Set stream = ##CLASS(%CSP.BinaryStream).%New()
+
+            Do stream.Write($CHAR(13,10))
+
+            //Get the Form Data values
+
+            Set key = $ORDER(%request.Data(""))
+            While (key'="") {
+               Do stream.Write("--")
+               Do stream.Write(boundary)
+               Do stream.Write($CHAR(13,10))
+               Set value = $GET(%request.Data(key,1))
+               Do stream.Write("Content-Disposition: form-data; name=")
+               Do stream.Write(""""_key_"""")
+               Do stream.Write($CHAR(13,10,13,10))
+               Do stream.Write(value)
+               Do stream.Write($CHAR(13,10))
+               Set key = $ORDER(%request.Data(key))
+            }
+
+            //Now get the possible MIME data streams
+            Set key = %request.NextMimeData("")
+            While key'="" {
+               Set numMimeStreams = %request.CountMimeData(key)
+               Set index = %request.NextMimeDataIndex(key, "")
+               Do stream.Write("--")
+               Do stream.Write(boundary)
+               Do stream.Write($CHAR(13,10))
+               If numMimeStreams > 1 {
+                  //I need to create a boundary for a nested multipart content type
+                  Set internalboundary = "--"
+                  For i = 1 : 1 : 7 {
+                     Set internalboundary = internalboundary _ $RANDOM(10)
+                  }
+                  While index '= "" {
+                     Set mimestream = %request.GetMimeData(key, index)
+                     Set headers = mimestream.Headers
+                     Do stream.Write("--")
+                     Do stream.Write(internalboundary)
+                     Do stream.Write($CHAR(13,10))
+                     Do stream.Write(headers)
+                     Do stream.Write($CHAR(13,10,13,10))
+                     Set sc = stream.CopyFrom(mimestream)
+                     //TODO error handling
+                     Do stream.Write($CHAR(13,10))
+                     Set index = %request.NextMimeDataIndex(key, index)
+                  }
+                  Do stream.Write("--")
+                  Do stream.Write(internalboundary)
+                  Do stream.Write("--")
+               }
+               Else {
+                  Set mimestream = %request.GetMimeData(key, index)
+                  Set headers = mimestream.Headers
+                  Do stream.Write(headers)
+                  Do stream.Write($CHAR(13,10,13,10))
+                  Set sc = stream.CopyFrom(mimestream)
+                  //TODO error handling
+                  Do stream.Write($CHAR(13,10))
+               }
+               Set key = %request.NextMimeData(key)
+            }
+            Do stream.Write("--")
+            Do stream.Write(boundary)
+            Do stream.Write("--")
+            Do stream.Rewind()
+           }
+
+
+           Try {
+            Do interface."make_request"(environ, stream, application, appPath)
+           }
+           Catch exception {
+            throw exception
+           }
+           Quit $$$OK
+}
+
+ClassMethod GetPythonClass(
+	pClassname As %String,
+	pModule As %String,
+	pClasspath As %String) As %SYS.Python
+{
+	Try {
+		If pClasspath '="" {
+            set sys = ##class(%SYS.Python).Import("sys")
+
+                for i=0:1:(sys.path."__len__"()-1) {
+                    Try {
+                        if sys.path."__getitem__"(i) = pClasspath {
+                            do sys.path."__delitem__"(i)
+                        }
+                    }
+                    Catch ex {
+                        // do nothing
+                    }
+
+                }
+                do sys.path.insert(0, pClasspath)
+		}
+
+		Set importlib = ##class(%SYS.Python).Import("importlib")
+		Set builtins = ##class(%SYS.Python).Import("builtins")
+		Set module = importlib."import_module"(pModule)
+		Set class = builtins.getattr(module, pClassname)
+   }
+   Catch ex {
+        throw ##class(%Exception.General).%New("Error loading WSGI application: "_pModule_"."_pClassname_" from "_pClasspath)
+   }
+	
+	Quit class
 }
 
 }
