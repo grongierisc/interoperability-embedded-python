@@ -31,23 +31,21 @@ ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
         Set %response.Domain = ..#DOMAIN
         Do %response.MatchLanguage() 
         
+        if ..#DEVMODE {
+            w %session.SessionId
+        }
+
         #; Record if device re-direction is already active
         Set tRedirected=##class(%Library.Device).ReDirectIO()
         
         #; Record the redirect routine
         Set tRedirectRoutine=$System.Device.GetMnemonicRoutine()
-        
-        if ..#DEVMODE {
-            #; Not so pretty but help to for reload the WSGI application
-            do outputError^%SYS.cspServer2("","","","")
-        }
-        else {
-            #; Now switch to using THIS routine for device redirection
-            Use $io::("^%SYS.cspServer2")
 
-            #; Switch device redirection on (may already be on but thats ok)
-            Do ##class(%Library.Device).ReDirectIO(1)
-        }
+        #; Now switch to using THIS routine for device redirection
+        Use $io::("^%SYS.cspServer2")
+
+        #; Switch device redirection on (may already be on but thats ok)
+        Do ##class(%Library.Device).ReDirectIO(1)
 
         #; Ensure that the application is defined (security check)
         If $$$GetSecurityApplicationsDispatchClass(%request.AppData)="" {
@@ -96,7 +94,7 @@ ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
         
         Do ..Http500(##class(%Exception.StatusException).CreateFromStatus(tSC))
     }
-    
+
     #; Ensure that at least something is written out as the body
     #; This will trigger the device redirect capture and force headers to be written
     #; (if not already done)
@@ -111,8 +109,7 @@ ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
         #; Switch device redirection on
         Do ##class(%Library.Device).ReDirectIO(1)
     }
-    
-    #; Any errors should have been caught and reported
+
     Quit $$$OK
 }
 
