@@ -31,9 +31,7 @@ ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
         Set %response.Domain = ..#DOMAIN
         Do %response.MatchLanguage() 
         
-        if ..#DEVMODE {
-            w %session.SessionId
-        }
+
 
         #; Record if device re-direction is already active
         Set tRedirected=##class(%Library.Device).ReDirectIO()
@@ -108,6 +106,11 @@ ClassMethod Page(skipheader As %Boolean = 0) As %Status [ ProcedureBlock = 1 ]
         
         #; Switch device redirection on
         Do ##class(%Library.Device).ReDirectIO(1)
+    }
+
+    if ..#DEVMODE {
+        #; Close the device to ensure next request starts with a new process
+        Close 0
     }
 
     Quit $$$OK
