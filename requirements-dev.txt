@@ -1,7 +1,7 @@
 pytest
 dacite
 xmltodict
-intersystems_iris @ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.6/intersystems_iris-3.7.6-py3-none-any.whl
+intersystems_iris @ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.7.7/intersystems_iris-3.7.7-py3-none-any.whl
 requests
 dataclasses-json
 wheel
