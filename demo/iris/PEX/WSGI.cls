@@ -7,8 +7,6 @@ Parameter MODULENAME = "app_flask";
 
 Parameter APPNAME = "app";
 
-// Parameter MODULENAME = "app";
-
-// Parameter APPNAME = "demo_app";
+Parameter DEVMODE = 0;
 
 }
