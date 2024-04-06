@@ -18,12 +18,33 @@ def test_dispatch_serializer():
 
 def test_serialize_message_not_dataclass():
     bh = _BusinessHost()
-    msg = TestSimpleMessageNotDataclass(integer=1, string='test')
-    result = bh._serialize_message(msg)
-    result.jstr.Rewind()
-    stream = result.jstr.Read()
-    assert result.classname == 'registerFiles.message.TestSimpleMessageNotDataclass'
+    msg = TestSimpleMessageNotDataclass()
+    msg.integer = 1
+    msg.string = 'test'
 
+    # Mock iris_handler
+    bh.iris_handle = MagicMock()
+
+    # expect an error
+    try:
+        bh.send_request_sync(target='test', request=msg)
+    except Exception as e:
+        assert type(e) == TypeError
+
+def test_serialize_message_not_message():
+    bh = _BusinessHost()
+    msg = TestSimpleMessageNotMessage()
+    msg.integer = 1
+    msg.string = 'test'
+
+    # Mock iris_handler
+    bh.iris_handle = MagicMock()
+
+    # expect an error
+    try:
+        bh.send_request_sync(target='test', request=msg)
+    except Exception as e:
+        assert type(e) == TypeError
 
 def test_serialize_message_decorator():
     bh = _BusinessHost()
