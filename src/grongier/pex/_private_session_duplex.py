@@ -54,7 +54,7 @@ class _PrivateSessionDuplex(_BusinessHost):
         """
         return 
 
-    @_BusinessHost.input_serialzer
+    @_BusinessHost.input_serialzer_param(0,'document')
     @_BusinessHost.output_deserialzer
     def send_document_to_process(self, document):
         """ Send the specified message to the target business process or business operation synchronously.

@@ -67,7 +67,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.OnComplete(request, response)
 
-    @_BusinessHost.input_serialzer
+    @_BusinessHost.input_serialzer_param(0,'response')
     def reply(self, response):
         """ Send the specified response to the production component that sent the initial request to the business process.
 
