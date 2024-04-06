@@ -8,6 +8,8 @@ import json
 import importlib
 import iris
 
+from functools import wraps
+
 from inspect import signature, getsource
 
 from dacite import from_dict, Config
@@ -41,6 +43,32 @@ class _BusinessHost(_Common):
                 param2[key] = self._dispatch_serializer(value)
             return fonction(self,*serialized, **param2)
         return dispatch_serializer
+    
+    def input_serialzer_param(position:int,name:str):
+        """
+        It takes a function as an argument, and returns a function that takes the same arguments as the
+        original function, but serializes the arguments before passing them to the original function
+        
+        :param fonction: the function that will be decorated
+        :return: The function dispatch_serializer is being returned.
+        """
+        def input_serialzer_param(fonction):
+            @wraps(fonction)
+            def dispatch_serializer(self,*params, **param2):
+                # Handle positional arguments
+                serialized=[]
+                for i,param in enumerate(params):
+                    if i == position:
+                        serialized.append(self._dispatch_serializer(param))
+                    else:
+                        serialized.append(param)
+                # Handle keyword arguments
+                for key, value in param2.items():
+                    if key == name:
+                        param2[key] = self._dispatch_serializer(value)
+                return fonction(self,*serialized, **param2)
+            return dispatch_serializer
+        return input_serialzer_param
 
     def output_deserialzer(fonction):
         """
@@ -88,7 +116,7 @@ class _BusinessHost(_Common):
             return self._dispatch_serializer(fonction(self,*params, **param2))
         return dispatch_serializer
 
-    @input_serialzer
+    @input_serialzer_param(1,'request')
     @output_deserialzer
     def send_request_sync(self, target, request, timeout=-1, description=None):
         """ Send the specified message to the target business process or business operation synchronously.
@@ -108,7 +136,7 @@ class _BusinessHost(_Common):
 
         return self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
 
-    @input_serialzer
+    @input_serialzer_param(1,'request')
     def send_request_async(self, target, request, description=None):
         """ Send the specified message to the target business process or business operation asynchronously.
         Parameters:
@@ -163,8 +191,8 @@ class _BusinessHost(_Common):
             return message
         else:
             # todo : decorator takes care of all the parameters, so this should never happen
-            return message
-            #raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
+            # return message
+            raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
 
     def _serialize_message(self,message):
         """ Converts a python dataclass message into an iris grongier.pex.message.

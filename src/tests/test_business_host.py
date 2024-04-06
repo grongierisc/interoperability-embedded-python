@@ -7,7 +7,7 @@ from grongier.pex._business_host import _BusinessHost
 
 from grongier.pex import Message
 
-from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage, FullMessage, PostMessage, MyResponse
+from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestSimpleMessageNotDataclass, TestPickledMessage, FullMessage, PostMessage, MyResponse
 
 from registerFiles.obj import PostClass
 
@@ -15,6 +15,15 @@ from registerFiles.bs import RedditService
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
+
+def test_serialize_message_not_dataclass():
+    bh = _BusinessHost()
+    msg = TestSimpleMessageNotDataclass(integer=1, string='test')
+    result = bh._serialize_message(msg)
+    result.jstr.Rewind()
+    stream = result.jstr.Read()
+    assert result.classname == 'registerFiles.message.TestSimpleMessageNotDataclass'
+
 
 def test_serialize_message_decorator():
     bh = _BusinessHost()
@@ -24,9 +33,21 @@ def test_serialize_message_decorator():
     bh.iris_handle = MagicMock()
 
     bh.send_request_sync(target='test', request=msg)
-    bh.iris_handle.dispatchSendRequestSync.assert_called_once()
+
     assert bh.iris_handle.dispatchSendRequestSync.call_args[0][0] == 'test'
     assert type(bh.iris_handle.dispatchSendRequestSync.call_args[0][1]) == type(msg_serialized)
+
+def test_serialize_message_decorator_by_position():
+    bh = _BusinessHost()
+    msg = TestSimpleMessage(integer=1, string='test')
+    msg_serialized = bh._serialize_message(msg)
+    # Mock iris_handler
+    bh.iris_handle = MagicMock()
+
+    bh.send_request_sync('test', msg)
+
+    assert bh.iris_handle.dispatchSendRequestSync.call_args.args[0] == 'test'
+    assert type(bh.iris_handle.dispatchSendRequestSync.call_args.args[1]) == type(msg_serialized)
 
 def test_serialize_message():
     bh = _BusinessHost()
