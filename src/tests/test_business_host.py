@@ -15,6 +15,38 @@ from registerFiles.bs import RedditService
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
+    message = TestSimpleMessage(integer=1, string='test')
+
+    rsp = bh._dispatch_serializer(message)
+
+    assert rsp.classname == 'registerFiles.message.TestSimpleMessage'
+    assert rsp.json == '{"integer": 1, "string": "test"}'
+
+def test_dispatch_serializer_none():
+    bh = _BusinessHost()
+    message = None
+
+    rsp = bh._dispatch_serializer(message)
+
+    assert rsp is None
+
+def test_dispatch_serializer_not_message():
+    bh = _BusinessHost()
+    message = TestSimpleMessageNotMessage()
+
+    try:
+        rsp = bh._dispatch_serializer(message)
+    except Exception as e:
+        assert type(e) == TypeError
+
+def test_dispatch_serializer_not_dataclass():
+    bh = _BusinessHost()
+    message = TestSimpleMessageNotDataclass()
+
+    try:
+        rsp = bh._dispatch_serializer(message)
+    except Exception as e:
+        assert type(e) == TypeError
 
 def test_serialize_message_not_dataclass():
     bh = _BusinessHost()

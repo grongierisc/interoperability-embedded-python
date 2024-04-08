@@ -189,6 +189,8 @@ class _BusinessHost(_Common):
             return self._serialize_pickle_message(message)
         elif (message is not None and self._is_iris_object_instance(message)):
             return message
+        elif (message is None):
+            return message
         else:
             # todo : decorator takes care of all the parameters, so this should never happen
             # return message
