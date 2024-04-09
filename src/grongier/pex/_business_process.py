@@ -38,7 +38,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.OnRequest(request)
 
-    def on_response(self, request, response, callRequest, callResponse, completionKey):
+    def on_response(self, request, response, call_request, call_response, completion_key):
         """ Handles responses sent to the business process in response to messages that it sent to the target.
         A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
         Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
@@ -46,14 +46,14 @@ class _BusinessProcess(_BusinessHost):
         request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
         response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
-        callRequest: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
-        callResponse: An instance of IRISObject or subclass of Message that contains the incoming response.
-        completionKey: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
+        call_request: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
+        call_response: An instance of IRISObject or subclass of Message that contains the incoming response.
+        completion_key: A string that contains the completion_key specified in the completion_key parameter of the outgoing SendAsync() method.
         Returns:
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.OnResponse(request, response, callRequest, callResponse, completionKey)
+        return self.OnResponse(request, response, call_request, call_response, completion_key)
 
     def on_complete(self, request, response):
         """ Called after the business process has received and handled all responses to requests it has sent to targets.
@@ -77,15 +77,15 @@ class _BusinessProcess(_BusinessHost):
 
         return self.iris_handle.dispatchReply(response)
 
-    def set_timer(self, timeout, completionKey=None):
+    def set_timer(self, timeout, completion_key=None):
         """ Specifies the maximum time the business process will wait for responses.
 
         Parameters:
         timeout: an integer that specifies a number of seconds, or a string that specifies a time period such as"PT15s", 
             which represents 15 seconds of processor time.
-        completionKey: a string that will be returned with the response if the maximum time is exceeded.
+        completion_key: a string that will be returned with the response if the maximum time is exceeded.
         """
-        self.iris_handle.dispatchSetTimer(timeout, completionKey)
+        self.iris_handle.dispatchSetTimer(timeout, completion_key)
         return
 
     def _set_iris_handles(self, handle_current, handle_partner):
@@ -151,10 +151,10 @@ class _BusinessProcess(_BusinessHost):
     
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_response(self, host_object, request, response, callRequest, callResponse, completionKey):
+    def _dispatch_on_response(self, host_object, request, response, call_request, call_response, completion_key):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        return_object = self.on_response(request, response, callRequest, callResponse, completionKey)
+        return_object = self.on_response(request, response, call_request, call_response, completion_key)
         self._save_persistent_properties(host_object)
         return return_object
 
@@ -181,7 +181,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return 
 
-    def OnResponse(self, request, response, callRequest, callResponse, completionKey):
+    def OnResponse(self, request, response, call_request, call_response, completion_key):
         """ 
         DEPRECATED : use on_response
         Handles responses sent to the business process in response to messages that it sent to the target.
@@ -191,9 +191,9 @@ class _BusinessProcess(_BusinessHost):
         request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
         response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
-        callRequest: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
-        callResponse: An instance of IRISObject or subclass of Message that contains the incoming response.
-        completionKey: A string that contains the completionKey specified in the completionKey parameter of the outgoing SendAsync() method.
+        call_request: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
+        call_response: An instance of IRISObject or subclass of Message that contains the incoming response.
+        completion_key: A string that contains the completion_key specified in the completion_key parameter of the outgoing SendAsync() method.
         Returns:
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
