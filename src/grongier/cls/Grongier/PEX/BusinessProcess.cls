@@ -48,7 +48,7 @@ Method OnResponse(
 {
 	set tSC = $$$OK
 	try {
-		set response = ..%class."_dispatch_on_response"($this,request,response,callRequest,callResponse,pCompletionKey)
+		set response = ..%class."_dispatch_on_response"($this,request,callRequest,callResponse,pCompletionKey)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}
@@ -62,7 +62,7 @@ Method OnComplete(
 	set tSC = $$$OK
 	try {
 		set tSC = ..Connect() quit:$$$ISERR(tSC)
-		set response = ..%class."_dispatch_on_complete"($this,request,response)
+		set response = ..%class."_dispatch_on_complete"($this,request)
 	} catch ex {
 		set tSC = ex.AsStatus()
 	}

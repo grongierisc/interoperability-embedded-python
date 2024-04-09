@@ -38,7 +38,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.OnRequest(request)
 
-    def on_response(self, request, response, call_request, call_response, completion_key):
+    def on_response(self, request, call_request, call_response, completion_key):
         """ Handles responses sent to the business process in response to messages that it sent to the target.
         A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
         Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
@@ -53,9 +53,9 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.OnResponse(request, response, call_request, call_response, completion_key)
+        return self.OnResponse(request, call_request, call_response, completion_key)
 
-    def on_complete(self, request, response):
+    def on_complete(self, request):
         """ Called after the business process has received and handled all responses to requests it has sent to targets.
         Parameters: 
         request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
@@ -65,7 +65,7 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return self.OnComplete(request, response)
+        return self.OnComplete(request)
 
     @_BusinessHost.input_serialzer_param(0,'response')
     def reply(self, response):
@@ -151,19 +151,19 @@ class _BusinessProcess(_BusinessHost):
     
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_response(self, host_object, request, response, call_request, call_response, completion_key):
+    def _dispatch_on_response(self, host_object, request, call_request, call_response, completion_key):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        return_object = self.on_response(request, response, call_request, call_response, completion_key)
+        return_object = self.on_response(request, call_request, call_response, completion_key)
         self._save_persistent_properties(host_object)
         return return_object
 
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_complete(self, host_object, request, response):
+    def _dispatch_on_complete(self, host_object, request):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
-        return_object = self.on_complete(request, response)
+        return_object = self.on_complete(request)
         self._save_persistent_properties(host_object)
         return return_object
 
@@ -181,7 +181,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return 
 
-    def OnResponse(self, request, response, call_request, call_response, completion_key):
+    def OnResponse(self, request, call_request, call_response, completion_key):
         """ 
         DEPRECATED : use on_response
         Handles responses sent to the business process in response to messages that it sent to the target.
@@ -198,9 +198,9 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return response
+        return 
 
-    def OnComplete(self, request, response):
+    def OnComplete(self, request):
         """ 
         DEPRECATED : use on_complete
         Called after the business process has received and handled all responses to requests it has sent to targets.
@@ -212,4 +212,4 @@ class _BusinessProcess(_BusinessHost):
         An instance of IRISObject or subclass of Message that contains the response message that this business process can return
             to the production component that sent the initial message.
         """
-        return response
+        return 
