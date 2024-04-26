@@ -25,6 +25,18 @@ Method dispatchSetTimer(
 	quit
 }
 
+Method dispatchSendRequestAsync(
+	target,
+	request,
+	responseRequired,
+	completionKey,
+	description)
+{
+    set tSC = ..SendRequestAsync(target,request,responseRequired,completionKey,description)
+    if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
+    quit
+}
+
 Method OnRequest(
 	request As %Persistent,
 	Output response As %Persistent) As %Status

@@ -76,6 +76,26 @@ class _BusinessProcess(_BusinessHost):
         """
 
         return self.iris_handle.dispatchReply(response)
+    
+    @_BusinessHost.input_serialzer_param(1,'request')
+    def send_request_async(self, target, request, response_required=True, completion_key=None,description=None):
+        """ Send the specified message to the target business process or business operation asynchronously.
+        Parameters:
+        target: a string that specifies the name of the business process or operation to receive the request. 
+            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
+        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
+            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
+        description: an optional string parameter that sets a description property in the message header. The default is None.
+        
+        Raises:
+        TypeError: if request is not of type Message or IRISObject.
+        """
+        if response_required:
+            # cast True to 1
+            response_required = 1
+        else:
+            response_required = 0
+        return self.iris_handle.dispatchSendRequestAsync(target,request,response_required,completion_key,description)
 
     def set_timer(self, timeout, completion_key=None):
         """ Specifies the maximum time the business process will wait for responses.
