@@ -39,7 +39,7 @@ repository = "https://github.com/grongierisc/interoperability-embedded-python"
 issues = "https://github.com/grongierisc/interoperability-embedded-python/issues"
 
 [project.scripts]
-iop = "grongier.pex._cli:main"
+iop = "iop._cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

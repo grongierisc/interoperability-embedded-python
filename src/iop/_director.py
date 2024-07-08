@@ -255,7 +255,7 @@ class _Director():
             # else create a python object
             else:
                 # python message are casted to Grongier.PEX.Message
-                message = iris.cls("Grongier.PEX.Message")._New()
+                message = iris.cls("IOP.Message")._New()
                 message.classname = classname
                 if body:
                     message.jstr = _Utils.string_to_stream(body)
@@ -264,7 +264,7 @@ class _Director():
         # serialize the message
         business_host = _BusinessHost()
         serial_message = business_host._dispatch_serializer(message)
-        response = iris.cls('Grongier.PEX.Utils').dispatchTestComponent(target,serial_message)
+        response = iris.cls('IOP.Utils').dispatchTestComponent(target,serial_message)
         try:
             deserialized_response = business_host._dispatch_deserializer(response)
         except ImportError as e:
