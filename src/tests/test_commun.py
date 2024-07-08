@@ -69,12 +69,10 @@ def test_log_info_japanese():
 def test_get_info():
     # set python path to the registerFiles folder
     path = os.path.dirname(os.path.realpath(__file__))
-    # join the registerFolder to the path
-    path = os.path.join(path, 'registerFiles/edge')
 
     sys.path.append(path)
 
-    from bs_underscore import BS
+    from registerFiles.edge.bs_underscore import BS
 
     result = BS._get_info()
 
