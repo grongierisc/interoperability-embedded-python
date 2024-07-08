@@ -1,5 +1,5 @@
 import importlib
-from grongier.pex._business_host import _BusinessHost
+from iop._business_host import _BusinessHost
 
 class _PrivateSessionDuplex(_BusinessHost):
     

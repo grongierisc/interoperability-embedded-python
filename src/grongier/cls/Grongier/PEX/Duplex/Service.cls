@@ -1,9 +1,4 @@
-Class Grongier.PEX.DuplexService Extends Grongier.PEX.PrivateSessionDuplex
+Class Grongier.PEX.DuplexService Extends IOP.PrivateSessionDuplex
 {
-
-ClassMethod OnBusinessType(pItem As Ens.Config.Item) As %Integer
-{
-    Quit $$$eHostTypeService
-}
 
 }

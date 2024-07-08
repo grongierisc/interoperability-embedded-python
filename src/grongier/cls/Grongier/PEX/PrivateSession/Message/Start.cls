@@ -3,29 +3,11 @@
    Confidential property of InterSystems Corporation. */
 
 /// This class is a DICOM framework class
-Class Grongier.PEX.PrivateSession.Message.Start Extends (%Persistent, Ens.Util.MessageBodyMethods) [ ClassType = persistent, Inheritance = right, ProcedureBlock, System = 4 ]
+Class Grongier.PEX.PrivateSession.Message.Start Extends IOP.PrivateSession.Message.Start [ ClassType = persistent, Inheritance = right, ProcedureBlock, System = 4 ]
 {
-
-Parameter DOMAIN = "PrivateSession";
-
-/// From 'Ens.Util.MessageBodyMethods'
-Method %ShowContents(pZenOutput As %Boolean = 0)
-{
-	Write $$$Text("(session-start)")
-}
 
 Storage Default
 {
-<Data name="StartDefaultData">
-<Value name="1">
-<Value>%%CLASSNAME</Value>
-</Value>
-</Data>
-<DataLocation>^Grongier.PEX.Private9756.StartD</DataLocation>
-<DefaultData>StartDefaultData</DefaultData>
-<IdLocation>^Grongier.PEX.Private9756.StartD</IdLocation>
-<IndexLocation>^Grongier.PEX.Private9756.StartI</IndexLocation>
-<StreamLocation>^Grongier.PEX.Private9756.StartS</StreamLocation>
 <Type>%Storage.Persistent</Type>
 }
 
