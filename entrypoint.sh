@@ -5,7 +5,7 @@
 
 /usr/irissys/dev/Cloud/ICM/waitISC.sh
 
-alias iop='irispython -m grongier.pex._cli'
+alias iop='irispython -m iop._cli'
 
 # init iop
 iop --init

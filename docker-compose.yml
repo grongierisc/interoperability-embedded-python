@@ -16,4 +16,5 @@ services:
     volumes:
       - ./:/irisdev/app
       - ./src/grongier:/usr/irissys/mgr/python/grongier
+      - ./src/iop:/usr/irissys/mgr/python/iop
     entrypoint: ["sh", "/irisdev/app/entrypoint.sh"]
