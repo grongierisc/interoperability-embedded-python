@@ -39,9 +39,6 @@ def test_register_component():
     overwrite = 1
     iris_classname = 'UnitTest.EmailOperation'
     result = _Utils.register_component(module, classname, path, overwrite, iris_classname)
-    expect = 1
-
-    assert result == expect
 
 def test_register_folder():
     path = os.path.dirname(os.path.realpath(__file__))

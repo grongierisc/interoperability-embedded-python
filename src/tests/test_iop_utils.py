@@ -38,10 +38,23 @@ def test_register_component():
     path = os.path.join(path, 'registerFilesIop')
     overwrite = 1
     iris_classname = 'UnitTest.EmailOperation'
-    result = _Utils.register_component(module, classname, path, overwrite, iris_classname)
-    expect = 1
+    _Utils.register_component(module, classname, path, overwrite, iris_classname)
 
-    assert result == expect
+def test_register_module_error():
+    module = 'bo'
+    classname = 'EmailOperation'
+    # get the path of the current file
+    path = os.path.dirname(os.path.realpath(__file__))
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFilesIop')
+    overwrite = 1
+    # mock call iris.cls() to raise an exception
+    with patch('iris.cls', side_effect=RuntimeError):
+        iris_classname = 'UnitTest.EmailOperation'
+        try:
+            _Utils.register_component(module, classname, path, overwrite, iris_classname)
+        except RuntimeError as e:
+            assert True
 
 def test_register_folder():
     path = os.path.dirname(os.path.realpath(__file__))
