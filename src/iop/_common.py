@@ -211,7 +211,7 @@ class _Common(metaclass=abc.ABCMeta):
         current_class = self.__class__.__name__
         current_method = None
         try:
-            frame = traceback.extract_stack()[-2]
+            frame = traceback.extract_stack()[-3]
             current_method = frame.name
         except:
             pass
