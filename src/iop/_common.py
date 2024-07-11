@@ -203,6 +203,28 @@ class _Common(metaclass=abc.ABCMeta):
         except:
             pass
         return ret
+    
+    def _log(self) -> (str,str):
+        """ Get the class name and method name of the calling method.
+        Returns a tuple of the class name and the method name.
+        """
+        current_class = self.__class__.__name__
+        current_method = None
+        try:
+            frame = traceback.extract_stack()[-2]
+            current_method = frame.name
+        except:
+            pass
+        return current_class, current_method
+    
+    def trace(self, message):
+        """ Write a log entry of type "trace". Log entries can be viewed in the management portal.
+        
+        Parameters:
+        message: a string that is written to the log.
+        """
+        current_class, current_method = self._log()
+        iris.cls("Ens.Util.Log").LogTrace(current_class, current_method, message,1)
 
     def log_info(self, message):
         """ Write a log entry of type "info". Log entries can be viewed in the management portal.
@@ -211,15 +233,8 @@ class _Common(metaclass=abc.ABCMeta):
         message: a string that is written to the log.
         """
 
-        current_class = self.__class__.__name__
-        current_method = None
-        try:
-            frame = traceback.extract_stack()[-2]
-            current_method = frame.name
-        except:
-            pass
+        current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogInfo(current_class, current_method, message)
-        return
 
     def log_alert(self, message):
         """ Write a log entry of type "alert". Log entries can be viewed in the management portal.
@@ -227,15 +242,8 @@ class _Common(metaclass=abc.ABCMeta):
         Parameters:
         message: a string that is written to the log.
         """
-        current_class = self.__class__.__name__
-        current_method = None
-        try:
-            frame = traceback.extract_stack()[-2]
-            current_method = frame.name
-        except:
-            pass
+        current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogAlert(current_class, current_method, message)
-        return
 
     def log_warning(self, message):
         """ Write a log entry of type "warning". Log entries can be viewed in the management portal.
@@ -243,15 +251,8 @@ class _Common(metaclass=abc.ABCMeta):
         Parameters:
         message: a string that is written to the log.
         """
-        current_class = self.__class__.__name__
-        current_method = None
-        try:
-            frame = traceback.extract_stack()[-2]
-            current_method = frame.name
-        except:
-            pass
+        current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogWarning(current_class, current_method, message)
-        return
 
     def log_error(self, message):
         """ Write a log entry of type "error". Log entries can be viewed in the management portal.
@@ -259,15 +260,8 @@ class _Common(metaclass=abc.ABCMeta):
         Parameters:
         message: a string that is written to the log.
         """
-        current_class = self.__class__.__name__
-        current_method = None
-        try:
-            frame = traceback.extract_stack()[-2]
-            current_method = frame.name
-        except:
-            pass
+        current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogError(current_class, current_method, message)
-        return
 
     def log_assert(self, message):
         """ Write a log entry of type "assert". Log entries can be viewed in the management portal.
@@ -275,15 +269,8 @@ class _Common(metaclass=abc.ABCMeta):
         Parameters:
         message: a string that is written to the log.
         """
-        current_class = self.__class__.__name__
-        current_method = None
-        try:
-            frame = traceback.extract_stack()[-2]
-            current_method = frame.name
-        except:
-            pass
+        current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogAssert(current_class, current_method, message)
-        return
 
     def LOGINFO(self, message):
         """ DECAPRETED : use log_info
