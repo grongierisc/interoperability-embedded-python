@@ -235,9 +235,17 @@ class _BusinessHost(_Common):
         :param serial: The serialized object
         :return: The return value is a tuple of the form (serial, serial_type)
         """
-        if (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("IOP.Message"):
+        if (
+                (serial is not None and type(serial).__module__.find('iris') == 0) 
+                 and 
+                (serial._IsA("IOP.Message") or serial._IsA("Grongier.PEX.Message"))
+           ):
             return self._deserialize_message(serial)
-        elif (serial is not None and type(serial).__module__.find('iris') == 0) and serial._IsA("IOP.PickleMessage"):
+        elif (
+                (serial is not None and type(serial).__module__.find('iris') == 0) 
+                and 
+                (serial._IsA("IOP.PickleMessage") or serial._IsA("Grongier.PEX.PickleMessage"))
+            ):
             return self._deserialize_pickle_message(serial)
         else:
             return serial
