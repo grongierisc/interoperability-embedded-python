@@ -7,13 +7,26 @@ Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor)
 
 Parameter BUFFER = 64000;
 
+Property buffer As %String(MAXLEN = "") [ Calculated, Transient ];
+
 Property classname As %String(MAXLEN = "");
 
 Property jsonObject As %DynamicObject(XMLPROJECTION = "None");
 
-Property json As %String(MAXLEN = "");
+Property json As %String(MAXLEN = "") [ Calculated, Transient ];
 
-Property jstr As %Stream.GlobalCharacter [ Internal, Private ];
+Property jsonStream As %Stream.GlobalCharacter [ Internal, Private ];
+
+Property jsonString As %String(MAXLEN = 64000) [ Calculated, Transient ];
+
+Property jstr As %Stream.GlobalCharacter [ Internal, Private ]; // for retrocompatibility
+
+Property type As %String(MAXLEN = 6) [ ReadOnly ];
+
+Method bufferGet()
+{
+	Quit ..#BUFFER
+}
 
 Method %OnNew(classname) As %Status [ Private, ServerOnly = 1 ]
 {
@@ -21,40 +34,68 @@ Method %OnNew(classname) As %Status [ Private, ServerOnly = 1 ]
 	Quit $$$OK
 }
 
+Method jstrGet()
+{
+	set rsp = $$$NULLOREF
+	// Get as stream no matter what
+	if ..type="String" { 
+		Set rsp = ##class(%Stream.GlobalCharacter).%New()
+		Set sc = rsp.Write(..jsonString)
+	}
+	elseif ..type="Stream" { 
+		set rsp = ..jsonStream
+	}
+	Quit rsp
+}
+
+Method jstrSet(pInput) As %Status
+{
+	// Set as stream no matter what
+	set sc = ..jsonSet(pInput)
+	if $$$ISERR(sc) { Quit sc }
+	if ..type="String" { 
+		set stream = ##class(%Stream.GlobalCharacter).%New()
+		Set sc = stream.Write(..jsonString)
+		set r%jsonStream = stream
+	}
+	Quit sc
+}
+
 Method jsonGet()
 {
-	QUIT ..GetObjectJson()
+	Quit $Case(..type
+				, "String":..jsonString
+				, "Stream":..jsonStream
+				, :$$$NULLOREF)
 }
 
-Method jsonSet(value) As %Status
+Method jsonSet(pInput) As %Status
 {
-	set ..jsonObject = {}.%FromJSON(value)
-	set ..jstr = ##class(%Stream.GlobalCharacter).%New()
-    do ..jstr.Write(value)
-	return $$$OK
-}
-
-Method %DispatchGetProperty(property As %String) As %ObjectHandle
-{
-	quit $property(..jsonObject,property)
-}
-
-Method %DispatchSetProperty(
-	property As %String,
-	value)
-{
-	set $property(..jsonObject,property) = value
-	quit
+	Set tOldStream=$Case(..type
+				, "String":..jsonString
+				, "Stream":..jsonStream
+				, :$$$NULLOREF)
+	Quit:tOldStream=pInput $$$OK
+	If '$IsObject(pInput) Do:..type'="" Clear()  Set i%type=""  Quit $$$OK
+	If pInput.%Extends("%Stream.GlobalCharacter")       { Do:..type'="Stream" Clear()  Set r%jsonStream=pInput, i%type="Stream" }
+	Else {  Set ..jsonString=pInput, ..type="String" }
+	Quit $$$OK
+Clear()
+	If ..type="String"     { Set ..jsonString="" }
+	ElseIf ..type="Stream" { Set r%jsonStream=$$$NULLOREF }
+	Quit
 }
 
 Method GetObjectJson(ByRef atEnd)
 {
 	set atEnd = 1
-	set json = ..jsonObject.%ToJSON()
-	if json = "{}" {
-		d ..jstr.Rewind()
-		set json = ..jstr.Read(..#BUFFER)
-        set atEnd = ..jstr.AtEnd
+	if ..type = "String" {
+		set json = ..jsonString
+	}
+	elseif ..type = "Stream" {
+		do ..jsonStream.Rewind()
+		set json = ..jsonStream.Read(..#BUFFER)
+		set atEnd = ..jsonStream.AtEnd
 	}
     QUIT json
 }

@@ -212,8 +212,10 @@ class _BusinessHost(_Common):
         msg = iris.cls('IOP.Message')._New()
         msg.classname = module + "." + classname
 
-        stream = _Utils.string_to_stream(json_string)
-        msg.jstr = stream
+        if hasattr(message, 'buffer') and len(json_string) > msg.buffer:
+            msg.json = _Utils.string_to_stream(json_string)
+        else:
+            msg.json = json_string
 
         return msg
 
@@ -268,7 +270,11 @@ class _BusinessHost(_Common):
         except Exception:
             raise ImportError("Class not found: " + classname)
 
-        string = _Utils.stream_to_string(serial.jstr)
+        string = ""
+        if (serial.type == 'Stream'):
+            string = _Utils.stream_to_string(serial.json)
+        else:
+            string = serial.json
 
         jdict = json.loads(string, cls=IrisJSONDecoder)
         msg = self._dataclass_from_dict(msg,jdict)
