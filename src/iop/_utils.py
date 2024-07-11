@@ -28,7 +28,8 @@ class _Utils():
         # for retrocompatibility load grongier.pex
         path = pkg_resources.resource_filename('grongier', 'cls')
 
-        _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+        if path:
+            _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
     @staticmethod
     def register_component(module:str,classname:str,path:str,overwrite:int=1,iris_classname:str='Python'):
@@ -47,10 +48,12 @@ class _Utils():
         :type iris_classname: str
         :return: The return value is a string.
         """
-        path = os.path.normpath(path)
-        # get the absolute path of the folder
-        path = os.path.abspath(path)
-        return iris.cls('Grongier.PEX.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
+        path = os.path.abspath(os.path.normpath(path))
+        try:
+            iris.cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
+        except RuntimeError as e:
+            # New message error : Make sure the iop package is installed in iris 
+            raise RuntimeError("Make sure the iop package is installed in iris eg: iop --init.") from e
 
     @staticmethod
     def register_folder(path:str,overwrite:int=1,iris_package_name:str='Python'):
@@ -333,7 +336,7 @@ class _Utils():
         production_name = production_name.split('.')[-1]
         stream = _Utils.string_to_stream(xml)
         # register the production
-        _Utils.raise_on_error(iris.cls('Grongier.PEX.Utils').CreateProduction(package,production_name,stream))
+        _Utils.raise_on_error(iris.cls('IOP.Utils').CreateProduction(package,production_name,stream))
 
     @staticmethod
     def export_production(production_name):
@@ -348,7 +351,7 @@ class _Utils():
                 return key, ''
             return key, value
         # export the production
-        xdata = iris.cls('Grongier.PEX.Utils').ExportProduction(production_name)
+        xdata = iris.cls('IOP.Utils').ExportProduction(production_name)
         # for each chunk of 1024 characters
         string = _Utils.stream_to_string(xdata)
         # convert the xml to a dictionary
