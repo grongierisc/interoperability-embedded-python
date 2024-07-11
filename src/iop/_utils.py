@@ -53,7 +53,7 @@ class _Utils():
             iris.cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
         except RuntimeError as e:
             # New message error : Make sure the iop package is installed in iris 
-            raise RuntimeError("Make sure the iop package is installed in iris eg: iop --init.") from e
+            raise RuntimeError("Iris class : IOP.Utils not found. Make sure the iop package is installed in iris eg: iop --init.") from e
 
     @staticmethod
     def register_folder(path:str,overwrite:int=1,iris_package_name:str='Python'):
