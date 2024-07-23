@@ -149,6 +149,30 @@ Method dispatchSendRequestSync(
     quit $g(objResponse)
 }
 
+Method dispatchSendRequestSyncMultiple(
+	pCallStructList As %List,
+	pTimeout As %Numeric = -1) As %List
+{
+    set builtins = ##class(%SYS.Python).Import("builtins")
+    // Convert %List to multidimensional array
+    set tCallStructList=builtins.len(pCallStructList)
+    $$$LOGINFO("pCallStructList: "_pCallStructList)
+    for i=0:1:builtins.len(pCallStructList)-1 {
+        set tCallStructList(i+1) = pCallStructList."__getitem__"(i)
+    }
+
+    $$$LOGINFO("tCallStructList: "_tCallStructList(1))
+    set tSC = ..SendRequestSyncMultiple(.tCallStructList,pTimeout)
+    if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
+    // Convert multidimensional array to Python list
+    set tResponseList = builtins.list()
+    
+    for i=1:1:tCallStructList {
+        do tResponseList.append(tCallStructList(i))
+    }
+    quit tResponseList
+}
+
 Method dispatchSendRequestAsync(
 	target,
 	request,

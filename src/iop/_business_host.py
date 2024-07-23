@@ -152,6 +152,39 @@ class _BusinessHost(_Common):
         
         return self.iris_handle.dispatchSendRequestAsync(target,request,description)
 
+    def send_multi_request_sync(self, target_request:list, timeout=-1, description=None)->list:
+        """ Send the specified list of tuple (target,request) to business process or business operation synchronously.
+            
+        Parameters:
+        target_request: a list of tuple (target,request) that specifies the name of the business process or operation to receive the request. 
+            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
+            The request is either an instance of a class that is a subclass of Message class or of IRISObject class.
+        timeout: an optional integer that specifies the number of seconds to wait before treating the send request as a failure. The default value is -1, which means wait forever.
+        description: an optional string parameter that sets a description property in the message header. The default is None.
+        Returns:
+            the list of tuple (target,request,response,status).
+        """
+        # create a list of iris.Ens.CallStructure for each target_request
+        call_list = []
+        for target,request in target_request:
+            call = iris.cls("Ens.CallStructure")._New()
+            call.TargetDispatchName = target
+            call.Request = self._dispatch_serializer(request)
+            call_list.append(call)
+        # call the dispatchSendMultiRequestSync method
+        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(call_list,timeout)
+        # create a list of tuple (target,request,response,status)
+        result = []
+        for i in range(len(target_request)):
+            result.append(
+                (target_request[i][0],
+                 target_request[i][1],
+                 self._dispatch_deserializer(response_list[i].Response),
+                 response_list[i].ResponseCode
+                ))
+        return result
+
+
     def _serialize_pickle_message(self,message):
         """ Converts a python dataclass message into an iris iop.message.
 
