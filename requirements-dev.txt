@@ -6,3 +6,4 @@ requests
 dataclasses-json
 wheel
 twine
+iris-embedded-python-wrapper
