@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import pickle
 import codecs
@@ -133,7 +134,6 @@ class _BusinessHost(_Common):
         Raises:
         TypeError: if request is not of type Message or IRISObject.
         """
-
         return self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
 
     @input_serialzer_param(1,'request')
@@ -151,6 +151,17 @@ class _BusinessHost(_Common):
         """
         
         return self.iris_handle.dispatchSendRequestAsync(target,request,description)
+    
+    async def send_request_async_ng(self, target, request, timeout=-1, description=None):
+        """ Send the specified message to the target business process or business operation asynchronously.
+        Parameters:
+        target: a string that specifies the name of the business process or operation to receive the request. 
+            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
+        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
+            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
+        description: an optional string parameter that sets a description property in the message header. The default is None.
+        """
+        return await _send_request_async_ng(target, request, timeout ,description, self)
 
     def send_multi_request_sync(self, target_request:list, timeout=-1, description=None)->list:
         """ Send the specified list of tuple (target,request) to business process or business operation synchronously.
@@ -550,3 +561,62 @@ class IrisJSONDecoder(json.JSONDecoder):
             else:
                 ret[key] = value
         return ret
+
+class _send_request_async_ng(asyncio.Future):
+
+    _message_header_id = 0
+    _queue_name = ""
+    _end_time = 0
+    _response = None
+    _done = False
+
+    def __init__(self, target, request, timeout=-1, description=None, host=None):
+        super().__init__()
+        self.target = target
+        self.request = request
+        self.timeout = timeout
+        self.description = description
+        self.host = host
+        self._iris_handle = host.iris_handle
+        asyncio.create_task(self.send())
+
+    async def send_async(self):
+        # Call the synchronous function
+        self._iris_handle.dispatchSendRequestAsyncNG(self.target, self.host._dispatch_serializer(self.request), self.timeout, self.description)
+        
+        # Periodically check if the request is done
+        while not self._iris_handle.dispatchIsRequestDone():
+            await asyncio.sleep(0.1)  # Adjust the sleep duration as needed
+        
+        # Set the result of the Future
+        self.set_result("Request sent and completed")
+
+    async def send(self):
+        message_header_id = iris.ref()
+        queue_name = iris.ref()
+        end_time = iris.ref()
+        request = self.host._dispatch_serializer(self.request)
+        self._iris_handle.dispatchSendRequestAsyncNG(self.target, request, self.timeout, self.description, message_header_id, queue_name, end_time)
+        self._message_header_id = message_header_id.value
+        self._queue_name = queue_name.value
+        self._end_time = end_time.value
+
+        while not self._done:
+            await asyncio.sleep(0.1)
+            self.done()
+
+        self.set_result(self._response)
+
+    def done(self):
+        response = iris.ref()
+        status = self._iris_handle.dispatchIsRequestDone(self.timeout, self._end_time, self._queue_name, self._message_header_id, response)
+        self._response = self.host._dispatch_deserializer(response.value)
+        if status == 1 and self._response is not None:
+            self._done = True
+
+    # def __await__(self):
+    #     if not self._done:
+    #         self.done()
+    #         yield self
+    #     else:
+    #         return self._response

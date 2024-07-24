@@ -139,12 +139,12 @@ Method SetPropertyValues()
 }
 
 Method dispatchSendRequestSync(
-	target,
-	request,
+	pTarget,
+	pRequest,
 	timeout,
-	description) As %String
+	pDescription) As %String
 {
-    set tSC = ..SendRequestSync(target,request,.objResponse,timeout,description)
+    set tSC = ..SendRequestSync(pTarget,pRequest,.objResponse,timeout,pDescription)
     if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
     quit $g(objResponse)
 }
@@ -162,7 +162,7 @@ Method dispatchSendRequestSyncMultiple(
 
     set tSC = ..SendRequestSyncMultiple(.tCallStructList,pTimeout)
     if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
-    
+
     // Convert multidimensional array to Python list
     set tResponseList = builtins.list()
     
@@ -173,11 +173,11 @@ Method dispatchSendRequestSyncMultiple(
 }
 
 Method dispatchSendRequestAsync(
-	target,
-	request,
-	description)
+	pTarget,
+	pRequest,
+	pDescription)
 {
-    set tSC = ..SendRequestAsync(target,request,description)
+    set tSC = ..SendRequestAsync(pTarget,pRequest,pDescription)
     if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
     quit
 }
@@ -221,6 +221,123 @@ ClassMethod OnGetConnections(
     }
 
     quit
+}
+
+Method dispatchSendRequestAsyncNGTest(
+	pTarget,
+	pRequest,
+	pTimeout,
+	pDescription,
+	ByRef pMessageHeaderId,
+	ByRef pQueueName,
+	ByRef pEndTime) As %String
+{
+    Set tTargetConfigName = $get($$$DispatchNameToConfigName(pTarget)) Quit:""=tTargetConfigName $$$EnsError($$$EnsErrBusinessDispatchNameNotRegistered,pTarget)
+    Set tTargetBusinessClass=$$$ConfigClassName(tTargetConfigName)
+    Set tPriority=$$$eMessagePriorityAsync
+
+    Set tSC=$classmethod(tTargetBusinessClass,"acceptRequestAsync",..%ConfigName,tTargetConfigName,pRequest,tPriority,$$$queueSyncCallQueueName,..%SessionId,"",.tRequestHeader,pDescription,..%SuperSession)
+
+	Quit tSC
+}
+
+Method dispatchSendRequestAsyncNG(
+	pTarget,
+	pRequest,
+	pTimeout,
+	pDescription,
+	ByRef pMessageHeaderId,
+	ByRef pQueueName,
+	ByRef pEndTime) As %String
+{
+	set tSC=$$$OK, tResponse=$$$NULLOREF
+	try {
+
+        set tTargetDispatchName=pTarget
+        set tTargetConfigName=$get($$$DispatchNameToConfigName(pTarget))
+        if tTargetConfigName="" set tSC=$$$EnsError($$$EnsErrBusinessDispatchNameNotRegistered,tTargetDispatchName) quit
+        set tTargetBusinessClass = $$$ConfigClassName(tTargetConfigName)
+        set tINVOCATION=$classmethod(tTargetBusinessClass,"%GetParameter","INVOCATION")
+        if (tINVOCATION'="Queue")&&(tINVOCATION'="InProc") set tSC=$$$ERROR($$$EnsErrParameterInvocationInvalid,tTargetBusinessClass) quit
+
+        quit:$$$ISERR(tSC)
+        ;
+        set tStartTime=$zh
+        set:pTimeout'=-1 tEndTime=$zh+pTimeout
+
+        if tINVOCATION="InProc" {
+            set tTimeout=$s(pTimeout=-1:-1,1:tEndTime-$zh)
+            if (pTimeout'=-1)&&(tTimeout<0) quit
+            set tSC=..SendRequestSync(tTargetConfigName,pRequest,.tResponse,tTimeout,pDescription)
+            return tResponse
+        } elseif tINVOCATION="Queue" {
+            Set tSessionId=..%SessionId
+            Set tSuperSession = ..%SuperSession
+            Set tSC = ##class(Ens.MessageHeader).NewRequestMessage(.tRequestHeader,pRequest,.tSessionId,.tSuperSession) quit:$$$ISERR(tSC)
+            Set ..%SessionId=tSessionId
+            Set ..%SuperSession=tSuperSession
+            Set tRequestHeader.SourceConfigName = ..%ConfigName
+            Set tRequestHeader.TargetConfigName = tTargetConfigName
+            Set tRequestHeader.SourceBusinessType = $$$ConfigBusinessType($$$DispatchNameToConfigName(..%ConfigName))
+            Set tRequestHeader.TargetBusinessType = $$$ConfigBusinessType($$$DispatchNameToConfigName(tTargetConfigName))
+            Set tRequestHeader.TargetQueueName = $$$getConfigQueueName($$$DispatchNameToConfigName(tTargetConfigName),..%SessionId)
+            Set tRequestHeader.ReturnQueueName = $$$queueSyncCallQueueName
+            Set tRequestHeader.BusinessProcessId = ""
+            Set tRequestHeader.Priority = $$$eMessagePriorityAsync
+            Set tRequestHeader.Description = pDescription
+            Set tSC = ##class(Ens.Queue).Create($$$queueSyncCallQueueName) quit:$$$ISERR(tSC)
+            Set tSC = ##class(Ens.Queue).EnQueue(tRequestHeader) quit:$$$ISERR(tSC)
+            Set pMessageHeaderId = tRequestHeader.MessageId()
+            Set pQueueName = $$$queueSyncCallQueueName
+            Set:(pTimeout'=-1) pEndTime = tEndTime
+        }
+	}
+	catch {
+		set tSC = $$$EnsSystemError
+	}
+	quit tSC
+}
+
+Method dispatchIsRequestDone(
+	pTimeout,
+	pEndTime,
+	pQueueName,
+	pMessageHeaderId,
+	ByRef pResponse) As %Status
+{
+    set tSC=$$$OK
+    try {
+        set tTimeout=$s(pTimeout=-1:-1,1:pEndTime-$zh) if (pTimeout'=-1)&&(tTimeout<0) quit
+        set tSC = ##class(Ens.Queue).DeQueue($$$queueSyncCallQueueName,.tResponseHeader,tTimeout,.tIsTimedOut,0) Quit:$$$ISERR(tSC)
+        quit:tIsTimedOut 
+
+        set tFound = $select(tResponseHeader.CorrespondingMessageId: pMessageHeaderId=tResponseHeader.CorrespondingMessageId, 1: 0)
+        if tFound=0 {
+            $$$sysTRACE("Out-of-band message '"_tResponseHeader.%Id()_"' discarded")
+            do tResponseHeader.SetStatus($$$eMessageStatusDiscarded)
+            quit
+        }
+        if tResponseHeader.IsError {
+            do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
+            set tSC = $$$EnsError($$$EnsErrGeneral,"Error message received: "_tResponseHeader.ErrorText)
+            quit
+        }
+        if tResponseHeader.MessageBodyClassName'="" {
+            set tResponse = $classmethod(tResponseHeader.MessageBodyClassName,"%OpenId",tResponseHeader.MessageBodyId,,.tSC)
+            if '$IsObject(tResponse) Set tSC=$$$EnsError($$$EnsErrGeneral,"Could not open MessageBody "_tResponseHeader.MessageBodyId_" for MessageHeader #"_tResponseHeader.%Id()_" with body class "_tResponseHeader.MessageBodyClassName_":"_$$$StatusDisplayString(tSC))  Quit
+        } else {
+            set tResponse=$$$NULLOREF
+        }
+        set pResponse=tResponse
+        do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
+        
+    
+    Set tSC2 = ##class(Ens.Queue).Delete($$$queueSyncCallQueueName,"*") quit:$$$ISERR(tSC2)
+    }
+	catch {
+		set tSC = $$$EnsSystemError
+	}
+	quit tSC
 }
 
 }
