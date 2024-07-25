@@ -223,24 +223,6 @@ ClassMethod OnGetConnections(
     quit
 }
 
-Method dispatchSendRequestAsyncNGTest(
-	pTarget,
-	pRequest,
-	pTimeout,
-	pDescription,
-	ByRef pMessageHeaderId,
-	ByRef pQueueName,
-	ByRef pEndTime) As %String
-{
-    Set tTargetConfigName = $get($$$DispatchNameToConfigName(pTarget)) Quit:""=tTargetConfigName $$$EnsError($$$EnsErrBusinessDispatchNameNotRegistered,pTarget)
-    Set tTargetBusinessClass=$$$ConfigClassName(tTargetConfigName)
-    Set tPriority=$$$eMessagePriorityAsync
-
-    Set tSC=$classmethod(tTargetBusinessClass,"acceptRequestAsync",..%ConfigName,tTargetConfigName,pRequest,tPriority,$$$queueSyncCallQueueName,..%SessionId,"",.tRequestHeader,pDescription,..%SuperSession)
-
-	Quit tSC
-}
-
 Method dispatchSendRequestAsyncNG(
 	pTarget,
 	pRequest,
@@ -305,37 +287,50 @@ Method dispatchIsRequestDone(
 	pMessageHeaderId,
 	ByRef pResponse) As %Status
 {
+
     set tSC=$$$OK
     try {
-        set tTimeout=$s(pTimeout=-1:-1,1:pEndTime-$zh) if (pTimeout'=-1)&&(tTimeout<0) quit
+        set tTimeout=$s(pTimeout=-1:-1,1:pEndTime-$zh)
+
         set tSC = ##class(Ens.Queue).DeQueue($$$queueSyncCallQueueName,.tResponseHeader,tTimeout,.tIsTimedOut,0) Quit:$$$ISERR(tSC)
-        quit:tIsTimedOut 
+
+        quit:$IsObject(tResponseHeader)=0
 
         set tFound = $select(tResponseHeader.CorrespondingMessageId: pMessageHeaderId=tResponseHeader.CorrespondingMessageId, 1: 0)
         if tFound=0 {
-            $$$sysTRACE("Out-of-band message '"_tResponseHeader.%Id()_"' discarded")
-            do tResponseHeader.SetStatus($$$eMessageStatusDiscarded)
-            quit
+
+            set tSC = ##class(Ens.Queue).EnQueue(tResponseHeader)
+            Kill $$$EnsActiveMessage($$$SystemName_":"_$Job)
         }
-        if tResponseHeader.IsError {
+        else {
+
+            if tIsTimedOut || ((pTimeout'=-1)&&(tTimeout<0)) {
+
+                do tResponseHeader.SetStatus($$$eMessageStatusDiscarded)
+                return $$$ERROR($$$EnsErrFailureTimeout, tTimeout, $$$StatusDisplayString(tSC), $$$CurrentClass)
+            }
+            if tResponseHeader.IsError {
+
+                do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
+                return $$$EnsError($$$EnsErrGeneral,"Error message received: "_tResponseHeader.ErrorText)
+                
+            }
+            if tResponseHeader.MessageBodyClassName'="" {
+
+                set tResponse = $classmethod(tResponseHeader.MessageBodyClassName,"%OpenId",tResponseHeader.MessageBodyId,,.tSC)
+                if '$IsObject(tResponse) return $$$EnsError($$$EnsErrGeneral,"Could not open MessageBody "_tResponseHeader.MessageBodyId_" for MessageHeader #"_tResponseHeader.%Id()_" with body class "_tResponseHeader.MessageBodyClassName_":"_$$$StatusDisplayString(tSC)) 
+            } else {
+
+                set tResponse=$$$NULLOREF
+            }
+            set pResponse=tResponse
             do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
-            set tSC = $$$EnsError($$$EnsErrGeneral,"Error message received: "_tResponseHeader.ErrorText)
-            quit
+            set tSC = 2
+
         }
-        if tResponseHeader.MessageBodyClassName'="" {
-            set tResponse = $classmethod(tResponseHeader.MessageBodyClassName,"%OpenId",tResponseHeader.MessageBodyId,,.tSC)
-            if '$IsObject(tResponse) Set tSC=$$$EnsError($$$EnsErrGeneral,"Could not open MessageBody "_tResponseHeader.MessageBodyId_" for MessageHeader #"_tResponseHeader.%Id()_" with body class "_tResponseHeader.MessageBodyClassName_":"_$$$StatusDisplayString(tSC))  Quit
-        } else {
-            set tResponse=$$$NULLOREF
-        }
-        set pResponse=tResponse
-        do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
-        
-    
-    Set tSC2 = ##class(Ens.Queue).Delete($$$queueSyncCallQueueName,"*") quit:$$$ISERR(tSC2)
     }
-	catch {
-		set tSC = $$$EnsSystemError
+	catch ex {
+		set tSC = ex.AsStatus()
 	}
 	quit tSC
 }
