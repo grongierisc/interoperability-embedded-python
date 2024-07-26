@@ -1,17 +1,51 @@
 import pickle
+import asyncio
+import iris
 import codecs
 from datetime import datetime, date, time
 from unittest.mock import MagicMock
 
 from iop._business_host import _BusinessHost
 
-from iop import Message
-
 from registerFilesIop.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestSimpleMessageNotDataclass, TestPickledMessage, FullMessage, PostMessage, MyResponse
 
 from registerFilesIop.obj import PostClass
 
 from registerFilesIop.bs import RedditService
+from registerFilesIop.bo import FileOperation
+
+def test_send_request_async_ng():
+    bh = _BusinessHost()
+    bh.iris_handle = MagicMock()
+    bh.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
+    bh.iris_handle.dispatchIsRequestDone.return_value = 2
+    bh._dispatch_deserializer = MagicMock()
+    bh._dispatch_deserializer.return_value = MyResponse(value='test')
+    result = bh.send_request_async_ng('test', TestSimpleMessage(integer=1, string='test'))
+    assert asyncio.iscoroutine(result)
+    assert asyncio.run(result) == MyResponse(value='test')
+
+def test_send_multi_request_sync():
+    bh = _BusinessHost()
+    bh.iris_handle = MagicMock()
+    bh.iris_handle.dispatchSendRequestSyncMultiple = MagicMock()
+    rsp = iris.cls("Ens.CallStructure")._New()
+    rsp.Response = MyResponse(value='test')
+    rsp.ResponseCode = 1
+    bh.iris_handle.dispatchSendRequestSyncMultiple.return_value = [rsp]
+    result = bh.send_multi_request_sync([('test', TestSimpleMessage(integer=1, string='test'))])
+    assert result == [('test', TestSimpleMessage(integer=1, string='test'),MyResponse(value='test'),1)]
+
+def test_dispatch_message():
+    bs = FileOperation()
+    bs.PutLine = MagicMock()
+    bs.Limit = 1
+    bs.on_init()
+    bs._dispach_message(PostMessage(Post=PostClass(Title='test', Selftext='test', 
+                                                   Url='test', Author='test', CreatedUTC=1.1, OriginalJSON='test'),
+                                    Found='True', ToEmailAddress='test'))
+    assert True
+
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
@@ -53,6 +87,19 @@ def test_serialize_message_not_dataclass():
     msg = TestSimpleMessageNotDataclass()
     msg.integer = 1
     msg.string = 'test'
+
+    # Mock iris_handler
+    bh.iris_handle = MagicMock()
+
+    # expect an error
+    try:
+        bh.send_request_sync(target='test', request=msg)
+    except Exception as e:
+        assert type(e) == TypeError
+
+def test_serialize_message_string():
+    bh = _BusinessHost()
+    msg = 'test'
 
     # Mock iris_handler
     bh.iris_handle = MagicMock()
@@ -203,3 +250,4 @@ def test_dispatch_on_get_connections():
     for i in range(0, _list_len):
         print(_list.__getitem__(i))
     assert len(_list) == 1
+
