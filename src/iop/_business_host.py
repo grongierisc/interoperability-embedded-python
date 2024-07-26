@@ -177,6 +177,15 @@ class _BusinessHost(_Common):
         """
         # create a list of iris.Ens.CallStructure for each target_request
         call_list = []
+        # sanity check
+        if not isinstance(target_request,list):
+            raise TypeError("The target_request parameter must be a list")
+        if len(target_request) == 0:
+            raise ValueError("The target_request parameter must not be empty")
+        # check if the target_request is a list of tuple of 2 elements
+        if not all(isinstance(item, tuple) and len(item) == 2 for item in target_request):
+            raise TypeError("The target_request parameter must be a list of tuple of 2 elements")
+
         for target,request in target_request:
             call = iris.cls("Ens.CallStructure")._New()
             call.TargetDispatchName = target
