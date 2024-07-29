@@ -15,11 +15,13 @@ Property jsonObject As %DynamicObject(XMLPROJECTION = "None");
 
 Property json As %String(MAXLEN = "") [ Calculated, Transient ];
 
-Property jsonStream As %Stream.GlobalCharacter [ Internal, Private ];
+Property jsonStream As %Stream.GlobalCharacter [ Internal, ReadOnly ];
 
-Property jsonString As %String(MAXLEN = 64000) [ Calculated, Transient ];
+Property jsonString As %String(MAXLEN = 64000) [ Internal, ReadOnly ];
 
-Property jstr As %Stream.GlobalCharacter [ Internal, Private ]; // for retrocompatibility
+Property jstr As %Stream.GlobalCharacter [ Internal, Private ];
+
+// for retrocompatibility
 
 Property type As %String(MAXLEN = 6) [ ReadOnly ];
 
@@ -57,6 +59,7 @@ Method jstrSet(pInput) As %Status
 		set stream = ##class(%Stream.GlobalCharacter).%New()
 		Set sc = stream.Write(..jsonString)
 		set r%jsonStream = stream
+		set i%type = "Stream"
 	}
 	Quit sc
 }
@@ -76,12 +79,19 @@ Method jsonSet(pInput) As %Status
 				, "Stream":..jsonStream
 				, :$$$NULLOREF)
 	Quit:tOldStream=pInput $$$OK
-	If '$IsObject(pInput) Do:..type'="" Clear()  Set i%type=""  Quit $$$OK
-	If pInput.%Extends("%Stream.GlobalCharacter")       { Do:..type'="Stream" Clear()  Set r%jsonStream=pInput, i%type="Stream" }
-	Else {  Set ..jsonString=pInput, ..type="String" }
+	Do:..type'="" Clear()  Set i%type=""
+	If $ISOBJECT(pInput) && pInput.%Extends("%Stream.GlobalCharacter") { 
+		Set r%jsonStream=pInput, i%type="Stream" 
+	}
+	If $IsObject(pInput) && 'pInput.%Extends("%Stream.GlobalCharacter") {  
+		Throw ##class(%Exception.General).%New("Invalid input type, must be a %Stream.GlobalCharacter")
+	}
+	Else {  
+		Set i%jsonString=pInput, i%type="String" 
+	}
 	Quit $$$OK
 Clear()
-	If ..type="String"     { Set ..jsonString="" }
+	If ..type="String"     { Set r%jsonString="" }
 	ElseIf ..type="Stream" { Set r%jsonStream=$$$NULLOREF }
 	Quit
 }
@@ -155,6 +165,15 @@ Storage Default
 </Value>
 <Value name="3">
 <Value>jstr</Value>
+</Value>
+<Value name="4">
+<Value>jsonStream</Value>
+</Value>
+<Value name="5">
+<Value>type</Value>
+</Value>
+<Value name="6">
+<Value>jsonString</Value>
 </Value>
 </Data>
 <Data name="jsonObject">

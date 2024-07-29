@@ -2,6 +2,17 @@
 Class IOP.Test Extends %Persistent
 {
 
+/// Description
+ClassMethod TEST() As %Status
+{
+	set msg = ##class(IOP.Message).%New()
+	set msg.classname = "IOP.Message"
+	set msg.json = "{""name"":""John""}"
+	set tset = msg.json
+	set tst = msg.jstr
+	QUIT $$$OK
+}
+
 /// Register
 ClassMethod Register() As %Status
 {
