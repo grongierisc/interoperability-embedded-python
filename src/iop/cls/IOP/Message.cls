@@ -13,7 +13,7 @@ Property classname As %String(MAXLEN = "");
 
 Property jsonObject As %DynamicObject(XMLPROJECTION = "None");
 
-Property json As %String(MAXLEN = "") [ Calculated, Transient ];
+Property json As %String(MAXLEN = "");
 
 Property jsonStream As %Stream.GlobalCharacter [ Internal, ReadOnly ];
 
