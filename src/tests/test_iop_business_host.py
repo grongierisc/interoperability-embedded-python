@@ -54,7 +54,7 @@ def test_dispatch_serializer():
     rsp = bh._dispatch_serializer(message)
 
     assert rsp.classname == 'registerFilesIop.message.TestSimpleMessage'
-    assert rsp.json == '{"integer": 1, "string": "test"}'
+    assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
 
 def test_dispatch_serializer_none():
     bh = _BusinessHost()
@@ -156,14 +156,14 @@ def test_serialize_message():
     result.jstr.Rewind()
     stream = result.jstr.Read()
     assert result.classname == 'registerFilesIop.message.TestSimpleMessage'
-    assert result.json == '{"integer": 1, "string": "test"}'
+    assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
     assert stream == '{"integer": 1, "string": "test"}'
 
 def test_deseialize_message():
     bh = _BusinessHost()
     msg = TestSimpleMessage(integer=1, string='test')
     result = bh._serialize_message(msg)
-    assert result.json == '{"integer": 1, "string": "test"}'
+    assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
     msg = bh._deserialize_message(result)
     assert msg.integer == 1
     assert msg.string == 'test'
@@ -172,7 +172,7 @@ def test_deseialize_message_japanese():
     bh = _BusinessHost()
     msg = TestSimpleMessage(integer=1, string='あいうえお')
     result = bh._serialize_message(msg)
-    assert result.json == '{"integer": 1, "string": "あいうえお"}'
+    assert result.GetObjectJson() == '{"integer": 1, "string": "あいうえお"}'
     msg = bh._deserialize_message(result)
     assert msg.integer == 1
     assert msg.string == 'あいうえお'
