@@ -34,15 +34,14 @@ class _BusinessHost(_Common):
         :param fonction: the function that will be decorated
         :return: The function dispatch_serializer is being returned.
         """
-        def dispatch_serializer(self,*params, **param2):
-            # Handle positional arguments
-            serialized=[]
-            for param in params:
-                serialized.append(self._dispatch_serializer(param))
-            # Handle keyword arguments
-            for key, value in param2.items():
-                param2[key] = self._dispatch_serializer(value)
-            return fonction(self,*serialized, **param2)
+        def dispatch_serializer(self, *params, **param2):
+            # Handle positional arguments using list comprehension
+            serialized = [self._dispatch_serializer(param) for param in params]
+            
+            # Handle keyword arguments using dictionary comprehension
+            param2 = {key: self._dispatch_serializer(value) for key, value in param2.items()}
+            
+            return fonction(self, *serialized, **param2)
         return dispatch_serializer
     
     def input_serialzer_param(position:int,name:str):
@@ -55,19 +54,20 @@ class _BusinessHost(_Common):
         """
         def input_serialzer_param(fonction):
             @wraps(fonction)
-            def dispatch_serializer(self,*params, **param2):
-                # Handle positional arguments
-                serialized=[]
-                for i,param in enumerate(params):
-                    if i == position:
-                        serialized.append(self._dispatch_serializer(param))
-                    else:
-                        serialized.append(param)
-                # Handle keyword arguments
-                for key, value in param2.items():
-                    if key == name:
-                        param2[key] = self._dispatch_serializer(value)
-                return fonction(self,*serialized, **param2)
+            def dispatch_serializer(self, *params, **param2):
+                # Handle positional arguments using list comprehension
+                serialized = [
+                    self._dispatch_serializer(param) if i == position else param
+                    for i, param in enumerate(params)
+                ]
+                
+                # Handle keyword arguments using dictionary comprehension
+                param2 = {
+                    key: self._dispatch_serializer(value) if key == name else value
+                    for key, value in param2.items()
+                }
+                
+                return fonction(self, *serialized, **param2)
             return dispatch_serializer
         return input_serialzer_param
 
@@ -93,15 +93,14 @@ class _BusinessHost(_Common):
         :param fonction: the function that will be decorated
         :return: The function dispatch_deserializer is being returned.
         """
-        def dispatch_deserializer(self,*params, **param2):
-            # Handle positional arguments
-            serialized=[]
-            for param in params:
-                serialized.append(self._dispatch_deserializer(param))
-            # Handle keyword arguments
-            for key, value in param2.items():
-                param2[key] = self._dispatch_deserializer(value)
-            return fonction(self,*serialized, **param2)
+        def dispatch_deserializer(self, *params, **param2):
+            # Handle positional arguments using list comprehension
+            serialized = [self._dispatch_deserializer(param) for param in params]
+            
+            # Handle keyword arguments using dictionary comprehension
+            param2 = {key: self._dispatch_deserializer(value) for key, value in param2.items()}
+            
+            return fonction(self, *serialized, **param2)
         return dispatch_deserializer
 
     def output_serialzer(fonction):
@@ -236,18 +235,20 @@ class _BusinessHost(_Common):
         :param message: The message to be serialized
         :return: The serialized message
         """
-        if (message is not None and self._is_message_instance(message)):
-            return self._serialize_message(message)
-        elif (message is not None and self._is_pickle_message_instance(message)):
-            return self._serialize_pickle_message(message)
-        elif (message is not None and self._is_iris_object_instance(message)):
+        if message is not None:
+            if self._is_message_instance(message):
+                return self._serialize_message(message)
+            elif self._is_pickle_message_instance(message):
+                return self._serialize_pickle_message(message)
+            elif self._is_iris_object_instance(message):
+                return message
+
+        if message == "" or message is None:
             return message
-        elif (message is None or message == ""):
-            return message
-        else:
-            # todo : decorator takes care of all the parameters, so this should never happen
-            # return message
-            raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
+
+        # todo : decorator takes care of all the parameters, so this should never happen
+        # return message
+        raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
 
     def _serialize_message(self,message):
         """ Converts a python dataclass message into an iris iop.message.
@@ -291,16 +292,22 @@ class _BusinessHost(_Common):
         :return: The return value is a tuple of the form (serial, serial_type)
         """
         if (
-                (serial is not None and type(serial).__module__.find('iris') == 0) 
-                 and 
-                (serial._IsA("IOP.Message") or serial._IsA("Grongier.PEX.Message"))
-           ):
+            serial is not None
+            and type(serial).__module__.startswith('iris')
+            and (
+                serial._IsA("IOP.Message")
+                or serial._IsA("Grongier.PEX.Message")
+            )
+        ):
             return self._deserialize_message(serial)
         elif (
-                (serial is not None and type(serial).__module__.find('iris') == 0) 
-                and 
-                (serial._IsA("IOP.PickleMessage") or serial._IsA("Grongier.PEX.PickleMessage"))
-            ):
+            serial is not None
+            and type(serial).__module__.startswith('iris')
+            and (
+                serial._IsA("IOP.PickleMessage")
+                or serial._IsA("Grongier.PEX.PickleMessage")
+            )
+        ):
             return self._deserialize_pickle_message(serial)
         else:
             return serial
