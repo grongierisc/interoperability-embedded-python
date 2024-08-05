@@ -168,6 +168,15 @@ def test_deseialize_message():
     assert msg.integer == 1
     assert msg.string == 'test'
 
+def test_big_message():
+    bh = _BusinessHost()
+    huge_string = 'test'*1000000
+    msg = TestSimpleMessage(integer=1, string=huge_string)
+    result = bh._serialize_message(msg)
+    msg = bh._deserialize_message(result)
+    assert msg.integer == 1
+    assert msg.string == huge_string
+
 def test_deseialize_message_japanese():
     bh = _BusinessHost()
     msg = TestSimpleMessage(integer=1, string='あいうえお')
