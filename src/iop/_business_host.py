@@ -266,8 +266,8 @@ class _BusinessHost(_Common):
         msg = iris.cls('IOP.Message')._New()
         msg.classname = module + "." + classname
 
-        if hasattr(message, 'buffer') and len(json_string) > msg.buffer:
-            msg.json = _Utils.string_to_stream(json_string)
+        if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:
+            msg.json = _Utils.string_to_stream(json_string,msg.buffer)
         else:
             msg.json = json_string
 

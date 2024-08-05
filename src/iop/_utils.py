@@ -195,7 +195,7 @@ class _Utils():
                 path = os.path.dirname(filename)
             else:
                 raise ValueError("The filename must be absolute")
-            # add the path to the system path
+            # add the path to the system path to the beginning
             sys.path.append(path)
         import settings
         # get the path of the settings file
@@ -360,17 +360,17 @@ class _Utils():
         return data
 
     @staticmethod
-    def stream_to_string(stream)-> str:
+    def stream_to_string(stream,buffer=1000000)-> str:
         string = ""
         stream.Rewind()
         while not stream.AtEnd:
-            string += stream.Read(4092)
+            string += stream.Read(buffer)
         return string
     
     @staticmethod
-    def string_to_stream(string:str):
+    def string_to_stream(string:str,buffer=1000000):
         stream = iris.cls('%Stream.GlobalCharacter')._New()
-        n = 4092
+        n = buffer
         chunks = [string[i:i+n] for i in range(0, len(string), n)]
         for chunk in chunks:
             stream.Write(chunk)
