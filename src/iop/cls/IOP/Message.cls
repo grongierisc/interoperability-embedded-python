@@ -5,7 +5,7 @@
 Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor)
 {
 
-Parameter BUFFER = 64000;
+Parameter BUFFER = 1000000;
 
 Property buffer As %String(MAXLEN = "") [ Calculated, Transient ];
 
@@ -15,9 +15,9 @@ Property jsonObject As %DynamicObject(XMLPROJECTION = "None");
 
 Property json As %String(MAXLEN = "");
 
-Property jsonStream As %Stream.GlobalCharacter [ Internal, ReadOnly ];
+Property jsonStream As %Stream.GlobalCharacter [ Internal, Private ];
 
-Property jsonString As %String(MAXLEN = 64000) [ Internal, ReadOnly ];
+Property jsonString As %String(MAXLEN = 1000000) [ Internal, Private ];
 
 Property jstr As %Stream.GlobalCharacter [ Internal, Private ];
 
@@ -80,13 +80,25 @@ Method jsonSet(pInput) As %Status
 				, :$$$NULLOREF)
 	Quit:tOldStream=pInput $$$OK
 	Do:..type'="" Clear()  Set i%type=""
-	If $ISOBJECT(pInput) && pInput.%Extends("%Stream.GlobalCharacter") { 
-		Set r%jsonStream=pInput, i%type="Stream" 
+
+	If $ISOBJECT(pInput) {
+		if pInput.%Extends("%Stream.GlobalCharacter") { 
+			Set ..jsonStream=pInput, i%type="Stream" 
+		}
+		else { 
+			Throw ##class(%Exception.General).%New("Invalid input type, must be a %Stream.GlobalCharacter or a %String")
+		}
 	}
-	If $IsObject(pInput) && 'pInput.%Extends("%Stream.GlobalCharacter") {  
-		Throw ##class(%Exception.General).%New("Invalid input type, must be a %Stream.GlobalCharacter")
-	}
-	Else {  
+	Else  {
+		if $LENGTH(pInput)>..#BUFFER { 
+			// write in a stream
+			Set stream = ##class(%Stream.GlobalCharacter).%New()
+			for i=1:..#BUFFER:$LENGTH(pInput) {
+				Set sc = stream.Write($EXTRACT(pInput,i,(i+..#BUFFER)))
+				Quit:$$$ISERR(sc)
+			}
+			Set ..jsonStream=stream, i%type="Stream"
+		}
 		Set i%jsonString=pInput, i%type="String" 
 	}
 	Quit $$$OK

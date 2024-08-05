@@ -3,11 +3,23 @@ Class IOP.Test Extends %Persistent
 {
 
 /// Description
-ClassMethod TEST() As %Status
+ClassMethod TestJsonStringMessage() As %Status
 {
 	set msg = ##class(IOP.Message).%New()
 	set msg.classname = "IOP.Message"
 	set msg.json = "{""name"":""John""}"
+	set tset = msg.json
+	set tst = msg.jstr
+	QUIT $$$OK
+}
+
+ClassMethod TestJsonStreamMessage() As %Status
+{
+	set msg = ##class(IOP.Message).%New()
+	set msg.classname = "IOP.Message"
+	set stream = ##class(%Stream.GlobalCharacter).%New()
+	set sc = stream.Write("{""name"":""John""}")
+	set msg.json = stream
 	set tset = msg.json
 	set tst = msg.jstr
 	QUIT $$$OK
