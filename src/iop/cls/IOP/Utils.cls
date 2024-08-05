@@ -120,7 +120,7 @@ ClassMethod GetRemoteClassInfo(
 				set onePath = $p(extraClasspaths,"|",i)
 				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" do sys.path.insert(0, onePath)
+				if onePath'="" && '$FIND(sys.path,onePath) do sys.path.insert(0, onePath)
 			}
 		}
 		;

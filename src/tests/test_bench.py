@@ -11,10 +11,8 @@ class TestBenchIoP:
     #before all tests
     @classmethod
     def setup_class(cls):
-        # Add the 'bench' to sys.path
-        sys.path.insert(0,os.path.abspath('src/tests/bench'))
         # migrate the production
-        _Utils.migrate()
+        _Utils.migrate('src/tests/bench')
         # stop all productions
         _Director.stop_production()
         # set the default production
@@ -45,5 +43,4 @@ class TestBenchIoP:
         _Director.stop_production()
         # set the default production
         _Director.set_default_production('test')
-        # Remove the 'bench' from sys.path
-        sys.path.remove(os.path.abspath('src/tests/bench'))
+

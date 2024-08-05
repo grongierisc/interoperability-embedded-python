@@ -1,9 +1,11 @@
 import os
+import sys
 import ast
 import iris
 import inspect
 import xmltodict
 import pkg_resources
+import importlib
 
 class _Utils():
     @staticmethod
@@ -186,20 +188,17 @@ class _Utils():
                 * key: the name of the production
                 * value: a dictionary containing the settings for the production
         """
-        # try to load the settings file
-        if filename:
-            import sys
-            path = None
-            # check if the filename is absolute or relative
-            if os.path.isabs(filename):
-                path = os.path.dirname(filename)
+        try:
+            # if the filename is not provided
+            if filename is None:
+                settings = importlib.import_module('settings')
             else:
-                raise ValueError("The filename must be absolute")
-            # add the path to the system path to the beginning
-            sys.path.append(path)
-        import settings
-        # get the path of the settings file
-        path = os.path.dirname(inspect.getfile(settings))
+                # import the settings file
+                settings = _Utils.import_module_from_path('settings',filename)
+            # get the path of the settings file
+            path = os.path.dirname(inspect.getfile(settings))
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError("settings.py not found") from e
         try:
             # set the classes settings
             _Utils.set_classes_settings(settings.CLASSES,path)
@@ -211,7 +210,22 @@ class _Utils():
         except AttributeError:
             print("No productions to register")
 
-
+    @staticmethod
+    def import_module_from_path(module_name, file_path):
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
+        # check is a file is persent at the path
+        if not os.path.isfile(file_path):
+            # append settings.py to the path
+            file_path = os.path.join(file_path,'settings.py')
+        
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        if spec is None:
+            raise ImportError(f"Cannot find module named {module_name} at {file_path}")
+        
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        return module
 
     @staticmethod
     def set_classes_settings(class_items,root_path=None):
