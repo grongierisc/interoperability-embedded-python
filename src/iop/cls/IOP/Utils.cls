@@ -104,12 +104,10 @@ ClassMethod GetRemoteClassInfo(
 	pModule As %String,
 	pClasspaths As %String,
 	ByRef pClassDetails,
-	ByRef pRemoteSettings) As %Status [ Internal, Private ]
+	ByRef pRemoteSettings) As %Status [ Internal ]
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
-	#dim tGateway As %External.Gateway
-	#dim tGatewayProxy As %Net.Remote.Object
 	
 	Try {
 		if pClasspaths '="" {
@@ -120,14 +118,19 @@ ClassMethod GetRemoteClassInfo(
 				set onePath = $p(extraClasspaths,"|",i)
 				set onePath = ##class(%File).NormalizeDirectory(onePath)
 				if onePath?1"$$IRISHOME"1P.E set onePath = $e($system.Util.InstallDirectory(),1,*-1)_$e(onePath,11,*)
-				if onePath'="" && '$FIND(sys.path,onePath) do sys.path.insert(0, onePath)
+				if onePath'="" do ##class(IOP.Common).SetPythonPath(onePath)
 			}
 		}
-		;
 
 		set importlib = ##class(%SYS.Python).Import("importlib")
 		set builtins = ##class(%SYS.Python).Import("builtins")
-		set module = importlib."import_module"(pModule)
+		set sys = ##class(%SYS.Python).Import("sys")
+		// Load the module form a specific path
+        set spec = importlib.util."spec_from_file_location"(pModule, onePath_pModule_".py")
+        set module = importlib.util."module_from_spec"(spec)
+        do sys.modules."__setitem__"(pModule, module)
+        do spec.loader."exec_module"(module)
+		// Get the class
 		set class = builtins.getattr(module, pRemoteClassname)
 		set tClass = class."__new__"(class)
 

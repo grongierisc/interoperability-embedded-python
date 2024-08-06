@@ -4,15 +4,15 @@ from iop._utils import _Utils
 import timeit
 import os
 
-import sys
-
 class TestBenchIoP:
 
     #before all tests
     @classmethod
     def setup_class(cls):
+        # get abspath of 'src/tests/bench'
+        path = os.path.abspath('src/tests/bench/settings.py')
         # migrate the production
-        _Utils.migrate('src/tests/bench')
+        _Utils.migrate(path)
         # stop all productions
         _Director.stop_production()
         # set the default production
@@ -43,4 +43,3 @@ class TestBenchIoP:
         _Director.stop_production()
         # set the default production
         _Director.set_default_production('test')
-

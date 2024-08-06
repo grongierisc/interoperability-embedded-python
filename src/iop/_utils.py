@@ -176,7 +176,7 @@ class _Utils():
         return module
 
     @staticmethod
-    def migrate(filename=None,root_path=None):
+    def migrate(filename=None):
         """ 
         Read the settings.py file and register all the components
         settings.py file has two dictionaries:
@@ -188,17 +188,23 @@ class _Utils():
                 * key: the name of the production
                 * value: a dictionary containing the settings for the production
         """
-        try:
-            # if the filename is not provided
-            if filename is None:
-                settings = importlib.import_module('settings')
+        path = None
+        # try to load the settings file
+        if filename:
+            # check if the filename is absolute or relative
+            if os.path.isabs(filename):
+                path = os.path.dirname(filename)
             else:
-                # import the settings file
-                settings = _Utils.import_module_from_path('settings',filename)
-            # get the path of the settings file
-            path = os.path.dirname(inspect.getfile(settings))
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError("settings.py not found") from e
+                raise ValueError("The filename must be absolute")
+            # add the path to the system path to the beginning
+            sys.path.insert(0,os.path.normpath(path))
+            # import settings from the specified file
+            settings = _Utils.import_module_from_path('settings',filename)
+        else:
+            # import settings from the settings module
+            import settings
+        # get the path of the settings file
+        path = os.path.dirname(inspect.getfile(settings))
         try:
             # set the classes settings
             _Utils.set_classes_settings(settings.CLASSES,path)
@@ -209,15 +215,17 @@ class _Utils():
             _Utils.set_productions_settings(settings.PRODUCTIONS,path)
         except AttributeError:
             print("No productions to register")
+        try:
+            # remove the path from the system path (with or without the trailing slash)
+            sys.path.remove(path+'/')
+            sys.path.remove(path)
+        except ValueError:
+            pass
 
     @staticmethod
     def import_module_from_path(module_name, file_path):
         if not os.path.isabs(file_path):
-            file_path = os.path.abspath(file_path)
-        # check is a file is persent at the path
-        if not os.path.isfile(file_path):
-            # append settings.py to the path
-            file_path = os.path.join(file_path,'settings.py')
+            raise ValueError("The file path must be absolute")
         
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         if spec is None:
@@ -225,6 +233,7 @@ class _Utils():
         
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
+        spec.loader.exec_module(module)
         return module
 
     @staticmethod

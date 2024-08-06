@@ -29,6 +29,23 @@ def test_setup():
     except RuntimeError as e:
         assert False
 
+def test_migrate_then_register():
+    # get the path of the current file
+    path = os.path.dirname(os.path.realpath(__file__))
+    # get abspath of 'src/tests/bench'
+    path_migrate = os.path.join(path, 'bench/settings.py')
+    # migrate the production
+    _Utils.migrate(path_migrate)
+    # register the component
+    module = 'bo'
+    classname = 'EmailOperation'
+    # join the registerFolder to the path
+    path = os.path.join(path, 'registerFilesIop')
+    overwrite = 1
+    iris_classname = 'UnitTest.EmailOperation'
+    result = _Utils.register_component(module, classname, path, overwrite, iris_classname)
+
+
 def test_register_component():
     module = 'bo'
     classname = 'EmailOperation'
@@ -253,6 +270,6 @@ def test_migrate_only_classes():
     # add mock_settings to sys.modules and __file__ to mock_settings
     with patch.dict('sys.modules', {'settings': mock_settings}):
         # Act
-        _Utils.migrate('/path/to/settings/settings.py')
+        _Utils.migrate()
         # Assert
         assert True # if no exception is raised, the test is ok

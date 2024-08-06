@@ -237,6 +237,6 @@ def test_migrate_only_classes():
     # add mock_settings to sys.modules and __file__ to mock_settings
     with patch.dict('sys.modules', {'settings': mock_settings}):
         # Act
-        _Utils.migrate('/path/to/settings/settings.py')
+        _Utils.migrate()
         # Assert
         assert True # if no exception is raised, the test is ok
