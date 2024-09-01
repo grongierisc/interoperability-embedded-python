@@ -258,7 +258,7 @@ class _Director():
                 message = iris.cls("IOP.Message")._New()
                 message.classname = classname
                 if body:
-                    message.json = _Utils.string_to_stream(body)
+                    message.json = body
                 else:
                     message.json = _Utils.string_to_stream("{}")
         # serialize the message

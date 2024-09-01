@@ -17,3 +17,4 @@ waitISC.log
 .env
 
 prof
+src/tests/bench/result.txt

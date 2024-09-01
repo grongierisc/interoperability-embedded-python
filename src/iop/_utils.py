@@ -216,8 +216,6 @@ class _Utils():
         except AttributeError:
             print("No productions to register")
         try:
-            # remove the path from the system path (with or without the trailing slash)
-            sys.path.remove(path+'/')
             sys.path.remove(path)
         except ValueError:
             pass

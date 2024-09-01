@@ -66,6 +66,7 @@ This proof of concept aims to show how the **iris interoperability framework** c
   - [7.11. version](#711-version)
   - [7.12. log](#712-log)
 - [8. Credits](#8-credits)
+- [9. Benchmarks](#9-benchmarks)
 
 ## 1.2. Example
 
@@ -1334,3 +1335,20 @@ output :
 Most of the code came from PEX for Python by Mo Cheng and Summer Gerry.
 
 Works only on IRIS 2021.2 +
+
+# 9. Benchmarks
+
+8 senarios with thoses parameters :
+- 100 messages
+- body : simple string `test`
+
+| Scenario | Time (s) |
+| --- | --- |
+| Python BP to Python BO with Iris Message | 0.739 |
+| Python BP to Python BO with Python Message | 0.732 |
+| ObjetScript BP to Python BO with Iris Message | 0.594 |
+| ObjetScript BP to Python BO with Python Message | 0.642 |
+| Python BP to ObjetScript BO with Iris Message | 0.642 |
+| Python BP to ObjetScript BO with Python Message | 0.675 |
+| ObjetScript BP to ObjetScript BO with Iris Message | 0.159 |
+| ObjetScript BP to ObjetScript BO with Python Message | 0.182 |
