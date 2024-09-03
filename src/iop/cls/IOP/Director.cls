@@ -9,6 +9,8 @@ Class IOP.Director [ Inheritance = right, ProcedureBlock, System = 4 ]
 
 ClassMethod dispatchCreateBusinessService(pTargetDispatchName As %String) As Ens.BusinessService
 {
+	// Hack to prevent job to be registered in the production
+	do ##class(Ens.Job).UnRegister(pTargetDispatchName,$JOB)
 	set tSC = ##class(Ens.Director).CreateBusinessService(pTargetDispatchName,.service)
 	if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
 	quit service
