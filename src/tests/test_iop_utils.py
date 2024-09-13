@@ -119,6 +119,17 @@ def test_set_classes_settings_by_classe():
     CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
     _Utils.set_classes_settings(CLASSES)
 
+def test_set_classes_settings_by_classe_with_sub_module():
+    # set python path to the registerFilesIop folder
+    path = os.path.dirname(os.path.realpath(__file__))
+
+    sys.path.append(path)
+
+    from registerFilesIop.bo import EmailOperation
+    CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
+    _Utils.set_classes_settings(CLASSES)
+    print(CLASSES)
+
 def test_set_classes_settings_by_class_with_rootpath():
     # set python path to the registerFilesIop folder
     path = os.path.dirname(os.path.realpath(__file__))

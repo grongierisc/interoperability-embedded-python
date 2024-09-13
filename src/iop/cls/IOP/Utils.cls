@@ -125,15 +125,23 @@ ClassMethod GetRemoteClassInfo(
 		set importlib = ##class(%SYS.Python).Import("importlib")
 		set builtins = ##class(%SYS.Python).Import("builtins")
 		set sys = ##class(%SYS.Python).Import("sys")
+		set os = ##class(%SYS.Python).Import("os")
 		// Load the module form a specific path
-        set spec = importlib.util."spec_from_file_location"(pModule, onePath_pModule_".py")
-        set module = importlib.util."module_from_spec"(spec)
-        do sys.modules."__setitem__"(pModule, module)
-        do spec.loader."exec_module"(module)
+		// Guess the full path to the module
+		set path = ..GuessFullPath(pModule, onePath)
+		Try {
+			set spec = importlib.util."spec_from_file_location"(pModule, path)
+			set module = importlib.util."module_from_spec"(spec)
+			do sys.modules."__setitem__"(pModule, module)
+			do spec.loader."exec_module"(module)
+		}
+		Catch ex {
+			set module = importlib."import_module"(pModule)
+		}
+
 		// Get the class
 		set class = builtins.getattr(module, pRemoteClassname)
 		set tClass = class."__new__"(class)
-
 
 		If $IsObject(tClass) {
 			#; List of information about the class as a whole - $lb(SuperClass, Description, InfoURL, IconURL, Adapter)
@@ -152,13 +160,21 @@ ClassMethod GetRemoteClassInfo(
 	Quit tSC
 }
 
-/// Set tConnectionSettings("Classpaths") = pCLASSPATHS
-/// Set tConnectionSettings("Module") = pModule
-/// Set tConnectionSettings("Classname") = pRemoteClassname
-/// Set:(""=pProxyClassname) pProxyClassname = pRemoteClassname
-/// 
-/// Set tSC = ..GenerateProxyClass(pProxyClassname,.tConnectionSettings,tClassDetails,tRemoteSettings,pOverwrite)
-/// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
+ClassMethod GuessFullPath(
+	module As %String,
+	path As %String) As %String
+{
+    If $Find(module, ".") {
+        Set module = $Piece(module, ".", *)
+    }
+    If $Find(path, module) {
+        Set path = $Piece(path, module, 1)
+    }
+    // append the module to the path
+    Set path = path _ module _ ".py"
+    Return path
+}
+
 ClassMethod GenerateProxyClass(
 	pClassname As %String,
 	ByRef pConnectionSettings,
