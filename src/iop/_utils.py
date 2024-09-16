@@ -51,8 +51,9 @@ class _Utils():
         :return: The return value is a string.
         """
         path = os.path.abspath(os.path.normpath(path))
+        fullpath = _Utils.guess_path(module,path)
         try:
-            iris.cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,overwrite,iris_classname)
+            iris.cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,fullpath,overwrite,iris_classname)
         except RuntimeError as e:
             # New message error : Make sure the iop package is installed in iris 
             raise RuntimeError("Iris class : IOP.Utils not found. Make sure the iop package is installed in iris eg: iop --init.") from e
@@ -396,3 +397,25 @@ class _Utils():
         for chunk in chunks:
             stream.Write(chunk)
         return stream
+    
+    @staticmethod
+    def guess_path(module,path):
+        if "." in module:
+            if module.startswith("."):
+                # count the number of dots at the beginning of the module name
+                dots = 0
+                for c in module:
+                    if c == ".":
+                        dots += 1
+                    else:
+                        break
+                # remove the dots from the beginning of the module name
+                module = module[dots:]
+                # go to the parent directory dots times
+                for i in range(dots)-1:
+                    path = os.path.dirname(path)
+                return os.path.join(path, module.replace(".", os.sep) + ".py")
+            else:
+                return os.path.join(path, module.replace(".", os.sep) + ".py")
+        else:
+            return os.path.join(path, module + ".py")

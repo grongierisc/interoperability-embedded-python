@@ -43,7 +43,7 @@ def test_migrate_then_register():
     path = os.path.join(path, 'registerFilesIop')
     overwrite = 1
     iris_classname = 'UnitTest.EmailOperation'
-    result = _Utils.register_component(module, classname, path, overwrite, iris_classname)
+    _Utils.register_component(module, classname, path, overwrite, iris_classname)
 
 
 def test_register_component():
@@ -117,7 +117,7 @@ def test_set_classes_settings_by_classe():
 
     from bo import EmailOperation
     CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
-    _Utils.set_classes_settings(CLASSES)
+    _Utils.set_classes_settings(CLASSES,path)
 
 def test_set_classes_settings_by_classe_with_sub_module():
     # set python path to the registerFilesIop folder
@@ -127,8 +127,7 @@ def test_set_classes_settings_by_classe_with_sub_module():
 
     from registerFilesIop.bo import EmailOperation
     CLASSES = { 'UnitTest.Package.EmailOperation': EmailOperation }
-    _Utils.set_classes_settings(CLASSES)
-    print(CLASSES)
+    _Utils.set_classes_settings(CLASSES,path)
 
 def test_set_classes_settings_by_class_with_rootpath():
     # set python path to the registerFilesIop folder

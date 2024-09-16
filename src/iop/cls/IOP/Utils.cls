@@ -11,11 +11,12 @@ ClassMethod dispatchRegisterComponent(
 	pModule As %String,
 	pRemoteClassname As %String,
 	pCLASSPATHS As %String = "",
+	pFullpath As %String = "",
 	pOverwrite As %Boolean = 0,
 	pProxyClassname As %String = "") As %Status
 {
 	set tSc = $$$OK
-	$$$ThrowOnError(##class(IOP.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pOverwrite , pProxyClassname))
+	$$$ThrowOnError(##class(IOP.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pFullpath, pOverwrite , pProxyClassname))
 	return tSc
 }
 
@@ -24,6 +25,7 @@ ClassMethod RegisterComponent(
 	pModule As %String,
 	pRemoteClassname As %String,
 	pCLASSPATHS As %String = "",
+	pFullpath As %String = "",
 	pOverwrite As %Boolean = 0,
 	pProxyClassname As %String = "") As %Status
 {
@@ -38,7 +40,7 @@ ClassMethod RegisterComponent(
 		
 	Try {
 
-		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,.tClassDetails,.tRemoteSettings))
+		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,pFullpath,.tClassDetails,.tRemoteSettings))
 
 		Set tConnectionSettings("Classpaths") = pCLASSPATHS
 		Set tConnectionSettings("Module") = pModule
@@ -103,6 +105,7 @@ ClassMethod GetRemoteClassInfo(
 	pRemoteClassname As %String,
 	pModule As %String,
 	pClasspaths As %String,
+	pFullpath As %String = "",
 	ByRef pClassDetails,
 	ByRef pRemoteSettings) As %Status [ Internal ]
 {
@@ -124,18 +127,15 @@ ClassMethod GetRemoteClassInfo(
 
 		set importlib = ##class(%SYS.Python).Import("importlib")
 		set builtins = ##class(%SYS.Python).Import("builtins")
-		set sys = ##class(%SYS.Python).Import("sys")
-		set os = ##class(%SYS.Python).Import("os")
 		// Load the module form a specific path
-		// Guess the full path to the module
-		set path = ..GuessFullPath(pModule, onePath)
 		Try {
-			set spec = importlib.util."spec_from_file_location"(pModule, path)
+			set spec = importlib.util."spec_from_file_location"(pModule, pFullpath)
 			set module = importlib.util."module_from_spec"(spec)
 			do sys.modules."__setitem__"(pModule, module)
 			do spec.loader."exec_module"(module)
 		}
 		Catch ex {
+			// If the module is not found, try to import the frist one found
 			set module = importlib."import_module"(pModule)
 		}
 
@@ -158,21 +158,6 @@ ClassMethod GetRemoteClassInfo(
 	}
 	
 	Quit tSC
-}
-
-ClassMethod GuessFullPath(
-	module As %String,
-	path As %String) As %String
-{
-    If $Find(module, ".") {
-        Set module = $Piece(module, ".", *)
-    }
-    If $Find(path, module) {
-        Set path = $Piece(path, module, 1)
-    }
-    // append the module to the path
-    Set path = path _ module _ ".py"
-    Return path
 }
 
 ClassMethod GenerateProxyClass(
