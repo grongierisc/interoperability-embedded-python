@@ -1,0 +1,14 @@
+site_name: IoP (Interoperability On Python)
+site_description: A Python-first approach to build Interoperability solutions on IRIS and Health Connect
+site_author: grongier@intersystems.com 
+site_url: https://grongierisc.github.io/interoperability-embedded-python/
+docs_dir: docs
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - First Steps: getting-started/first-steps.md
+  - Example: example.md
+  - Command Line: command-line.md
+
+theme: readthedocs
