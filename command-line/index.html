@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/command-line/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Command Line - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Command Line";
+        var mkdocs_page_input_path = "command-line.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/command-line/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../example/">Example</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Command Line</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#help">help</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#default">default</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#lists">lists</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#start">start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#kill">kill</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#stop">stop</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#restart">restart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#migrate">migrate</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#export">export</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#status">status</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#version">version</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#log">log</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Command Line</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="command-line">Command line</h1>
+<p>Since version 2.3.1, you can use the command line to register your components and productions.</p>
+<p>To use it, you have to use the following command :</p>
+<pre><code class="language-bash">iop 
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+optional arguments:
+  -h, --help            display help and default production name
+  -d DEFAULT, --default DEFAULT
+                        set the default production
+  -l, --lists           list productions
+  -s START, --start START
+                        start a production
+  -k, --kill            kill a production (force stop)
+  -S, --stop            stop a production
+  -r, --restart         restart a production
+  -M MIGRATE, --migrate MIGRATE
+                        migrate production and classes with settings file
+  -e EXPORT, --export EXPORT
+                        export a production
+  -x, --status          status a production
+  -v, --version         display version
+  -L, --log             display log
+
+default production: PEX.Production
+</code></pre>
+<h2 id="help">help</h2>
+<p>The help command display the help and the default production name.</p>
+<pre><code class="language-bash">iop -h
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+...
+default production: PEX.Production
+</code></pre>
+<h2 id="default">default</h2>
+<p>The default command set the default production.</p>
+<p>With no argument, it display the default production.</p>
+<pre><code class="language-bash">iop -d
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">default production: PEX.Production
+</code></pre>
+<p>With an argument, it set the default production.</p>
+<pre><code class="language-bash">iop -d PEX.Production
+</code></pre>
+<h2 id="lists">lists</h2>
+<p>The lists command list productions.</p>
+<pre><code class="language-bash">iop -l
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">{
+    &quot;PEX.Production&quot;: {
+        &quot;Status&quot;: &quot;Stopped&quot;,
+        &quot;LastStartTime&quot;: &quot;2023-05-31 11:13:51.000&quot;,
+        &quot;LastStopTime&quot;: &quot;2023-05-31 11:13:54.153&quot;,
+        &quot;AutoStart&quot;: 0
+    }
+}
+</code></pre>
+<h2 id="start">start</h2>
+<p>The start command start a production.</p>
+<p>To exit the command, you have to press CTRL+C.</p>
+<pre><code class="language-bash">iop -s PEX.Production
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+...
+</code></pre>
+<h2 id="kill">kill</h2>
+<p>The kill command kill a production (force stop).</p>
+<p>Kill command is the same as stop command but with a force stop.</p>
+<p>Kill command doesn't take an argument because only one production can be running.</p>
+<pre><code class="language-bash">iop -k 
+</code></pre>
+<h2 id="stop">stop</h2>
+<p>The stop command stop a production.</p>
+<p>Stop command doesn't take an argument because only one production can be running.</p>
+<pre><code class="language-bash">iop -S 
+</code></pre>
+<h2 id="restart">restart</h2>
+<p>The restart command restart a production.</p>
+<p>Restart command doesn't take an argument because only one production can be running.</p>
+<pre><code class="language-bash">iop -r 
+</code></pre>
+<h2 id="migrate">migrate</h2>
+<p>The migrate command migrate a production and classes with settings file.</p>
+<p>Migrate command must take the absolute path of the settings file.</p>
+<p>Settings file must be in the same folder as the python code.</p>
+<pre><code class="language-bash">iop -M /tmp/settings.py
+</code></pre>
+<h2 id="export">export</h2>
+<p>The export command export a production.</p>
+<p>If no argument is given, the export command export the default production.</p>
+<pre><code class="language-bash">iop -e
+</code></pre>
+<p>If an argument is given, the export command export the production given in argument.</p>
+<pre><code class="language-bash">iop -e PEX.Production
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">{
+    &quot;Production&quot;: {
+        &quot;@Name&quot;: &quot;PEX.Production&quot;,
+        &quot;@TestingEnabled&quot;: &quot;true&quot;,
+        &quot;@LogGeneralTraceEvents&quot;: &quot;false&quot;,
+        &quot;Description&quot;: &quot;&quot;,
+        &quot;ActorPoolSize&quot;: &quot;2&quot;,
+        &quot;Item&quot;: [
+            {
+                &quot;@Name&quot;: &quot;Python.FileOperation&quot;,
+                &quot;@Category&quot;: &quot;&quot;,
+                &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                &quot;@PoolSize&quot;: &quot;1&quot;,
+                &quot;@Enabled&quot;: &quot;true&quot;,
+                &quot;@Foreground&quot;: &quot;false&quot;,
+                &quot;@Comment&quot;: &quot;&quot;,
+                &quot;@LogTraceEvents&quot;: &quot;true&quot;,
+                &quot;@Schedule&quot;: &quot;&quot;,
+                &quot;Setting&quot;: [
+                    {
+                        &quot;@Target&quot;: &quot;Adapter&quot;,
+                        &quot;@Name&quot;: &quot;Charset&quot;,
+                        &quot;#text&quot;: &quot;utf-8&quot;
+                    },
+                    {
+                        &quot;@Target&quot;: &quot;Adapter&quot;,
+                        &quot;@Name&quot;: &quot;FilePath&quot;,
+                        &quot;#text&quot;: &quot;/irisdev/app/output/&quot;
+                    },
+                    {
+                        &quot;@Target&quot;: &quot;Host&quot;,
+                        &quot;@Name&quot;: &quot;%settings&quot;,
+                        &quot;#text&quot;: &quot;path=/irisdev/app/output/&quot;
+                    }
+                ]
+            }
+        ]
+    }
+}
+</code></pre>
+<h2 id="status">status</h2>
+<p>The status command status a production.</p>
+<p>Status command doesn't take an argument because only one production can be running.</p>
+<pre><code class="language-bash">iop -x 
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">{
+    &quot;Production&quot;: &quot;PEX.Production&quot;,
+    &quot;Status&quot;: &quot;stopped&quot;
+}
+</code></pre>
+<p>Status can be :
+- stopped
+- running
+- suspended
+- troubled</p>
+<h2 id="version">version</h2>
+<p>The version command display the version.</p>
+<pre><code class="language-bash">iop -v
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">2.3.0
+</code></pre>
+<h2 id="log">log</h2>
+<p>The log command display the log.</p>
+<p>To exit the command, you have to press CTRL+C.</p>
+<pre><code class="language-bash">iop -L
+</code></pre>
+<p>output :</p>
+<pre><code class="language-bash">2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+...
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../example/" class="btn btn-neutral float-left" title="Example"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../example/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
