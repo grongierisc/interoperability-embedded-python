@@ -137,3 +137,5 @@ This command will create the production in IRIS and add the `MyBo` class to it.
 ### Run the production and test it
 
 Now that the production is created, we can run it and test it.
+
+TODO add schema
