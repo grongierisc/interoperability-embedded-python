@@ -40,7 +40,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        iris_object = iris.cls("Grongier.PEX.Director").dispatchCreateBusinessService(target)
+        iris_object = iris.cls("IOP.Director").dispatchCreateBusinessService(target)
         return iris_object
 
     @staticmethod
@@ -54,7 +54,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        iris_object = iris.cls("Grongier.PEX.Director").dispatchCreateBusinessService(target)
+        iris_object = iris.cls("IOP.Director").dispatchCreateBusinessService(target)
         return iris_object.GetClass()
     
     ### List of function to manage the production
@@ -112,12 +112,12 @@ class _Director():
     ### list production
     @staticmethod
     def list_productions():
-        return iris.cls('Grongier.PEX.Director').dispatchListProductions()
+        return iris.cls('IOP.Director').dispatchListProductions()
     
     ### status production
     @staticmethod
     def status_production():
-        dikt = iris.cls('Grongier.PEX.Director').StatusProduction()
+        dikt = iris.cls('IOP.Director').StatusProduction()
         if dikt['Production'] is None or dikt['Production'] == '':
             dikt['Production'] = _Director.get_default_production()
         return dikt

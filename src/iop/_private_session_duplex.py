@@ -31,7 +31,8 @@ class _PrivateSessionDuplex(_BusinessHost):
         """ For internal use only. """
         self.iris_handle = handle_current
         if type(handle_partner).__module__.find('iris') == 0:
-            if handle_partner._IsA("Grongier.PEX.InboundAdapter") or handle_partner._IsA("Grongier.PEX.OutboundAdapter"):
+            if (handle_partner._IsA("Grongier.PEX.InboundAdapter") or handle_partner._IsA("Grongier.PEX.OutboundAdapter")
+                or handle_partner._IsA("IOP.InboundAdapter") or handle_partner._IsA("IOP.OutboundAdapter")):
                 module = importlib.import_module(handle_partner.GetModule())
                 handle_partner = getattr(module, handle_partner.GetClassname())()
         self.Adapter = self.adapter = handle_partner
