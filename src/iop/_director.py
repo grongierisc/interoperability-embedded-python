@@ -15,6 +15,13 @@ class _Director():
     Instead these business services are created by a custom application by calling the Director.CreateBusinessService() method.
     """
 
+    _bs = {}
+
+    def get_business_service(self,target):
+        if target not in self._bs or self._bs[target] is None:
+            self._bs[target] = _Director.create_python_business_service(target)
+        return self._bs[target]
+
     @staticmethod
     def CreateBusinessService(target):
         """ DEPRECATED : use create_business_service
