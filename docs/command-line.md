@@ -149,6 +149,8 @@ Settings file must be in the same folder as the python code.
 iop -M /tmp/settings.py
 ```
 
+More details about the settings file can be found [here](getting-started/register-component.md).
+
 ## export
 
 The export command export a production.
