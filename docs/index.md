@@ -1,4 +1,4 @@
-IoP (Interoperability On Python)
+# IoP (Interoperability On Python)
 
 [![PyPI - Status](https://img.shields.io/pypi/status/iris-pex-embedded-python)](https://pypi.org/project/iris-pex-embedded-python/)
 [![PyPI](https://img.shields.io/pypi/v/iris-pex-embedded-python)](https://pypi.org/project/iris-pex-embedded-python/)
@@ -6,4 +6,30 @@ IoP (Interoperability On Python)
 [![PyPI - License](https://img.shields.io/pypi/l/iris-pex-embedded-python)](https://pypi.org/project/iris-pex-embedded-python/)
 ![GitHub last commit](https://img.shields.io/github/last-commit/grongierisc/interoperability-embedded-python)
 
-This proof of concept aims to show how the **iris interoperability framework** can be use with **embedded python**.
+Welcome to the **Interoperability On Python (IoP)** proof of concept! This project demonstrates how the **IRIS Interoperability Framework** can be utilized with a **Python-first approach**.
+
+## Example
+
+Here's a simple example of how a Business Operation can be implemented in Python:
+
+```python
+from iop import BusinessOperation
+
+class MyBo(BusinessOperation):
+    def on_message(self, request):
+        self.log_info("Hello World")
+```
+
+## Installation
+
+To start using this proof of concept, install it using pip:
+
+```bash
+pip install iris-pex-embedded-python
+```
+
+## Getting Started
+
+If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation.md). Then, follow the [first steps](getting-started/first-steps.md) to create your first Business Operation.
+
+Happy coding!

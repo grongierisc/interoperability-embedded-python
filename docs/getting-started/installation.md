@@ -8,8 +8,7 @@ Before you begin, ensure you have the following installed:
 
 - Python 3.6 or higher
 - IRIS 2021.1 or higher
-- Embedded Python configured in IRIS
-  - [Configuring Embedded Python](TODO: Add link to the guide)
+- [Configuring Embedded Python](TODO: Add link to the guide)
 
 ## With PyPi
 
