@@ -15,5 +15,8 @@ nav:
   - Reference:
     - Examples: example.md
     - Useful Links: useful-links.md
+  - About:
+    - Credits: credits.md
+    - Benchmarks: benchmarks.md
 
 theme: readthedocs
