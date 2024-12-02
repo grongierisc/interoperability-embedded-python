@@ -41,6 +41,14 @@
       <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Getting Started</span></p>
@@ -49,14 +57,29 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="getting-started/first-steps/">First Steps</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="getting-started/register-component/">Register Component</a>
+                  </li>
               </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="example/">Example</a>
-                </li>
+                  <li class="toctree-l1"><a class="reference internal" href="command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="python-api/">Python API</a>
+                  </li>
               </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="command-line/">Command Line</a>
-                </li>
+                  <li class="toctree-l1"><a class="reference internal" href="example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="benchmarks/">Benchmarks</a>
+                  </li>
               </ul>
       </div>
     </div>
@@ -81,13 +104,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <p>IoP (Interoperability On Python)</p>
+                <h1 id="iop-interoperability-on-python">IoP (Interoperability On Python)</h1>
 <p><a href="https://pypi.org/project/iris-pex-embedded-python/"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/iris-pex-embedded-python" /></a>
 <a href="https://pypi.org/project/iris-pex-embedded-python/"><img alt="PyPI" src="https://img.shields.io/pypi/v/iris-pex-embedded-python" /></a>
 <a href="https://pypi.org/project/iris-pex-embedded-python/"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/iris-pex-embedded-python" /></a>
 <a href="https://pypi.org/project/iris-pex-embedded-python/"><img alt="PyPI - License" src="https://img.shields.io/pypi/l/iris-pex-embedded-python" /></a>
 <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/grongierisc/interoperability-embedded-python" /></p>
-<p>This proof of concept aims to show how the <strong>iris interoperability framework</strong> can be use with <strong>embedded python</strong>.</p>
+<p>Welcome to the <strong>Interoperability On Python (IoP)</strong> proof of concept! This project demonstrates how the <strong>IRIS Interoperability Framework</strong> can be utilized with a <strong>Python-first approach</strong>.</p>
+<h2 id="example">Example</h2>
+<p>Here's a simple example of how a Business Operation can be implemented in Python:</p>
+<pre><code class="language-python">from iop import BusinessOperation
+
+class MyBo(BusinessOperation):
+    def on_message(self, request):
+        self.log_info(&quot;Hello World&quot;)
+</code></pre>
+<h2 id="installation">Installation</h2>
+<p>To start using this proof of concept, install it using pip:</p>
+<pre><code class="language-bash">pip install iris-pex-embedded-python
+</code></pre>
+<h2 id="getting-started">Getting Started</h2>
+<p>If you're new to this proof of concept, begin by reading the <a href="getting-started/installation/">installation guide</a>. Then, follow the <a href="getting-started/first-steps/">first steps</a> to create your first Business Operation.</p>
+<p>Happy coding!</p>
               
             </div>
           </div><footer>
@@ -136,5 +174,5 @@
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2024-11-29 08:55:23.885823+00:00
+Build Date UTC : 2024-12-02 16:48:43.753351+00:00
 -->

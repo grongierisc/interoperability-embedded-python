@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/example/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/benchmarks/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Examples - IoP (Interoperability On Python)</title>
+    <title>Benchmarks - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Examples";
-        var mkdocs_page_input_path = "example.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/example/";
+        var mkdocs_page_name = "Benchmarks";
+        var mkdocs_page_input_path = "benchmarks.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/benchmarks/";
       </script>
     
     <!--[if lt IE 9]>
@@ -60,33 +60,19 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
-              <ul class="current">
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Examples</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#business-operation">Business Operation</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#explanation">Explanation</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#register-a-component">Register a Component</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingpy">Example of setting.py</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#registering-the-component">Registering the Component</a>
-    </li>
-        </ul>
-    </li>
-    </ul>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">About</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Benchmarks</a>
+    <ul class="current">
+    </ul>
                   </li>
               </ul>
       </div>
@@ -103,8 +89,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Reference</li>
-      <li class="breadcrumb-item active">Examples</li>
+          <li class="breadcrumb-item">About</li>
+      <li class="breadcrumb-item active">Benchmarks</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -113,64 +99,60 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="example">Example</h1>
-<p>This document provides an example of a business operation and messages in Python, along with instructions on how to register a component.</p>
-<h2 id="business-operation">Business Operation</h2>
-<p>Below is an example of a business operation in Python:</p>
-<pre><code class="language-python">from iop import BusinessOperation, Message
-from dataclasses import dataclass
-
-class MyBusinessOperation(BusinessOperation):
-
-    def on_init(self):
-        # This method is called when the component is becoming active in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        return
-
-    def on_teardown(self):
-        # This method is called when the component is becoming inactive in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_teardown() is called&quot;)
-        return
-
-    def on_message(self, message_input: 'MyRequest'):
-        # Called from service/process/operation, message is of type MyRequest with property request_string
-        self.log_info(&quot;[Python] MyBusinessOperation:on_message() is called with message: &quot; + message_input.request_string)
-        response = MyResponse(&quot;MyBusinessOperation:on_message() echos&quot;)
-        return response
-
-@dataclass
-class MyRequest(Message):
-    request_string: str = None
-
-@dataclass
-class MyResponse(Message):
-    my_string: str = None
-</code></pre>
-<h3 id="explanation">Explanation</h3>
-<ul>
-<li><strong>on_init</strong>: This method is called when the component becomes active in the production.</li>
-<li><strong>on_teardown</strong>: This method is called when the component becomes inactive in the production.</li>
-<li><strong>on_message</strong>: This method is called from service/process/operation, and it processes the incoming message of type <code>MyRequest</code>.</li>
-</ul>
-<h2 id="register-a-component">Register a Component</h2>
-<p>To register a component, create a <code>setting.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
-<h3 id="example-of-settingpy">Example of <code>setting.py</code></h3>
-<pre><code class="language-python">import bo
-
-CLASSES = {
-    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
-}
-</code></pre>
-<h3 id="registering-the-component">Registering the Component</h3>
-<p>Use the <code>iop</code> command line to register your component:</p>
-<pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
+                <h1 id="benchmarks">Benchmarks</h1>
+<p>8 senarios with thoses parameters :
+- 100 messages
+- body : simple string <code>test</code></p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Time (s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python BP to Python BO with Iris Message</td>
+<td>0.239</td>
+</tr>
+<tr>
+<td>Python BP to Python BO with Python Message</td>
+<td>0.232</td>
+</tr>
+<tr>
+<td>ObjetScript BP to Python BO with Iris Message</td>
+<td>0.294</td>
+</tr>
+<tr>
+<td>ObjetScript BP to Python BO with Python Message</td>
+<td>0.242</td>
+</tr>
+<tr>
+<td>Python BP to ObjetScript BO with Iris Message</td>
+<td>0.242</td>
+</tr>
+<tr>
+<td>Python BP to ObjetScript BO with Python Message</td>
+<td>0.275</td>
+</tr>
+<tr>
+<td>ObjetScript BP to ObjetScript BO with Iris Message</td>
+<td>0.159</td>
+</tr>
+<tr>
+<td>ObjetScript BP to ObjetScript BO with Python Message</td>
+<td>0.182</td>
+</tr>
+</tbody>
+</table>
+<p>Benchmarked can be run in the unit test with the following command :</p>
+<pre><code class="language-bash">pytest src/tests/test_bench.py
 </code></pre>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../useful-links/" class="btn btn-neutral float-right" title="Useful Links">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../credits/" class="btn btn-neutral float-left" title="Credits"><span class="icon icon-circle-arrow-left"></span> Previous</a>
     </div>
 
   <hr/>
@@ -193,10 +175,8 @@ CLASSES = {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../credits/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
-    
-      <span><a href="../useful-links/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

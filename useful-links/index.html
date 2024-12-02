@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/example/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/useful-links/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Examples - IoP (Interoperability On Python)</title>
+    <title>Useful Links - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Examples";
-        var mkdocs_page_input_path = "example.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/example/";
+        var mkdocs_page_name = "Useful Links";
+        var mkdocs_page_input_path = "useful-links.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/useful-links/";
       </script>
     
     <!--[if lt IE 9]>
@@ -61,25 +61,19 @@
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
               <ul class="current">
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Examples</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Useful Links</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#business-operation">Business Operation</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#explanation">Explanation</a>
+    <li class="toctree-l2"><a class="reference internal" href="#training">Training</a>
     </li>
-        </ul>
+    <li class="toctree-l2"><a class="reference internal" href="#templates">Templates</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#register-a-component">Register a Component</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingpy">Example of setting.py</a>
+    <li class="toctree-l2"><a class="reference internal" href="#project-links">Project Links</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#registering-the-component">Registering the Component</a>
-    </li>
-        </ul>
+    <li class="toctree-l2"><a class="reference internal" href="#demos">Demos</a>
     </li>
     </ul>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">About</span></p>
@@ -104,7 +98,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Reference</li>
-      <li class="breadcrumb-item active">Examples</li>
+      <li class="breadcrumb-item active">Useful Links</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -113,64 +107,50 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="example">Example</h1>
-<p>This document provides an example of a business operation and messages in Python, along with instructions on how to register a component.</p>
-<h2 id="business-operation">Business Operation</h2>
-<p>Below is an example of a business operation in Python:</p>
-<pre><code class="language-python">from iop import BusinessOperation, Message
-from dataclasses import dataclass
-
-class MyBusinessOperation(BusinessOperation):
-
-    def on_init(self):
-        # This method is called when the component is becoming active in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        return
-
-    def on_teardown(self):
-        # This method is called when the component is becoming inactive in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_teardown() is called&quot;)
-        return
-
-    def on_message(self, message_input: 'MyRequest'):
-        # Called from service/process/operation, message is of type MyRequest with property request_string
-        self.log_info(&quot;[Python] MyBusinessOperation:on_message() is called with message: &quot; + message_input.request_string)
-        response = MyResponse(&quot;MyBusinessOperation:on_message() echos&quot;)
-        return response
-
-@dataclass
-class MyRequest(Message):
-    request_string: str = None
-
-@dataclass
-class MyResponse(Message):
-    my_string: str = None
-</code></pre>
-<h3 id="explanation">Explanation</h3>
+                <h2 id="useful-links">Useful Links</h2>
+<p>Explore the following resources to learn more about the project and see it in action:</p>
+<h3 id="training">Training</h3>
 <ul>
-<li><strong>on_init</strong>: This method is called when the component becomes active in the production.</li>
-<li><strong>on_teardown</strong>: This method is called when the component becomes inactive in the production.</li>
-<li><strong>on_message</strong>: This method is called from service/process/operation, and it processes the incoming message of type <code>MyRequest</code>.</li>
+<li><a href="https://github.com/grongierisc/formation-template-python">Training Repository</a><br />
+  A repository to learn how to use the project.</li>
 </ul>
-<h2 id="register-a-component">Register a Component</h2>
-<p>To register a component, create a <code>setting.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
-<h3 id="example-of-settingpy">Example of <code>setting.py</code></h3>
-<pre><code class="language-python">import bo
-
-CLASSES = {
-    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
-}
-</code></pre>
-<h3 id="registering-the-component">Registering the Component</h3>
-<p>Use the <code>iop</code> command line to register your component:</p>
-<pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
-</code></pre>
+<h3 id="templates">Templates</h3>
+<ul>
+<li><a href="https://github.com/grongierisc/iris-python-interoperability-template">Project Template</a><br />
+  A template to start a new project.</li>
+</ul>
+<h3 id="project-links">Project Links</h3>
+<ul>
+<li><a href="https://pypi.org/project/iris-pex-embedded-python/">PyPI</a><br />
+  The project on PyPI.</li>
+<li><a href="https://github.com/grongierisc/iris-python-interoperability-template">GitHub</a><br />
+  The project on GitHub.</li>
+</ul>
+<h3 id="demos">Demos</h3>
+<ul>
+<li><a href="https://github.com/grongierisc/iris-flask-template">Flask Demo</a><br />
+  Demonstrates how to use the project with Flask.</li>
+<li><a href="https://github.com/grongierisc/iris-fastapi-template">FastAPI Demo</a><br />
+  Demonstrates how to use the project with FastAPI.</li>
+<li><a href="https://github.com/grongierisc/iris-django-template">Django Demo</a><br />
+  Demonstrates how to use the project with Django.</li>
+<li><a href="https://github.com/grongierisc/iris-kafka-python">Kafka Demo</a><br />
+  Example of using the project with Kafka.</li>
+<li><a href="https://github.com/grongierisc/iris-rag-demo">RAG Demo</a><br />
+  Example of using the project with RAG.</li>
+<li><a href="https://github.com/grongierisc/iris-chemicals-properties">IRIS Chemical</a><br />
+  Example of extracting chemical properties.</li>
+<li><a href="https://github.com/grongierisc/RestToDicom">Rest to DICOM</a><br />
+  Example of using the project with RestToDicom.</li>
+<li><a href="https://github.com/grongierisc/iris-pero-ocr">OCR</a><br />
+  Example of using the project with an OCR engine.</li>
+</ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../useful-links/" class="btn btn-neutral float-right" title="Useful Links">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../example/" class="btn btn-neutral float-left" title="Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../credits/" class="btn btn-neutral float-right" title="Credits">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -193,10 +173,10 @@ CLASSES = {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../example/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../useful-links/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../credits/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

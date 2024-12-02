@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/command-line/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Command Line - IoP (Interoperability On Python)</title>
+    <title>Command Line Interface - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Command Line";
+        var mkdocs_page_name = "Command Line Interface";
         var mkdocs_page_input_path = "command-line.md";
         var mkdocs_page_url = "/interoperability-embedded-python/command-line/";
       </script>
@@ -49,13 +49,12 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
               </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../example/">Example</a>
-                </li>
-              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
               <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="#">Command Line</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Command Line Interface</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#help">help</a>
     </li>
@@ -82,7 +81,23 @@
     <li class="toctree-l2"><a class="reference internal" href="#log">log</a>
     </li>
     </ul>
-                </li>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
               </ul>
       </div>
     </div>
@@ -98,7 +113,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Command Line</li>
+          <li class="breadcrumb-item">API documentation</li>
+      <li class="breadcrumb-item active">Command Line Interface</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -201,6 +217,7 @@ default production: PEX.Production
 <p>Settings file must be in the same folder as the python code.</p>
 <pre><code class="language-bash">iop -M /tmp/settings.py
 </code></pre>
+<p>More details about the settings file can be found <a href="../getting-started/register-component/">here</a>.</p>
 <h2 id="export">export</h2>
 <p>The export command export a production.</p>
 <p>If no argument is given, the export command export the default production.</p>
@@ -288,7 +305,8 @@ default production: PEX.Production
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../example/" class="btn btn-neutral float-left" title="Example"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../getting-started/register-component/" class="btn btn-neutral float-left" title="Register Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../python-api/" class="btn btn-neutral float-right" title="Python API">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -311,8 +329,10 @@ default production: PEX.Production
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../example/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../getting-started/register-component/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
+    
+      <span><a href="../python-api/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

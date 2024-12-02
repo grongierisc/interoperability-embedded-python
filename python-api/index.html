@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/python-api/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Python API - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Python API";
+        var mkdocs_page_input_path = "python-api.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/python-api/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Python API</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-classes">Core Classes</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#message">Message 📦</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#businessservice">BusinessService 🔄</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#businessoperation">BusinessOperation 🔧</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#businessprocess">BusinessProcess ‍💼</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#adapter-classes">Adapter Classes 🔌</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#inboundadapter">InboundAdapter</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#outboundadapter">OutboundAdapter</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#common-methods">Common Methods 🛠️</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#director-class">Director Class 🎭</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API documentation</li>
+      <li class="breadcrumb-item active">Python API</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="python-api-documentation">Python API Documentation</h1>
+<h2 id="core-classes">Core Classes</h2>
+<h3 id="message">Message 📦</h3>
+<p>Base class for messages passed between components. This class provides the foundation for all message types in the interoperability framework.</p>
+<p><strong>Usage:</strong> Subclass <code>Message</code> and decorate with <code>@dataclass</code> to define message properties. This approach provides type hints and automatic initialization.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from iop import Message
+from dataclasses import dataclass
+
+@dataclass
+class MyRequest(Message):
+    request_string: str = None
+</code></pre>
+<h3 id="businessservice">BusinessService 🔄</h3>
+<p>Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.</p>
+<p><strong>Key Methods:</strong></p>
+<ul>
+<li>
+<p><code>on_process_input(self, message_input: Message) -&gt; None</code></p>
+<ul>
+<li>Handles incoming messages from adapter</li>
+<li>Parameters:<ul>
+<li><code>message_input</code>: The incoming message to process</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+<li>
+<p><code>send_request_sync(self, target: str, request: Message, timeout: int = -1) -&gt; Message</code></p>
+<ul>
+<li>Sends a synchronous request and waits for response</li>
+<li>Parameters:<ul>
+<li><code>target</code>: Name of the target component</li>
+<li><code>request</code>: Message to send</li>
+<li><code>timeout</code>: Maximum wait time in seconds (-1 for default)</li>
+</ul>
+</li>
+<li>Returns: Response message</li>
+</ul>
+</li>
+<li>
+<p><code>send_request_async(self, target: str, request: Message) -&gt; None</code></p>
+<ul>
+<li>Sends an asynchronous request without waiting</li>
+<li>Parameters:<ul>
+<li><code>target</code>: Name of the target component</li>
+<li><code>request</code>: Message to send</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+</ul>
+<p><strong>Basic Example:</strong></p>
+<pre><code class="language-python">from iop import BusinessService
+
+class MyService(BusinessService):
+    def on_process_input(self, message_input):
+        self.log_info(f&quot;Received: {message_input}&quot;)
+</code></pre>
+<p><strong>Advanced Example with Adapter:</strong></p>
+<pre><code class="language-python">from iop import BusinessService, Message
+from dataclasses import dataclass
+
+@dataclass
+class MyRequest(Message):
+    file_path: str = None
+    data: str = None
+
+class MyService(BusinessService):
+    def get_adapter_type():
+        &quot;&quot;&quot;Enable pull mode for the BusinessService&quot;&quot;&quot;
+        return &quot;Ens.InboundAdapter&quot;
+
+    def on_process_input(self, message_input):
+        self.log_info(f&quot;Received: {message_input}&quot;)
+        with open(message_input.file_path, 'r') as file:
+            data = file.read()
+        request = MyRequest(data=data)
+        self.send_request_async(&quot;MyBusinessOperation&quot;, request)
+</code></pre>
+<h3 id="businessoperation">BusinessOperation 🔧</h3>
+<p>Base class for business operations that process requests and perform specific business logic.</p>
+<p><strong>Key Methods:</strong></p>
+<ul>
+<li>
+<p><code>on_message(self, request: Message) -&gt; Message</code></p>
+<ul>
+<li>Process incoming request messages</li>
+<li>Parameters:<ul>
+<li><code>request</code>: The incoming message to process</li>
+</ul>
+</li>
+<li>Returns: Response message</li>
+</ul>
+</li>
+<li>
+<p><code>send_request_sync(self, target: str, request: Message, timeout: int = -1) -&gt; Message</code></p>
+<ul>
+<li>Send synchronous request and wait for response</li>
+<li>Parameters and returns same as BusinessService</li>
+</ul>
+</li>
+<li>
+<p><code>send_request_async(self, target: str, request: Message) -&gt; None</code></p>
+<ul>
+<li>Send asynchronous request without waiting</li>
+<li>Parameters and returns same as BusinessService</li>
+</ul>
+</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from iop import BusinessOperation, Message
+from dataclasses import dataclass
+
+@dataclass
+class MyRequest(Message):
+    request_string: str = None
+
+@dataclass
+class MyResponse(Message):
+    my_string: str = None
+
+class MyOperation(BusinessOperation):
+    def on_message(self, request):
+        self.log_info(f&quot;Received: {request}&quot;)
+        return MyResponse(my_string=&quot;Hello World&quot;)
+</code></pre>
+<h3 id="businessprocess">BusinessProcess ‍💼</h3>
+<p>Base class for business processes that orchestrate message flow between components.</p>
+<p><strong>Key Methods:</strong></p>
+<ul>
+<li>
+<p><code>on_request(self, request: Message) -&gt; None</code></p>
+<ul>
+<li>Handle initial incoming requests</li>
+<li>Parameters:<ul>
+<li><code>request</code>: The incoming request to process</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+<li>
+<p><code>on_response(self, request: Message, response: Message, call_request: Message, call_response: Message, completion_key: str) -&gt; None</code></p>
+<ul>
+<li>Handle asynchronous responses</li>
+<li>Parameters:<ul>
+<li><code>request</code>: Original request</li>
+<li><code>response</code>: Current response</li>
+<li><code>call_request</code>: Request that generated this response</li>
+<li><code>call_response</code>: The response being processed</li>
+<li><code>completion_key</code>: Unique identifier for the response chain</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+<li>
+<p><code>on_complete(self, request: Message, response: Message) -&gt; None</code></p>
+<ul>
+<li>Called after all responses are received</li>
+<li>Parameters:<ul>
+<li><code>request</code>: Original request</li>
+<li><code>response</code>: Final response</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+<li>
+<p><code>reply(self, response: Message) -&gt; None</code></p>
+<ul>
+<li>Send response back to the caller</li>
+<li>Parameters:<ul>
+<li><code>response</code>: Response message to send</li>
+</ul>
+</li>
+<li>Returns: None</li>
+</ul>
+</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from iop import BusinessProcess, Message
+from dataclasses import dataclass
+
+@dataclass
+class MyRequest(Message):
+    request_string: str = None
+
+@dataclass
+class MyResponse(Message):
+    my_string: str = None
+
+class MyProcess(BusinessProcess):
+    def on_request(self, request):
+        self.log_info(f&quot;Received: {request}&quot;)
+        self.send_request_async(&quot;MyBusinessOperation&quot;, request)
+
+    def on_response(self, request, response, call_request, call_response, completion_key):
+        self.log_info(f&quot;Received: {response}&quot;)
+        self.reply(response)
+</code></pre>
+<h3 id="adapter-classes">Adapter Classes 🔌</h3>
+<h4 id="inboundadapter">InboundAdapter</h4>
+<p>Base class for adapters that receive external data.</p>
+<p><strong>Key Methods:</strong></p>
+<ul>
+<li><code>on_task(self) -&gt; None</code><ul>
+<li>Called at configured intervals to check for new data</li>
+<li>Override this method to implement custom data acquisition logic</li>
+<li>Returns: None</li>
+</ul>
+</li>
+</ul>
+<h4 id="outboundadapter">OutboundAdapter</h4>
+<p>Base class for adapters that send data to external systems.</p>
+<p><strong>Key Methods:</strong></p>
+<ul>
+<li><code>on_keepalive(self) -&gt; None</code><ul>
+<li>Called periodically to maintain external connections</li>
+<li>Implement connection maintenance logic here</li>
+<li>Returns: None</li>
+</ul>
+</li>
+</ul>
+<h3 id="common-methods">Common Methods 🛠️</h3>
+<p>Available in all component classes:</p>
+<p><strong>Logging Methods:</strong></p>
+<ul>
+<li>
+<p><code>log_info(self, message: str) -&gt; None</code></p>
+<ul>
+<li>Log informational message for general information</li>
+</ul>
+</li>
+<li>
+<p><code>log_error(self, message: str) -&gt; None</code></p>
+<ul>
+<li>Log error message for errors and exceptions</li>
+</ul>
+</li>
+<li>
+<p><code>log_warning(self, message: str) -&gt; None</code></p>
+<ul>
+<li>Log warning message for potential issues</li>
+</ul>
+</li>
+<li>
+<p><code>log_alert(self, message: str) -&gt; None</code></p>
+<ul>
+<li>Log alert message for critical situations</li>
+</ul>
+</li>
+</ul>
+<p><strong>Lifecycle Methods:</strong></p>
+<ul>
+<li>
+<p><code>on_init(self) -&gt; None</code></p>
+<ul>
+<li>Initialize component when it starts</li>
+<li>Override to add custom initialization</li>
+</ul>
+</li>
+<li>
+<p><code>on_tear_down(self) -&gt; None</code></p>
+<ul>
+<li>Clean up resources when component stops</li>
+<li>Override to add custom cleanup logic</li>
+</ul>
+</li>
+<li>
+<p><code>on_connected(self) -&gt; None</code></p>
+<ul>
+<li>Handle connection setup when connections are established</li>
+<li>Override to add custom connection logic</li>
+</ul>
+</li>
+</ul>
+<h3 id="director-class">Director Class 🎭</h3>
+<p>Manages InterSystems IRIS productions and business services, particularly for non-polling services.</p>
+<p><strong>Key Methods:</strong></p>
+<p><strong>Production Management:</strong></p>
+<ul>
+<li>
+<p><code>start_production(production_name: str = None) -&gt; None</code></p>
+<ul>
+<li>Start a production</li>
+<li>If no name provided, uses default production</li>
+</ul>
+</li>
+<li>
+<p><code>stop_production() -&gt; None</code></p>
+<ul>
+<li>Stop the currently running production</li>
+</ul>
+</li>
+<li>
+<p><code>restart_production() -&gt; None</code></p>
+<ul>
+<li>Restart the current production</li>
+</ul>
+</li>
+<li>
+<p><code>shutdown_production() -&gt; None</code></p>
+<ul>
+<li>Gracefully shutdown the production</li>
+</ul>
+</li>
+<li>
+<p><code>status_production() -&gt; dict</code></p>
+<ul>
+<li>Get current production status</li>
+<li>Returns dictionary with production details</li>
+</ul>
+</li>
+</ul>
+<p><strong>Business Service Management:</strong></p>
+<ul>
+<li>
+<p><code>create_business_service(target: str) -&gt; object</code></p>
+<ul>
+<li>Create an instance of a business service</li>
+<li>Parameters:<ul>
+<li><code>target</code>: Name of the business service in production</li>
+</ul>
+</li>
+<li>Returns: Business service instance</li>
+</ul>
+</li>
+<li>
+<p><code>get_business_service(target: str) -&gt; object</code></p>
+<ul>
+<li>Get an existing business service instance</li>
+<li>Parameters:<ul>
+<li><code>target</code>: Name of the business service in production</li>
+</ul>
+</li>
+<li>Returns: Business service instance</li>
+</ul>
+</li>
+<li>
+<p><code>test_component(target: str, message=None, classname: str=None, body=None) -&gt; object</code></p>
+<ul>
+<li>Test a production component</li>
+<li>Parameters:<ul>
+<li><code>target</code>: Component name</li>
+<li><code>message</code>: Optional message instance</li>
+<li><code>classname</code>: Optional message class name</li>
+<li><code>body</code>: Optional message body</li>
+</ul>
+</li>
+<li>Returns: Component response</li>
+</ul>
+</li>
+</ul>
+<p><strong>Production Logging:</strong></p>
+<ul>
+<li>
+<p><code>log_production() -&gt; None</code></p>
+<ul>
+<li>Start real-time production log monitoring</li>
+<li>Press Ctrl+C to stop</li>
+</ul>
+</li>
+<li>
+<p><code>log_production_top(top: int) -&gt; None</code></p>
+<ul>
+<li>Display last N log entries</li>
+<li>Parameters:<ul>
+<li><code>top</code>: Number of entries to show</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>Production Configuration:</strong></p>
+<ul>
+<li>
+<p><code>set_default_production(production_name: str) -&gt; None</code></p>
+<ul>
+<li>Set the default production name</li>
+</ul>
+</li>
+<li>
+<p><code>get_default_production() -&gt; str</code></p>
+<ul>
+<li>Get the current default production name</li>
+</ul>
+</li>
+</ul>
+<p><strong>Example Usage:</strong></p>
+<p>In a flask application :</p>
+<pre><code class="language-python">from iop import Director
+
+from flask import Flask
+
+app = Flask(__name__)
+
+director = Director()
+
+@app.route('/')
+def hello_world():
+    bs = director.get_business_service(&quot;MyBusinessService&quot;)
+    return bs.on_process_input(&quot;Hello, World!&quot;)
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../command-line/" class="btn btn-neutral float-left" title="Command Line Interface"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../example/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../command-line/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../example/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/getting-started/register-component/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Register Component - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Register Component";
+        var mkdocs_page_input_path = "getting-started/register-component.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/getting-started/register-component/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Register Component</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#with-a-settings-file">With a Settings File</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingspy">Example of settings.py</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#registering-the-component">Registering the Component</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#using-the-python-shell">Using the Python Shell</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#registering-a-single-component">Registering a Single Component</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#registering-all-components-in-a-file">Registering All Components in a File</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#registering-all-components-in-a-folder">Registering All Components in a Folder</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#migrating-settings">Migrating Settings</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#the-settingspy-file">The settings.py File</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#the-classes-section">The CLASSES Section</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-productions-section">The PRODUCTIONS Section</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../python-api/">Python API</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Register Component</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="registering-components">Registering Components</h1>
+<p>There are two main ways to register your Python components with IRIS Interoperability:</p>
+<ul>
+<li>
+<p>With a settings file</p>
+</li>
+<li>
+<p>With a Python script:</p>
+<ul>
+<li>Register a single component using <code>register_component</code></li>
+<li>Register all components in a file using <code>register_file</code> </li>
+<li>Register all components in a folder using <code>register_folder</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="with-a-settings-file">With a Settings File</h2>
+<p>Create a <code>settings.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
+<h3 id="example-of-settingspy">Example of <code>settings.py</code></h3>
+<pre><code class="language-python">import bo
+
+CLASSES = {
+    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
+}
+</code></pre>
+<h3 id="registering-the-component">Registering the Component</h3>
+<p>Use the <code>iop</code> command line to register your component:</p>
+<pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
+</code></pre>
+<h2 id="using-the-python-shell">Using the Python Shell</h2>
+<h3 id="registering-a-single-component">Registering a Single Component</h3>
+<p>Use the <code>register_component</code> method to add a new Python file to the component list for interoperability.</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_component(&lt;ModuleName&gt;,&lt;ClassName&gt;,&lt;PathToPyFile&gt;,&lt;OverWrite&gt;,&lt;NameOfTheComponent&gt;)
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_component(&quot;MyCombinedBusinessOperation&quot;,&quot;MyCombinedBusinessOperation&quot;,&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX.MyCombinedBusinessOperation&quot;)
+</code></pre>
+<h3 id="registering-all-components-in-a-file">Registering All Components in a File</h3>
+<p>Use the <code>register_file</code> method to add all components in a file to the component list for interoperability.</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_file(&lt;File&gt;,&lt;OverWrite&gt;,&lt;PackageName&gt;)
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_file(&quot;/irisdev/app/src/python/demo/bo.py&quot;,1,&quot;PEX&quot;)
+</code></pre>
+<h3 id="registering-all-components-in-a-folder">Registering All Components in a Folder</h3>
+<p>Use the <code>register_folder</code> method to add all components in a folder to the component list for interoperability.</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_folder(&lt;Path&gt;,&lt;OverWrite&gt;,&lt;PackageName&gt;)
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-python">from iop import Utils
+Utils.register_folder(&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX&quot;)
+</code></pre>
+<h3 id="migrating-settings">Migrating Settings</h3>
+<p>Use the <code>migrate</code> method to migrate the settings file to the IRIS framework.</p>
+<pre><code class="language-python">from iop import Utils
+Utils.migrate()
+</code></pre>
+<h2 id="the-settingspy-file">The <code>settings.py</code> File</h2>
+<p>This file is used to store the settings of the interoperability components. It has two sections:</p>
+<ul>
+<li><code>CLASSES</code>: Stores the classes of the interoperability components.</li>
+<li><code>PRODUCTIONS</code>: Stores the productions of the interoperability components.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-python">import bp
+from bo import *
+from bs import *
+
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
+    'Python.FileOperation': FileOperation,
+    'Python.FileOperationWithIrisAdapter': FileOperationWithIrisAdapter,
+}
+
+PRODUCTIONS = [
+    {
+        'dc.Python.Production': {
+        &quot;@Name&quot;: &quot;dc.Demo.Production&quot;,
+        &quot;@TestingEnabled&quot;: &quot;true&quot;,
+        &quot;@LogGeneralTraceEvents&quot;: &quot;false&quot;,
+        &quot;Description&quot;: &quot;&quot;,
+        &quot;ActorPoolSize&quot;: &quot;2&quot;,
+        &quot;Item&quot;: [
+            {
+                &quot;@Name&quot;: &quot;Python.FileOperation&quot;,
+                &quot;@Category&quot;: &quot;&quot;,
+                &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                &quot;@PoolSize&quot;: &quot;1&quot;,
+                &quot;@Enabled&quot;: &quot;true&quot;,
+                &quot;@Foreground&quot;: &quot;false&quot;,
+                &quot;@Comment&quot;: &quot;&quot;,
+                &quot;@LogTraceEvents&quot;: &quot;true&quot;,
+                &quot;@Schedule&quot;: &quot;&quot;,
+                &quot;Setting&quot;: {
+                    &quot;@Target&quot;: &quot;Host&quot;,
+                    &quot;@Name&quot;: &quot;%settings&quot;,
+                    &quot;#text&quot;: &quot;path=/tmp&quot;
+                }
+            },
+            {
+                &quot;@Name&quot;: &quot;Python.RedditService&quot;,
+                &quot;@Category&quot;: &quot;&quot;,
+                &quot;@ClassName&quot;: &quot;Python.RedditService&quot;,
+                &quot;@PoolSize&quot;: &quot;1&quot;,
+                &quot;@Enabled&quot;: &quot;true&quot;,
+                &quot;@Foreground&quot;: &quot;false&quot;,
+                &quot;@Comment&quot;: &quot;&quot;,
+                &quot;@LogTraceEvents&quot;: &quot;false&quot;,
+                &quot;@Schedule&quot;: &quot;&quot;,
+                &quot;Setting&quot;: [
+                    {
+                        &quot;@Target&quot;: &quot;Host&quot;,
+                        &quot;@Name&quot;: &quot;%settings&quot;,
+                        &quot;#text&quot;: &quot;limit=10\nother&lt;10&quot;
+                    }
+                ]
+            },
+            {
+                &quot;@Name&quot;: &quot;Python.FilterPostRoutingRule&quot;,
+                &quot;@Category&quot;: &quot;&quot;,
+                &quot;@ClassName&quot;: &quot;Python.FilterPostRoutingRule&quot;,
+                &quot;@PoolSize&quot;: &quot;1&quot;,
+                &quot;@Enabled&quot;: &quot;true&quot;,
+                &quot;@Foreground&quot;: &quot;false&quot;,
+                &quot;@Comment&quot;: &quot;&quot;,
+                &quot;@LogTraceEvents&quot;: &quot;false&quot;,
+                &quot;@Schedule&quot;: &quot;&quot;
+            }
+        ]
+    }
+    }
+]
+</code></pre>
+<h3 id="the-classes-section">The <code>CLASSES</code> Section</h3>
+<p>This section stores the classes of the interoperability components. It helps to register the components.</p>
+<p>The dictionary has the following structure:</p>
+<ul>
+<li>Key: The name of the component</li>
+<li>Value: </li>
+<li>The class of the component (you have to import it before)</li>
+<li>The module of the component (you have to import it before)</li>
+<li>Another dictionary with the following structure:<ul>
+<li><code>module</code>: Name of the module of the component (optional)</li>
+<li><code>class</code>: Name of the class of the component (optional)</li>
+<li><code>path</code>: The path of the component (mandatory)</li>
+</ul>
+</li>
+</ul>
+<p>Example:</p>
+<p>When Value is a class or a module:</p>
+<pre><code class="language-python">import bo
+import bp
+from bs import RedditService
+
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
+    'Python.FileOperation': bo,
+}
+</code></pre>
+<p>When Value is a dictionary:</p>
+<pre><code class="language-python">CLASSES = {
+    'Python.RedditService': {
+        'module': 'bs',
+        'class': 'RedditService',
+        'path': '/irisdev/app/src/python/demo/'
+    },
+    'Python.Module': {
+        'module': 'bp',
+        'path': '/irisdev/app/src/python/demo/'
+    },
+    'Python.Package': {
+        'path': '/irisdev/app/src/python/demo/'
+    },
+}
+</code></pre>
+<h3 id="the-productions-section">The <code>PRODUCTIONS</code> Section</h3>
+<p>This section stores the productions of the interoperability components. It helps to register a production.</p>
+<p>The list has the following structure:</p>
+<ul>
+<li>A list of dictionaries with the following structure:</li>
+<li><code>dc.Python.Production</code>: The name of the production<ul>
+<li><code>@Name</code>: The name of the production</li>
+<li><code>@TestingEnabled</code>: The testing enabled of the production</li>
+<li><code>@LogGeneralTraceEvents</code>: The log general trace events of the production</li>
+<li><code>Description</code>: The description of the production</li>
+<li><code>ActorPoolSize</code>: The actor pool size of the production</li>
+<li><code>Item</code>: The list of the items of the production</li>
+<li><code>@Name</code>: The name of the item</li>
+<li><code>@Category</code>: The category of the item</li>
+<li><code>@ClassName</code>: The class name of the item</li>
+<li><code>@PoolSize</code>: The pool size of the item</li>
+<li><code>@Enabled</code>: The enabled of the item</li>
+<li><code>@Foreground</code>: The foreground of the item</li>
+<li><code>@Comment</code>: The comment of the item</li>
+<li><code>@LogTraceEvents</code>: The log trace events of the item</li>
+<li><code>@Schedule</code>: The schedule of the item</li>
+<li><code>Setting</code>: The list of the settings of the item<ul>
+<li><code>@Target</code>: The target of the setting</li>
+<li><code>@Name</code>: The name of the setting</li>
+<li><code>#text</code>: The value of the setting</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>The minimum structure of a production is:</p>
+<pre><code class="language-python">PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                &quot;Item&quot;: [
+                    {
+                        &quot;@Name&quot;: &quot;Python.FileOperation&quot;,
+                        &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                    },
+                    {
+                        &quot;@Name&quot;: &quot;Python.EmailOperation&quot;,
+                        &quot;@ClassName&quot;: &quot;UnitTest.Package.EmailOperation&quot;
+                    }
+                ]
+            }
+        } 
+    ]
+</code></pre>
+<p>You can also set in <code>@ClassName</code> an item from the <code>CLASSES</code> section.</p>
+<p>Example:</p>
+<pre><code class="language-python">from bo import FileOperation
+PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                &quot;Item&quot;: [
+                    {
+                        &quot;@Name&quot;: &quot;Python.FileOperation&quot;,
+                        &quot;@ClassName&quot;: FileOperation,
+                    }
+                ]
+            }
+        } 
+    ]
+</code></pre>
+<p>As the production is a dictionary, you can add in the value of the production dictionary an environment variable.</p>
+<p>Example:</p>
+<pre><code class="language-python">import os
+
+PRODUCTIONS = [
+        {
+            'UnitTest.Production': {
+                &quot;Item&quot;: [
+                    {
+                        &quot;@Name&quot;: &quot;Python.FileOperation&quot;,
+                        &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                        &quot;Setting&quot;: {
+                            &quot;@Target&quot;: &quot;Host&quot;,
+                            &quot;@Name&quot;: &quot;%settings&quot;,
+                            &quot;#text&quot;: os.environ['SETTINGS']
+                        }
+                    }
+                ]
+            }
+        } 
+    ]
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../first-steps/" class="btn btn-neutral float-left" title="First Steps"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../command-line/" class="btn btn-neutral float-right" title="Command Line Interface">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../first-steps/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../command-line/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
