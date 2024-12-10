@@ -118,7 +118,13 @@ Method Connect() As %Status
 Method OnTearDown() As %Status
 {
     set tSC = $$$OK
-    do ..%class."_dispatch_on_tear_down"()
+    if $isObject(..%class) {
+        try {
+            do ..%class."_dispatch_on_tear_down"()
+        } catch ex {
+            set tSC = ex.AsStatus()
+        }
+    }
     quit tSC
 }
 
