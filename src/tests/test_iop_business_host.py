@@ -171,8 +171,8 @@ def test_deseialize_message():
 def test_big_message():
     bh = _BusinessHost()
     huge_string = 'test'*1000000
-    msg = TestSimpleMessage(integer=1, string=huge_string)
-    result = bh._serialize_message(msg)
+    tst_msg = TestSimpleMessage(integer=1, string=huge_string)
+    result = bh._serialize_message(tst_msg)
     msg = bh._deserialize_message(result)
     assert msg.integer == 1
     assert msg.string == huge_string
