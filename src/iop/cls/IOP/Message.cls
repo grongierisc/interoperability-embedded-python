@@ -1,7 +1,3 @@
-/* Copyright (c) 2021 by InterSystems Corporation.
-   Cambridge, Massachusetts, U.S.A.  All rights reserved.
-   Confidential property of InterSystems Corporation. */
-
 Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor)
 {
 
@@ -79,11 +75,16 @@ Method jsonSet(pInput) As %Status
 				, "Stream":..jsonStream
 				, :$$$NULLOREF)
 	Quit:tOldStream=pInput $$$OK
-	Do:..type'="" Clear()  Set i%type=""
+
+	If ..type'="" {
+		Set:(..type="String") i%jsonString="" 
+		Set:(..type="Stream") i%jsonStream=$$$NULLOREF 
+		Set i%type = ""
+	}
 
 	If $ISOBJECT(pInput) {
 		if pInput.%Extends("%Stream.GlobalCharacter") { 
-			Set ..jsonStream=pInput, i%type="Stream" 
+			Set r%jsonStream=pInput, i%type="Stream"
 		}
 		else { 
 			Throw ##class(%Exception.General).%New("Invalid input type, must be a %Stream.GlobalCharacter or a %String")
@@ -97,15 +98,12 @@ Method jsonSet(pInput) As %Status
 				Set sc = stream.Write($EXTRACT(pInput,i,(i+..#BUFFER)))
 				Quit:$$$ISERR(sc)
 			}
-			Set ..jsonStream=stream, i%type="Stream"
+			Set r%jsonStream=stream, i%type="Stream"
 		}
-		Set i%jsonString=pInput, i%type="String" 
+		else {
+			Set i%jsonString=pInput, i%type="String"
+		}
 	}
-	Quit $$$OK
-Clear()
-	If ..type="String"     { Set r%jsonString="" }
-	ElseIf ..type="Stream" { Set r%jsonStream=$$$NULLOREF }
-	Quit
 }
 
 Method GetObjectJson(ByRef atEnd)
