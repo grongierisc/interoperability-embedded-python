@@ -95,7 +95,7 @@ Method jsonSet(pInput) As %Status
 			// write in a stream
 			Set stream = ##class(%Stream.GlobalCharacter).%New()
 			for i=1:..#BUFFER:$LENGTH(pInput) {
-				Set sc = stream.Write($EXTRACT(pInput,i,(i+..#BUFFER)))
+				Set sc = stream.Write($EXTRACT(pInput,i,(i+..#BUFFER-1)))
 				Quit:$$$ISERR(sc)
 			}
 			Set r%jsonStream=stream, i%type="Stream"

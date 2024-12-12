@@ -283,3 +283,59 @@ def test_migrate_only_classes():
         _Utils.migrate()
         # Assert
         assert True # if no exception is raised, the test is ok
+
+def test_string_to_stream():
+    string = 'test'
+    result = _Utils.string_to_stream(string)
+    expect = 'test'
+
+    assert result.Read() == expect
+
+def test_stream_to_string():
+    stream = iris.cls('%Stream.GlobalCharacter')._New()
+    stream.Write('test')
+    result = _Utils.stream_to_string(stream)
+    expect = 'test'
+
+    assert result == expect
+
+def test_stream_to_string_empty():
+    stream = iris.cls('%Stream.GlobalCharacter')._New()
+    result = _Utils.stream_to_string(stream)
+    expect = ''
+
+    assert result == expect
+
+def test_stream_to_string_huge():
+    stream = iris.cls('%Stream.GlobalCharacter')._New()
+    for i in range(1000):
+        stream.Write('test'*1000)
+    result = _Utils.stream_to_string(stream)
+    expect = 'test'*1000000
+
+    assert result == expect
+
+class TestIOPMessage:
+
+    def test_set_json_string(self):
+        msg = iris.cls('IOP.Message')._New()
+        msg.json = '{"test": "test"}'
+
+        assert msg.json == '{"test": "test"}'
+        assert msg.type == 'String'
+
+    def test_set_json_huge_string(self):
+        msg = iris.cls('IOP.Message')._New()
+        msg.json = '{"test": "test"}'*100000
+
+        assert _Utils.stream_to_string(msg.json) == '{"test": "test"}'*100000
+        assert msg.type == 'Stream'
+
+    def test_set_json_stream(self):
+        msg = iris.cls('IOP.Message')._New()
+        stream = iris.cls('%Stream.GlobalCharacter')._New()
+        stream.Write('{"test": "test"}')
+        msg.json = stream
+
+        assert msg.json.Read() == '{"test": "test"}'
+        assert msg.type == 'Stream'
