@@ -25,9 +25,9 @@ class _Director():
         """
         if target not in self._bs or self._bs[target] is None:
             self._bs[target] = _Director.create_python_business_service(target)
-            if force_session_id:
-                self._bs[target].iris_handle._SessionId = ""
-                self._bs[target].iris_handle.ForceSessionId()
+        if force_session_id:
+            self._bs[target].iris_handle._SessionId = ""
+            self._bs[target].iris_handle.ForceSessionId()
         return self._bs[target]
 
     @staticmethod
