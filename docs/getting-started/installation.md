@@ -7,8 +7,8 @@ Welcome to the installation guide for IoP. This guide will walk you through the 
 Before you begin, ensure you have the following installed:
 
 - Python 3.6 or higher
-- IRIS 2021.1 or higher
-- [Configuring Embedded Python](TODO: Add link to the guide)
+- IRIS 2021.2 or higher
+- [Configuring Embedded Python](https://grongierisc.github.io/iris-embedded-python-wrapper/)
 
 ## With PyPi
 
@@ -24,7 +24,7 @@ Then you can run the application using the following command:
 iop --init
 ```
 
-Check the documentation about the command line interface [here](TODO: Add link to the guide) for more information.
+Check the documentation about the command line interface [here](/interoperability-embedded-python/command-line) for more information.
 
 ## With ZPM/IPM
 
