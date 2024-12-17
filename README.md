@@ -32,6 +32,6 @@ pip install iris-pex-embedded-python
 
 ## Getting Started
 
-If you're new to this project, begin by reading the [installation guide](https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation.md). Then, follow the [first steps](https://grongierisc.github.io/interoperability-embedded-python/getting-started/first-steps.md) to create your first Business Operation.
+If you're new to this project, begin by reading the [installation guide](https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation). Then, follow the [first steps](https://grongierisc.github.io/interoperability-embedded-python/getting-started/first-steps) to create your first Business Operation.
 
 Happy coding!
