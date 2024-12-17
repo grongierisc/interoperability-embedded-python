@@ -8,12 +8,18 @@
 
 name: Upload Python Package
 
-
 on:
   release:
     types: [published]
   push:
-    branches: [master]
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - 'tests/**'
+      - 'demo/**'
+      - '.vscode/**'
+      - '.github/**'
 
 jobs:
   deploy:
