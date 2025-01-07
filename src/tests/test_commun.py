@@ -5,25 +5,25 @@ import sys
 
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 
-from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestPickledMessage
+from registerFiles.message import SimpleMessage, SimpleMessageNotMessage, PickledMessage
 
 from grongier.pex._common import _Common
 
 
 def test_is_message_class():
     # test if the message is an grongier.pex.Message instance
-    result = _Common._is_message_class(TestSimpleMessage)
+    result = _Common._is_message_class(SimpleMessage)
     assert result == True
     # test not a message class
-    result = _Common._is_message_class(TestSimpleMessageNotMessage)
+    result = _Common._is_message_class(SimpleMessageNotMessage)
     assert result == False
 
 def test_is_pickle_message_class():
     # test if the message is an grongier.pex.Message instance
-    result = _Common._is_pickel_message_class(TestPickledMessage)
+    result = _Common._is_pickel_message_class(PickledMessage)
     assert result == True
     # test not a message class
-    result = _Common._is_pickel_message_class(TestSimpleMessageNotMessage)
+    result = _Common._is_pickel_message_class(SimpleMessageNotMessage)
     assert result == False
 
 def test_is_iris_object_instance():
@@ -31,7 +31,7 @@ def test_is_iris_object_instance():
     result = _Common._is_iris_object_instance(msg)
     assert result == True
     # test not an iris object instance
-    result = _Common._is_iris_object_instance(TestSimpleMessageNotMessage)
+    result = _Common._is_iris_object_instance(SimpleMessageNotMessage)
     assert result == False
     # test iris not persistent object
     msg = iris.cls('Ens.Job')._New()

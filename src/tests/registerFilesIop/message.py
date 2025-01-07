@@ -39,19 +39,19 @@ class MyResponse(Message):
     value:str = None
 
 @dataclass
-class TestSimpleMessage(Message):
+class SimpleMessage(Message):
     integer : int 
     string : str
 
-class TestSimpleMessageNotDataclass(Message):
+class SimpleMessageNotDataclass(Message):
     integer : int 
     string : str
 
-class TestSimpleMessageNotMessage:
+class SimpleMessageNotMessage:
     integer : int 
     string : str
 
 @dataclass
-class TestPickledMessage(PickleMessage):
+class PickledMessage(PickleMessage):
     integer : int 
     string : str

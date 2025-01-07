@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 from iop._business_host import _BusinessHost
 
-from registerFilesIop.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestSimpleMessageNotDataclass, TestPickledMessage, FullMessage, PostMessage, MyResponse
+from registerFilesIop.message import SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, PickledMessage, FullMessage, PostMessage, MyResponse
 
 from registerFilesIop.obj import PostClass
 
@@ -21,7 +21,7 @@ def test_send_request_async_ng():
     bh.iris_handle.dispatchIsRequestDone.return_value = 2
     bh._dispatch_deserializer = MagicMock()
     bh._dispatch_deserializer.return_value = MyResponse(value='test')
-    result = bh.send_request_async_ng('test', TestSimpleMessage(integer=1, string='test'))
+    result = bh.send_request_async_ng('test', SimpleMessage(integer=1, string='test'))
     assert asyncio.iscoroutine(result)
     assert asyncio.run(result) == MyResponse(value='test')
 
@@ -33,8 +33,8 @@ def test_send_multi_request_sync():
     rsp.Response = MyResponse(value='test')
     rsp.ResponseCode = 1
     bh.iris_handle.dispatchSendRequestSyncMultiple.return_value = [rsp]
-    result = bh.send_multi_request_sync([('test', TestSimpleMessage(integer=1, string='test'))])
-    assert result == [('test', TestSimpleMessage(integer=1, string='test'),MyResponse(value='test'),1)]
+    result = bh.send_multi_request_sync([('test', SimpleMessage(integer=1, string='test'))])
+    assert result == [('test', SimpleMessage(integer=1, string='test'),MyResponse(value='test'),1)]
 
 def test_dispatch_message():
     bs = FileOperation()
@@ -49,11 +49,11 @@ def test_dispatch_message():
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
-    message = TestSimpleMessage(integer=1, string='test')
+    message = SimpleMessage(integer=1, string='test')
 
     rsp = bh._dispatch_serializer(message)
 
-    assert rsp.classname == 'registerFilesIop.message.TestSimpleMessage'
+    assert rsp.classname == 'registerFilesIop.message.SimpleMessage'
     assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
 
 def test_dispatch_serializer_none():
@@ -66,7 +66,7 @@ def test_dispatch_serializer_none():
 
 def test_dispatch_serializer_not_message():
     bh = _BusinessHost()
-    message = TestSimpleMessageNotMessage()
+    message = SimpleMessageNotMessage()
 
     try:
         rsp = bh._dispatch_serializer(message)
@@ -75,7 +75,7 @@ def test_dispatch_serializer_not_message():
 
 def test_dispatch_serializer_not_dataclass():
     bh = _BusinessHost()
-    message = TestSimpleMessageNotDataclass()
+    message = SimpleMessageNotDataclass()
 
     try:
         rsp = bh._dispatch_serializer(message)
@@ -84,7 +84,7 @@ def test_dispatch_serializer_not_dataclass():
 
 def test_serialize_message_not_dataclass():
     bh = _BusinessHost()
-    msg = TestSimpleMessageNotDataclass()
+    msg = SimpleMessageNotDataclass()
     msg.integer = 1
     msg.string = 'test'
 
@@ -112,7 +112,7 @@ def test_serialize_message_string():
 
 def test_serialize_message_not_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessageNotMessage()
+    msg = SimpleMessageNotMessage()
     msg.integer = 1
     msg.string = 'test'
 
@@ -127,7 +127,7 @@ def test_serialize_message_not_message():
 
 def test_serialize_message_decorator():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     msg_serialized = bh._serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
@@ -139,7 +139,7 @@ def test_serialize_message_decorator():
 
 def test_serialize_message_decorator_by_position():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     msg_serialized = bh._serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
@@ -151,17 +151,17 @@ def test_serialize_message_decorator_by_position():
 
 def test_serialize_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     result = bh._serialize_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
-    assert result.classname == 'registerFilesIop.message.TestSimpleMessage'
+    assert result.classname == 'registerFilesIop.message.SimpleMessage'
     assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
     assert stream == '{"integer": 1, "string": "test"}'
 
 def test_deseialize_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     result = bh._serialize_message(msg)
     assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
     msg = bh._deserialize_message(result)
@@ -171,7 +171,7 @@ def test_deseialize_message():
 def test_big_message():
     bh = _BusinessHost()
     huge_string = 'test'*1000000
-    tst_msg = TestSimpleMessage(integer=1, string=huge_string)
+    tst_msg = SimpleMessage(integer=1, string=huge_string)
     result = bh._serialize_message(tst_msg)
     msg = bh._deserialize_message(result)
     assert msg.integer == 1
@@ -179,7 +179,7 @@ def test_big_message():
 
 def test_deseialize_message_japanese():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='あいうえお')
+    msg = SimpleMessage(integer=1, string='あいうえお')
     result = bh._serialize_message(msg)
     assert result.GetObjectJson() == '{"integer": 1, "string": "あいうえお"}'
     msg = bh._deserialize_message(result)
@@ -188,19 +188,19 @@ def test_deseialize_message_japanese():
 
 def test_serialize_pickled_message():
     bh = _BusinessHost()
-    msg = TestPickledMessage(integer=1, string='test')
+    msg = PickledMessage(integer=1, string='test')
     result = bh._serialize_pickle_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
-    # convert TestPickledMessage to a pickle and encode it in base64
+    # convert PickledMessage to a pickle and encode it in base64
     pickled = pickle.dumps(msg)
     pickled = codecs.encode(pickled, "base64").decode()
-    assert result.classname == 'registerFilesIop.message.TestPickledMessage'
+    assert result.classname == 'registerFilesIop.message.PickledMessage'
     assert stream == pickled
 
 def test_deseialize_pickled_message():
     bh = _BusinessHost()
-    msg = TestPickledMessage(integer=1, string='test')
+    msg = PickledMessage(integer=1, string='test')
     result = bh._serialize_pickle_message(msg)
     # way around 
     msg = bh._deserialize_pickle_message(result)

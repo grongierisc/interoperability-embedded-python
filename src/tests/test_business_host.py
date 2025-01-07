@@ -7,7 +7,7 @@ from grongier.pex._business_host import _BusinessHost
 
 from grongier.pex import Message
 
-from registerFiles.message import TestSimpleMessage, TestSimpleMessageNotMessage, TestSimpleMessageNotDataclass, TestPickledMessage, FullMessage, PostMessage, MyResponse
+from registerFiles.message import SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, PickledMessage, FullMessage, PostMessage, MyResponse
 
 from registerFiles.obj import PostClass
 
@@ -15,11 +15,11 @@ from registerFiles.bs import RedditService
 
 def test_dispatch_serializer():
     bh = _BusinessHost()
-    message = TestSimpleMessage(integer=1, string='test')
+    message = SimpleMessage(integer=1, string='test')
 
     rsp = bh._dispatch_serializer(message)
 
-    assert rsp.classname == 'registerFiles.message.TestSimpleMessage'
+    assert rsp.classname == 'registerFiles.message.SimpleMessage'
     assert rsp.json == '{"integer": 1, "string": "test"}'
 
 def test_dispatch_serializer_none():
@@ -32,7 +32,7 @@ def test_dispatch_serializer_none():
 
 def test_dispatch_serializer_not_message():
     bh = _BusinessHost()
-    message = TestSimpleMessageNotMessage()
+    message = SimpleMessageNotMessage()
 
     try:
         rsp = bh._dispatch_serializer(message)
@@ -41,7 +41,7 @@ def test_dispatch_serializer_not_message():
 
 def test_dispatch_serializer_not_dataclass():
     bh = _BusinessHost()
-    message = TestSimpleMessageNotDataclass()
+    message = SimpleMessageNotDataclass()
 
     try:
         rsp = bh._dispatch_serializer(message)
@@ -50,7 +50,7 @@ def test_dispatch_serializer_not_dataclass():
 
 def test_serialize_message_not_dataclass():
     bh = _BusinessHost()
-    msg = TestSimpleMessageNotDataclass()
+    msg = SimpleMessageNotDataclass()
     msg.integer = 1
     msg.string = 'test'
 
@@ -65,7 +65,7 @@ def test_serialize_message_not_dataclass():
 
 def test_serialize_message_not_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessageNotMessage()
+    msg = SimpleMessageNotMessage()
     msg.integer = 1
     msg.string = 'test'
 
@@ -80,7 +80,7 @@ def test_serialize_message_not_message():
 
 def test_serialize_message_decorator():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     msg_serialized = bh._serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
@@ -92,7 +92,7 @@ def test_serialize_message_decorator():
 
 def test_serialize_message_decorator_by_position():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     msg_serialized = bh._serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
@@ -104,17 +104,17 @@ def test_serialize_message_decorator_by_position():
 
 def test_serialize_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     result = bh._serialize_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
-    assert result.classname == 'registerFiles.message.TestSimpleMessage'
+    assert result.classname == 'registerFiles.message.SimpleMessage'
     assert result.json == '{"integer": 1, "string": "test"}'
     assert stream == '{"integer": 1, "string": "test"}'
 
 def test_deseialize_message():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='test')
+    msg = SimpleMessage(integer=1, string='test')
     result = bh._serialize_message(msg)
     assert result.json == '{"integer": 1, "string": "test"}'
     msg = bh._deserialize_message(result)
@@ -123,7 +123,7 @@ def test_deseialize_message():
 
 def test_deseialize_message_japanese():
     bh = _BusinessHost()
-    msg = TestSimpleMessage(integer=1, string='あいうえお')
+    msg = SimpleMessage(integer=1, string='あいうえお')
     result = bh._serialize_message(msg)
     assert result.json == '{"integer": 1, "string": "あいうえお"}'
     msg = bh._deserialize_message(result)
@@ -132,19 +132,19 @@ def test_deseialize_message_japanese():
 
 def test_serialize_pickled_message():
     bh = _BusinessHost()
-    msg = TestPickledMessage(integer=1, string='test')
+    msg = PickledMessage(integer=1, string='test')
     result = bh._serialize_pickle_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
-    # convert TestPickledMessage to a pickle and encode it in base64
+    # convert PickledMessage to a pickle and encode it in base64
     pickled = pickle.dumps(msg)
     pickled = codecs.encode(pickled, "base64").decode()
-    assert result.classname == 'registerFiles.message.TestPickledMessage'
+    assert result.classname == 'registerFiles.message.PickledMessage'
     assert stream == pickled
 
 def test_deseialize_pickled_message():
     bh = _BusinessHost()
-    msg = TestPickledMessage(integer=1, string='test')
+    msg = PickledMessage(integer=1, string='test')
     result = bh._serialize_pickle_message(msg)
     # way around 
     msg = bh._deserialize_pickle_message(result)
