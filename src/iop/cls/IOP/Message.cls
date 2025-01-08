@@ -56,7 +56,7 @@ Method GetValueAt(
         Set matches = parser.find(tJSON)
 
         Set tResult = ""
-
+        zw
         // Return the first match
         if matches."__len__"() = 1 {
             Set match = matches."__getitem__"(0)
@@ -120,6 +120,30 @@ ClassMethod ProcessBrackets(pPath As %String) As %String
     Return tPath
 }
 
+Method CopyValues(
+	pSource As Ens.VDoc.Interface,
+	pSourcePath As %String,
+	pTargetPath As %String,
+	pAction As %String,
+	pKey As %String,
+	pEmptyFieldAsNull As %Boolean = 0,
+	pIgnoreMissingSource As %Boolean = 0,
+	pGenerateEmptySegments As %Boolean = 0) As %Status
+{
+    Set tSC = $$$OK
+    Try {
+        // Get source value
+        Set tValue = pSource.GetValueAt(pSourcePath, "String", .tSC, 0)
+        Return:$$$ISERR(tSC) tSC
+
+        // Set target value
+        Set tSC = ..SetValueAt(tValue, pTargetPath, pAction, pKey)
+    } Catch ex {
+        Set tSC = ex.AsStatus()
+    }
+    Return tSC
+}
+
 Method SetValueAt(
 	pValue As %String = "",
 	pPropertyPath As %String = "",
@@ -128,9 +152,6 @@ Method SetValueAt(
 {
     Set tSC = $$$OK
     // if pAction is set, use jsonpath to set the value
-    // if pAction is clear, use jsonpath to remove the value
-    // if pAction is append, use jsonpath to append the value
-    // if pAction is insert, use jsonpath to insert the value, using pKey as the key
     Try {
         // Convert pPropertyPath to a a jsonpath
         Set tPath = ..ConvertPath(pPropertyPath)
@@ -139,26 +160,20 @@ Method SetValueAt(
         Set jp = ##class(%SYS.Python).Import("jsonpath_ng")
         Set builtins = ##class(%SYS.Python).Builtins()
 
+        if ..json = "" {
+            Set ..json = "{}"
+        }
         Set tJSON = pyjson.loads(..json)
 
         Set parser = jp.parse(tPath)
         if pAction = "set" {
-            Set tJSON = parser.update(tJSON, pValue)
-        }
-        ElseIf pAction = "clear" {
-            Set tJSON = parser.remove(tJSON)
-        }
-        ElseIf pAction = "append" {
-            Set tJSON = parser.append(tJSON, pValue)
-        }
-        ElseIf pAction = "insert" {
-            Set tJSON = parser.insert(tJSON, pValue, pKey)
+            Set tJSON = parser."update_or_create"(tJSON, pValue)
         }
 
         Set tResult = pyjson.dumps(tJSON)
         Set ..json = tResult
         Set ..classname = ..DocType
-
+        
     } Catch ex {
         Set tSC = ex.AsStatus()
     }

@@ -25,18 +25,17 @@ def test_register_message_schema(message_class, expected_name):
     assert iop_schema.Category == expected_name
     assert iop_schema.Name == expected_name
 
-@pytest.mark.parametrize("json_data,classname,path,expected", [
-    ('{"string":"Foo", "integer":42}', 'registerFilesIop.message.SimpleMessage', 'string', 'Foo'),
-    ('{"post":{"Title":"Foo"}, "string":"bar", "list_str":["Foo","Bar"]}', 'registerFilesIop.message.ComplexMessage', 'post.Title', 'Foo'),
-    ('{"post":{"Title":"Foo"}, "list_post":[{"Title":"Bar"},{"Title":"Foo"}]}', 'registerFilesIop.message.ComplexMessage', 'list_post(2).Title', 'Foo'),
-    ('{"list_str":["Foo","Bar"]}', 'registerFilesIop.message.ComplexMessage', 'list_str(2)', 'Bar'),
-    ('{"list_str":["Foo","Bar"]}', 'registerFilesIop.message.ComplexMessage', 'list_str()', ['Foo','Bar']),
-    ('{"list_str":["Foo","Bar"]}', 'registerFilesIop.message.ComplexMessage', 'list_str', ['Foo','Bar']),
-    ('{"list":["Foo","sub_list":["Bar","Baz"]]}', 'registerFilesIop.message.ComplexMessage', 'list().sub_list(2)', 'Baz'),
+@pytest.mark.parametrize("json_data,path,expected", [
+    ('{"string":"Foo", "integer":42}', 'string', 'Foo'),
+    ('{"post":{"Title":"Foo"}, "string":"bar", "list_str":["Foo","Bar"]}', 'post.Title', 'Foo'),
+    ('{"post":{"Title":"Foo"}, "list_post":[{"Title":"Bar"},{"Title":"Foo"}]}', 'list_post(2).Title', 'Foo'),
+    ('{"list_str":["Foo","Bar"]}', 'list_str(2)', 'Bar'),
+    ('{"list_str":["Foo","Bar"]}', 'list_str()', ['Foo','Bar']),
+    ('{"list_str":["Foo","Bar"]}', 'list_str', ['Foo','Bar']),
+    ('{"list":["Foo",["Bar","Baz"]]}', 'list(2)(2)', 'Baz'),
 ])
-def test_get_value_at(iop_message, json_data, classname, path, expected):
+def test_get_value_at(iop_message, json_data, path, expected):
     iop_message.json = json_data
-    iop_message.classname = classname
     result = iop_message.GetValueAt(path)
     assert result == expected
 
@@ -70,7 +69,7 @@ def test_set_value_at(iop_message, json_data, path, value, action, key, expected
         'Foo'
     )
 ])
-def test_transform(load_cls_files, iop_message, json_data, classname, transform_class, expected_value):
+def test_get_transform(load_cls_files, iop_message, json_data, classname, transform_class, expected_value):
     ref = iris.ref(None)
     iop_message.json = json_data
     iop_message.classname = classname
@@ -79,3 +78,24 @@ def test_transform(load_cls_files, iop_message, json_data, classname, transform_
     result = ref.value
     
     assert result.StringValue == expected_value
+
+def test_set_transform(load_cls_files):
+    ref = iris.ref(None)
+    message = iris.cls('Ens.StringRequest')._New()
+    message.StringValue = 'Foo'
+    
+    _Utils.raise_on_error(iris.cls('UnitTest.SimpleMessageSet').Transform(message, ref))
+    result = ref.value
+    
+    assert json.loads(result.json) == json.loads('{"string":"Foo"}')
+
+def test_set_transform_vdoc(load_cls_files, iop_message):
+    ref = iris.ref(None)
+    iop_message.json = '{"string":"Foo", "integer":42}'
+    iop_message.classname = 'registerFilesIop.message.SimpleMessage'
+    
+    _Utils.raise_on_error(iris.cls('UnitTest.SimpleMessageSetVDoc').Transform(iop_message, ref))
+    result = ref.value
+    
+    assert json.loads(result.json) == json.loads('{"string":"Foo"}')
+    assert result.classname == 'registerFilesIop.message.SimpleMessage'
