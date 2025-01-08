@@ -8,3 +8,4 @@ wheel
 twine
 iris-embedded-python-wrapper
 dc-schema
+jsonpath-ng
