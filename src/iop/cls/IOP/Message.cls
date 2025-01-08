@@ -47,13 +47,31 @@ Method GetValueAt(
         // Convert pPropertyPath to a a jsonpath
         Set tPath = ..ConvertPath(pPropertyPath)
 
-		Set tJSON = {}.%FromJSON(..json)
+        Set pyjson = ##class(%SYS.Python).Import("json")
+        Set jp = ##class(%SYS.Python).Import("jsonpath_ng")
+        Set builtins = ##class(%SYS.Python).Builtins()
 
-        // Get value at path
-        Set tValue = tJSON.%Get(tPath)
+		Set tJSON = pyjson.loads(..json)
+        Set parser = jp.parse(tPath)
+        Set matches = parser.find(tJSON)
 
-        Return tValue
-        
+        Set tResult = ""
+
+        // Return the first match
+        if matches."__len__"() = 1 {
+            Set match = matches."__getitem__"(0)
+            Set tResult = match."value"
+        }
+        ElseIf matches."__len__"() > 1 {
+            Set tResult = builtins.list()
+            For i=0:1:matches."__len__"()-1 {
+                Set match = matches."__getitem__"(i)
+                Do tResult.append(match."value")
+            }
+        }
+
+        Return tResult
+
     } Catch ex {
         Set pStatus = ex.AsStatus()
         Return ""
@@ -62,21 +80,44 @@ Method GetValueAt(
 
 ClassMethod ConvertPath(pPropertyPath As %String) As %String
 {
-    Set tPath = ""
-    Set tParts = $ListFromString(pPropertyPath, ".")
-    Set tPartsCount = $ListLength(tParts)
-    For i = 1:1:tPartsCount {
-        Set tPart = $ListGet(tParts, i)
-        If tPart["(" {
-            Set tIndex = $Extract(tPart, $Find(tPart, "(") + 1, $Find(tPart, ")") - 1)
-            Set tPart = $Extract(tPart, 1, $Find(tPart, "(") - 1)
-            Set tPath = tPath _ "." _ tPart _ "[" _ tIndex _ "]"
+    // Convert pPropertyPath to a jsonpath just by replacing 
+    // - '()' with '[*]'
+    // - '(index)' with '[index]'
+    // - '(' with '[' and ')' with ']'
+    // - if index is an integer, replace it with [index-1]
+    Set tPath = pPropertyPath
+    Set tPath = $Replace(tPath, "()", "[*]")
+    Set tPath = $Replace(tPath, "(", "[")
+    Set tPath = $Replace(tPath, ")", "]")
+    // Process each [] occurrence in the path
+    Set tPath = ..ProcessBrackets(tPath)
+
+    Return tPath
+}
+
+ClassMethod ProcessBrackets(pPath As %String) As %String
+{
+    Set tPath = pPath
+    Set start = $Find(tPath, "[")
+    While start {
+        Set end = $Find(tPath, "]", start)
+        If 'end Quit  // No matching closing bracket
+        
+        // Extract the index between [ and ]
+        Set tIndex = $Extract(tPath, start, end-2)
+        
+        // If index is numeric, decrease by 1 (0-based indexing)
+        If +tIndex {
+            Set newPath = $Extract(tPath, 1, start-1)
+            Set newPath = newPath _ (tIndex-1)
+            Set newPath = newPath _ $Extract(tPath, end-1, *)
+            Set tPath = newPath
         }
-        Else {
-            Set tPath = tPath _ "." _ tPart
-        }
+        
+        // Move past this [] pair for next iteration
+        Set start = $Find(tPath, "[", end)
     }
-    Return $Extract(tPath, 2, $Length(tPath))
+    Return tPath
 }
 
 Method SetValueAt(

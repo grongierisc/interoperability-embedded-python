@@ -25,14 +25,22 @@ class FullMessage(Message):
     datetime:datetime
     time:time
 
-
-
 @dataclass
 class PostMessage(Message):
-
     Post:PostClass = None
     ToEmailAddress:str = None
     Found:str = None
+
+@dataclass
+class ComplexMessage(Message):
+    post:PostClass = None
+    string:str = None
+    list_str:List[str] = None
+    list_int:List[int] = None
+    list_post:List[PostClass] = None
+    dict_str:Dict[str,str] = None
+    dict_int:Dict[str,int] = None
+    dict_post:Dict[str,PostClass] = None    
 
 @dataclass
 class MyResponse(Message):
