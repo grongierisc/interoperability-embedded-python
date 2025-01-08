@@ -127,30 +127,39 @@ Method SetValueAt(
 	pKey As %String = "") As %Status
 {
     Set tSC = $$$OK
-	Set tJSON = {}.%FromJSON(..json)
-	Set tPath = ..ConvertPath(pPropertyPath)
-
+    // if pAction is set, use jsonpath to set the value
+    // if pAction is clear, use jsonpath to remove the value
+    // if pAction is append, use jsonpath to append the value
+    // if pAction is insert, use jsonpath to insert the value, using pKey as the key
     Try {
-        If pAction = "set" {
-            Do tJSON.%Set(tPath, pValue)
+        // Convert pPropertyPath to a a jsonpath
+        Set tPath = ..ConvertPath(pPropertyPath)
+
+        Set pyjson = ##class(%SYS.Python).Import("json")
+        Set jp = ##class(%SYS.Python).Import("jsonpath_ng")
+        Set builtins = ##class(%SYS.Python).Builtins()
+
+        Set tJSON = pyjson.loads(..json)
+
+        Set parser = jp.parse(tPath)
+        if pAction = "set" {
+            Set tJSON = parser.update(tJSON, pValue)
+        }
+        ElseIf pAction = "clear" {
+            Set tJSON = parser.remove(tJSON)
         }
         ElseIf pAction = "append" {
-            Set current = tJSON.%Get(tPath)
-            If current = "" {
-                Do tJSON.%Set(tPath, pValue)
-            }
-            Else {
-                Do tJSON.%Set(tPath, current _ pValue)
-            }
+            Set tJSON = parser.append(tJSON, pValue)
         }
-        ElseIf pAction = "remove" {
-            Do tJSON.%Remove(tPath)
+        ElseIf pAction = "insert" {
+            Set tJSON = parser.insert(tJSON, pValue, pKey)
         }
-        Else {
-            Set tSC = $$$ERROR($$$GeneralError, "Invalid action: " _ pAction)
-        }
-    }
-    Catch ex {
+
+        Set tResult = pyjson.dumps(tJSON)
+        Set ..json = tResult
+        Set ..classname = ..DocType
+
+    } Catch ex {
         Set tSC = ex.AsStatus()
     }
     Return tSC

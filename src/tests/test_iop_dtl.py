@@ -1,6 +1,7 @@
 import os
 import pytest
 import iris
+import json
 from iop._utils import _Utils
 from registerFilesIop.message import SimpleMessage, ComplexMessage
 
@@ -38,6 +39,16 @@ def test_get_value_at(iop_message, json_data, classname, path, expected):
     iop_message.classname = classname
     result = iop_message.GetValueAt(path)
     assert result == expected
+
+@pytest.mark.parametrize("json_data,path,value,action,key,expected_json", [
+    ('{"string":"Foo", "integer":42}', 'string', 'Bar', 'set', None, '{"string":"Bar", "integer":42}'),
+    (r'{"post":{"Title":"Foo"}}', 'post.Title', 'Bar', 'set', None, r'{"post":{"Title":"Bar"}}')
+])
+def test_set_value_at(iop_message, json_data, path, value, action, key, expected_json):
+    iop_message.json = json_data
+    iop_message.classname = 'foo'
+    iop_message.SetValueAt(value, path, action, key)
+    assert json.loads(iop_message.json) == json.loads(expected_json)
 
 @pytest.mark.parametrize("json_data,classname,transform_class,expected_value", [
     (
