@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "iris_pex_embedded_python"
-version = "3.1.6"
+version = "3.2.0"
 description = "Iris Interoperability based on Embedded Python"
 readme = "README.md"
 authors = [
@@ -30,7 +30,8 @@ dependencies = [
     "dacite >=1.6.0",
     "xmltodict>=0.12.0",
     "iris-embedded-python-wrapper>=0.0.6",
-    "setuptools >= 40.8.0"
+    "setuptools >= 40.8.0",
+    "dc-schema >= 0.0.8"
 ]
 
 license = { file = "LICENSE" }

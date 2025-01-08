@@ -1,5 +1,11 @@
-Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor)
+Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor, Ens.VDoc.Interface)
 {
+
+Parameter DOCCLASSNAME = "JSON Document";
+
+Parameter DOCCLASSFULLNAME = "JSON Virtual Document";
+
+Parameter DOCSHORTNAME = "JSON";
 
 Parameter BUFFER = 1000000;
 
@@ -20,6 +26,373 @@ Property jstr As %Stream.GlobalCharacter [ Internal, Private ];
 // for retrocompatibility
 
 Property type As %String(MAXLEN = 6) [ ReadOnly ];
+
+Method GetValueAt(
+	pPropertyPath As %String = "",
+	pFormat As %String,
+	Output pStatus As %Status,
+	pDummy As %Boolean) As %String
+{
+    Set pStatus = $$$OK
+    Try {
+        // Handle standard path queries
+        If pPropertyPath = "" Return ""
+        
+        // pPropertyPath is formatted as :
+        // 1. "property1.property2.property3" for nested properties
+        // 2. "property1()" for all elements of an array or property1(*)
+        // 3. "property1(index).property2" for nested properties within an array
+        // 4. "property1(index)" for a specific element of an array
+
+        // Convert pPropertyPath to a a jsonpath
+        Set tPath = ..ConvertPath(pPropertyPath)
+
+		Set tJSON = {}.%FromJSON(..json)
+
+        // Get value at path
+        Set tValue = tJSON.%Get(tPath)
+
+        Return tValue
+        
+    } Catch ex {
+        Set pStatus = ex.AsStatus()
+        Return ""
+    }
+}
+
+ClassMethod ConvertPath(pPropertyPath As %String) As %String
+{
+    Set tPath = ""
+    Set tParts = $ListFromString(pPropertyPath, ".")
+    Set tPartsCount = $ListLength(tParts)
+    For i = 1:1:tPartsCount {
+        Set tPart = $ListGet(tParts, i)
+        If tPart["(" {
+            Set tIndex = $Extract(tPart, $Find(tPart, "(") + 1, $Find(tPart, ")") - 1)
+            Set tPart = $Extract(tPart, 1, $Find(tPart, "(") - 1)
+            Set tPath = tPath _ "." _ tPart _ "[" _ tIndex _ "]"
+        }
+        Else {
+            Set tPath = tPath _ "." _ tPart
+        }
+    }
+    Return $Extract(tPath, 2, $Length(tPath))
+}
+
+Method SetValueAt(
+	pValue As %String = "",
+	pPropertyPath As %String = "",
+	pAction As %String = "set",
+	pKey As %String = "") As %Status
+{
+    Set tSC = $$$OK
+	Set tJSON = {}.%FromJSON(..json)
+	Set tPath = ..ConvertPath(pPropertyPath)
+
+    Try {
+        If pAction = "set" {
+            Do tJSON.%Set(tPath, pValue)
+        }
+        ElseIf pAction = "append" {
+            Set current = tJSON.%Get(tPath)
+            If current = "" {
+                Do tJSON.%Set(tPath, pValue)
+            }
+            Else {
+                Do tJSON.%Set(tPath, current _ pValue)
+            }
+        }
+        ElseIf pAction = "remove" {
+            Do tJSON.%Remove(tPath)
+        }
+        Else {
+            Set tSC = $$$ERROR($$$GeneralError, "Invalid action: " _ pAction)
+        }
+    }
+    Catch ex {
+        Set tSC = ex.AsStatus()
+    }
+    Return tSC
+}
+
+Method IsValid() As %Status
+{
+    Return $$$OK
+}
+
+Method Validate(pValidationSpec As %String = "") As %Status
+{
+    If ..DocType = "" Return $$$ERROR($$$GeneralError, "No DocType specified")
+    
+    // Validate against stored schema
+    Return ##class(IOP.Message.JSONSchema).ValidateJSON(tJSON, ..DocTypeCategory, ..DocTypeName)
+}
+
+Method ParentMany(Output pParentsList) As %Integer
+{
+    Return 0
+}
+
+/// Returns a list of available DocTypes by querying the JSONSchema storage.
+Query EnumerateDocTypes(
+	Category As %String = "",
+	IncludeBase As %Boolean = 0) As %Query(CONTAINID = 0, ROWSPEC = "Type:%String")
+{
+}
+
+ClassMethod EnumerateDocTypesExecute(
+	ByRef qHandle As %Binary,
+	pName As %String = "",
+	IncludeBase As %Boolean) As %Status
+{
+    Kill qHandle
+    Set qHandle = 0
+    Set sql = "SELECT Name FROM IOP_Message.JSONSchema"
+    If pName '= "" {
+        Set sql = sql _ " WHERE Name = ?"
+    }
+
+    Set stmt = ##class(%SQL.Statement).%New()
+    Set tSC = stmt.%Prepare(sql)
+    Quit:$$$ISERR(tSC) tSC
+
+    If pName '= "" {
+        Set rs = stmt.%Execute(pName)
+    } Else {
+        Set rs = stmt.%Execute()
+    }
+    While rs.%Next() {
+        Set qHandle($I(qHandle)) = rs.%Get("Name")
+    }
+    set qHandle = 0
+    Quit $$$OK
+}
+
+ClassMethod EnumerateDocTypesFetch(
+	ByRef qHandle As %Binary,
+	ByRef qRow As %List,
+	ByRef AtEnd As %Integer = 0) As %Status
+{
+    Set qHandle = $O(qHandle(qHandle))
+    If qHandle = "" {
+        Set qRow = "", AtEnd = 1
+        Quit $$$OK
+    }
+    Set qRow = $LB(qHandle(qHandle))
+    Quit $$$OK
+}
+
+ClassMethod EnumerateDocTypesClose(ByRef qHandle As %Binary) As %Status
+{
+    Kill qHandle
+    Quit $$$OK
+}
+
+/// Returns a list of schema categories from the JSONSchema storage.
+Query EnumerateTypeCategories(Standard As %String = "") As %Query(CONTAINID = 0, ROWSPEC = "Category:%String,Description:%String,IsStandard:%Boolean,Base:%String")
+{
+}
+
+ClassMethod EnumerateTypeCategoriesExecute(
+	ByRef qHandle As %Binary,
+	pStandard As %String = "") As %Status
+{
+    Kill qHandle
+    Set qHandle = 0
+    Set sql = "SELECT Category, Name FROM IOP_Message.JSONSchema"
+
+    Set stmt = ##class(%SQL.Statement).%New()
+    Set tSC = stmt.%Prepare(sql)
+    Quit:$$$ISERR(tSC) tSC
+
+    Set rs = stmt.%Execute()
+
+    While rs.%Next() {
+        Set category = rs.%Get(1)
+        // Format: Category, Description, IsStandard, Base
+        Set qHandle($I(qHandle)) = $LB(category, "JSON Schema category", "IsStandard", "Base")
+    }
+    Set qHandle = 0
+    Quit $$$OK
+}
+
+ClassMethod EnumerateTypeCategoriesFetch(
+	ByRef qHandle As %Binary,
+	ByRef Row As %List,
+	ByRef AtEnd As %Integer = 0) As %Status
+{
+    Set qHandle = $O(qHandle(qHandle))
+    If qHandle = "" {
+        Set Row = "", AtEnd = 1
+        Quit $$$OK
+    }
+    Set Row = qHandle(qHandle)
+    Quit $$$OK
+}
+
+ClassMethod EnumerateTypeCategoriesClose(ByRef qHandle As %Binary) As %Status
+{
+    Kill qHandle
+    Quit $$$OK
+}
+
+/// Returns array of properties that make up the <i>contents</i>
+/// of this object.<br>
+/// This method in implemented within the document class.<br>
+/// The content array is in the form:<br>
+/// 	pContents(n,"type")="%String"<br>
+/// 	pContents(n,"name")="Field"<br>
+/// 	pContents(n,"alias")=alias code<br>
+/// If pContents(n) is non-zero then the property is a composite type with<br>
+/// sub-properties.  The sub-properties are indexed with a similar structure under<br>
+///     pContents(n,m) where m is the index of the subtype property.<br>
+ClassMethod GetContentArray(
+	Output pContents,
+	pMode As %String,
+	pDocType As %String = "MESSAGE",
+	pLevel As %Integer,
+	pIncludeBase As %Boolean = 0) As %Status
+{
+    Set tSC = $$$OK
+    Try {
+        // Get schema structure
+        Set tName = pDocType
+        #; Set tName = $Piece(pDocType, ":", 2)
+
+        Set tSC = ##class(IOP.Message.JSONSchema).GetSchema(tName, .json)
+        If $$$ISERR(tSC) Return tSC
+        set schema = {}.%FromJSON(json)
+
+        $$$ThrowOnError(##class(IOP.Message.Document).SchemaToContents(schema, .tContents))
+
+        Merge @pContents = tContents
+    }
+    Catch ex {
+        Set tSC = ex.AsStatus()
+    }
+    Return $$$OK
+}
+
+/// Convert a JSON schema structure into a contents array format
+/// schema: Dynamic object containing the JSON schema
+/// Output pContents: Array to store the contents structure
+/// Returns: %Status
+ClassMethod SchemaToContents(
+	schema As %DynamicObject,
+	Output pContents) As %Status
+{
+    Set tSC = $$$OK
+    Try {
+        Set idx = 0
+        Do ..ProcessProperties(schema.properties, .idx, .pContents, schema)
+    }
+    Catch ex {
+        Set tSC = ex.AsStatus()
+    }
+    Return tSC
+}
+
+ClassMethod ProcessProperties(
+	properties As %DynamicObject,
+	ByRef idx As %Integer,
+	Output pContents,
+	schema As %DynamicObject) As %Status
+{
+    Set iterator = properties.%GetIterator()
+    While iterator.%GetNext(.key, .value) {
+        Set idx = idx + 1
+        Do ..HandleProperty(value, .key, idx, .pContents, schema)
+    }
+    Return $$$OK
+}
+
+ClassMethod HandleProperty(
+	value As %DynamicObject,
+	ByRef key As %String,
+	idx As %Integer,
+	Output pContents,
+	schema As %DynamicObject)
+{
+    Set type = value.type
+    
+    If type = "string" || type = "number" || type = "boolean" {
+        Do ..HandlePrimitiveType(type, idx, .pContents)
+    }
+    ElseIf type = "array" {
+        Do ..HandleArrayType(value, .key, idx, .pContents, schema)
+    }
+    ElseIf type = "object" {
+        Do ..HandleObjectType(value, idx, .pContents)
+    }
+    ElseIf $IsObject(value.allOf) {
+        Do ..HandleAllOfType(value, key, idx, .pContents, schema)
+    }
+    
+    If type = "array" Set key = key_"()"
+    Set pContents(idx,"name") = key
+    Set pContents(idx,"alias") = key
+}
+
+ClassMethod HandlePrimitiveType(
+	type As %String,
+	idx As %Integer,
+	Output pContents)
+{
+    Set pContents(idx,"type") = $Case(type,
+        "string": "%String",
+        "number": "%Numeric",
+        "boolean": "%Boolean")
+}
+
+ClassMethod HandleArrayType(
+	value As %DynamicObject,
+	ByRef key As %String,
+	idx As %Integer,
+	Output pContents,
+	schema As %DynamicObject)
+{
+    Set pContents(idx,"type") = "()"
+    If $IsObject(value.items) && $IsObject(value.items.allOf) {
+        Do ..HandleAllOfType(value.items, key, idx, .pContents, schema)
+    }
+}
+
+ClassMethod HandleObjectType(
+	value As %DynamicObject,
+	idx As %Integer,
+	Output pContents)
+{
+    Set pContents(idx,"type") = "object"
+    If $IsObject(value.properties) {
+        Do ..SchemaToContents(value, .subContents)
+        Merge @pContents(idx) = subContents
+    }
+}
+
+ClassMethod HandleAllOfType(
+	value As %DynamicObject,
+	key As %String,
+	idx As %Integer,
+	Output pContents,
+	schema As %DynamicObject)
+{
+    Set pContents(idx) = 1 //TODO size of subContents
+    Set pContents(idx,"type") = "object"
+    Set pContents(idx,"name") = key
+    Set pContents(idx,"alias") = key
+    
+    Set allOfIterator = value.allOf.%GetIterator()
+    While allOfIterator.%GetNext(.allOfKey, .allOfValue) {
+        If $IsObject(allOfValue."$ref") {
+            Do ..SchemaToContents(allOfValue."$ref", .subContents)
+        }
+        Else {
+            Set tDef = schema."$defs".%Get($Piece(allOfValue."$ref","/",*))
+            Do ..SchemaToContents(tDef, .subContents)
+        }
+        Merge pContents(idx) = subContents
+    }
+}
 
 Method bufferGet()
 {
@@ -185,6 +558,26 @@ Storage Default
 <Value name="6">
 <Value>jsonString</Value>
 </Value>
+<Value name="7">
+<Value>DocType</Value>
+</Value>
+<Value name="8">
+<Value>TimeCreated</Value>
+</Value>
+<Value name="9">
+<Value>Source</Value>
+</Value>
+<Value name="10">
+<Value>IsMutable</Value>
+</Value>
+<Value name="11">
+<Value>OriginalDocId</Value>
+</Value>
+</Data>
+<Data name="UserValues">
+<Attribute>UserValues</Attribute>
+<Structure>subnode</Structure>
+<Subscript>"IOP.Message.UserValues"</Subscript>
 </Data>
 <Data name="jsonObject">
 <Attribute>jsonObject</Attribute>

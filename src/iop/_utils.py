@@ -6,6 +6,8 @@ import inspect
 import xmltodict
 import pkg_resources
 import importlib
+import json
+from dc_schema import get_schema
 
 class _Utils():
     @staticmethod
@@ -32,6 +34,33 @@ class _Utils():
 
         if path:
             _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+
+    @staticmethod
+    def register_message_schema(cls):
+        """
+        It takes a class and registers the schema
+        
+        :param cls: The class to register
+        """
+        schema = get_schema(cls)
+        schema_name = cls.__module__ + '.' + cls.__name__
+        schema_str = json.dumps(schema)
+        categories = schema_name
+        _Utils.register_schema(schema_name,schema_str,categories)
+
+    @staticmethod
+    def register_schema(schema_name:str, schema_str:str,categories:str):
+        """
+        It takes a schema name, a schema string, and a category string, and registers the schema
+        
+        :param schema_name: The name of the schema
+        :type schema_name: str
+        :param schema_str: The schema as a string
+        :type schema_str: str
+        :param categories: The categories of the schema
+        :type categories: str
+        """
+        _Utils.raise_on_error(iris.cls('IOP.Message.JSONSchema').Import(schema_str,categories,schema_name))
 
     @staticmethod
     def register_component(module:str,classname:str,path:str,overwrite:int=1,iris_classname:str='Python'):
@@ -128,7 +157,7 @@ class _Utils():
                         extend = klass.bases[0].id
                     else:
                         extend = klass.bases[0].attr
-                if  extend in ('BusinessOperation','BusinessProcess','BusinessService','DuplexService','DuplexProcess','DuplexOperation','InboundAdapter','OutboundAdapter'):
+                if extend in ('BusinessOperation','BusinessProcess','BusinessService','DuplexService','DuplexProcess','DuplexOperation','InboundAdapter','OutboundAdapter'):
                     module = _Utils.filename_to_module(filename)
                     iris_class_name = f"{iris_package_name}.{module}.{klass.name}"
                     # strip "_" for iris class name
@@ -188,6 +217,8 @@ class _Utils():
                 list of dictionaries:
                 * key: the name of the production
                 * value: a dictionary containing the settings for the production
+            * SCHEMAS
+                List of classes
         """
         path = None
         # try to load the settings file
@@ -216,6 +247,12 @@ class _Utils():
             _Utils.set_productions_settings(settings.PRODUCTIONS,path)
         except AttributeError:
             print("No productions to register")
+        try:
+            # set the schemas
+            for cls in settings.SCHEMAS:
+                _Utils.register_message_schema(cls)
+        except AttributeError:
+            print("No schemas to register")
         try:
             sys.path.remove(path)
         except ValueError:

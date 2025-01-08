@@ -19,7 +19,7 @@ class FullMessage(Message):
     boolean:bool
     list:List
     dict:Dict
-    list_dict:List[dict]
+    list_dict:List[Dict]
     dict_list:Dict[str,List]
     date:date
     datetime:datetime
