@@ -56,7 +56,6 @@ Method GetValueAt(
         Set matches = parser.find(tJSON)
 
         Set tResult = ""
-        zw
         // Return the first match
         if matches."__len__"() = 1 {
             Set match = matches."__getitem__"(0)

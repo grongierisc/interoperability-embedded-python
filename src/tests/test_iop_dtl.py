@@ -97,5 +97,5 @@ def test_set_transform_vdoc(load_cls_files, iop_message):
     _Utils.raise_on_error(iris.cls('UnitTest.SimpleMessageSetVDoc').Transform(iop_message, ref))
     result = ref.value
     
-    assert json.loads(result.json) == json.loads('{"string":"Foo"}')
+    assert json.loads(result.json) == json.loads('{"string":"Foo", "integer":42}')
     assert result.classname == 'registerFilesIop.message.SimpleMessage'
