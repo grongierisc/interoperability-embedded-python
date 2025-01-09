@@ -41,12 +41,15 @@ def test_get_value_at(iop_message, json_data, path, expected):
 
 @pytest.mark.parametrize("json_data,path,value,action,key,expected_json", [
     ('{"string":"Foo", "integer":42}', 'string', 'Bar', 'set', None, '{"string":"Bar", "integer":42}'),
-    (r'{"post":{"Title":"Foo"}}', 'post.Title', 'Bar', 'set', None, r'{"post":{"Title":"Bar"}}')
+    (r'{"post":{"Title":"Foo"}}', 'post.Title', 'Bar', 'set', None, r'{"post":{"Title":"Bar"}}'),
+    (r'{}', 'post.Title', 'Bar', 'set', None, r'{"post":{"Title":"Bar"}}'),
+    (r'{}', 'post()', 'Bar', 'append', None, r'{"post":["Bar"]}'),
+    (r'{"post":["Foo"]}', 'post()', 'Bar', 'append', None, r'{"post":["Foo","Bar"]}'),
 ])
 def test_set_value_at(iop_message, json_data, path, value, action, key, expected_json):
     iop_message.json = json_data
     iop_message.classname = 'foo'
-    iop_message.SetValueAt(value, path, action, key)
+    _Utils.raise_on_error(iop_message.SetValueAt(value, path, action, key))
     assert json.loads(iop_message.json) == json.loads(expected_json)
 
 @pytest.mark.parametrize("json_data,classname,transform_class,expected_value", [

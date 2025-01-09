@@ -1,4 +1,4 @@
-Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, %XML.Adaptor, Ens.VDoc.Interface)
+Class IOP.Message Extends (Ens.MessageBody, %CSP.Page, Ens.VDoc.Interface)
 {
 
 Parameter DOCCLASSNAME = "JSON Document";
@@ -26,6 +26,19 @@ Property jstr As %Stream.GlobalCharacter [ Internal, Private ];
 // for retrocompatibility
 
 Property type As %String(MAXLEN = 6) [ ReadOnly ];
+
+/// Gets the next index in an array
+Method GetNextIndex(
+	pPath As %String,
+	pIndex As %String,
+	ByRef pStatus As %Status = {$$$OK}) As %String
+{
+    Set f=$F(pPath,"()")  If 'f Set pStatus=$$$ERROR($$$EnsErrGeneral,"Can't iterate on no-array type '"_pPath_"'") Quit ""
+    if pIndex="" Set pIndex=1
+    Set tValue = ..GetValueAt($EXTRACT(pPath, 1, $LENGTH(pPath)-2))
+    if pIndex>$LENGTH(tValue) Quit ""
+    Quit pIndex+1
+}
 
 Method GetValueAt(
 	pPropertyPath As %String = "",
@@ -152,6 +165,12 @@ Method SetValueAt(
     Set tSC = $$$OK
     // if pAction is set, use jsonpath to set the value
     Try {
+        if pAction = "append" {
+            // trinm () from the end of the path
+            if $EXTRACT(pPropertyPath, *) = ")" {
+                Set pPropertyPath = $EXTRACT(pPropertyPath, 1, $LENGTH(pPropertyPath)-2)
+            }
+        }
         // Convert pPropertyPath to a a jsonpath
         Set tPath = ..ConvertPath(pPropertyPath)
 
@@ -159,6 +178,7 @@ Method SetValueAt(
         Set jp = ##class(%SYS.Python).Import("jsonpath_ng")
         Set builtins = ##class(%SYS.Python).Builtins()
 
+        // By default, if json is empty, set it to an empty object
         if ..json = "" {
             Set ..json = "{}"
         }
@@ -167,6 +187,18 @@ Method SetValueAt(
         Set parser = jp.parse(tPath)
         if pAction = "set" {
             Set tJSON = parser."update_or_create"(tJSON, pValue)
+        }
+        ElseIf pAction = "append" {
+            Set tFindValue = parser."find"(tJSON)
+            if tFindValue."__len__"() = 0 {
+                Set tList = builtins.list()
+                Do tList.append(pValue)
+                Set tJSON = parser."update_or_create"(tJSON,tList)
+            }
+            Else {
+                Do tFindValue."__getitem__"(0)."value".append(pValue)
+                Set tJSON = parser."update"(tJSON, tFindValue."__getitem__"(0)."value")
+            }
         }
 
         Set tResult = pyjson.dumps(tJSON)
