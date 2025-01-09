@@ -34,9 +34,10 @@ Method GetNextIndex(
 	ByRef pStatus As %Status = {$$$OK}) As %String
 {
     Set f=$F(pPath,"()")  If 'f Set pStatus=$$$ERROR($$$EnsErrGeneral,"Can't iterate on no-array type '"_pPath_"'") Quit ""
-    if pIndex="" Set pIndex=1
+    if pIndex="" Set pIndex=0
     Set tValue = ..GetValueAt($EXTRACT(pPath, 1, $LENGTH(pPath)-2))
-    if pIndex>$LENGTH(tValue) Quit ""
+    Set builtins = ##class(%SYS.Python).Builtins()
+    if pIndex>=builtins.len(tValue) Quit ""
     Quit pIndex+1
 }
 
