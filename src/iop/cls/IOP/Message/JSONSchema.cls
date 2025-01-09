@@ -9,6 +9,31 @@ Property JSONSchema As %String(MAXLEN = "");
 
 Index NameIndex On Name [ IdKey, Unique ];
 
+/// Import a JSON Schema from file
+ClassMethod ImportFromFile(
+	pFileName As %String,
+	pCategory As %String = "",
+	pName As %String) As %Status
+{
+    Set pStatus = $$$OK
+    Try {
+        If '##class(%File).Exists(pFileName) {
+            Set pStatus = $$$ERROR($$$GeneralError, "File not found")
+            Return pStatus
+        }
+        Set tFile = ##class(%File).%New(pFileName)
+        $$$ThrowOnError(tFile.Open("R"))
+        Set tSchema = ""
+        While 'tFile.AtEnd {
+            Set tSchema = tSchema _ tFile.ReadLine()
+        }
+        Set pStatus = ..Import(tSchema, pCategory, pName)
+    } Catch ex {
+        Set pStatus = ex.AsStatus()
+    }
+    Return pStatus
+}
+
 /// Store the JSON Schema in this object
 ClassMethod Import(
 	pSchema As %String,
