@@ -360,7 +360,7 @@ ClassMethod GetContentArray(
         If $$$ISERR(tSC) Return tSC
         set schema = {}.%FromJSON(json)
 
-        $$$ThrowOnError(##class(IOP.Message.Document).SchemaToContents(schema, .tContents))
+        $$$ThrowOnError(##class(IOP.Message).SchemaToContents(schema, .tContents))
 
         Merge @pContents = tContents
     }
