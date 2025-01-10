@@ -12,6 +12,7 @@ nav:
   - API documentation:
     - Command Line Interface: command-line.md
     - Python API: python-api.md
+  - DTL Support: dtl.md
   - Reference:
     - Examples: example.md
     - Useful Links: useful-links.md

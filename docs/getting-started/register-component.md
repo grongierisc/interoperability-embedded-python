@@ -89,16 +89,18 @@ Utils.migrate()
 
 ## The `settings.py` File
 
-This file is used to store the settings of the interoperability components. It has two sections:
+This file is used to store the settings of the interoperability components. It has three sections:
 
 - `CLASSES`: Stores the classes of the interoperability components.
 - `PRODUCTIONS`: Stores the productions of the interoperability components.
+- `SCHEMAS`: Stores the schemas of the interoperability components.
 
 Example:
 ```python
 import bp
 from bo import *
 from bs import *
+from msg import RedditPost
 
 CLASSES = {
     'Python.RedditService': RedditService,
@@ -106,6 +108,8 @@ CLASSES = {
     'Python.FileOperation': FileOperation,
     'Python.FileOperationWithIrisAdapter': FileOperationWithIrisAdapter,
 }
+
+SCHEMAS = [RedditPost]
 
 PRODUCTIONS = [
     {
@@ -305,4 +309,19 @@ PRODUCTIONS = [
             }
         } 
     ]
+```
+
+### The `SCHEMAS` Section
+
+This section stores the schemas of the interoperability components. It helps to register the schemas for DTL transformations.
+
+The list has the following structure:
+
+- A list of classes
+
+Example:
+```python
+from msg import RedditPost
+
+SCHEMAS = [RedditPost]
 ```
