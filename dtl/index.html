@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/example/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/dtl/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Examples - IoP (Interoperability On Python)</title>
+    <title>DTL Support - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Examples";
-        var mkdocs_page_input_path = "example.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/example/";
+        var mkdocs_page_name = "DTL Support";
+        var mkdocs_page_input_path = "dtl.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/dtl/";
       </script>
     
     <!--[if lt IE 9]>
@@ -59,29 +59,25 @@
                   <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
                   </li>
               </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">DTL Support</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-to-use-dtl-in-with-message">How to use DTL in with Message</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#building-a-dtl-transformation">Building a DTL Transformation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#jsonschema-support">JsonSchema Support</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
-              <ul class="current">
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Examples</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#business-operation">Business Operation</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#explanation">Explanation</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#register-a-component">Register a Component</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingpy">Example of setting.py</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#registering-the-component">Registering the Component</a>
-    </li>
-        </ul>
-    </li>
-    </ul>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
@@ -107,8 +103,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Reference</li>
-      <li class="breadcrumb-item active">Examples</li>
+      <li class="breadcrumb-item active">DTL Support</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -117,64 +112,80 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="example">Example</h1>
-<p>This document provides an example of a business operation and messages in Python, along with instructions on how to register a component.</p>
-<h2 id="business-operation">Business Operation</h2>
-<p>Below is an example of a business operation in Python:</p>
-<pre><code class="language-python">from iop import BusinessOperation, Message
+                <h1 id="dtl-support">DTL Support</h1>
+<p>Starting with version 3.2.0, IoP supports DTL transformations. 
+DTL the Data Transformation Layer in IRIS Interoperability. 
+DTL transformations are used to transform data from one format to another with a graphical editor.
+It supports also <code>jsonschema</code> structures.</p>
+<h2 id="how-to-use-dtl-in-with-message">How to use DTL in with Message</h2>
+<p>First you need to register you message class is a <code>settings.py</code> file.</p>
+<p>To do so, you need to add the following line in the <code>settings.py</code> file:</p>
+<p><code>settings.py</code></p>
+<pre><code>from msg import MyMessage
+
+SCHEMAS = [MyMessage]
+</code></pre>
+<p>Then you can use iop migration command to generate schema files for your message classes.</p>
+<pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
+</code></pre>
+<h3 id="example">Example</h3>
+<p><code>msg.py</code></p>
+<pre><code class="language-python">from iop import Message
 from dataclasses import dataclass
 
-class MyBusinessOperation(BusinessOperation):
-
-    def on_init(self):
-        # This method is called when the component is becoming active in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        return
-
-    def on_teardown(self):
-        # This method is called when the component is becoming inactive in the production
-        self.log_info(&quot;[Python] MyBusinessOperation:on_teardown() is called&quot;)
-        return
-
-    def on_message(self, message_input: 'MyRequest'):
-        # Called from service/process/operation, message is of type MyRequest with property request_string
-        self.log_info(&quot;[Python] MyBusinessOperation:on_message() is called with message: &quot; + message_input.request_string)
-        response = MyResponse(&quot;MyBusinessOperation:on_message() echos&quot;)
-        return response
-
 @dataclass
-class MyRequest(Message):
-    request_string: str = None
-
-@dataclass
-class MyResponse(Message):
-    my_string: str = None
+class MyMessage(Message):
+    name: str = None
+    age: int = None
 </code></pre>
-<h3 id="explanation">Explanation</h3>
-<ul>
-<li><strong>on_init</strong>: This method is called when the component becomes active in the production.</li>
-<li><strong>on_teardown</strong>: This method is called when the component becomes inactive in the production.</li>
-<li><strong>on_message</strong>: This method is called from service/process/operation, and it processes the incoming message of type <code>MyRequest</code>.</li>
-</ul>
-<h2 id="register-a-component">Register a Component</h2>
-<p>To register a component, create a <code>setting.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
-<h3 id="example-of-settingpy">Example of <code>setting.py</code></h3>
-<pre><code class="language-python">import bo
+<p><code>settings.py</code></p>
+<pre><code class="language-python">from msg import MyMessage
 
-CLASSES = {
-    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
+SCHEMAS = [MyMessage]
+</code></pre>
+<p>Migrate the schema files</p>
+<pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
+</code></pre>
+<h2 id="building-a-dtl-transformation">Building a DTL Transformation</h2>
+<p>To build a DTL transformation, you need to create a new DTL transformation class.</p>
+<p>Go to the IRIS Interoperability Management Portal and create a new DTL transformation.</p>
+<p><img alt="DTL Transformation" src="../img/interop_dtl_management_portal.png" /></p>
+<p>Then select the source and target message classes.</p>
+<p><img alt="DTL Transformation" src="../img/dtl_wizard.png" /></p>
+<p>And it's schema.</p>
+<p><img alt="DTL Transformation" src="../img/vdoc_type.png" /></p>
+<p>Then you can start building your transformation.</p>
+<p><img alt="DTL Transformation" src="../img/complex_transform.png" /></p>
+<p>You can even test your transformation.</p>
+<p><img alt="DTL Transformation" src="../img/test_dtl.png" /></p>
+<p>Example of payload to test as a source message:</p>
+<pre><code class="language-xml">&lt;test&gt;
+  &lt;Message&gt;
+    &lt;json&gt;&lt;![CDATA[
+{
+&quot;list_str&quot;:[&quot;toto&quot;,&quot;titi&quot;],
+&quot;post&quot;:{&quot;Title&quot;:&quot;foo&quot;,&quot;Selftext&quot;:&quot;baz&quot;},
+&quot;list_post&quot;:[{&quot;Title&quot;:&quot;bar&quot;,&quot;Selftext&quot;:&quot;baz&quot;},{&quot;Title&quot;:&quot;foo&quot;,&quot;Selftext&quot;:&quot;foo&quot;}]
 }
+]]&gt;&lt;/json&gt;
+  &lt;/Message&gt;
+&lt;/test&gt;
 </code></pre>
-<h3 id="registering-the-component">Registering the Component</h3>
-<p>Use the <code>iop</code> command line to register your component:</p>
-<pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
+<h2 id="jsonschema-support">JsonSchema Support</h2>
+<p>Starting with version 3.2.0, IoP supports <code>jsonschema</code> structures for DTL transformations.</p>
+<p>Same as for message classes, you need to register your <code>jsonschema</code>.
+To do so, you need to invoke his iris command:</p>
+<pre><code class="language-objectscript">zw ##class(IOP.Message.JSONSchema).ImportFromFile(&quot;/irisdev/app/random_jsonschema.json&quot;,&quot;Demo&quot;,&quot;Demo&quot;)
 </code></pre>
+<p>Where the first argument is the path to the jsonschema file, the second argument is the package name and the third argument is the name of the schema.</p>
+<p>Then you can use it in your DTL transformation.
+The schema will be available in the name of <code>Demo</code>.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../dtl/" class="btn btn-neutral float-left" title="DTL Support"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../useful-links/" class="btn btn-neutral float-right" title="Useful Links">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../example/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -197,10 +208,10 @@ CLASSES = {
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../dtl/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../useful-links/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../example/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

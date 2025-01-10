@@ -77,6 +77,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#the-productions-section">The PRODUCTIONS Section</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-schemas-section">The SCHEMAS Section</a>
+    </li>
         </ul>
     </li>
     </ul>
@@ -88,6 +90,10 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../python-api/">Python API</a>
                   </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../dtl/">DTL Support</a>
+                </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
               <ul>
@@ -189,15 +195,17 @@ Utils.register_folder(&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX&quot
 Utils.migrate()
 </code></pre>
 <h2 id="the-settingspy-file">The <code>settings.py</code> File</h2>
-<p>This file is used to store the settings of the interoperability components. It has two sections:</p>
+<p>This file is used to store the settings of the interoperability components. It has three sections:</p>
 <ul>
 <li><code>CLASSES</code>: Stores the classes of the interoperability components.</li>
 <li><code>PRODUCTIONS</code>: Stores the productions of the interoperability components.</li>
+<li><code>SCHEMAS</code>: Stores the schemas of the interoperability components.</li>
 </ul>
 <p>Example:</p>
 <pre><code class="language-python">import bp
 from bo import *
 from bs import *
+from msg import RedditPost
 
 CLASSES = {
     'Python.RedditService': RedditService,
@@ -205,6 +213,8 @@ CLASSES = {
     'Python.FileOperation': FileOperation,
     'Python.FileOperationWithIrisAdapter': FileOperationWithIrisAdapter,
 }
+
+SCHEMAS = [RedditPost]
 
 PRODUCTIONS = [
     {
@@ -393,6 +403,17 @@ PRODUCTIONS = [
             }
         } 
     ]
+</code></pre>
+<h3 id="the-schemas-section">The <code>SCHEMAS</code> Section</h3>
+<p>This section stores the schemas of the interoperability components. It helps to register the schemas for DTL transformations.</p>
+<p>The list has the following structure:</p>
+<ul>
+<li>A list of classes</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-python">from msg import RedditPost
+
+SCHEMAS = [RedditPost]
 </code></pre>
               
             </div>
