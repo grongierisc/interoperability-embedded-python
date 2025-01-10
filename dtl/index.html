@@ -72,6 +72,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#jsonschema-support">JsonSchema Support</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#example-of-dtl-transformation-with-jsonschema-or-message-class">Example of DTL Transformation with JsonSchema or Message Class</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -113,9 +115,9 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="dtl-support">DTL Support</h1>
-<p>Starting with version 3.2.0, IoP supports DTL transformations. 
-DTL the Data Transformation Layer in IRIS Interoperability. 
-DTL transformations are used to transform data from one format to another with a graphical editor.
+<p>Starting with version 3.2.0, IoP supports DTL transformations.</p>
+<p>DTL the Data Transformation Layer in IRIS Interoperability. </p>
+<p>DTL transformations are used to transform data from one format to another with a graphical editor.
 It supports also <code>jsonschema</code> structures.</p>
 <h2 id="how-to-use-dtl-in-with-message">How to use DTL in with Message</h2>
 <p>First you need to register you message class is a <code>settings.py</code> file.</p>
@@ -173,13 +175,113 @@ SCHEMAS = [MyMessage]
 </code></pre>
 <h2 id="jsonschema-support">JsonSchema Support</h2>
 <p>Starting with version 3.2.0, IoP supports <code>jsonschema</code> structures for DTL transformations.</p>
-<p>Same as for message classes, you need to register your <code>jsonschema</code>.
-To do so, you need to invoke his iris command:</p>
+<p>Same as for message classes, you need to register your <code>jsonschema</code>.</p>
+<p>To do so, you need to invoke his iris command:</p>
 <pre><code class="language-objectscript">zw ##class(IOP.Message.JSONSchema).ImportFromFile(&quot;/irisdev/app/random_jsonschema.json&quot;,&quot;Demo&quot;,&quot;Demo&quot;)
 </code></pre>
 <p>Where the first argument is the path to the jsonschema file, the second argument is the package name and the third argument is the name of the schema.</p>
-<p>Then you can use it in your DTL transformation.
-The schema will be available in the name of <code>Demo</code>.</p>
+<p>Then you can use it in your DTL transformation.</p>
+<p>The schema will be available in the name of <code>Demo</code>.</p>
+<p>Example <code>jsonschema</code> file:</p>
+<pre><code class="language-json">{
+    &quot;$schema&quot;: &quot;https://json-schema.org/draft/2020-12/schema&quot;,
+    &quot;type&quot;: &quot;object&quot;,
+    &quot;title&quot;: &quot;PostMessage&quot;,
+    &quot;properties&quot;: {
+        &quot;post&quot;: {
+            &quot;allOf&quot;: [
+                {
+                    &quot;$ref&quot;: &quot;#/$defs/PostClass&quot;
+                }
+            ]
+        },
+        &quot;to_email_address&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;default&quot;: null
+        },
+        &quot;my_list&quot;: {
+            &quot;type&quot;: &quot;array&quot;,
+            &quot;items&quot;: {
+                &quot;type&quot;: &quot;string&quot;
+            }
+        },
+        &quot;found&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;default&quot;: null
+        },
+        &quot;list_of_post&quot;: {
+            &quot;type&quot;: &quot;array&quot;,
+            &quot;items&quot;: {
+                &quot;allOf&quot;: [
+                    {
+                        &quot;$ref&quot;: &quot;#/$defs/PostClass&quot;
+                    }
+                ]
+            }
+        }
+    },
+    &quot;$defs&quot;: {
+        &quot;PostClass&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;title&quot;: &quot;PostClass&quot;,
+            &quot;properties&quot;: {
+                &quot;title&quot;: {
+                    &quot;type&quot;: &quot;string&quot;
+                },
+                &quot;selftext&quot;: {
+                    &quot;type&quot;: &quot;string&quot;
+                },
+                &quot;author&quot;: {
+                    &quot;type&quot;: &quot;string&quot;
+                },
+                &quot;url&quot;: {
+                    &quot;type&quot;: &quot;string&quot;
+                },
+                &quot;created_utc&quot;: {
+                    &quot;type&quot;: &quot;number&quot;
+                },
+                &quot;original_json&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;default&quot;: null
+                }
+            },
+            &quot;required&quot;: [
+                &quot;title&quot;,
+                &quot;selftext&quot;,
+                &quot;author&quot;,
+                &quot;url&quot;,
+                &quot;created_utc&quot;
+            ]
+        }
+    }
+}
+</code></pre>
+<h2 id="example-of-dtl-transformation-with-jsonschema-or-message-class">Example of DTL Transformation with JsonSchema or Message Class</h2>
+<p>Many can be found in the <code>UnitTest</code> package <code>./src/tests/cls</code> directory.</p>
+<pre><code class="language-objectscript">Class UnitTest.ComplexTransform Extends Ens.DataTransformDTL [ DependsOn = IOP.Message ]
+{
+
+Parameter IGNOREMISSINGSOURCE = 1;
+
+Parameter REPORTERRORS = 1;
+
+Parameter TREATEMPTYREPEATINGFIELDASNULL = 0;
+
+XData DTL [ XMLNamespace = &quot;http://www.intersystems.com/dtl&quot; ]
+{
+&lt;transform sourceClass='IOP.Message' targetClass='IOP.Message' sourceDocType='registerFilesIop.message.ComplexMessage' targetDocType='registerFilesIop.message.ComplexMessage' create='new' language='objectscript' &gt;
+&lt;assign value='source.{post}' property='target.{post}' action='set' /&gt;
+&lt;foreach property='source.{list_str()}' key='k1' &gt;
+&lt;assign value='source.{list_str(k1)}_&quot;foo&quot;' property='target.{list_str()}' action='append' /&gt;
+&lt;/foreach&gt;
+&lt;foreach property='source.{list_post()}' key='k2' &gt;
+&lt;assign value='source.{list_post().Title}' property='target.{list_post(k2).Title}' action='append' /&gt;
+&lt;/foreach&gt;
+&lt;/transform&gt;
+}
+
+}
+</code></pre>
               
             </div>
           </div><footer>
