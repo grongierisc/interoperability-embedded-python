@@ -157,6 +157,12 @@ Method CopyValues(
     Return tSC
 }
 
+/// Sets a value at the specified property path in the JSON document
+/// @param pValue Value to set
+/// @param pPropertyPath Path to the property (e.g. "property1.property2" or "array()")
+/// @param pAction Action to perform ("set", "append", "remove", "insert")
+/// @param pKey Optional key for specialized operations, required for insert
+/// @returns %Status
 Method SetValueAt(
 	pValue As %String = "",
 	pPropertyPath As %String = "",
@@ -164,51 +170,86 @@ Method SetValueAt(
 	pKey As %String = "") As %Status
 {
     Set tSC = $$$OK
-    // if pAction is set, use jsonpath to set the value
     Try {
-        if pAction = "append" {
-            // trinm () from the end of the path
-            if $EXTRACT(pPropertyPath, *) = ")" {
-                Set pPropertyPath = $EXTRACT(pPropertyPath, 1, $LENGTH(pPropertyPath)-2)
-            }
-        }
-        // Convert pPropertyPath to a a jsonpath
-        Set tPath = ..ConvertPath(pPropertyPath)
+        // Validate input parameters
+        If pPropertyPath = "" Return $$$ERROR($$$GeneralError, "Property path cannot be empty")
+        If '$LISTFIND($LISTBUILD("set","append","remove","insert"), pAction) Return $$$ERROR($$$GeneralError, "Invalid action: "_pAction)
+        If (pAction = "insert") && (pKey = "") Return $$$ERROR($$$GeneralError, "Key is required for insert action")
 
+        // Initialize Python objects
         Set pyjson = ##class(%SYS.Python).Import("json")
         Set jp = ##class(%SYS.Python).Import("jsonpath_ng")
         Set builtins = ##class(%SYS.Python).Builtins()
 
-        // By default, if json is empty, set it to an empty object
-        if ..json = "" {
-            Set ..json = "{}"
+        // Handle append operations
+        Set tAppend = (pAction = "append")
+        If tAppend, $EXTRACT(pPropertyPath, *-1, *) = "()" {
+            Set pPropertyPath = $EXTRACT(pPropertyPath, 1, *-2)
         }
-        Set tJSON = pyjson.loads(..json)
 
+        // Initialize empty JSON if needed
+        Set:..json="" ..json = "{}"
+        
+        // Parse JSON and prepare path
+        Set tJSON = pyjson.loads(..json)
+        Set tPath = ..ConvertPath(pPropertyPath)
         Set parser = jp.parse(tPath)
-        if pAction = "set" {
+
+        If pAction = "set" {
+            // Simple set operation
             Set tJSON = parser."update_or_create"(tJSON, pValue)
         }
-        ElseIf pAction = "append" {
-            Set tFindValue = parser."find"(tJSON)
-            if tFindValue."__len__"() = 0 {
-                Set tList = builtins.list()
-                Do tList.append(pValue)
-                Set tJSON = parser."update_or_create"(tJSON,tList)
+        ElseIf pAction = "remove" {
+            // Remove operation
+            Set matches = parser.find(tJSON)
+            If matches."__len__"() > 0 {
+                // Not yet implemented
+                Set tSC = $$$ERROR($$$GeneralError, "Remove operation not yet implemented")
+            }
+        }
+        ElseIf pAction = "insert" {
+            // Handle dictionary insert/update
+            Set matches = parser.find(tJSON)
+            If matches."__len__"() = 0 {
+                // Create new dictionary if path doesn't exist
+                Set tDict = builtins.dict()
+                Do tDict."__setitem__"(pKey, pValue)
+                Set tJSON = parser."update_or_create"(tJSON, tDict)
             }
             Else {
+                // Update existing dictionary
+                Set tDict = matches."__getitem__"(0)."value"
+                Do tDict."__setitem__"(pKey, pValue)
+                Set tJSON = parser."update"(tJSON, tDict)
+            }
+        }
+        ElseIf tAppend {
+            // Handle append operation
+            Set tFindValue = parser."find"(tJSON)
+            If tFindValue."__len__"() = 0 {
+                // Create new array if path doesn't exist
+                Set:(tAppend) tValue = builtins.list()
+                Do:tAppend tValue.append(pValue)
+                Set tJSON = parser."update_or_create"(tJSON, $Select(tAppend: tValue, 1: pValue))
+            }
+            Else {
+                // Append to existing array
                 Do tFindValue."__getitem__"(0)."value".append(pValue)
                 Set tJSON = parser."update"(tJSON, tFindValue."__getitem__"(0)."value")
             }
         }
 
-        Set tResult = pyjson.dumps(tJSON)
-        Set ..json = tResult
+        // Update JSON storage
+        Set ..json = pyjson.dumps(tJSON)
         Set ..classname = ..DocType
-        
-    } Catch ex {
-        Set tSC = ex.AsStatus()
+
     }
+    Catch ex {
+        Set tSC = ex.AsStatus()
+        // Log error details
+        $$$LOGWARNING("Error in SetValueAt: "_$System.Status.GetErrorText(tSC))
+    }
+    
     Return tSC
 }
 
