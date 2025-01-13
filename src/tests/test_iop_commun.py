@@ -38,6 +38,34 @@ def test_is_iris_object_instance():
     result = _Common._is_iris_object_instance(msg)
     assert result == False
 
+def test_log_info_to_console():
+    commun = _Common()
+    commun.log_to_console = True
+    # generate a random string of 10 characters
+    import random, string
+    letters = string.ascii_lowercase
+    random_string = ''.join(random.choice(letters) for i in range(10))
+    commun.log_info(random_string)
+    # check $IRISINSTALLDIR/mgr/messages.log last line
+    with open(os.path.join(os.environ['IRISINSTALLDIR'], 'mgr', 'messages.log'), 'r') as file:
+        lines = file.readlines()
+        last_line = lines[-1]
+        assert random_string in last_line
+
+def test_log_info_to_console_from_method():
+    commun = _Common()
+    # generate a random string of 10 characters
+    import random, string
+    letters = string.ascii_lowercase
+    random_string = ''.join(random.choice(letters) for i in range(10))
+    commun.trace(message=random_string, to_console=True)
+    # check $IRISINSTALLDIR/mgr/messages.log last line
+    with open(os.path.join(os.environ['IRISINSTALLDIR'], 'mgr', 'messages.log'), 'r') as file:
+        lines = file.readlines()
+        last_line = lines[-1]
+        assert random_string in last_line
+
+
 def test_log_info():
     commun = _Common()
     # generate a random string of 10 characters

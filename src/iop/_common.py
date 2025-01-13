@@ -4,6 +4,8 @@ import inspect
 import iris
 import traceback
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
+from iop._log_manager import LogManager
+import logging
 
 class _Common(metaclass=abc.ABCMeta):
     """Base class that defines common methods for all component types.
@@ -15,6 +17,7 @@ class _Common(metaclass=abc.ABCMeta):
     INFO_URL: ClassVar[str]
     ICON_URL: ClassVar[str]
     iris_handle: Any = None
+    log_to_console: bool = False
 
     def on_init(self) -> None:
         """Initialize component when started.
@@ -245,56 +248,67 @@ class _Common(metaclass=abc.ABCMeta):
         current_class = self.__class__.__name__
         current_method = None
         try:
-            frame = traceback.extract_stack()[-3]
+            frame = traceback.extract_stack()[-4]
             current_method = frame.name
         except:
             pass
         return current_class, current_method
-    
-    def trace(self, message: str) -> None:
+
+    @property
+    def logger(self) -> logging.Logger:
+        """Get a logger instance for this component.
+        
+        Returns:
+            Logger configured for IRIS integration
+        """
+        class_name, method_name = self._log()
+        return LogManager.get_logger(class_name, method_name, self.log_to_console)
+
+    def trace(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write trace log entry.
         
         Args:
             message: Message to log
+            to_console: If True, log to console instead of IRIS
         """
-        current_class, current_method = self._log()
-        iris.cls("Ens.Util.Log").LogTrace(current_class, current_method, message,1)
+        self.logger.debug(message, extra={'to_console': to_console})
 
-    def log_info(self, message: str) -> None:
+
+    def log_info(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write info log entry.
         
         Args:
             message: Message to log
+            to_console: If True, log to console instead of IRIS
         """
-        current_class, current_method = self._log()
-        iris.cls("Ens.Util.Log").LogInfo(current_class, current_method, message)
+        self.logger.info(message, extra={'to_console': to_console})
 
-    def log_alert(self, message: str) -> None:
-        """Write a log entry of type "alert". Log entries can be viewed in the management portal.
+    def log_alert(self, message: str, to_console: Optional[bool] = None) -> None:
+        """Write alert log entry.
         
-        Parameters:
-        message: a string that is written to the log.
+        Args:
+            message: Message to log
+            to_console: If True, log to console instead of IRIS
         """
-        current_class, current_method = self._log()
-        iris.cls("Ens.Util.Log").LogAlert(current_class, current_method, message)
+        self.logger.critical(message, extra={'to_console': to_console})
 
-    def log_warning(self, message: str) -> None:
-        """Write a log entry of type "warning". Log entries can be viewed in the management portal.
+    def log_warning(self, message: str, to_console: Optional[bool] = None) -> None:
+        """Write warning log entry.
         
-        Parameters:
-        message: a string that is written to the log.
+        Args:
+            message: Message to log
+            to_console: If True, log to console instead of IRIS
         """
-        current_class, current_method = self._log()
-        iris.cls("Ens.Util.Log").LogWarning(current_class, current_method, message)
+        self.logger.warning(message, extra={'to_console': to_console})
 
-    def log_error(self, message: str) -> None:
-        """Write a log entry of type "error". Log entries can be viewed in the management portal.
+    def log_error(self, message: str, to_console: Optional[bool] = None) -> None:
+        """Write error log entry.
         
-        Parameters:
-        message: a string that is written to the log.
+        Args:
+            message: Message to log
+            to_console: If True, log to console instead of IRIS
         """
-        current_class, current_method = self._log()
-        iris.cls("Ens.Util.Log").LogError(current_class, current_method, message)
+        self.logger.error(message, extra={'to_console': to_console})
 
     def log_assert(self, message: str) -> None:
         """Write a log entry of type "assert". Log entries can be viewed in the management portal.
