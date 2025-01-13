@@ -1,39 +1,40 @@
 import importlib
+from typing import Any, List, Optional, Union, Tuple
 from iop._business_host import _BusinessHost
 
 class _BusinessOperation(_BusinessHost):
-    """ This class corresponds to the PEX framework EnsLib.PEX.BusinessOperation class.
-    The EnsLib.PEX.BusinessOperation RemoteClassName property identifies the Python class with the business operation implementation.
-    The business operation can optionally use an adapter to handle the outgoing message. Specify the adapter in the OutboundAdapter property.
-    If the business operation has an adapter, it uses the adapter to send the message to the external system.
-    The adapter can either be a PEX adapter or an ObjectScript adapter.
+    """Business operation component that handles outbound communication.
+    
+    Responsible for sending messages to external systems. Can optionally use an 
+    adapter to handle the outbound messaging protocol.
     """
 
-    DISPATCH = []
-    Adapter = adapter = None
+    DISPATCH: List[Tuple[str, str]] = []
+    Adapter: Any = None
+    adapter: Any = None
 
-    def on_message(self, request):
-        """ Called when the business operation receives a message from another production component.
-        Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
-        If the operation has an adapter, it uses the Adapter.invoke() method to call the method on the adapter that sends the message to the external system.
-        If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method
+    def on_message(self, request: Any) -> Any:
+        """Handle incoming messages.
+        
+        Process messages received from other production components and either
+        send to external system or forward to another component.
 
-        Parameters:
-        request: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
-
+        Args:
+            request: The incoming message
+            
         Returns:
-        The response object
+            Response message
         """
         return self.OnMessage(request)
 
-    def on_keepalive(self):
+    def on_keepalive(self) -> None:
         """
-        > This function is called when the server sends a keepalive message
+        Called when the server sends a keepalive message.
         """
         return
 
-    def _set_iris_handles(self, handle_current, handle_partner):
-        """ For internal use only. """
+    def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
+        """For internal use only."""
         self.iris_handle = handle_current
         if type(handle_partner).__module__.find('iris') == 0:
             if handle_partner._IsA("Grongier.PEX.OutboundAdapter") or handle_partner._IsA("IOP.OutboundAdapter"):
@@ -42,20 +43,20 @@ class _BusinessOperation(_BusinessHost):
             self.Adapter = self.adapter = handle_partner
         return
 
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_init(self, host_object: Any) -> None:
+        """For internal use only."""
         self._create_dispatch()
         self.on_init()
         return
 
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_message(self, request):
-        """ For internal use only. """
+    def _dispatch_on_message(self, request: Any) -> Any:
+        """For internal use only."""
         return self._dispach_message(request)
 
-    def OnMessage(self, request):
-        """ DEPRECATED : use on_message
+    def OnMessage(self, request: Any) -> Any:
+        """DEPRECATED : use on_message
         Called when the business operation receives a message from another production component.
         Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
         If the operation has an adapter, it uses the Adapter.invoke() method to call the method on the adapter that sends the message to the external system.
@@ -67,4 +68,4 @@ class _BusinessOperation(_BusinessHost):
         Returns:
         The response object
         """
-        return 
+        return

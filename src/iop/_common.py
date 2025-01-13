@@ -1,70 +1,97 @@
-import traceback
+import abc
 import dataclasses
 import inspect
 import iris
-import abc
+import traceback
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
 
 class _Common(metaclass=abc.ABCMeta):
-    """ This is a common superclass for all component types that defines common methods."""
+    """Base class that defines common methods for all component types.
+    
+    Provides core functionality like initialization, teardown, connection handling
+    and message type checking that is shared across component types.
+    """
 
-    INFO_URL: str
-    ICON_URL: str
-    iris_handle = None
+    INFO_URL: ClassVar[str]
+    ICON_URL: ClassVar[str]
+    iris_handle: Any = None
 
-    def on_init(self):
-        """ The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
+    def on_init(self) -> None:
+        """Initialize component when started.
+        
+        Called when component starts. Use to initialize required structures.
+        """
         return self.OnInit()
 
-    def on_tear_down(self):
-        """ Called before the component is terminated. Use it to free any structures."""
+    def on_tear_down(self) -> None:
+        """Clean up component before termination.
+        
+        Called before component terminates. Use to free resources.
+        """
         return self.OnTearDown()
 
-    def on_connected(self):
-        """ The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
+    def on_connected(self) -> None:
+        """Handle component connection/reconnection.
+        
+        Called when component connects or reconnects after disconnection.
+        Use to initialize connection-dependent structures.
+        """
         return self.OnConnected()
 
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_connected(self, host_object: Any) -> None:
+        """Internal dispatch for connection handling."""
         self.on_connected()
         return
 
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_init(self, host_object: Any) -> None:
+        """Internal dispatch for initialization."""
         self.on_init()
         return
 
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_tear_down(self, host_object: Any) -> None:
+        """Internal dispatch for teardown."""
         self.on_tear_down()
         return
 
-    def _set_iris_handles(self, handle_current, handle_partner):
+    def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
+        """Internal method to set IRIS handles."""
         pass
 
     @classmethod
-    def _is_message_instance(cls, obj):
+    def _is_message_instance(cls, obj: Any) -> bool:
+        """Check if object is a valid Message instance.
+        
+        Args:
+            obj: Object to check
+            
+        Returns:
+            True if object is a Message instance
+            
+        Raises:
+            TypeError: If object is Message class but not a dataclass
+        """
         if cls._is_message_class(type(obj)):
             if not dataclasses.is_dataclass(obj):
-                raise TypeError(type(obj).__module__ + '.' + type(obj).__qualname__+" must be a dataclass")
+                raise TypeError(f"{type(obj).__module__}.{type(obj).__qualname__} must be a dataclass")
             return True
         return False
 
     @classmethod
-    def _is_pickle_message_instance(cls, obj):
+    def _is_pickle_message_instance(cls, obj: Any) -> bool:
+        """Check if object is a PickleMessage instance."""
         if cls._is_pickel_message_class(type(obj)):
             return True
         return False
     
     @classmethod
-    def _is_iris_object_instance(cls, obj):
+    def _is_iris_object_instance(cls, obj: Any) -> bool:
+        """Check if object is an IRIS persistent object."""
         if (obj is not None and type(obj).__module__.find('iris') == 0) and obj._IsA("%Persistent"):
             return True
         return False
 
     @classmethod
-    def _is_message_class(cls, klass):
+    def _is_message_class(cls, klass: Type) -> bool:
         name = klass.__module__ + '.' + klass.__qualname__
         if name == "iop.Message" or name == "grongier.pex.Message": 
             return True
@@ -74,7 +101,7 @@ class _Common(metaclass=abc.ABCMeta):
         return False
 
     @classmethod
-    def _is_pickel_message_class(cls, klass):
+    def _is_pickel_message_class(cls, klass: Type) -> bool:
         name = klass.__module__ + '.' + klass.__qualname__
         if name == "iop.PickleMessage" or name == "grongier.pex.PickleMessage": 
             return True
@@ -84,10 +111,15 @@ class _Common(metaclass=abc.ABCMeta):
         return False
 
     @classmethod
-    def _get_info(cls):
-        """ Get class information to display in the Informational Settings expando for Production config items of this Business Host or Adapter.
-        This method returns a list of Superclass, Description, InfoURL, and IconURL, and possibly Adapter (if class is a Business Service or Business Operation)
-        IconURL is not yet displayed anywhere
+    def _get_info(cls) -> List[str]:
+        """Get component configuration information.
+        
+        Returns information used to display in Production config UI including:
+        - Superclass
+        - Description  
+        - InfoURL
+        - IconURL
+        - Adapter type (for Business Services/Operations)
         """
         ret = []
         desc = ""
@@ -137,19 +169,19 @@ class _Common(metaclass=abc.ABCMeta):
             raise e
         return ret
 
-    @classmethod
-    def _get_properties(cls):
-        """ Get a list of the Attributes and Properties of this Python class.
-        Return value is a list of lists of form $lb(propName,data_type,defaultVal,required,category,description).
-        which can be used by the Production Configuration to display them as settings.
-        This list will only include class attributes (no instance attributes) and properties which are not marked to be private by use of the _ prefix.
-        For class attributes, we will use the value that it is defined with as the defaultVal and its type as the data_type, or "" and String if set to None.
-        Add a function attrName_info() for a attribute or property 'attrName' in order to add more information about that attribute by using the function annotation for the return value.
-        The annotation should be a dictionary including any of 'IsRequired', 'Category', 'Description', 'DataType', or 'ExcludeFromSettings' as keys.
-        'ExcludeFromSettings' should be a boolean, and if true will exclude an attribute from being returned in the list, and so prevent it from being displayed as a setting in the Production Configuration Page
-        'DataType' does not need to be specified if it is the same as the type of the attribute definition.  Otherwise, it can be either a Python type or a string.
-        If 'IsRequired' is not specified, this will default to false.
-        If 'Category' is not specified, the attribute will be added to the Additional category.
+    @classmethod 
+    def _get_properties(cls) -> List[List[Any]]:
+        """Get component properties for Production configuration.
+        
+        Returns list of property definitions containing:
+        - Property name
+        - Data type
+        - Default value 
+        - Required flag
+        - Category
+        - Description
+        
+        Only includes non-private class attributes and properties.
         """
         ret = []
         try:
@@ -204,9 +236,11 @@ class _Common(metaclass=abc.ABCMeta):
             pass
         return ret
     
-    def _log(self) -> (str,str):
-        """ Get the class name and method name of the calling method.
-        Returns a tuple of the class name and the method name.
+    def _log(self) -> Tuple[str, Optional[str]]:
+        """Get class and method name for logging.
+        
+        Returns:
+            Tuple of (class_name, method_name)
         """
         current_class = self.__class__.__name__
         current_method = None
@@ -217,27 +251,26 @@ class _Common(metaclass=abc.ABCMeta):
             pass
         return current_class, current_method
     
-    def trace(self, message):
-        """ Write a log entry of type "trace". Log entries can be viewed in the management portal.
+    def trace(self, message: str) -> None:
+        """Write trace log entry.
         
-        Parameters:
-        message: a string that is written to the log.
+        Args:
+            message: Message to log
         """
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogTrace(current_class, current_method, message,1)
 
-    def log_info(self, message):
-        """ Write a log entry of type "info". Log entries can be viewed in the management portal.
+    def log_info(self, message: str) -> None:
+        """Write info log entry.
         
-        Parameters:
-        message: a string that is written to the log.
+        Args:
+            message: Message to log
         """
-
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogInfo(current_class, current_method, message)
 
-    def log_alert(self, message):
-        """ Write a log entry of type "alert". Log entries can be viewed in the management portal.
+    def log_alert(self, message: str) -> None:
+        """Write a log entry of type "alert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -245,8 +278,8 @@ class _Common(metaclass=abc.ABCMeta):
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogAlert(current_class, current_method, message)
 
-    def log_warning(self, message):
-        """ Write a log entry of type "warning". Log entries can be viewed in the management portal.
+    def log_warning(self, message: str) -> None:
+        """Write a log entry of type "warning". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -254,8 +287,8 @@ class _Common(metaclass=abc.ABCMeta):
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogWarning(current_class, current_method, message)
 
-    def log_error(self, message):
-        """ Write a log entry of type "error". Log entries can be viewed in the management portal.
+    def log_error(self, message: str) -> None:
+        """Write a log entry of type "error". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -263,8 +296,8 @@ class _Common(metaclass=abc.ABCMeta):
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogError(current_class, current_method, message)
 
-    def log_assert(self, message):
-        """ Write a log entry of type "assert". Log entries can be viewed in the management portal.
+    def log_assert(self, message: str) -> None:
+        """Write a log entry of type "assert". Log entries can be viewed in the management portal.
         
         Parameters:
         message: a string that is written to the log.
@@ -272,65 +305,34 @@ class _Common(metaclass=abc.ABCMeta):
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogAssert(current_class, current_method, message)
 
-    def LOGINFO(self, message):
-        """ DECAPRETED : use log_info
-        Write a log entry of type "info". Log entries can be viewed in the management portal.
-        
-        Parameters:
-        message: a string that is written to the log.
-        """
+    def LOGINFO(self, message: str) -> None:
+        """DEPRECATED: Use log_info."""
         return self.log_info(message=message)
 
-    def LOGALERT(self, message):
-        """ DECAPRETED : use log_alert
-        Write a log entry of type "alert". Log entries can be viewed in the management portal.
-        
-        Parameters:
-        message: a string that is written to the log.
-        """
+    def LOGALERT(self, message: str) -> None:
+        """DEPRECATED: Use log_alert."""
         return self.log_alert(message)
 
-    def LOGWARNING(self, message):
-        """ DECAPRETED : use log_warning
-        Write a log entry of type "warning". Log entries can be viewed in the management portal.
-        
-        Parameters:
-        message: a string that is written to the log.
-        """
+    def LOGWARNING(self, message: str) -> None:
+        """DEPRECATED: Use log_warning."""
         return self.log_warning(message)
 
-    def LOGERROR(self, message):
-        """ DECAPRETED : use log_error
-        Write a log entry of type "error". Log entries can be viewed in the management portal.
-        
-        Parameters:
-        message: a string that is written to the log.
-        """
+    def LOGERROR(self, message: str) -> None:
+        """DEPRECATED: Use log_error."""
         return self.log_error(message)
 
-    def LOGASSERT(self, message):
-        """ DECAPRETED : use log_assert
-        Write a log entry of type "assert". Log entries can be viewed in the management portal.
-        
-        Parameters:
-        message: a string that is written to the log.
-        """
+    def LOGASSERT(self, message: str) -> None:
+        """DEPRECATED: Use log_assert."""
         return self.log_assert(message)
         
-    def OnInit(self):
-        """ DEPRECATED : use on_init
-        The on_init() method is called when the component is started.
-        Use the on_init() method to initialize any structures needed by the component."""
+    def OnInit(self) -> None:
+        """DEPRECATED: Use on_init."""
         return 
 
-    def OnTearDown(self):
-        """ DEPRECATED : use on_tear_down
-        Called before the component is terminated. Use it to freee any structures.
-        """
+    def OnTearDown(self) -> None:
+        """DEPRECATED: Use on_tear_down."""
         return 
 
-    def OnConnected(self):
-        """ DEPRECATED : use on_connected
-        The on_connected() method is called when the component is connected or reconnected after being disconnected.
-        Use the on_connected() method to initialize any structures needed by the component."""
-        return 
+    def OnConnected(self) -> None:
+        """DEPRECATED: Use on_connected."""
+        return

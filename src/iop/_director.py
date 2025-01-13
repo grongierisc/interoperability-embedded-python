@@ -1,9 +1,9 @@
-import iris
+import asyncio
 import datetime
+import functools
+import iris
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
-import functools
-import asyncio
 from dataclasses import dataclass
 
 from iop._business_host import _BusinessHost
@@ -155,7 +155,7 @@ class _Director():
 
     @staticmethod
     def format_log(row: list) -> str:
-        # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,       11
+        # 0,  1,          2,   3,         4,         5,           6,            7,     8,    9,          10,        11
         # ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
         # yield all except stack aand tracecat
         # in first position, the timelogged

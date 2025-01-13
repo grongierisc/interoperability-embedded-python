@@ -1,21 +1,10 @@
-# _manager.py is the main entry point of the pex package
-# it's a command line interface to manage productions
-# eg :
-#   python3 -m iop -h : display help and the default production name
-#   python3 -m iop -l : list productions
-#   python3 -m iop -d <production_name> : set the default production to <production_name>
-#   python3 -m iop -s <production_name> : start a production named <production_name> if <production_name> is not set, the default production is started
-#   python3 -m iop -k <production_name> : stop a production named <production_name> if <production_name> is not set, the default production is killed
-#   python3 -m iop -r <production_name> : restart a production named <production_name> if <production_name> is not set, the default production is restarted
-#   python3 -m iop -m <settings_file> : migrate a production and classes with the settings file <settings_file>
-#   python3 -m iop -x <production_name> : export a production named <production_name> if <production_name> is not set, the default production is exported
-from iop._director import _Director
-from iop._utils import _Utils
-
 import argparse
 import json
 import os
-from importlib.metadata import version 
+from importlib.metadata import version
+
+from iop._director import _Director
+from iop._utils import _Utils
 
 def parse_args():
     # parse arguments

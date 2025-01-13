@@ -1,40 +1,46 @@
+import abc
 import asyncio
-import datetime
-import pickle
-import codecs
-import uuid
-import decimal
 import base64
-import json
+import codecs
+import datetime
+import decimal
 import importlib
+import inspect
 import iris
-
+import json
+import pickle
+import uuid
+from dataclasses import dataclass
 from functools import wraps
+from inspect import getsource, signature
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union
 
-from inspect import signature, getsource
-
-from dacite import from_dict, Config
+from dacite import Config, from_dict
 
 from iop._common import _Common
+from iop._message import _Message as Message
 from iop._utils import _Utils
 
 class _BusinessHost(_Common):
-    """ This is a superclass for BusinessService, BusinesProcess, and BusinessOperation that
-    defines common methods. It is a subclass of Common.
+    """Base class for business components that defines common methods.
+    
+    This is a superclass for BusinessService, BusinessProcess, and BusinessOperation that
+    defines common functionality like message serialization/deserialization and request handling.
     """
 
-    buffer:int = 64000
-    DISPATCH = []
+    buffer: int = 64000
+    DISPATCH: List[Tuple[str, str]] = []
 
-    def input_serialzer(fonction):
-        """
-        It takes a function as an argument, and returns a function that takes the same arguments as the
-        original function, but serializes the arguments before passing them to the original function
+    def input_serialzer(fonction: Callable) -> Callable:
+        """Decorator that serializes input arguments before passing to function.
         
-        :param fonction: the function that will be decorated
-        :return: The function dispatch_serializer is being returned.
+        Args:
+            fonction: Function to decorate
+            
+        Returns:
+            Decorated function that handles serialization
         """
-        def dispatch_serializer(self, *params, **param2):
+        def dispatch_serializer(self, *params: Any, **param2: Any) -> Any:
             # Handle positional arguments using list comprehension
             serialized = [self._dispatch_serializer(param) for param in params]
             
@@ -44,17 +50,19 @@ class _BusinessHost(_Common):
             return fonction(self, *serialized, **param2)
         return dispatch_serializer
     
-    def input_serialzer_param(position:int,name:str):
-        """
-        It takes a function as an argument, and returns a function that takes the same arguments as the
-        original function, but serializes the arguments before passing them to the original function
+    def input_serialzer_param(position: int, name: str) -> Callable:
+        """Decorator that serializes specific parameter by position or name.
         
-        :param fonction: the function that will be decorated
-        :return: The function dispatch_serializer is being returned.
+        Args:
+            position: Position of parameter to serialize
+            name: Name of parameter to serialize
+            
+        Returns:
+            Decorator function
         """
-        def input_serialzer_param(fonction):
+        def input_serialzer_param(fonction: Callable) -> Callable:
             @wraps(fonction)
-            def dispatch_serializer(self, *params, **param2):
+            def dispatch_serializer(self, *params: Any, **param2: Any) -> Any:
                 # Handle positional arguments using list comprehension
                 serialized = [
                     self._dispatch_serializer(param) if i == position else param
@@ -71,29 +79,30 @@ class _BusinessHost(_Common):
             return dispatch_serializer
         return input_serialzer_param
 
-    def output_deserialzer(fonction):
-        """
-        It takes a function as an argument, and returns a function that takes the same arguments as the
-        original function, but returns the result of the original function passed to the
-        `_dispatch_deserializer` function
+    def output_deserialzer(fonction: Callable) -> Callable:
+        """Decorator that deserializes output of function.
         
-        :param fonction: the function that will be decorated
-        :return: The function dispatch_deserializer is being returned.
+        Args:
+            fonction: Function to decorate
+            
+        Returns:
+            Decorated function that handles deserialization
         """
-        def dispatch_deserializer(self,*params, **param2):
-            return self._dispatch_deserializer(fonction(self,*params, **param2))
+        def dispatch_deserializer(self, *params: Any, **param2: Any) -> Any:
+            return self._dispatch_deserializer(fonction(self, *params, **param2))
             
         return dispatch_deserializer
 
-    def input_deserialzer(fonction):
-        """
-        It takes a function as input, and returns a function that takes the same arguments as the input
-        function, but deserializes the arguments before passing them to the input function
+    def input_deserialzer(fonction: Callable) -> Callable:
+        """Decorator that deserializes input arguments before passing to function.
         
-        :param fonction: the function that will be decorated
-        :return: The function dispatch_deserializer is being returned.
+        Args:
+            fonction: Function to decorate
+            
+        Returns:
+            Decorated function that handles deserialization
         """
-        def dispatch_deserializer(self, *params, **param2):
+        def dispatch_deserializer(self, *params: Any, **param2: Any) -> Any:
             # Handle positional arguments using list comprehension
             serialized = [self._dispatch_deserializer(param) for param in params]
             
@@ -103,81 +112,85 @@ class _BusinessHost(_Common):
             return fonction(self, *serialized, **param2)
         return dispatch_deserializer
 
-    def output_serialzer(fonction):
-        """
-        It takes a function as an argument, and returns a function that takes the same arguments as the
-        original function, and returns the result of the original function, after passing it through the
-        _dispatch_serializer function
+    def output_serialzer(fonction: Callable) -> Callable:
+        """Decorator that serializes output of function.
         
-        :param fonction: The function that is being decorated
-        :return: The function dispatch_serializer is being returned.
+        Args:
+            fonction: Function to decorate
+            
+        Returns:
+            Decorated function that handles serialization
         """
-        def dispatch_serializer(self,*params, **param2):
-            return self._dispatch_serializer(fonction(self,*params, **param2))
+        def dispatch_serializer(self, *params: Any, **param2: Any) -> Any:
+            return self._dispatch_serializer(fonction(self, *params, **param2))
         return dispatch_serializer
 
-    @input_serialzer_param(1,'request')
+    @input_serialzer_param(1, 'request')
     @output_deserialzer
-    def send_request_sync(self, target, request, timeout=-1, description=None):
-        """ Send the specified message to the target business process or business operation synchronously.
+    def send_request_sync(self, target: str, request: Union[Message, Any], 
+                         timeout: int = -1, description: Optional[str] = None) -> Any:
+        """Send message synchronously to target component.
+        
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever 
+            description: Optional description for logging
             
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is either an instance of a class that is a subclass of Message class or of IRISObject class.
-            If the target is a build-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        timeout: an optional integer that specifies the number of seconds to wait before treating the send request as a failure. The default value is -1, which means wait forever.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
         Returns:
-            the response object from target.
+            Response from target component
+            
         Raises:
-        TypeError: if request is not of type Message or IRISObject.
+            TypeError: If request is invalid type
         """
-        return self.iris_handle.dispatchSendRequestSync(target,request,timeout,description)
+        return self.iris_handle.dispatchSendRequestSync(target, request, timeout, description)
 
-    @input_serialzer_param(1,'request')
-    def send_request_async(self, target, request, description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
-            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
+    @input_serialzer_param(1, 'request')
+    def send_request_async(self, target: str, request: Union[Message, Any], 
+                          description: Optional[str] = None) -> None:
+        """Send message asynchronously to target component.
         
+        Args:
+            target: Name of target component
+            request: Message to send
+            description: Optional description for logging
+            
         Raises:
-        TypeError: if request is not of type Message or IRISObject.
+            TypeError: If request is invalid type
         """
-        
-        return self.iris_handle.dispatchSendRequestAsync(target,request,description)
+        return self.iris_handle.dispatchSendRequestAsync(target, request, description)
     
-    async def send_request_async_ng(self, target, request, timeout=-1, description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
-            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
-        """
-        return await _send_request_async_ng(target, request, timeout ,description, self)
-
-    def send_multi_request_sync(self, target_request:list, timeout=-1, description=None)->list:
-        """ Send the specified list of tuple (target,request) to business process or business operation synchronously.
+    async def send_request_async_ng(self, target: str, request: Union[Message, Any], 
+                                   timeout: int = -1, description: Optional[str] = None) -> Any:
+        """Send message asynchronously to target component with asyncio.
+        
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever 
+            description: Optional description for logging
             
-        Parameters:
-        target_request: a list of tuple (target,request) that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-            The request is either an instance of a class that is a subclass of Message class or of IRISObject class.
-        timeout: an optional integer that specifies the number of seconds to wait before treating the send request as a failure. The default value is -1, which means wait forever.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
         Returns:
-            the list of tuple (target,request,response,status).
+            Response from target component
+        """
+        return await _send_request_async_ng(target, request, timeout, description, self)
+
+    def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
+                                timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:
+        """Send multiple messages synchronously to target components.
+        
+        Args:
+            target_request: List of tuples (target, request) to send
+            timeout: Timeout in seconds, -1 means wait forever 
+            description: Optional description for logging
+            
+        Returns:
+            List of tuples (target, request, response, status)
         """
         # create a list of iris.Ens.CallStructure for each target_request
         call_list = []
         # sanity check
-        if not isinstance(target_request,list):
+        if not isinstance(target_request, list):
             raise TypeError("The target_request parameter must be a list")
         if len(target_request) == 0:
             raise ValueError("The target_request parameter must not be empty")
@@ -185,14 +198,14 @@ class _BusinessHost(_Common):
         if not all(isinstance(item, tuple) and len(item) == 2 for item in target_request):
             raise TypeError("The target_request parameter must be a list of tuple of 2 elements")
 
-        for target,request in target_request:
+        for target, request in target_request:
             call = iris.cls("Ens.CallStructure")._New()
             call.TargetDispatchName = target
             call.Request = self._dispatch_serializer(request)
             call_list.append(call)
         # call the dispatchSendMultiRequestSync method
-        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(call_list,timeout)
-        # create a list of tuple (target,request,response,status)
+        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(call_list, timeout)
+        # create a list of tuple (target, request, response, status)
         result = []
         for i in range(len(target_request)):
             result.append(
@@ -204,16 +217,15 @@ class _BusinessHost(_Common):
         return result
 
 
-    def _serialize_pickle_message(self,message):
-        """ Converts a python dataclass message into an iris iop.message.
+    def _serialize_pickle_message(self, message: Any) -> iris.cls:
+        """Converts a python dataclass message into an iris iop.message.
 
-        Parameters:
-        message: The message to serialize, an instance of a class that is a subclass of Message.
+        Args:
+            message: The message to serialize, an instance of a class that is a subclass of Message.
 
         Returns:
-        string: The message in json format.
+            The message in json format.
         """
-
         pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
         module = message.__class__.__module__
         classname = message.__class__.__name__
@@ -227,13 +239,17 @@ class _BusinessHost(_Common):
         return msg
 
 
-    def _dispatch_serializer(self,message):
-        """
-        If the message is a message instance, serialize it as a message, otherwise, if it's a pickle message
-        instance, serialize it as a pickle message, otherwise, return the message
+    def _dispatch_serializer(self, message: Any) -> Any:
+        """Serializes the message based on its type.
         
-        :param message: The message to be serialized
-        :return: The serialized message
+        Args:
+            message: The message to serialize
+            
+        Returns:
+            The serialized message
+            
+        Raises:
+            TypeError: If message is invalid type
         """
         if message is not None:
             if self._is_message_instance(message):
@@ -250,14 +266,14 @@ class _BusinessHost(_Common):
         # return message
         raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
 
-    def _serialize_message(self,message):
-        """ Converts a python dataclass message into an iris iop.message.
+    def _serialize_message(self, message: Any) -> iris.cls:
+        """Converts a python dataclass message into an iris iop.message.
 
-        Parameters:
-        message: The message to serialize, an instance of a class that is a subclass of Message.
+        Args:
+            message: The message to serialize, an instance of a class that is a subclass of Message.
 
         Returns:
-        string: The message in json format.
+            The message in json format.
         """
         json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
         module = message.__class__.__module__
@@ -267,29 +283,34 @@ class _BusinessHost(_Common):
         msg.classname = module + "." + classname
 
         if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:
-            msg.json = _Utils.string_to_stream(json_string,msg.buffer)
+            msg.json = _Utils.string_to_stream(json_string, msg.buffer)
         else:
             msg.json = json_string
 
         return msg
 
-    def _deserialize_pickle_message(self,serial):
-        """ 
-        Converts an iris iop.message into an python dataclass message.
+    def _deserialize_pickle_message(self, serial: iris.cls) -> Any:
+        """Converts an iris iop.message into a python dataclass message.
         
+        Args:
+            serial: The serialized message
+            
+        Returns:
+            The deserialized message
         """
         string = _Utils.stream_to_string(serial.jstr)
 
         msg = pickle.loads(codecs.decode(string.encode(), "base64"))
         return msg
 
-    def _dispatch_deserializer(self,serial):
-        """
-        If the serialized object is a Message, deserialize it as a Message, otherwise deserialize it as a
-        PickleMessage
+    def _dispatch_deserializer(self, serial: Any) -> Any:
+        """Deserializes the message based on its type.
         
-        :param serial: The serialized object
-        :return: The return value is a tuple of the form (serial, serial_type)
+        Args:
+            serial: The serialized message
+            
+        Returns:
+            The deserialized message
         """
         if (
             serial is not None
@@ -312,17 +333,21 @@ class _BusinessHost(_Common):
         else:
             return serial
 
-    def _deserialize_message(self,serial):
-        """ 
-        Converts an iris iop.message into an python dataclass message.
+    def _deserialize_message(self, serial: iris.cls) -> Any:
+        """Converts an iris iop.message into a python dataclass message.
+        
+        Args:
+            serial: The serialized message
+            
+        Returns:
+            The deserialized message
         """
-
         if (serial.classname is None):
             raise ValueError("JSON message malformed, must include classname")
         classname = serial.classname
 
         j = classname.rindex(".")
-        if (j <=0):
+        if (j <= 0):
             raise ValueError("Classname must include a module: " + classname)
         try:
             module = importlib.import_module(classname[:j])
@@ -337,16 +362,18 @@ class _BusinessHost(_Common):
             string = serial.json
 
         jdict = json.loads(string, cls=IrisJSONDecoder)
-        msg = self._dataclass_from_dict(msg,jdict)
+        msg = self._dataclass_from_dict(msg, jdict)
         return msg
 
-    def _dataclass_from_dict(self,klass, dikt):
-        """
-        > If the field is not in the dataclass, then add it as an attribute
+    def _dataclass_from_dict(self, klass: Type, dikt: Dict) -> Any:
+        """Converts a dictionary to a dataclass instance.
         
-        :param klass: The dataclass to convert to
-        :param dikt: the dictionary to convert to a dataclass
-        :return: A dataclass object with the fields of the dataclass and the fields of the dictionary.
+        Args:
+            klass: The dataclass to convert to
+            dikt: The dictionary to convert to a dataclass
+            
+        Returns:
+            A dataclass object with the fields of the dataclass and the fields of the dictionary.
         """
         ret = from_dict(klass, dikt, Config(check_types=False))
         
@@ -355,64 +382,63 @@ class _BusinessHost(_Common):
         except Exception as e:
             fieldtypes = []
         
-        for key,val in dikt.items():
+        for key, val in dikt.items():
             if key not in fieldtypes:
                 setattr(ret, key, val)
         return ret
 
-    def _dispach_message(self, request):
-        """
-        It takes a request object, and returns a response object
+    def _dispach_message(self, request: Any) -> Any:
+        """Dispatches the message to the appropriate method.
         
-        :param request: The request object
-        :return: The return value is the result of the method call.
+        Args:
+            request: The request object
+            
+        Returns:
+            The response object
         """
-
         call = 'on_message'
 
         module = request.__class__.__module__
         classname = request.__class__.__name__
 
-        for msg,method in self.DISPATCH:
-            if msg == module+"."+classname:
+        for msg, method in self.DISPATCH:
+            if msg == module + "." + classname:
                 call = method
 
-        return getattr(self,call)(request)
+        return getattr(self, call)(request)
 
     
-    def _create_dispatch(self):
-        """
-        It creates a list of tuples, where each tuple contains the name of a class and the name of a method
-        that takes an instance of that class as its only argument
-        :return: A list of tuples.
+    def _create_dispatch(self) -> None:
+        """Creates a list of tuples, where each tuple contains the name of a class and the name of a method
+        that takes an instance of that class as its only argument.
         """
         if len(self.DISPATCH) == 0:
-            #get all function in current BO
+            # get all function in current BO
             method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
             for method in method_list:
-                #get signature of current function
+                # get signature of current function
                 try:
                     param = signature(getattr(self, method)).parameters
                 # Handle staticmethod
                 except ValueError as e:
-                    param=''
-                #one parameter
-                if (len(param)==1):
-                    #get parameter type
+                    param = ''
+                # one parameter
+                if (len(param) == 1):
+                    # get parameter type
                     annotation = str(param[list(param)[0]].annotation)
-                    #trim annotation format <class 'toto'>
+                    # trim annotation format <class 'toto'>
                     i = annotation.find("'")
                     j = annotation.rfind("'")
-                    #if end is not found
+                    # if end is not found
                     if j == -1:
                         j = None
                     classname = annotation[i+1:j]
-                    self.DISPATCH.append((classname,method))
+                    self.DISPATCH.append((classname, method))
         return
 
     @staticmethod
-    def OnGetConnections():
-        """ The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
+    def OnGetConnections() -> Optional[List[str]]:
+        """The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
         calls for the class. Implement this method to allow connections between components to show up in 
         the interoperability UI.
 
@@ -421,51 +447,57 @@ class _BusinessHost(_Common):
         """
         return None
 
-    def SendRequestSync(self, target, request, timeout=-1, description=None):
-        """ DEPRECATED : use send_request_sync
-        `SendRequestSync` is a function that sends a request to a target and waits for a response
+    def SendRequestSync(self, target: str, request: Union[Message, Any], 
+                       timeout: int = -1, description: Optional[str] = None) -> Any:
+        """DEPRECATED: use send_request_sync.
         
-        :param target: The target of the request
-        :param request: The request to send
-        :param timeout: The timeout in seconds. If the timeout is negative, the default timeout will be used
-        :param description: A string that describes the request. This is used for logging purposes
-        :return: The return value is a tuple of (response, status).
+        Args:
+            target: The target of the request
+            request: The request to send
+            timeout: The timeout in seconds, -1 means wait forever 
+            description: A string that describes the request
+            
+        Returns:
+            The response from the target component
         """
-        return self.send_request_sync(target,request,timeout,description)
+        return self.send_request_sync(target, request, timeout, description)
         
-    def SendRequestAsync(self, target, request, description=None):
-        """ DEPRECATED : use send_request_async
-        It takes a target, a request, and a description, and returns a send_request_async function
+    def SendRequestAsync(self, target: str, request: Union[Message, Any], 
+                        description: Optional[str] = None) -> None:
+        """DEPRECATED: use send_request_async.
         
-        :param target: The target of the request. This is the name of the function you want to call
-        :param request: The request to send
-        :param description: A string that describes the request
-        :return: The return value is a Future object.
+        Args:
+            target: The target of the request
+            request: The request to send
+            description: A string that describes the request
         """
-        return self.send_request_async(target,request,description)
+        return self.send_request_async(target, request, description)
 
     @staticmethod
-    def getAdapterType():
-        """ DEPRECATED : use get_adapter_type
-        Name of the registred Adapter
+    def getAdapterType() -> Optional[str]:
+        """DEPRECATED: use get_adapter_type.
+        
+        Returns:
+            Name of the registered Adapter
         """
         return
         
     @staticmethod
-    def get_adapter_type():
-        """
-        Name of the registred Adapter
+    def get_adapter_type() -> Optional[str]:
+        """Returns the name of the registered Adapter.
+        
+        Returns:
+            Name of the registered Adapter
         """
         return 
     
-    def on_get_connections(self) -> list:
-        """
-        The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
+    def on_get_connections(self) -> List[str]:
+        """The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
         calls for the class. Implement this method to allow connections between components to show up in 
         the interoperability UI.
 
         Returns:
-            An IRISList containing all targets for this class. Default is None.
+            A list containing all targets for this class.
         """
         ## Parse the class code to find all invocations of send_request_sync and send_request_async
         ## and return the targets
@@ -473,12 +505,12 @@ class _BusinessHost(_Common):
         # get the source code of the class
         source = getsource(self.__class__)
         # find all invocations of send_request_sync and send_request_async
-        for method in ['send_request_sync','send_request_async','SendRequestSync','SendRequestAsync']:
+        for method in ['send_request_sync', 'send_request_async', 'SendRequestSync', 'SendRequestAsync']:
             i = source.find(method)
             while i != -1:
-                j = source.find("(",i)
+                j = source.find("(", i)
                 if j != -1:
-                    k = source.find(",",j)
+                    k = source.find(",", j)
                     if k != -1:
                         target = source[j+1:k]
                         if target.find("=") != -1:
@@ -486,7 +518,7 @@ class _BusinessHost(_Common):
                             target = target[target.find("=")+1:].strip()
                         if target not in targer_list:
                             targer_list.append(target)
-                i = source.find(method,i+1)
+                i = source.find(method, i+1)
 
         for target in targer_list:
             # if target is a string, remove the quotes
@@ -500,12 +532,12 @@ class _BusinessHost(_Common):
                 try:
                     if target.find("self.") != -1:
                         # it's a class variable
-                        targer_list[targer_list.index(target)] = getattr(self,target[target.find(".")+1:])
+                        targer_list[targer_list.index(target)] = getattr(self, target[target.find(".")+1:])
                     elif target.find(".") != -1:
                         # it's a class variable
-                        targer_list[targer_list.index(target)] = getattr(getattr(self,target[:target.find(".")]),target[target.find(".")+1:])
+                        targer_list[targer_list.index(target)] = getattr(getattr(self, target[:target.find(".")]), target[target.find(".")+1:])
                     else:
-                        targer_list[targer_list.index(target)] = getattr(self,target)
+                        targer_list[targer_list.index(target)] = getattr(self, target)
                 except Exception as e:
                     pass
 
@@ -519,29 +551,29 @@ class IrisJSONEncoder(json.JSONEncoder):
     UUIDs.
     """
 
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         if o.__class__.__name__ == 'DataFrame':
-            return 'dataframe:'+o.to_json(orient="table")
+            return 'dataframe:' + o.to_json(orient="table")
         elif isinstance(o, datetime.datetime):
             r = o.isoformat()
             if o.microsecond:
                 r = r[:23] + r[26:]
             if r.endswith("+00:00"):
                 r = r[:-6] + "Z"
-            return 'datetime:'+r
+            return 'datetime:' + r
         elif isinstance(o, datetime.date):
-            return 'date:'+o.isoformat()
+            return 'date:' + o.isoformat()
         elif isinstance(o, datetime.time):
             r = o.isoformat()
             if o.microsecond:
                 r = r[:12]
-            return 'time:'+r
+            return 'time:' + r
         elif isinstance(o, decimal.Decimal): 
-            return 'decimal:'+str(o)
+            return 'decimal:' + str(o)
         elif isinstance(o, uuid.UUID):
-            return 'uuid:'+str(o)
+            return 'uuid:' + str(o)
         elif isinstance(o, bytes):
-            return 'bytes:'+base64.b64encode(o).decode("UTF-8")
+            return 'bytes:' + base64.b64encode(o).decode("UTF-8")
         elif hasattr(o, '__dict__'):
             return o.__dict__
         else:
@@ -551,17 +583,17 @@ class IrisJSONEncoder(json.JSONEncoder):
 # assumes the value is a string that represents a type and a value. It then converts the value to the
 # appropriate type
 class IrisJSONDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         json.JSONDecoder.__init__(
             self, object_hook=self.object_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def object_hook(self, obj: Dict) -> Dict:
         ret = {}
         for key, value in obj.items():
             i = 0
             if isinstance(value, str):
                 i = value.find(":") 
-            if (i>0):
+            if (i > 0):
                 typ = value[:i]
                 if typ == 'datetime':
                     ret[key] = datetime.datetime.fromisoformat(value[i+1:])
@@ -571,7 +603,7 @@ class IrisJSONDecoder(json.JSONDecoder):
                     ret[key] = datetime.time.fromisoformat(value[i+1:])
                 elif typ == 'dataframe':
                     module = importlib.import_module('pandas')
-                    ret[key] = module.read_json(value[i+1:],orient="table")
+                    ret[key] = module.read_json(value[i+1:], orient="table")
                 elif typ == 'decimal':
                     ret[key] = decimal.Decimal(value[i+1:])
                 elif typ == 'uuid':
@@ -586,13 +618,14 @@ class IrisJSONDecoder(json.JSONDecoder):
 
 class _send_request_async_ng(asyncio.Future):
 
-    _message_header_id = 0
-    _queue_name = ""
-    _end_time = 0
-    _response = None
-    _done = False
+    _message_header_id: int = 0
+    _queue_name: str = ""
+    _end_time: int = 0
+    _response: Any = None
+    _done: bool = False
 
-    def __init__(self, target, request, timeout=-1, description=None, host=None):
+    def __init__(self, target: str, request: Union[Message, Any], 
+                 timeout: int = -1, description: Optional[str] = None, host: Optional[_BusinessHost] = None) -> None:
         super().__init__()
         self.target = target
         self.request = request
@@ -602,7 +635,7 @@ class _send_request_async_ng(asyncio.Future):
         self._iris_handle = host.iris_handle
         asyncio.create_task(self.send())
 
-    async def send(self):
+    async def send(self) -> None:
         # init parameters
         message_header_id = iris.ref()
         queue_name = iris.ref()
@@ -625,7 +658,7 @@ class _send_request_async_ng(asyncio.Future):
 
         self.set_result(self._response)
 
-    def is_done(self):
+    def is_done(self) -> None:
         response = iris.ref()
         status = self._iris_handle.dispatchIsRequestDone(self.timeout, self._end_time,
                                                          self._queue_name, self._message_header_id,

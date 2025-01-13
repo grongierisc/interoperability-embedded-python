@@ -1,135 +1,126 @@
+from typing import Any, List, Optional, Union
 from iop._business_host import _BusinessHost
 
 class _BusinessProcess(_BusinessHost):
-    """ Typically contains most of the logic in a production.
-    A business process can receive messages from a business service, another business process, or a business operation.
-    It can modify the message, convert it to a different format, or route it based on the message contents.
-    The business process can route a message to a business operation or another business process.
+    """Business process component that contains routing and transformation logic.
+    
+    A business process can receive messages from services, other processes, or operations.
+    It can modify messages, transform formats, and route based on content.
     """
 
-    DISPATCH = []
+    DISPATCH: List[tuple] = []
+    PERSISTENT_PROPERTY_LIST: Optional[List[str]] = None
 
-    PERSISTENT_PROPERTY_LIST=None
-    """ A list of the variable names of persistent properties."""        
+    def on_message(self, request: Any) -> Any:
+        """Handle incoming messages.
 
-    def on_message(self, request):
-        """ Called when the business operation receives a message from another production component.
-        Typically, the operation will either send the message to the external system or forward it to a business process or another business operation.
-        If the operation has an adapter, it uses the Adapter.invoke() method to call the method on the adapter that sends the message to the external system.
-        If the operation is forwarding the message to another production component, it uses the SendRequestAsync() or the SendRequestSync() method
-
-        Parameters:
-        request: An instance of either a subclass of Message or of IRISObject containing the incoming message for the business operation.
+        Args:
+            request: The incoming message
 
         Returns:
-        The response object
+            Response message
         """
         return self.on_request(request)
 
-    def on_request(self, request):
-        """ Handles requests sent to the business process. A production calls this method whenever an initial request 
-        for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
-        Parameters:
-        request: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
+    def on_request(self, request: Any) -> Any:
+        """Process initial requests sent to this component.
         
+        Args:
+            request: The incoming request message
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return self.OnRequest(request)
 
-    def on_response(self, request, response, call_request, call_response, completion_key):
-        """ Handles responses sent to the business process in response to messages that it sent to the target.
-        A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
-        Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
-        Parameters:
-        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
-        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
-        call_request: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
-        call_response: An instance of IRISObject or subclass of Message that contains the incoming response.
-        completion_key: A string that contains the completion_key specified in the completion_key parameter of the outgoing SendAsync() method.
+    def on_response(self, request: Any, response: Any, call_request: Any, call_response: Any, completion_key: str) -> Any:
+        """Handle responses to messages sent by this component.
+        
+        Args:
+            request: The initial request message
+            response: The response message
+            call_request: The request sent to the target
+            call_response: The incoming response
+            completion_key: The completion key specified in the outgoing SendAsync() method
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return self.OnResponse(request, response, call_request, call_response, completion_key)
 
-    def on_complete(self, request, response):
-        """ Called after the business process has received and handled all responses to requests it has sent to targets.
-        Parameters: 
-        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
-        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+    def on_complete(self, request: Any, response: Any) -> Any:
+        """Called after all responses to requests sent by this component have been handled.
+        
+        Args:
+            request: The initial request message
+            response: The response message
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return self.OnComplete(request, response)
 
     @_BusinessHost.input_serialzer_param(0,'response')
-    def reply(self, response):
-        """ Send the specified response to the production component that sent the initial request to the business process.
+    def reply(self, response: Any) -> None:
+        """Send the specified response to the production component that sent the initial request.
 
-        Parameters:
-        response: An instance of IRISObject or subclass of Message that contains the response message.
+        Args:
+            response: The response message
         """
-
         return self.iris_handle.dispatchReply(response)
     
     @_BusinessHost.input_serialzer_param(1,'request')
-    def send_request_async(self, target, request, response_required=True, completion_key=None,description=None):
-        """ Send the specified message to the target business process or business operation asynchronously.
-        Parameters:
-        target: a string that specifies the name of the business process or operation to receive the request. 
-            The target is the name of the component as specified in the Item Name property in the production definition, not the class name of the component.
-        request: specifies the message to send to the target. The request is an instance of IRISObject or of a subclass of Message.
-            If the target is a built-in ObjectScript component, you should use the IRISObject class. The IRISObject class enables the PEX framework to convert the message to a class supported by the target.
-        description: an optional string parameter that sets a description property in the message header. The default is None.
+    def send_request_async(self, target: str, request: Any, response_required: bool=True, completion_key: Optional[str]=None, description: Optional[str]=None) -> None:
+        """Send the specified message to the target business process or business operation asynchronously.
         
+        Args:
+            target: The name of the business process or operation to receive the request
+            request: The message to send to the target
+            response_required: Whether a response is required
+            completion_key: A string that will be returned with the response if the maximum time is exceeded
+            description: An optional description property in the message header
+            
         Raises:
-        TypeError: if request is not of type Message or IRISObject.
+            TypeError: If request is not of type Message or IRISObject
         """
         if response_required:
-            # cast True to 1
             response_required = 1
         else:
             response_required = 0
-        return self.iris_handle.dispatchSendRequestAsync(target,request,response_required,completion_key,description)
+        return self.iris_handle.dispatchSendRequestAsync(target, request, response_required, completion_key, description)
 
-    def set_timer(self, timeout, completion_key=None):
-        """ Specifies the maximum time the business process will wait for responses.
+    def set_timer(self, timeout: Union[int, str], completion_key: Optional[str]=None) -> None:
+        """Specify the maximum time the business process will wait for responses.
 
-        Parameters:
-        timeout: an integer that specifies a number of seconds, or a string that specifies a time period such as"PT15s", 
-            which represents 15 seconds of processor time.
-        completion_key: a string that will be returned with the response if the maximum time is exceeded.
+        Args:
+            timeout: The maximum time to wait for responses
+            completion_key: A string that will be returned with the response if the maximum time is exceeded
         """
         self.iris_handle.dispatchSetTimer(timeout, completion_key)
         return
 
-    def _set_iris_handles(self, handle_current, handle_partner):
-        """ For internal use only. """
+    def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
+        """For internal use only."""
         self.iris_handle = handle_current
         return
 
-    def _save_persistent_properties(self, host_object):
-        """ For internal use only. """
-        if self.PERSISTENT_PROPERTY_LIST == None:
+    def _save_persistent_properties(self, host_object: Any) -> None:
+        """For internal use only."""
+        if self.PERSISTENT_PROPERTY_LIST is None:
             return
         for prop in self.PERSISTENT_PROPERTY_LIST:
             val = getattr(self, prop, None)
             typ = val.__class__.__name__
-            if (typ in ["str","int","float","bool","bytes"]):
+            if typ in ["str", "int", "float", "bool", "bytes"]:
                 try:
                     host_object.setPersistentProperty(prop, val)
                 except:
                     pass
         return
 
-    def _restore_persistent_properties(self, host_object):
-        """ For internal use only. """
-        if self.PERSISTENT_PROPERTY_LIST == None:
+    def _restore_persistent_properties(self, host_object: Any) -> None:
+        """For internal use only."""
+        if self.PERSISTENT_PROPERTY_LIST is None:
             return
         for prop in self.PERSISTENT_PROPERTY_LIST:
             try:
@@ -139,22 +130,22 @@ class _BusinessProcess(_BusinessHost):
                 pass
         return
 
-    def _dispatch_on_connected(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_connected(self, host_object: Any) -> None:
+        """For internal use only."""
         self.on_connected()
         self._save_persistent_properties(host_object)
         return
 
-    def _dispatch_on_init(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_init(self, host_object: Any) -> None:
+        """For internal use only."""
         self._restore_persistent_properties(host_object)
         self._create_dispatch()
         self.on_init()
         self._save_persistent_properties(host_object)
         return
 
-    def _dispatch_on_tear_down(self, host_object):
-        """ For internal use only. """
+    def _dispatch_on_tear_down(self, host_object: Any) -> None:
+        """For internal use only."""
         self._restore_persistent_properties(host_object)
         self.on_tear_down()
         self._save_persistent_properties(host_object)
@@ -162,8 +153,8 @@ class _BusinessProcess(_BusinessHost):
 
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_request(self, host_object, request):
-        """ For internal use only. """
+    def _dispatch_on_request(self, host_object: Any, request: Any) -> Any:
+        """For internal use only."""
         self._restore_persistent_properties(host_object)
         return_object = self._dispach_message(request)
         self._save_persistent_properties(host_object)
@@ -171,8 +162,8 @@ class _BusinessProcess(_BusinessHost):
     
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_response(self, host_object, request, response, call_request, call_response, completion_key):
-        """ For internal use only. """
+    def _dispatch_on_response(self, host_object: Any, request: Any, response: Any, call_request: Any, call_response: Any, completion_key: str) -> Any:
+        """For internal use only."""
         self._restore_persistent_properties(host_object)
         return_object = self.on_response(request, response, call_request, call_response, completion_key)
         self._save_persistent_properties(host_object)
@@ -180,56 +171,50 @@ class _BusinessProcess(_BusinessHost):
 
     @_BusinessHost.input_deserialzer
     @_BusinessHost.output_serialzer
-    def _dispatch_on_complete(self, host_object, request, response):
-        """ For internal use only. """
+    def _dispatch_on_complete(self, host_object: Any, request: Any, response: Any) -> Any:
+        """For internal use only."""
         self._restore_persistent_properties(host_object)
         return_object = self.on_complete(request, response)
         self._save_persistent_properties(host_object)
         return return_object
 
-    def OnRequest(self, request):
+    def OnRequest(self, request: Any) -> Any:
         """ 
-        DEPRECATED : use on_request
-        Handles requests sent to the business process. A production calls this method whenever an initial request 
-        for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
-        Parameters:
-        request: An instance of IRISObject or subclass of Message that contains the request message sent to the business process.
+        DEPRECATED: Use on_request.
         
+        Args:
+            request: The incoming request message
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return 
 
-    def OnResponse(self, request, response, call_request, call_response, completion_key):
+    def OnResponse(self, request: Any, response: Any, call_request: Any, call_response: Any, completion_key: str) -> Any:
         """ 
-        DEPRECATED : use on_response
-        Handles responses sent to the business process in response to messages that it sent to the target.
-        A production calls this method whenever a response for a specific business process arrives on the appropriate queue and is assigned a job in which to execute.
-        Typically this is a response to an asynchronous request made by the business process where the responseRequired parameter has a true value.
-        Parameters:
-        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
-        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
-        call_request: An instance of IRISObject or subclass of Message that contains the request that the business process sent to its target.
-        call_response: An instance of IRISObject or subclass of Message that contains the incoming response.
-        completion_key: A string that contains the completion_key specified in the completion_key parameter of the outgoing SendAsync() method.
+        DEPRECATED: Use on_response.
+        
+        Args:
+            request: The initial request message
+            response: The response message
+            call_request: The request sent to the target
+            call_response: The incoming response
+            completion_key: The completion key specified in the outgoing SendAsync() method
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return response
 
-    def OnComplete(self, request, response):
+    def OnComplete(self, request: Any, response: Any) -> Any:
         """ 
-        DEPRECATED : use on_complete
-        Called after the business process has received and handled all responses to requests it has sent to targets.
-        Parameters: 
-        request: An instance of IRISObject or subclass of Message that contains the initial request message sent to the business process.
-        response: An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+        DEPRECATED: Use on_complete.
+        
+        Args:
+            request: The initial request message
+            response: The response message
+            
         Returns:
-        An instance of IRISObject or subclass of Message that contains the response message that this business process can return
-            to the production component that sent the initial message.
+            Response message
         """
         return response
