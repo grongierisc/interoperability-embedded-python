@@ -2,46 +2,50 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/benchmarks/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/command-line/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/credits/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/dtl/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/example/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
+    </url>
+    <url>
+         <loc>https://grongierisc.github.io/interoperability-embedded-python/logging/</loc>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/python-api/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/useful-links/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/getting-started/first-steps/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
     <url>
          <loc>https://grongierisc.github.io/interoperability-embedded-python/getting-started/register-component/</loc>
-         <lastmod>2025-01-10</lastmod>
+         <lastmod>2025-01-13</lastmod>
     </url>
 </urlset>
