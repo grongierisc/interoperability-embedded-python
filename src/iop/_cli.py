@@ -1,20 +1,167 @@
+from __future__ import annotations
 import argparse
 import json
 import os
+from dataclasses import dataclass
+from enum import Enum, auto
+import sys
+from typing import Optional, Callable
 from importlib.metadata import version
 
 from iop._director import _Director
 from iop._utils import _Utils
 
-def parse_args():
-    # parse arguments
+class CommandType(Enum):
+    DEFAULT = auto()
+    LIST = auto()
+    START = auto()
+    STOP = auto()
+    KILL = auto()
+    RESTART = auto()
+    STATUS = auto()
+    TEST = auto()
+    VERSION = auto()
+    EXPORT = auto()
+    MIGRATE = auto()
+    LOG = auto()
+    INIT = auto()
+    HELP = auto()
+
+@dataclass
+class CommandArgs:
+    """Container for parsed command arguments"""
+    default: Optional[str] = None
+    list: bool = False
+    start: Optional[str] = None
+    detach: bool = False
+    stop: bool = False
+    kill: bool = False
+    restart: bool = False
+    status: bool = False
+    migrate: Optional[str] = None
+    export: Optional[str] = None
+    version: bool = False
+    log: Optional[str] = None
+    init: Optional[str] = None
+    test: Optional[str] = None
+    classname: Optional[str] = None
+    body: Optional[str] = None
+
+class Command:
+    def __init__(self, args: CommandArgs):
+        self.args = args
+
+    def execute(self) -> None:
+        command_type = self._determine_command_type()
+        command_handlers = {
+            CommandType.DEFAULT: self._handle_default,
+            CommandType.LIST: self._handle_list,
+            CommandType.START: self._handle_start,
+            CommandType.STOP: self._handle_stop,
+            CommandType.KILL: self._handle_kill,
+            CommandType.RESTART: self._handle_restart,
+            CommandType.STATUS: self._handle_status,
+            CommandType.TEST: self._handle_test,
+            CommandType.VERSION: self._handle_version,
+            CommandType.EXPORT: self._handle_export,
+            CommandType.MIGRATE: self._handle_migrate,
+            CommandType.LOG: self._handle_log,
+            CommandType.INIT: self._handle_init,
+            CommandType.HELP: self._handle_help
+        }
+        handler = command_handlers.get(command_type)
+        if handler:
+            handler()
+
+    def _determine_command_type(self) -> CommandType:
+        if self.args.default: return CommandType.DEFAULT
+        if self.args.list: return CommandType.LIST
+        if self.args.start: return CommandType.START
+        if self.args.stop: return CommandType.STOP
+        if self.args.kill: return CommandType.KILL
+        if self.args.restart: return CommandType.RESTART
+        if self.args.status: return CommandType.STATUS
+        if self.args.test: return CommandType.TEST
+        if self.args.version: return CommandType.VERSION
+        if self.args.export: return CommandType.EXPORT
+        if self.args.migrate: return CommandType.MIGRATE
+        if self.args.log: return CommandType.LOG
+        if self.args.init: return CommandType.INIT
+        return CommandType.HELP
+
+    def _handle_default(self) -> None:
+        if self.args.default == 'not_set':
+            print(_Director.get_default_production())
+        else:
+            _Director.set_default_production(self.args.default)
+
+    def _handle_list(self) -> None:
+        dikt = _Director.list_productions()
+        print(json.dumps(dikt, indent=4))
+
+    def _handle_start(self) -> None:
+        production_name = self.args.start if self.args.start != 'not_set' else _Director.get_default_production()
+        if self.args.detach:
+            _Director.start_production(production_name)
+            print(f"Production {production_name} started")
+        else:
+            _Director.start_production_with_log(production_name)
+
+    def _handle_stop(self) -> None:
+        _Director.stop_production()
+        print(f"Production {_Director.get_default_production()} stopped")
+
+    def _handle_kill(self) -> None:
+        _Director.shutdown_production()
+
+    def _handle_restart(self) -> None:
+        _Director.restart_production()
+
+    def _handle_status(self) -> None:
+        print(json.dumps(_Director.status_production(), indent=4))
+
+    def _handle_test(self) -> None:
+        test_name = None if self.args.test == 'not_set' else self.args.test
+        response = _Director.test_component(
+            test_name,
+            classname=self.args.classname if self.args.classname != 'not_set' else None,
+            body=self.args.body if self.args.body != 'not_set' else None
+        )
+        print(response)
+
+    def _handle_version(self) -> None:
+        print(version('iris-pex-embedded-python'))
+
+    def _handle_export(self) -> None:
+        export_name = _Director.get_default_production() if self.args.export == 'not_set' else self.args.export
+        print(json.dumps(_Utils.export_production(export_name), indent=4))
+
+    def _handle_migrate(self) -> None:
+        migrate_path = self.args.migrate
+        if not os.path.isabs(migrate_path):
+            migrate_path = os.path.join(os.getcwd(), migrate_path)
+        _Utils.migrate(migrate_path)
+
+    def _handle_log(self) -> None:
+        log_name = _Director.get_default_production() if self.args.log == 'not_set' else self.args.log
+        print(_Director.get_production_log(log_name))
+
+    def _handle_init(self) -> None:
+        _Utils.setup(None)
+
+    def _handle_help(self) -> None:
+        create_parser().print_help()
+        print(f"\nDefault production: {_Director.get_default_production()}")
+
+def create_parser() -> argparse.ArgumentParser:
+    """Create and configure argument parser"""
     main_parser = argparse.ArgumentParser()
     parser = main_parser.add_mutually_exclusive_group()
+    
+    # Main commands
     parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_set')
     parser.add_argument('-l', '--list', help='list productions', action='store_true')
     parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_set')
-    start = main_parser.add_argument_group('start arguments')
-    start.add_argument('-D', '--detach', help='start a production in detach mode', action='store_true')
     parser.add_argument('-S', '--stop', help='stop a production', action='store_true')
     parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
     parser.add_argument('-r', '--restart', help='restart a production', action='store_true')
@@ -25,117 +172,25 @@ def parse_args():
     parser.add_argument('-L', '--log', help='display log', nargs='?', const='not_set')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
+
+    # Command groups
+    start = main_parser.add_argument_group('start arguments')
+    start.add_argument('-D', '--detach', help='start a production in detach mode', action='store_true')
+    
     test = main_parser.add_argument_group('test arguments')
-    # add classname argument
     test.add_argument('-C', '--classname', help='test classname', nargs='?', const='not_set')
-    # body argument
     test.add_argument('-B', '--body', help='test body', nargs='?', const='not_set')
+    
     return main_parser
 
-def main(argv=None):
-    # build arguments
-    parser = parse_args()
+def main(argv=None) -> None:
+    parser = create_parser()
     args = parser.parse_args(argv)
-
-    if args.default:
-        # set default production
-        if args.default == 'not_set':
-            # display default production name
-            print(_Director.get_default_production())
-        else:
-            _Director.set_default_production(args.default)
-
-    elif args.list:
-        # display list of productions
-        dikt = _Director.list_productions()
-        print(json.dumps(dikt, indent=4))
-
-    elif args.start:
-        production_name = None
-        if args.start == 'not_set':
-            # start default production
-            production_name = _Director.get_default_production()
-        else:
-            # start production with name
-            production_name = args.start
-        if args.detach:
-            # start production in detach mode
-            _Director.start_production(production_name)
-            print(f"Production {production_name} started")
-        else:
-            _Director.start_production_with_log(production_name)
-
-    elif args.init:
-        if args.init == 'not_set':
-            # set arg to None
-            args.init = None
-        _Utils.setup(args.start)
-
-    elif args.kill:
-        # kill a production
-        _Director.shutdown_production()
-
-    elif args.restart:
-        # restart a production
-        _Director.restart_production()
-
-    elif args.migrate:
-        # check if migrate is absolute path
-        if os.path.isabs(args.migrate):
-            # migrate a production with absolute path
-            _Utils.migrate(args.migrate)
-        else:
-            # migrate a production with relative path
-            _Utils.migrate(os.path.join(os.getcwd(), args.migrate))
-
-    elif args.version:
-        # display version
-        print(version('iris-pex-embedded-python'))
-
-    elif args.log:
-        # display log
-        if args.log == 'not_set':
-            # display default production log
-            _Director.log_production()
-        else:
-            _Director.log_production_top(args.log)
-
-    elif args.stop:
-        # stop a production
-        _Director.stop_production()
-        print(f"Production {_Director.get_default_production()} stopped")
-
-    elif args.status:
-        dikt=_Director.status_production()
-        print(json.dumps(dikt, indent=4))
-
-    elif args.test:
-        classname = None
-        body = None
-        if args.test == 'not_set':
-            # set arg to None
-            args.test = None
-        if args.classname:
-            classname = args.classname
-        if args.body:
-            body = args.body
-        response = _Director.test_component(args.test, classname=classname, body=body)
-        print(response)
-
-    elif args.export:
-        if args.export == 'not_set':
-            # export default production
-            args.export=_Director.get_default_production()
-
-        dikt = _Utils.export_production(args.export)
-        print(json.dumps(dikt, indent=4))
-
-    else:
-        # display help
-        parser.print_help()
-        print()
-        print("Default production : " + _Director.get_default_production())
-
+    cmd_args = CommandArgs(**vars(args))
+    
+    command = Command(cmd_args)
+    command.execute()
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
