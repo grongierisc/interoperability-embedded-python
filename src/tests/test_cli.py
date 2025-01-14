@@ -3,115 +3,111 @@ from unittest.mock import patch
 from io import StringIO
 import json
 import os
-from grongier.pex._cli import main
+from iop._cli import main
 from iop._director import _Director
 
-def test_help():
-    # test help
-    try:
-        main(['-h'])
-    except SystemExit as e:
-        assert e.code == 0
+class TestIOPCli(unittest.TestCase):
+    """Test cases for IOP CLI functionality."""
 
-def test_default_with_name():
-    # test default
-    try:
-        main(['-d', 'UnitTest.Production'])
-    except SystemExit as e:
-        assert e.code == 0
-        # assert the output
-        assert _Director.get_default_production() == 'UnitTest.Production'
+    def test_help_and_basic_commands(self):
+        """Test basic CLI commands like help and namespace."""
+        # Test help
+        with self.assertRaises(SystemExit) as cm:
+            main(['-h'])
+        self.assertEqual(cm.exception.code, 0)
 
-def test_default_without_name():
-    # test default
-    try:
-        main(['-d'])
-    except SystemExit as e:
-        assert e.code == 0
+        # Test without arguments
+        with self.assertRaises(SystemExit) as cm:
+            main([])
+        self.assertEqual(cm.exception.code, 0)
 
-def test_cli_namespace():
-    try:
-        main([])
-    except SystemExit as e:
-        assert e.code == 0
+    def test_default_settings(self):
+        """Test default production settings."""
+        # Test with name
+        with self.assertRaises(SystemExit) as cm:
+            main(['-d', 'UnitTest.Production'])
+        self.assertEqual(cm.exception.code, 0)
+        self.assertEqual(_Director.get_default_production(), 'UnitTest.Production')
 
-def test_start():
-    with patch('grongier.pex._director._Director.start_production_with_log') as mock_start:
-        try:
-            main(['-s', 'my_production'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_start.assert_called_once_with('my_production')
-    with patch('grongier.pex._director._Director.start_production') as mock_start:
-        try:
-            main(['-s', 'my_production', '-D'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_start.assert_called_once_with('my_production')
+        # Test without name
+        with self.assertRaises(SystemExit) as cm:
+            main(['-d'])
+        self.assertEqual(cm.exception.code, 0)
 
-def test_init():
-    with patch('grongier.pex._utils._Utils.setup') as mock_setup:
-        try:
-            main(['-i'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_setup.assert_called_once_with(None)
+    def test_production_controls(self):
+        """Test production control commands (start, stop, restart, kill)."""
+        # Test start
+        with patch('iop._director._Director.start_production_with_log') as mock_start:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-s', 'my_production'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_start.assert_called_once_with('my_production')
 
-def test_kill():
-    with patch('grongier.pex._director._Director.shutdown_production') as mock_shutdown:
-        try:
-            main(['-k'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_shutdown.assert_called_once()
+        with patch('iop._director._Director.start_production') as mock_start:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-s', 'my_production', '-D'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_start.assert_called_once_with('my_production')
 
-def test_restart():
-    with patch('grongier.pex._director._Director.restart_production') as mock_restart:
-        try:
-            main(['-r'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_restart.assert_called_once()
+        # Test stop
+        with patch('iop._director._Director.stop_production') as mock_stop:
+            with patch('sys.stdout', new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(['-S'])
+                self.assertEqual(cm.exception.code, 0)
+                mock_stop.assert_called_once()
+                self.assertEqual(fake_out.getvalue().strip(), 'Production UnitTest.Production stopped')
 
-def test_migrate_relative():
-    with patch('grongier.pex._utils._Utils.migrate') as mock_migrate:
-        try:
-            main(['-m', 'settings.json'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
+        # Test restart
+        with patch('iop._director._Director.restart_production') as mock_restart:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-r'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_restart.assert_called_once()
 
-def test_migrate_absolute():
-    with patch('grongier.pex._utils._Utils.migrate') as mock_migrate:
-        try:
-            main(['-m', '/tmp/settings.json'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_migrate.assert_called_once_with('/tmp/settings.json')
+        # Test kill
+        with patch('iop._director._Director.shutdown_production') as mock_shutdown:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-k'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_shutdown.assert_called_once()
 
-def test_stop():
-    with patch('grongier.pex._director._Director.stop_production') as mock_stop:
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            try:
-                main(['-S'])
-            except SystemExit as e:
-                assert e.code == 0
-            mock_stop.assert_called_once()
-            assert fake_out.getvalue().strip() == 'Production UnitTest.Production stopped'
+    def test_migration(self):
+        """Test migration functionality."""
+        # Test relative path
+        with patch('iop._utils._Utils.migrate') as mock_migrate:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-m', 'settings.json'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
 
-def test_test():
-    with patch('grongier.pex._director._Director.test_component') as mock_test:
-        try:
-            main(['-t', 'my_test', '-C', 'MyClass', '-B', 'my_body'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_test.assert_called_once_with('my_test', classname='MyClass', body='my_body')
+        # Test absolute path
+        with patch('iop._utils._Utils.migrate') as mock_migrate:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-m', '/tmp/settings.json'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_migrate.assert_called_once_with('/tmp/settings.json')
 
-def test_test_japanese():
-    with patch('grongier.pex._director._Director.test_component') as mock_test:
-        try:
-            main(['-t', 'my_test', '-C', 'MyClass', '-B', 'あいうえお'])
-        except SystemExit as e:
-            assert e.code == 0
-        mock_test.assert_called_once_with('my_test', classname='MyClass', body='あいうえお')
+    def test_initialization(self):
+        """Test initialization command."""
+        with patch('iop._utils._Utils.setup') as mock_setup:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-i'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_setup.assert_called_once_with(None)
 
+    def test_component_testing(self):
+        """Test component testing functionality."""
+        # Test with ASCII
+        with patch('iop._director._Director.test_component') as mock_test:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-t', 'my_test', '-C', 'MyClass', '-B', 'my_body'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_test.assert_called_once_with('my_test', classname='MyClass', body='my_body')
+
+        # Test with Unicode
+        with patch('iop._director._Director.test_component') as mock_test:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-t', 'my_test', '-C', 'MyClass', '-B', 'あいうえお'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_test.assert_called_once_with('my_test', classname='MyClass', body='あいうえお')
