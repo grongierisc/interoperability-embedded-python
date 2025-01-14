@@ -1,113 +1,96 @@
 from iop._director import _Director
 from iop._utils import _Utils
-
 import timeit
 import os
 
 class TestBenchIoP:
+    TEST_CASES = [
+        {
+            'name': 'Python BP to Python BO with Iris Message',
+            'component': 'Python.BenchIoPProcess',
+            'message_type': 'iris.Ens.StringRequest',
+            'use_json': False
+        },
+        {
+            'name': 'Python BP to ObjetScript BO with Iris Message',
+            'component': 'Python.BenchIoPProcess.To.Cls',
+            'message_type': 'iris.Ens.StringRequest',
+            'use_json': False
+        },
+        {
+            'name': 'Python BP to Python BO with Python Message',
+            'component': 'Python.BenchIoPProcess',
+            'message_type': 'msg.MyMessage',
+            'use_json': True
+        },
+        {
+            'name': 'Python BP to ObjetScript BO with Python Message',
+            'component': 'Python.BenchIoPProcess.To.Cls',
+            'message_type': 'msg.MyMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to Python BO with Iris Message',
+            'component': 'Bench.Process',
+            'message_type': 'iris.Ens.StringRequest',
+            'use_json': False
+        },
+        {
+            'name': 'ObjetScript BP to ObjetScript BO with Iris Message',
+            'component': 'Bench.Process.To.Cls',
+            'message_type': 'iris.Ens.StringRequest',
+            'use_json': False
+        },
+        {
+            'name': 'ObjetScript BP to Python BO with Python Message',
+            'component': 'Bench.Process',
+            'message_type': 'msg.MyMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to ObjetScript BO with Python Message',
+            'component': 'Bench.Process.To.Cls',
+            'message_type': 'msg.MyMessage',
+            'use_json': True
+        }
+    ]
 
-    #before all tests
     @classmethod
     def setup_class(cls):
-        # get abspath of 'src/tests/bench'
         path = os.path.abspath('src/tests/bench/settings.py')
-        # migrate the production
         _Utils.migrate(path)
-        # stop all productions
         _Director.stop_production()
-        # set the default production
         _Director.set_default_production('Bench.Production')
-        # start the production
         _Director.start_production()
-        # create a list of results
         cls.results = []
 
     def test_bench_iris(self):
-        # this test is made to preload the production
         _Director.test_component('Python.BenchIoPProcess')
 
-
-    def test_bench_iris_message(self):
+    def run_benchmark(self, test_case):
         body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Python.BenchIoPProcess','','iris.Ens.StringRequest',body), number=1)
-        # set the result in the list
-        name = 'Python BP to Python BO with Iris Message'
-        self.results.append((name,result))
-        # assert the result
+        message = f'{{"message":"{body}"}}' if test_case['use_json'] else body
+        result = timeit.timeit(
+            lambda: _Director.test_component(
+                test_case['component'],
+                '',
+                test_case['message_type'],
+                message
+            ),
+            number=1
+        )
+        self.results.append((test_case['name'], result))
         assert result > 0
 
-    def test_bench_iris_message_to_cls(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Python.BenchIoPProcess.To.Cls','','iris.Ens.StringRequest',body), number=1)
-        # set the result in the list
-        name = 'Python BP to ObjetScript BO with Iris Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
+    def test_all_benchmarks(self):
+        for test_case in self.TEST_CASES:
+            self.run_benchmark(test_case)
 
-    def test_bench_python_message(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Python.BenchIoPProcess','','msg.MyMessage',f'{{"message":"{body}"}}'), number=1)
-        # set the result in the list
-        name = 'Python BP to Python BO with Python Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    def test_bench_python_message_to_cls(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Python.BenchIoPProcess.To.Cls','','msg.MyMessage',f'{{"message":"{body}"}}'), number=1)
-        # set the result in the list
-        name = 'Python BP to ObjetScript BO with Python Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    def test_bench_cls_iris_message(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Bench.Process','','iris.Ens.StringRequest',body), number=1)
-        # set the result in the list
-        name = 'ObjetScript BP to Python BO with Iris Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    def test_bench_cls_iris_message_to_cls(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Bench.Process.To.Cls','','iris.Ens.StringRequest',body), number=1)
-        # set the result in the list
-        name = 'ObjetScript BP to ObjetScript BO with Iris Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    def test_bench_cls_python_message(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Bench.Process','','msg.MyMessage',f'{{"message":"{body}"}}'), number=1)
-        # set the result in the list
-        name = 'ObjetScript BP to Python BO with Python Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    def test_bench_cls_python_message_to_cls(self):
-        body = "test"
-        result = timeit.timeit(lambda: _Director.test_component('Bench.Process.To.Cls','','msg.MyMessage',f'{{"message":"{body}"}}'), number=1)
-        # set the result in the list
-        name = 'ObjetScript BP to ObjetScript BO with Python Message'
-        self.results.append((name,result))
-        # assert the result
-        assert result > 0
-
-    #after all tests
     @classmethod
     def teardown_class(cls):
-        # stop all productions
         _Director.stop_production()
-        # set the default production
         _Director.set_default_production('test')
-        # write the results in a file
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(current_dir,'bench','result.txt'),'w') as f:
-            for name,result in cls.results:
+        with open(os.path.join(current_dir, 'bench', 'result.txt'), 'w') as f:
+            for name, result in cls.results:
                 f.write(f'{name}: {result}\n')

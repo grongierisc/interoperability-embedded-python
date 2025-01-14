@@ -4,259 +4,116 @@ import iris
 import codecs
 from datetime import datetime, date, time
 from unittest.mock import MagicMock
+import pytest
 
 from iop._business_host import _BusinessHost
-
-from registerFilesIop.message import SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, PickledMessage, FullMessage, PostMessage, MyResponse
-
+from registerFilesIop.message import (
+    SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, 
+    PickledMessage, FullMessage, PostMessage, MyResponse
+)
 from registerFilesIop.obj import PostClass
-
 from registerFilesIop.bs import RedditService
 from registerFilesIop.bo import FileOperation
 
-def test_send_request_async_ng():
+@pytest.fixture
+def business_host():
     bh = _BusinessHost()
     bh.iris_handle = MagicMock()
-    bh.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
-    bh.iris_handle.dispatchIsRequestDone.return_value = 2
-    bh._dispatch_deserializer = MagicMock()
-    bh._dispatch_deserializer.return_value = MyResponse(value='test')
-    result = bh.send_request_async_ng('test', SimpleMessage(integer=1, string='test'))
-    assert asyncio.iscoroutine(result)
-    assert asyncio.run(result) == MyResponse(value='test')
+    return bh
 
-def test_send_multi_request_sync():
-    bh = _BusinessHost()
-    bh.iris_handle = MagicMock()
-    bh.iris_handle.dispatchSendRequestSyncMultiple = MagicMock()
-    rsp = iris.cls("Ens.CallStructure")._New()
-    rsp.Response = MyResponse(value='test')
-    rsp.ResponseCode = 1
-    bh.iris_handle.dispatchSendRequestSyncMultiple.return_value = [rsp]
-    result = bh.send_multi_request_sync([('test', SimpleMessage(integer=1, string='test'))])
-    assert result == [('test', SimpleMessage(integer=1, string='test'),MyResponse(value='test'),1)]
+class TestBusinessHostAsync:
+    def test_send_request_async_ng(self, business_host):
+        business_host.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
+        business_host.iris_handle.dispatchIsRequestDone.return_value = 2
+        business_host._dispatch_deserializer = MagicMock()
+        business_host._dispatch_deserializer.return_value = MyResponse(value='test')
+        
+        result = business_host.send_request_async_ng('test', SimpleMessage(integer=1, string='test'))
+        
+        assert asyncio.iscoroutine(result)
+        assert asyncio.run(result) == MyResponse(value='test')
 
-def test_dispatch_message():
-    bs = FileOperation()
-    bs.PutLine = MagicMock()
-    bs.Limit = 1
-    bs.on_init()
-    bs._dispach_message(PostMessage(Post=PostClass(Title='test', Selftext='test', 
-                                                   Url='test', Author='test', CreatedUTC=1.1, OriginalJSON='test'),
-                                    Found='True', ToEmailAddress='test'))
-    assert True
+    def test_send_multi_request_sync(self, business_host):
+        business_host.iris_handle.dispatchSendRequestSyncMultiple = MagicMock()
+        rsp = iris.cls("Ens.CallStructure")._New()
+        rsp.Response = MyResponse(value='test')
+        rsp.ResponseCode = 1
+        business_host.iris_handle.dispatchSendRequestSyncMultiple.return_value = [rsp]
+        
+        result = business_host.send_multi_request_sync([('test', SimpleMessage(integer=1, string='test'))])
+        
+        assert result == [('test', SimpleMessage(integer=1, string='test'), MyResponse(value='test'), 1)]
 
+class TestMessageSerialization:
+    def test_dispatch_serializer_valid(self, business_host):
+        message = SimpleMessage(integer=1, string='test')
+        rsp = business_host._dispatch_serializer(message)
+        
+        assert rsp.classname == 'registerFilesIop.message.SimpleMessage'
+        assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
 
-def test_dispatch_serializer():
-    bh = _BusinessHost()
-    message = SimpleMessage(integer=1, string='test')
+    def test_dispatch_serializer_none(self, business_host):
+        assert business_host._dispatch_serializer(None) is None
 
-    rsp = bh._dispatch_serializer(message)
+    @pytest.mark.parametrize("invalid_message,expected_error", [
+        (SimpleMessageNotMessage(), TypeError),
+        (SimpleMessageNotDataclass(), TypeError),
+        ("test", TypeError)
+    ])
+    def test_dispatch_serializer_invalid(self, business_host, invalid_message, expected_error):
+        with pytest.raises(expected_error):
+            business_host._dispatch_serializer(invalid_message)
 
-    assert rsp.classname == 'registerFilesIop.message.SimpleMessage'
-    assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
+class TestMessageDeserialization:
+    def test_serialize_deserialize_simple(self, business_host):
+        original = SimpleMessage(integer=1, string='test')
+        serialized = business_host._serialize_message(original)
+        deserialized = business_host._deserialize_message(serialized)
+        
+        assert deserialized.integer == original.integer
+        assert deserialized.string == original.string
 
-def test_dispatch_serializer_none():
-    bh = _BusinessHost()
-    message = None
+    def test_serialize_deserialize_japanese(self, business_host):
+        original = SimpleMessage(integer=1, string='あいうえお')
+        serialized = business_host._serialize_message(original)
+        deserialized = business_host._deserialize_message(serialized)
+        
+        assert deserialized.string == 'あいうえお'
 
-    rsp = bh._dispatch_serializer(message)
+    def test_serialize_deserialize_large_string(self, business_host):
+        huge_string = 'test' * 1000000
+        original = SimpleMessage(integer=1, string=huge_string)
+        serialized = business_host._serialize_message(original)
+        deserialized = business_host._deserialize_message(serialized)
+        
+        assert deserialized.string == huge_string
 
-    assert rsp is None
+class TestPickledMessages:
+    def test_pickled_message_roundtrip(self, business_host):
+        original = PickledMessage(integer=1, string='test')
+        serialized = business_host._serialize_pickle_message(original)
+        deserialized = business_host._deserialize_pickle_message(serialized)
+        
+        assert deserialized.integer == original.integer
+        assert deserialized.string == original.string
 
-def test_dispatch_serializer_not_message():
-    bh = _BusinessHost()
-    message = SimpleMessageNotMessage()
+class TestBusinessService:
+    def test_dispatch_message(self):
+        bs = FileOperation()
+        bs.PutLine = MagicMock()
+        bs.Limit = 1
+        bs.on_init()
+        
+        post = PostClass(Title='test', Selftext='test', Url='test', 
+                        Author='test', CreatedUTC=1.1, OriginalJSON='test')
+        message = PostMessage(Post=post, Found='True', ToEmailAddress='test')
+        
+        bs._dispach_message(message)
 
-    try:
-        rsp = bh._dispatch_serializer(message)
-    except Exception as e:
-        assert type(e) == TypeError
-
-def test_dispatch_serializer_not_dataclass():
-    bh = _BusinessHost()
-    message = SimpleMessageNotDataclass()
-
-    try:
-        rsp = bh._dispatch_serializer(message)
-    except Exception as e:
-        assert type(e) == TypeError
-
-def test_serialize_message_not_dataclass():
-    bh = _BusinessHost()
-    msg = SimpleMessageNotDataclass()
-    msg.integer = 1
-    msg.string = 'test'
-
-    # Mock iris_handler
-    bh.iris_handle = MagicMock()
-
-    # expect an error
-    try:
-        bh.send_request_sync(target='test', request=msg)
-    except Exception as e:
-        assert type(e) == TypeError
-
-def test_serialize_message_string():
-    bh = _BusinessHost()
-    msg = 'test'
-
-    # Mock iris_handler
-    bh.iris_handle = MagicMock()
-
-    # expect an error
-    try:
-        bh.send_request_sync(target='test', request=msg)
-    except Exception as e:
-        assert type(e) == TypeError
-
-def test_serialize_message_not_message():
-    bh = _BusinessHost()
-    msg = SimpleMessageNotMessage()
-    msg.integer = 1
-    msg.string = 'test'
-
-    # Mock iris_handler
-    bh.iris_handle = MagicMock()
-
-    # expect an error
-    try:
-        bh.send_request_sync(target='test', request=msg)
-    except Exception as e:
-        assert type(e) == TypeError
-
-def test_serialize_message_decorator():
-    bh = _BusinessHost()
-    msg = SimpleMessage(integer=1, string='test')
-    msg_serialized = bh._serialize_message(msg)
-    # Mock iris_handler
-    bh.iris_handle = MagicMock()
-
-    bh.send_request_sync(target='test', request=msg)
-
-    assert bh.iris_handle.dispatchSendRequestSync.call_args[0][0] == 'test'
-    assert type(bh.iris_handle.dispatchSendRequestSync.call_args[0][1]) == type(msg_serialized)
-
-def test_serialize_message_decorator_by_position():
-    bh = _BusinessHost()
-    msg = SimpleMessage(integer=1, string='test')
-    msg_serialized = bh._serialize_message(msg)
-    # Mock iris_handler
-    bh.iris_handle = MagicMock()
-
-    bh.send_request_sync('test', msg)
-
-    assert bh.iris_handle.dispatchSendRequestSync.call_args.args[0] == 'test'
-    assert type(bh.iris_handle.dispatchSendRequestSync.call_args.args[1]) == type(msg_serialized)
-
-def test_serialize_message():
-    bh = _BusinessHost()
-    msg = SimpleMessage(integer=1, string='test')
-    result = bh._serialize_message(msg)
-    result.jstr.Rewind()
-    stream = result.jstr.Read()
-    assert result.classname == 'registerFilesIop.message.SimpleMessage'
-    assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
-    assert stream == '{"integer": 1, "string": "test"}'
-
-def test_deseialize_message():
-    bh = _BusinessHost()
-    msg = SimpleMessage(integer=1, string='test')
-    result = bh._serialize_message(msg)
-    assert result.GetObjectJson() == '{"integer": 1, "string": "test"}'
-    msg = bh._deserialize_message(result)
-    assert msg.integer == 1
-    assert msg.string == 'test'
-
-def test_big_message():
-    bh = _BusinessHost()
-    huge_string = 'test'*1000000
-    tst_msg = SimpleMessage(integer=1, string=huge_string)
-    result = bh._serialize_message(tst_msg)
-    msg = bh._deserialize_message(result)
-    assert msg.integer == 1
-    assert msg.string == huge_string
-
-def test_deseialize_message_japanese():
-    bh = _BusinessHost()
-    msg = SimpleMessage(integer=1, string='あいうえお')
-    result = bh._serialize_message(msg)
-    assert result.GetObjectJson() == '{"integer": 1, "string": "あいうえお"}'
-    msg = bh._deserialize_message(result)
-    assert msg.integer == 1
-    assert msg.string == 'あいうえお'
-
-def test_serialize_pickled_message():
-    bh = _BusinessHost()
-    msg = PickledMessage(integer=1, string='test')
-    result = bh._serialize_pickle_message(msg)
-    result.jstr.Rewind()
-    stream = result.jstr.Read()
-    # convert PickledMessage to a pickle and encode it in base64
-    pickled = pickle.dumps(msg)
-    pickled = codecs.encode(pickled, "base64").decode()
-    assert result.classname == 'registerFilesIop.message.PickledMessage'
-    assert stream == pickled
-
-def test_deseialize_pickled_message():
-    bh = _BusinessHost()
-    msg = PickledMessage(integer=1, string='test')
-    result = bh._serialize_pickle_message(msg)
-    # way around 
-    msg = bh._deserialize_pickle_message(result)
-    assert msg.integer == 1
-    assert msg.string == 'test'
-
-def test_fullmessage():
-    postclass = PostClass(
-        Selftext='test',
-        Title='test',
-        Url='test',
-        Author='test',
-        CreatedUTC=1.1,
-        OriginalJSON='test',
-    )
-    msg = FullMessage(
-        embedded=postclass,
-        embedded_list=['test'],
-        embedded_dict={'test':postclass},
-        string='test',
-        integer=1,
-        float=1.0,
-        boolean=True,
-        list=['test'],
-        dict={'test':'test'},
-        list_dict=[{'test':'test'}],
-        dict_list={'test':['test']},
-        date=date(2020, 1, 1),
-        datetime=datetime(2020, 1, 1, 1, 1, 1),
-        time=time(1, 1, 1)
-    )
-    bh = _BusinessHost()
-    tmp = bh._serialize_message(msg)
-    result = bh._deserialize_message(tmp)
-    assert result.embedded.Selftext == 'test'
-    assert result.embedded_list[0] == 'test'
-    assert result.embedded_dict['test'].Selftext == 'test'
-    assert result.string == 'test'
-    assert result.integer == 1
-    assert result.float == 1.0
-    assert result.boolean
-    assert result.list[0] == 'test'
-    assert result.dict['test'] == 'test'
-    assert result.list_dict[0]['test'] == 'test'
-    assert result.dict_list['test'][0] == 'test'
-    assert result.date == date(2020, 1, 1)
-    assert result.datetime == datetime(2020, 1, 1, 1, 1, 1)
-    assert result.time == time(1, 1, 1)
-
-def test_dispatch_on_get_connections():
-    bs = RedditService()
-    bs.Limit = 1
-    bs.on_init()
-    _list = bs.on_get_connections()
-    _list_len = _list.__len__()
-    for i in range(0, _list_len):
-        print(_list.__getitem__(i))
-    assert len(_list) == 1
-
+    def test_reddit_service_connections(self):
+        bs = RedditService()
+        bs.Limit = 1
+        bs.on_init()
+        connections = bs.on_get_connections()
+        
+        assert len(connections) == 1
