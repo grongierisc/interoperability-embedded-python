@@ -46,6 +46,23 @@ class IRISLogHandler(logging.Handler):
         self.method_name = method_name
         self.to_console = to_console
 
+        # Map Python logging levels to IRIS logging methods
+        self.level_map = {
+            logging.DEBUG: iris.cls("Ens.Util.Log").LogTrace,
+            logging.INFO: iris.cls("Ens.Util.Log").LogInfo,
+            logging.WARNING: iris.cls("Ens.Util.Log").LogWarning,
+            logging.ERROR: iris.cls("Ens.Util.Log").LogError,
+            logging.CRITICAL: iris.cls("Ens.Util.Log").LogAlert,
+        }
+        # Map Python logging levels to IRIS logging Console level
+        self.level_map_console = {
+            logging.DEBUG: -1,
+            logging.INFO: 0,
+            logging.WARNING: 1,
+            logging.ERROR: 2,
+            logging.CRITICAL: 3,
+        }
+
     def format(self, record: logging.LogRecord) -> str:
         """Format the log record into a string.
         
@@ -55,8 +72,6 @@ class IRISLogHandler(logging.Handler):
         Returns:
             Formatted log message
         """
-        if self.to_console:
-            return f"{record}"
         return record.getMessage()
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -65,17 +80,10 @@ class IRISLogHandler(logging.Handler):
         Args:
             record: The logging record to emit
         """
-        # Map Python logging levels to IRIS logging methods
-        level_map = {
-            logging.DEBUG: iris.cls("Ens.Util.Log").LogTrace,
-            logging.INFO: iris.cls("Ens.Util.Log").LogInfo,
-            logging.WARNING: iris.cls("Ens.Util.Log").LogWarning,
-            logging.ERROR: iris.cls("Ens.Util.Log").LogError,
-            logging.CRITICAL: iris.cls("Ens.Util.Log").LogAlert,
-        }
 
-        log_func = level_map.get(record.levelno, iris.cls("Ens.Util.Log").LogInfo)
+        log_func = self.level_map.get(record.levelno, iris.cls("Ens.Util.Log").LogInfo)
         if self.to_console or (hasattr(record, "to_console") and record.to_console):
-            iris.cls("%SYS.System").WriteToConsoleLog(self.format(record),0,0,"IoP.Log")
+            iris.cls("%SYS.System").WriteToConsoleLog(self.format(record),
+                0,self.level_map_console.get(record.levelno, 0),record.name)
         else:
             log_func(self.class_name, self.method_name, self.format(record))
