@@ -1,5 +1,6 @@
 import importlib
 from iop._business_host import _BusinessHost
+from iop._decorators import input_deserializer, input_serializer_param, output_serializer, input_serializer, output_deserializer
 
 class _PrivateSessionDuplex(_BusinessHost):
     
@@ -21,8 +22,8 @@ class _PrivateSessionDuplex(_BusinessHost):
         """
         pass
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_message(self, request):
         """ For internal use only. """
         return self._dispach_message(request)
@@ -38,8 +39,8 @@ class _PrivateSessionDuplex(_BusinessHost):
         self.Adapter = self.adapter = handle_partner
         return
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
         return self.on_process_input(request)
@@ -55,8 +56,8 @@ class _PrivateSessionDuplex(_BusinessHost):
         """
         return 
 
-    @_BusinessHost.input_serialzer_param(0,'document')
-    @_BusinessHost.output_deserialzer
+    @input_serializer_param(0,'document')
+    @output_deserializer
     def send_document_to_process(self, document):
         """ Send the specified message to the target business process or business operation synchronously.
             
@@ -75,8 +76,8 @@ class _PrivateSessionDuplex(_BusinessHost):
 
         return self.iris_handle.dispatchSendDocumentToProcess(document)
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_private_session_started(self, source_config_name,self_generated):
         """ For internal use only. """
 
@@ -87,8 +88,8 @@ class _PrivateSessionDuplex(_BusinessHost):
     def on_private_session_started(self,source_config_name,self_generated):
         pass
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_private_session_stopped(self, source_config_name,self_generated,message):
         """ For internal use only. """
 

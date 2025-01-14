@@ -7,6 +7,8 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
 from iop._log_manager import LogManager
 import logging
 
+from iop._message_validator import is_iris_object_instance, is_message_instance, is_pickle_message_instance
+
 class _Common(metaclass=abc.ABCMeta):
     """Base class that defines common methods for all component types.
     
@@ -19,100 +21,34 @@ class _Common(metaclass=abc.ABCMeta):
     iris_handle: Any = None
     log_to_console: bool = False
 
+    # Lifecycle methods
     def on_init(self) -> None:
-        """Initialize component when started.
-        
-        Called when component starts. Use to initialize required structures.
-        """
-        return self.OnInit()
+        """Initialize component when started."""
+        pass
 
     def on_tear_down(self) -> None:
-        """Clean up component before termination.
-        
-        Called before component terminates. Use to free resources.
-        """
-        return self.OnTearDown()
+        """Clean up component before termination."""
+        pass
 
     def on_connected(self) -> None:
-        """Handle component connection/reconnection.
-        
-        Called when component connects or reconnects after disconnection.
-        Use to initialize connection-dependent structures.
-        """
-        return self.OnConnected()
+        """Handle component connection/reconnection."""
+        pass
 
+    # Internal dispatch methods 
     def _dispatch_on_connected(self, host_object: Any) -> None:
-        """Internal dispatch for connection handling."""
         self.on_connected()
-        return
 
     def _dispatch_on_init(self, host_object: Any) -> None:
-        """Internal dispatch for initialization."""
         self.on_init()
-        return
 
     def _dispatch_on_tear_down(self, host_object: Any) -> None:
-        """Internal dispatch for teardown."""
         self.on_tear_down()
-        return
 
     def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
         """Internal method to set IRIS handles."""
         pass
 
-    @classmethod
-    def _is_message_instance(cls, obj: Any) -> bool:
-        """Check if object is a valid Message instance.
-        
-        Args:
-            obj: Object to check
-            
-        Returns:
-            True if object is a Message instance
-            
-        Raises:
-            TypeError: If object is Message class but not a dataclass
-        """
-        if cls._is_message_class(type(obj)):
-            if not dataclasses.is_dataclass(obj):
-                raise TypeError(f"{type(obj).__module__}.{type(obj).__qualname__} must be a dataclass")
-            return True
-        return False
-
-    @classmethod
-    def _is_pickle_message_instance(cls, obj: Any) -> bool:
-        """Check if object is a PickleMessage instance."""
-        if cls._is_pickel_message_class(type(obj)):
-            return True
-        return False
-    
-    @classmethod
-    def _is_iris_object_instance(cls, obj: Any) -> bool:
-        """Check if object is an IRIS persistent object."""
-        if (obj is not None and type(obj).__module__.find('iris') == 0) and obj._IsA("%Persistent"):
-            return True
-        return False
-
-    @classmethod
-    def _is_message_class(cls, klass: Type) -> bool:
-        name = klass.__module__ + '.' + klass.__qualname__
-        if name == "iop.Message" or name == "grongier.pex.Message": 
-            return True
-        for c in klass.__bases__:
-            if cls._is_message_class(c): 
-                return True
-        return False
-
-    @classmethod
-    def _is_pickel_message_class(cls, klass: Type) -> bool:
-        name = klass.__module__ + '.' + klass.__qualname__
-        if name == "iop.PickleMessage" or name == "grongier.pex.PickleMessage": 
-            return True
-        for c in klass.__bases__:
-            if cls._is_pickel_message_class(c): 
-                return True
-        return False
-
+    # Component information methods
     @classmethod
     def _get_info(cls) -> List[str]:
         """Get component configuration information.
@@ -239,6 +175,7 @@ class _Common(metaclass=abc.ABCMeta):
             pass
         return ret
     
+    # Logging methods
     def _log(self) -> Tuple[str, Optional[str]]:
         """Get class and method name for logging.
         

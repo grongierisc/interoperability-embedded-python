@@ -1,5 +1,6 @@
 import importlib
 from iop._business_host import _BusinessHost
+from iop._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
 
 class _BusinessService(_BusinessHost):
     """ This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.
@@ -36,8 +37,8 @@ class _BusinessService(_BusinessHost):
         self.Adapter = self.adapter = handle_partner
         return
     
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_process_input(self, request):
         """ For internal use only. """
         return self.on_process_input(request)

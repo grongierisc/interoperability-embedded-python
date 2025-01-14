@@ -1,6 +1,8 @@
 import importlib
 from typing import Any, List, Optional, Union, Tuple
 from iop._business_host import _BusinessHost
+from iop._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
+from iop._dispatch import create_dispatch, dispach_message
 
 class _BusinessOperation(_BusinessHost):
     """Business operation component that handles outbound communication.
@@ -45,15 +47,15 @@ class _BusinessOperation(_BusinessHost):
 
     def _dispatch_on_init(self, host_object: Any) -> None:
         """For internal use only."""
-        self._create_dispatch()
+        create_dispatch(self)
         self.on_init()
         return
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_message(self, request: Any) -> Any:
         """For internal use only."""
-        return self._dispach_message(request)
+        return dispach_message(self,request)
 
     def OnMessage(self, request: Any) -> Any:
         """DEPRECATED : use on_message

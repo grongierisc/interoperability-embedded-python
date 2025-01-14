@@ -1,5 +1,7 @@
 from typing import Any, List, Optional, Union
 from iop._business_host import _BusinessHost
+from iop._decorators import input_deserializer, input_serializer_param, output_serializer, input_serializer, output_deserializer
+from iop._dispatch import create_dispatch, dispach_message
 
 class _BusinessProcess(_BusinessHost):
     """Business process component that contains routing and transformation logic.
@@ -60,7 +62,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.OnComplete(request, response)
 
-    @_BusinessHost.input_serialzer_param(0,'response')
+    @input_serializer_param(0,'response')
     def reply(self, response: Any) -> None:
         """Send the specified response to the production component that sent the initial request.
 
@@ -69,7 +71,7 @@ class _BusinessProcess(_BusinessHost):
         """
         return self.iris_handle.dispatchReply(response)
     
-    @_BusinessHost.input_serialzer_param(1,'request')
+    @input_serializer_param(1,'request')
     def send_request_async(self, target: str, request: Any, response_required: bool=True, completion_key: Optional[str]=None, description: Optional[str]=None) -> None:
         """Send the specified message to the target business process or business operation asynchronously.
         
@@ -139,7 +141,7 @@ class _BusinessProcess(_BusinessHost):
     def _dispatch_on_init(self, host_object: Any) -> None:
         """For internal use only."""
         self._restore_persistent_properties(host_object)
-        self._create_dispatch()
+        create_dispatch(self)
         self.on_init()
         self._save_persistent_properties(host_object)
         return
@@ -151,17 +153,17 @@ class _BusinessProcess(_BusinessHost):
         self._save_persistent_properties(host_object)
         return
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_request(self, host_object: Any, request: Any) -> Any:
         """For internal use only."""
         self._restore_persistent_properties(host_object)
-        return_object = self._dispach_message(request)
+        return_object = dispach_message(self,request)
         self._save_persistent_properties(host_object)
         return return_object
     
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_response(self, host_object: Any, request: Any, response: Any, call_request: Any, call_response: Any, completion_key: str) -> Any:
         """For internal use only."""
         self._restore_persistent_properties(host_object)
@@ -169,8 +171,8 @@ class _BusinessProcess(_BusinessHost):
         self._save_persistent_properties(host_object)
         return return_object
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_complete(self, host_object: Any, request: Any, response: Any) -> Any:
         """For internal use only."""
         self._restore_persistent_properties(host_object)

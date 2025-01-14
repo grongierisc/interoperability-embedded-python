@@ -7,6 +7,7 @@ import signal
 from dataclasses import dataclass
 
 from iop._business_host import _BusinessHost
+from iop._dispatch import dispatch_deserializer, dispatch_serializer
 from iop._utils import _Utils
 
 class _Director():
@@ -278,10 +279,10 @@ class _Director():
                     message.json = _Utils.string_to_stream("{}")
         # serialize the message
         business_host = _BusinessHost()
-        serial_message = business_host._dispatch_serializer(message)
+        serial_message = dispatch_serializer(message)
         response = iris.cls('IOP.Utils').dispatchTestComponent(target,serial_message)
         try:
-            deserialized_response = business_host._dispatch_deserializer(response)
+            deserialized_response = dispatch_deserializer(response)
         except ImportError as e:
             # can't import the class, return the string
             deserialized_response = f'{response.classname} : {_Utils.stream_to_string(response.jstr)}'

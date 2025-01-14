@@ -1,10 +1,10 @@
 from iop._business_process import _BusinessProcess
-from iop._business_host import _BusinessHost
+from iop._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
 
 class _PrivateSessionProcess(_BusinessProcess):
     
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_document(self, host_object,source_config_name, request):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
@@ -16,8 +16,8 @@ class _PrivateSessionProcess(_BusinessProcess):
         pass
 
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_private_session_started(self, host_object, source_config_name,self_generated):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
@@ -28,8 +28,8 @@ class _PrivateSessionProcess(_BusinessProcess):
     def on_private_session_started(self,source_config_name,self_generated):
         pass
 
-    @_BusinessHost.input_deserialzer
-    @_BusinessHost.output_serialzer
+    @input_deserializer
+    @output_serializer
     def _dispatch_on_private_session_stopped(self, host_object, source_config_name,self_generated,message):
         """ For internal use only. """
         self._restore_persistent_properties(host_object)
