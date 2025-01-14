@@ -47,7 +47,8 @@ def test_log_info_to_console():
     random_string = ''.join(random.choice(letters) for i in range(10))
     commun.log_info(random_string)
     # check $IRISINSTALLDIR/mgr/messages.log last line
-    with open(os.path.join(os.environ['IRISINSTALLDIR'], 'mgr', 'messages.log'), 'r') as file:
+    install_dir = os.getenv('IRISINSTALLDIR',None) or os.getenv('ISC_PACKAGE_INSTALLDIR',None)
+    with open(os.path.join(install_dir, 'mgr', 'messages.log'), 'r') as file:
         lines = file.readlines()
         last_line = lines[-1]
         assert random_string in last_line
@@ -60,7 +61,8 @@ def test_log_info_to_console_from_method():
     random_string = ''.join(random.choice(letters) for i in range(10))
     commun.trace(message=random_string, to_console=True)
     # check $IRISINSTALLDIR/mgr/messages.log last line
-    with open(os.path.join(os.environ['IRISINSTALLDIR'], 'mgr', 'messages.log'), 'r') as file:
+    install_dir = os.getenv('IRISINSTALLDIR',None) or os.getenv('ISC_PACKAGE_INSTALLDIR',None)
+    with open(os.path.join(install_dir, 'mgr', 'messages.log'), 'r') as file:
         lines = file.readlines()
         last_line = lines[-1]
         assert random_string in last_line
