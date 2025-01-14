@@ -449,7 +449,7 @@ class _Utils():
                 # remove the dots from the beginning of the module name
                 module = module[dots:]
                 # go to the parent directory dots times
-                for i in range(dots)-1:
+                for i in range(dots - 1):
                     path = os.path.dirname(path)
                 return os.path.join(path, module.replace(".", os.sep) + ".py")
             else:

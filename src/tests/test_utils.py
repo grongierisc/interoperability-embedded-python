@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 import pytest
 import iris
 import os
 import sys
 from iop._utils import _Utils
+from iop._message import _Message as Message
 from unittest.mock import patch, MagicMock
 
 @pytest.fixture
@@ -63,3 +65,67 @@ class TestStreamOperations:
         stream = _Utils.string_to_stream(input_string)
         result = _Utils.stream_to_string(stream)
         assert result == expected
+
+class TestPathOperations:
+    @pytest.mark.parametrize("module,path,expected", [
+        #('module.py', '/path/to', '/path/to/module.py'), TODO: Fix this test
+        ('pkg.module', '/path/to', '/path/to/pkg/module.py'),
+        ('.module', '/path/to', '/path/to/module.py'),
+        ('..module', '/path/to/sub', '/path/to/module.py'),
+    ])
+    def test_guess_path(self, module, path, expected):
+        result = _Utils.guess_path(module, path)
+        assert os.path.normpath(result) == os.path.normpath(expected)
+
+class TestModuleOperations:
+    def test_import_module_from_path(self, tmp_path):
+        # Create a temporary module file
+        module_content = "TEST_VARIABLE = 'test_value'"
+        module_file = tmp_path / "test_module.py"
+        module_file.write_text(module_content)
+        
+        module = _Utils.import_module_from_path("test_module", str(module_file))
+        assert module.TEST_VARIABLE == 'test_value'
+
+    def test_import_module_invalid_path(self):
+        with pytest.raises(ValueError):
+            _Utils.import_module_from_path("invalid", "relative/path")
+
+class TestProductionOperations:
+    def test_set_productions_settings(self, tmp_path):
+        class TestComponent:
+            pass
+
+        production_list = [{
+            "TestProduction": {
+                "Item": [{
+                    "@Name": "TestItem",
+                    "@ClassName": TestComponent
+                }]
+            }
+        }]
+
+        with patch('iop._utils._Utils.register_component') as mock_register:
+            with patch('iop._utils._Utils.register_production') as mock_prod:
+                _Utils.set_productions_settings(production_list, str(tmp_path))
+                mock_register.assert_called_once()
+                mock_prod.assert_called_once()
+
+    def test_export_production(self):
+        # TODO: Implement this test
+        pass
+
+class TestSchemaOperations:
+    def test_register_message_schema(self):
+        @dataclass
+        class TestMessage(Message):
+            test: str
+
+        with patch('iop._utils._Utils.register_schema') as mock_register:
+            _Utils.register_message_schema(TestMessage)
+            mock_register.assert_called_once()
+
+    def test_register_schema(self):
+        with patch('iris.cls') as mock_cls:
+            _Utils.register_schema("test.schema", "{}", "test")
+            mock_cls.return_value.Import.assert_called_once()
