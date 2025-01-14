@@ -7,6 +7,7 @@ from grongier.pex._business_host import _BusinessHost
 
 from grongier.pex import Message
 
+from iop._dispatch import deserialize_message, deserialize_pickle_message, dispatch_serializer, serialize_message, serialize_pickle_message
 from registerFiles.message import SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, PickledMessage, FullMessage, PostMessage, MyResponse
 
 from registerFiles.obj import PostClass
@@ -17,7 +18,7 @@ def test_dispatch_serializer():
     bh = _BusinessHost()
     message = SimpleMessage(integer=1, string='test')
 
-    rsp = bh._dispatch_serializer(message)
+    rsp = dispatch_serializer(message)
 
     assert rsp.classname == 'registerFiles.message.SimpleMessage'
     assert rsp.json == '{"integer": 1, "string": "test"}'
@@ -26,7 +27,7 @@ def test_dispatch_serializer_none():
     bh = _BusinessHost()
     message = None
 
-    rsp = bh._dispatch_serializer(message)
+    rsp = dispatch_serializer(message)
 
     assert rsp is None
 
@@ -35,7 +36,7 @@ def test_dispatch_serializer_not_message():
     message = SimpleMessageNotMessage()
 
     try:
-        rsp = bh._dispatch_serializer(message)
+        rsp = dispatch_serializer(message)
     except Exception as e:
         assert type(e) == TypeError
 
@@ -44,7 +45,7 @@ def test_dispatch_serializer_not_dataclass():
     message = SimpleMessageNotDataclass()
 
     try:
-        rsp = bh._dispatch_serializer(message)
+        rsp = dispatch_serializer(message)
     except Exception as e:
         assert type(e) == TypeError
 
@@ -81,7 +82,7 @@ def test_serialize_message_not_message():
 def test_serialize_message_decorator():
     bh = _BusinessHost()
     msg = SimpleMessage(integer=1, string='test')
-    msg_serialized = bh._serialize_message(msg)
+    msg_serialized = serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
 
@@ -93,7 +94,7 @@ def test_serialize_message_decorator():
 def test_serialize_message_decorator_by_position():
     bh = _BusinessHost()
     msg = SimpleMessage(integer=1, string='test')
-    msg_serialized = bh._serialize_message(msg)
+    msg_serialized = serialize_message(msg)
     # Mock iris_handler
     bh.iris_handle = MagicMock()
 
@@ -105,7 +106,7 @@ def test_serialize_message_decorator_by_position():
 def test_serialize_message():
     bh = _BusinessHost()
     msg = SimpleMessage(integer=1, string='test')
-    result = bh._serialize_message(msg)
+    result = serialize_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
     assert result.classname == 'registerFiles.message.SimpleMessage'
@@ -115,25 +116,25 @@ def test_serialize_message():
 def test_deseialize_message():
     bh = _BusinessHost()
     msg = SimpleMessage(integer=1, string='test')
-    result = bh._serialize_message(msg)
+    result = serialize_message(msg)
     assert result.json == '{"integer": 1, "string": "test"}'
-    msg = bh._deserialize_message(result)
+    msg = deserialize_message(result)
     assert msg.integer == 1
     assert msg.string == 'test'
 
 def test_deseialize_message_japanese():
     bh = _BusinessHost()
     msg = SimpleMessage(integer=1, string='あいうえお')
-    result = bh._serialize_message(msg)
+    result = serialize_message(msg)
     assert result.json == '{"integer": 1, "string": "あいうえお"}'
-    msg = bh._deserialize_message(result)
+    msg = deserialize_message(result)
     assert msg.integer == 1
     assert msg.string == 'あいうえお'
 
 def test_serialize_pickled_message():
     bh = _BusinessHost()
     msg = PickledMessage(integer=1, string='test')
-    result = bh._serialize_pickle_message(msg)
+    result = serialize_pickle_message(msg)
     result.jstr.Rewind()
     stream = result.jstr.Read()
     # convert PickledMessage to a pickle and encode it in base64
@@ -145,9 +146,9 @@ def test_serialize_pickled_message():
 def test_deseialize_pickled_message():
     bh = _BusinessHost()
     msg = PickledMessage(integer=1, string='test')
-    result = bh._serialize_pickle_message(msg)
+    result = serialize_pickle_message(msg)
     # way around 
-    msg = bh._deserialize_pickle_message(result)
+    msg = deserialize_pickle_message(result)
     assert msg.integer == 1
     assert msg.string == 'test'
 
@@ -177,8 +178,8 @@ def test_fullmessage():
         time=time(1, 1, 1)
     )
     bh = _BusinessHost()
-    tmp = bh._serialize_message(msg)
-    result = bh._deserialize_message(tmp)
+    tmp = serialize_message(msg)
+    result = deserialize_message(tmp)
     assert result.embedded.Selftext == 'test'
     assert result.embedded_list[0] == 'test'
     assert result.embedded_dict['test'].Selftext == 'test'

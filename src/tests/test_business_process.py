@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from iop._business_process import _BusinessProcess
+from iop._dispatch import dispatch_serializer
 from registerFiles.message import SimpleMessage, PickledMessage, FullMessage
 
 @pytest.fixture

@@ -3,10 +3,11 @@ import asyncio
 import iris
 import codecs
 from datetime import datetime, date, time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
 
 from iop._business_host import _BusinessHost
+from iop._dispatch import deserialize_message, deserialize_pickle_message, dispach_message, dispatch_serializer, serialize_message, serialize_pickle_message
 from registerFilesIop.message import (
     SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, 
     PickledMessage, FullMessage, PostMessage, MyResponse
@@ -22,16 +23,17 @@ def business_host():
     return bh
 
 class TestBusinessHostAsync:
-    def test_send_request_async_ng(self, business_host):
+    @pytest.mark.asyncio
+    @patch('iop._async_request.dispatch_deserializer')
+    async def test_send_request_async_ng(self, mock_deserializer, business_host):
         business_host.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
         business_host.iris_handle.dispatchIsRequestDone.return_value = 2
-        business_host._dispatch_deserializer = MagicMock()
-        business_host._dispatch_deserializer.return_value = MyResponse(value='test')
+        mock_deserializer.return_value = MyResponse(value='test')
+
+        result = await business_host.send_request_async_ng('test', SimpleMessage(integer=1, string='test'))
         
-        result = business_host.send_request_async_ng('test', SimpleMessage(integer=1, string='test'))
-        
-        assert asyncio.iscoroutine(result)
-        assert asyncio.run(result) == MyResponse(value='test')
+        assert result == MyResponse(value='test')
+        mock_deserializer.assert_called_once()
 
     def test_send_multi_request_sync(self, business_host):
         business_host.iris_handle.dispatchSendRequestSyncMultiple = MagicMock()
@@ -47,13 +49,13 @@ class TestBusinessHostAsync:
 class TestMessageSerialization:
     def test_dispatch_serializer_valid(self, business_host):
         message = SimpleMessage(integer=1, string='test')
-        rsp = business_host._dispatch_serializer(message)
+        rsp = dispatch_serializer(message)
         
         assert rsp.classname == 'registerFilesIop.message.SimpleMessage'
         assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
 
     def test_dispatch_serializer_none(self, business_host):
-        assert business_host._dispatch_serializer(None) is None
+        assert dispatch_serializer(None) is None
 
     @pytest.mark.parametrize("invalid_message,expected_error", [
         (SimpleMessageNotMessage(), TypeError),
@@ -62,37 +64,37 @@ class TestMessageSerialization:
     ])
     def test_dispatch_serializer_invalid(self, business_host, invalid_message, expected_error):
         with pytest.raises(expected_error):
-            business_host._dispatch_serializer(invalid_message)
+            dispatch_serializer(invalid_message)
 
 class TestMessageDeserialization:
     def test_serialize_deserialize_simple(self, business_host):
         original = SimpleMessage(integer=1, string='test')
-        serialized = business_host._serialize_message(original)
-        deserialized = business_host._deserialize_message(serialized)
+        serialized = serialize_message(original)
+        deserialized = deserialize_message(serialized)
         
         assert deserialized.integer == original.integer
         assert deserialized.string == original.string
 
     def test_serialize_deserialize_japanese(self, business_host):
         original = SimpleMessage(integer=1, string='あいうえお')
-        serialized = business_host._serialize_message(original)
-        deserialized = business_host._deserialize_message(serialized)
+        serialized = serialize_message(original)
+        deserialized = deserialize_message(serialized)
         
         assert deserialized.string == 'あいうえお'
 
     def test_serialize_deserialize_large_string(self, business_host):
         huge_string = 'test' * 1000000
         original = SimpleMessage(integer=1, string=huge_string)
-        serialized = business_host._serialize_message(original)
-        deserialized = business_host._deserialize_message(serialized)
+        serialized = serialize_message(original)
+        deserialized = deserialize_message(serialized)
         
         assert deserialized.string == huge_string
 
 class TestPickledMessages:
     def test_pickled_message_roundtrip(self, business_host):
         original = PickledMessage(integer=1, string='test')
-        serialized = business_host._serialize_pickle_message(original)
-        deserialized = business_host._deserialize_pickle_message(serialized)
+        serialized = serialize_pickle_message(original)
+        deserialized = deserialize_pickle_message(serialized)
         
         assert deserialized.integer == original.integer
         assert deserialized.string == original.string
@@ -108,7 +110,7 @@ class TestBusinessService:
                         Author='test', CreatedUTC=1.1, OriginalJSON='test')
         message = PostMessage(Post=post, Found='True', ToEmailAddress='test')
         
-        bs._dispach_message(message)
+        dispach_message(bs,message)
 
     def test_reddit_service_connections(self):
         bs = RedditService()

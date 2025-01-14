@@ -1,6 +1,8 @@
+import iris
 import pytest
 from unittest.mock import MagicMock, patch
 from iop._business_operation import _BusinessOperation
+from iop._dispatch import dispach_message, dispatch_serializer
 from registerFiles.message import SimpleMessage
 
 @pytest.fixture
@@ -52,6 +54,21 @@ def test_dispatch_methods(operation):
     # Verify internal method calls
     operation.iris_handle.dispatchOnMessage.assert_not_called()
 
+def test_dispatch_on_message(operation):
+    class CustomOperation(_BusinessOperation):
+        def handle_simple(self, request: SimpleMessage):
+            return SimpleMessage(integer=request.integer + 1, string="handled")
+    # Test dispatch with no handlers
+    request = iris.cls("IOP.Message")._New()
+    request.json = '{"integer": 1, "string": "test"}'
+    request.classname = 'registerFiles.message.SimpleMessage'
+    operation = CustomOperation()
+    operation._dispatch_on_init(MagicMock())
+    response = operation._dispatch_on_message(request)
+    excepted_response = dispatch_serializer(SimpleMessage(integer=2, string='handled'))
+    
+    assert response.json == excepted_response.json
+
 def test_dispatch_with_custom_handlers():
     class CustomOperation(_BusinessOperation):
         def handle_simple(self, request: SimpleMessage):
@@ -62,7 +79,7 @@ def test_dispatch_with_custom_handlers():
     operation.iris_handle = MagicMock()
     
     request = SimpleMessage(integer=1, string='test')
-    response = operation._dispach_message(request)
+    response = dispach_message(operation,request)
     
     assert isinstance(response, SimpleMessage)
     assert response.integer == 2
