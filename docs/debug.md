@@ -36,12 +36,9 @@ I will explain first with a local installation of IRIS. Then I will show how to 
 
 To debug the code with a local installation of IRIS, you need to have the following:
 
-- A local installation of IRIS
-  - https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=PAGE_deployment_install
-- A python interpreter compatible with the version of IRIS
-  - https://docs.intersystems.com/iris20243/csp/docbook/Doc.View.cls?KEY=GEPYTHON_prereqs#GEPYTHON_prereqs_version
-- Iris embedded python wrapper
-  - https://github.com/grongierisc/iris-embedded-python-wrapper
+- [Local installation of IRIS](https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=PAGE_deployment_install)
+- [Python interpreter compatible with the version of IRIS](https://docs.intersystems.com/iris20243/csp/docbook/Doc.View.cls?KEY=GEPYTHON_prereqs#GEPYTHON_prereqs_version)
+- [Iris embedded python wrapper](https://github.com/grongierisc/iris-embedded-python-wrapper)
 
 After you have all the requirements, you can start the IRIS instance and run the python code.
 
