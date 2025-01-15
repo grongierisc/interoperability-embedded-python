@@ -222,7 +222,7 @@ class _Director():
                     await asyncio.sleep(1)
 
     @staticmethod
-    def log_production_top(top):
+    def log_production_top(top=10):
         """ 
         Log the top N logs of the production
         Parameters:

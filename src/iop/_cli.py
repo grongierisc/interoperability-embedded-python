@@ -143,8 +143,10 @@ class Command:
         _Utils.migrate(migrate_path)
 
     def _handle_log(self) -> None:
-        log_name = _Director.get_default_production() if self.args.log == 'not_set' else self.args.log
-        print(_Director.get_production_log(log_name))
+        if self.args.log == 'not_set':
+            print(_Director.log_production_top())
+        else:
+            print(_Director.log_production(self.args.log))
 
     def _handle_init(self) -> None:
         _Utils.setup(None)
