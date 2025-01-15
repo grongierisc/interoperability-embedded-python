@@ -1,34 +1,12 @@
-import abc
-import asyncio
-import base64
-import codecs
-import datetime
-import decimal
-import importlib
-import inspect
-import iris
-import json
-import pickle
-import uuid
-from dataclasses import dataclass
-from functools import wraps
-from inspect import getsource, signature
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, Union
+from inspect import getsource
+from typing import Any,List, Optional, Tuple, Union
 
-from dacite import Config, from_dict
+import iris
 
 from iop._common import _Common
 from iop._message import _Message as Message
-from iop._utils import _Utils
-from iop._decorators import (
-    input_serializer, input_serializer_param, output_deserializer,
-    input_deserializer, output_serializer
-)
-from iop._serialization import IrisJSONEncoder, IrisJSONDecoder
-from iop._dispatch import (
-    dispatch_serializer, dispatch_deserializer, 
-    dispach_message, create_dispatch
-)
+from iop._decorators import input_serializer_param, output_deserializer
+from iop._dispatch import dispatch_serializer, dispatch_deserializer
 from iop._async_request import AsyncRequest
 
 class _BusinessHost(_Common):
@@ -92,7 +70,7 @@ class _BusinessHost(_Common):
         return await AsyncRequest(target, request, timeout, description, self)
 
     def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
-                                timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:
+                               timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:
         """Send multiple messages synchronously to target components.
         
         Args:
@@ -102,35 +80,39 @@ class _BusinessHost(_Common):
             
         Returns:
             List of tuples (target, request, response, status)
+            
+        Raises:
+            TypeError: If target_request is not a list of tuples
+            ValueError: If target_request is empty
         """
-        # create a list of iris.Ens.CallStructure for each target_request
-        call_list = []
-        # sanity check
-        if not isinstance(target_request, list):
-            raise TypeError("The target_request parameter must be a list")
-        if len(target_request) == 0:
-            raise ValueError("The target_request parameter must not be empty")
-        # check if the target_request is a list of tuple of 2 elements
-        if not all(isinstance(item, tuple) and len(item) == 2 for item in target_request):
-            raise TypeError("The target_request parameter must be a list of tuple of 2 elements")
-
-        for target, request in target_request:
-            call = iris.cls("Ens.CallStructure")._New()
-            call.TargetDispatchName = target
-            call.Request = dispatch_serializer(request)
-            call_list.append(call)
-        # call the dispatchSendMultiRequestSync method
+        self._validate_target_request(target_request)
+        
+        call_list = [self._create_call_structure(target, request) 
+                    for target, request in target_request]
+        
         response_list = self.iris_handle.dispatchSendRequestSyncMultiple(call_list, timeout)
-        # create a list of tuple (target, request, response, status)
-        result = []
-        for i in range(len(target_request)):
-            result.append(
-                (target_request[i][0],
-                 target_request[i][1],
-                 dispatch_deserializer(response_list[i].Response),
-                 response_list[i].ResponseCode
-                ))
-        return result
+        
+        return [(target_request[i][0],
+                target_request[i][1], 
+                dispatch_deserializer(response_list[i].Response),
+                response_list[i].ResponseCode) 
+                for i in range(len(target_request))]
+
+    def _validate_target_request(self, target_request: List[Tuple[str, Union[Message, Any]]]) -> None:
+        """Validate the target_request parameter structure."""
+        if not isinstance(target_request, list):
+            raise TypeError("target_request must be a list")
+        if not target_request:
+            raise ValueError("target_request must not be empty")
+        if not all(isinstance(item, tuple) and len(item) == 2 for item in target_request):
+            raise TypeError("target_request must contain tuples of (target, request)")
+
+    def _create_call_structure(self, target: str, request: Union[Message, Any]) -> Any:
+        """Create an Ens.CallStructure object for the request."""
+        call = iris.cls("Ens.CallStructure")._New()
+        call.TargetDispatchName = target
+        call.Request = dispatch_serializer(request)
+        return call
 
     @staticmethod
     def OnGetConnections() -> Optional[List[str]]:
