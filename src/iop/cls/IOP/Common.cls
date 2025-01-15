@@ -193,7 +193,12 @@ ClassMethod OnGetConnections(
 	pItem As Ens.Config.Item)
 {
     // finds any settings of type Ens.DataType.ConfigName
-    do ..GetPropertyConnections(.pArray,pItem)
+    Try {
+        do ..GetPropertyConnections(.pArray,pItem)
+    }
+    Catch ex {
+    }
+
 
     // Get settings
     do pItem.GetModifiedSetting("%classpaths", .tClasspaths)
