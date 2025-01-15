@@ -111,9 +111,6 @@ class TestProductionOperations:
                 mock_register.assert_called_once()
                 mock_prod.assert_called_once()
 
-    def test_export_production(self):
-        # TODO: Implement this test
-        pass
 
 class TestSchemaOperations:
     def test_register_message_schema(self):
