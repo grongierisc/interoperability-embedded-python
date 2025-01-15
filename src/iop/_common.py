@@ -1,13 +1,11 @@
 import abc
-import dataclasses
 import inspect
-import iris
 import traceback
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type
-from iop._log_manager import LogManager
-import logging
+from typing import Any, ClassVar, List, Optional, Tuple
 
-from iop._message_validator import is_iris_object_instance, is_message_instance, is_pickle_message_instance
+import iris
+
+from iop._log_manager import LogManager, logging
 
 class _Common(metaclass=abc.ABCMeta):
     """Base class that defines common methods for all component types.
