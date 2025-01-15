@@ -14,6 +14,7 @@ nav:
     - Python API: python-api.md
   - DTL Support: dtl.md
   - Logging: logging.md
+  - Debugging: debug.md
   - Reference:
     - Examples: example.md
     - Useful Links: useful-links.md
