@@ -16,7 +16,7 @@ from iop._serialization import (
 )
 
 @dataclass
-class TestMessage:
+class FullMessge:
     text: str
     number: int
     date: datetime.date
@@ -33,7 +33,7 @@ def test_json_serialization():
     test_uuid = uuid.uuid4()
     test_bytes = b'hello world'
     
-    msg = TestMessage(
+    msg = FullMessge(
         text="test",
         number=42,
         date=datetime.date(2023, 1, 1),
@@ -48,11 +48,11 @@ def test_json_serialization():
     # Test serialization
     serial = serialize_message(msg)
     assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.Message")
-    assert serial.classname == f"{TestMessage.__module__}.{TestMessage.__name__}"
+    assert serial.classname == f"{FullMessge.__module__}.{FullMessge.__name__}"
     
     # Test deserialization
     result = deserialize_message(serial)
-    assert isinstance(result, TestMessage)
+    assert isinstance(result, FullMessge)
     assert result.text == msg.text
     assert result.number == msg.number
     assert result.date == msg.date
@@ -64,7 +64,7 @@ def test_json_serialization():
     assert result.items == msg.items
 
 def test_pickle_serialization():
-    msg = TestMessage(
+    msg = FullMessge(
         text="test",
         number=42,
         date=datetime.date(2023, 1, 1),
@@ -79,11 +79,11 @@ def test_pickle_serialization():
     # Test serialization
     serial = serialize_pickle_message(msg)
     assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.PickleMessage")
-    assert serial.classname == f"{TestMessage.__module__}.{TestMessage.__name__}"
+    assert serial.classname == f"{FullMessge.__module__}.{FullMessge.__name__}"
     
     # Test deserialization
     result = deserialize_pickle_message(serial)
-    assert isinstance(result, TestMessage)
+    assert isinstance(result, FullMessge)
     assert result.text == msg.text
     assert result.number == msg.number
     assert result.date == msg.date
