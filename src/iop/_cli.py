@@ -144,9 +144,9 @@ class Command:
 
     def _handle_log(self) -> None:
         if self.args.log == 'not_set':
-            print(_Director.log_production_top())
+            print(_Director.log_production())
         else:
-            print(_Director.log_production(self.args.log))
+            print(_Director.log_production_top(self.args.log))
 
     def _handle_init(self) -> None:
         _Utils.setup(None)
