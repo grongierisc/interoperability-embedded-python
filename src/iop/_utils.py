@@ -436,23 +436,31 @@ class _Utils():
         return stream
     
     @staticmethod
-    def guess_path(module,path):
-        if "." in module:
-            if module.startswith("."):
-                # count the number of dots at the beginning of the module name
-                dots = 0
-                for c in module:
-                    if c == ".":
-                        dots += 1
-                    else:
-                        break
-                # remove the dots from the beginning of the module name
-                module = module[dots:]
-                # go to the parent directory dots times
-                for i in range(dots - 1):
-                    path = os.path.dirname(path)
-                return os.path.join(path, module.replace(".", os.sep) + ".py")
-            else:
-                return os.path.join(path, module.replace(".", os.sep) + ".py")
+    def guess_path(module: str, path: str) -> str:
+        """Determines the full file path for a given module.
+        
+        Args:
+            module: Module name/path (e.g. 'foo.bar' or '.foo.bar')
+            path: Base directory path
+            
+        Returns:
+            Full path to the module's .py file
+        """
+        if not module:
+            raise ValueError("Module name cannot be empty")
+            
+        if module.startswith("."):
+            # Handle relative imports
+            dot_count = len(module) - len(module.lstrip("."))
+            module = module[dot_count:]
+            
+            # Go up directory tree based on dot count
+            for _ in range(dot_count - 1):
+                path = os.path.dirname(path)
+                
+        # Convert module path to file path
+        if module.endswith(".py"):
+            module_path = module.replace(".", os.sep)
         else:
-            return os.path.join(path, module + ".py")
+            module_path = module.replace(".", os.sep) + ".py"
+        return os.path.join(path, module_path)

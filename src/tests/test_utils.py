@@ -68,7 +68,7 @@ class TestStreamOperations:
 
 class TestPathOperations:
     @pytest.mark.parametrize("module,path,expected", [
-        #('module.py', '/path/to', '/path/to/module.py'), TODO: Fix this test
+        ('module', '/path/to', '/path/to/module.py'),
         ('pkg.module', '/path/to', '/path/to/pkg/module.py'),
         ('.module', '/path/to', '/path/to/module.py'),
         ('..module', '/path/to/sub', '/path/to/module.py'),
