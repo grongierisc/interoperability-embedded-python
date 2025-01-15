@@ -85,6 +85,30 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#business-service">Business Service</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#business-service_1">Business Service</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#pulling-business-service">Pulling Business Service</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#business-process">Business Process</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#async-calls">Async calls</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#using-the-asyncio-library">Using the asyncio library</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#using-the-native-send_request_async-method">Using the native send_request_async method</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#using-the-send_multi_request_sync-method">Using the send_multi_request_sync method</a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
@@ -172,6 +196,145 @@ CLASSES = {
 <h3 id="registering-the-component">Registering the Component</h3>
 <p>Use the <code>iop</code> command line to register your component:</p>
 <pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
+</code></pre>
+<h2 id="business-service">Business Service</h2>
+<p>Two kinds of business services can be created in Python:</p>
+<ul>
+<li>Business Service</li>
+<li>Pulling Business Service</li>
+</ul>
+<h3 id="business-service_1">Business Service</h3>
+<p>To create a business service, use the following code:</p>
+<pre><code class="language-python">from iop import BusinessService
+
+class MyBusinessService(BusinessService):
+
+    def on_process_input(self, message_input: 'MyRequest'):
+        # This method is called when the service is called
+        self.log_info(&quot;[Python] MyBusinessService:on_process_input() is called with message: &quot; + message_input.request_string)
+        response = MyResponse(&quot;MyBusinessService:on_process_input() echos&quot;)
+        return response
+</code></pre>
+<h3 id="pulling-business-service">Pulling Business Service</h3>
+<p>To create a business service that runs every 5 seconds, use the following code:</p>
+<pre><code class="language-python">from iop import BusinessService
+
+class MyBusinessService(BusinessService):
+
+    def get_adapter_type():
+        # This is mandatory to schedule the service
+        # By default, the service will be scheduled every 5 seconds
+        return &quot;Ens.InboundAdapter&quot;
+
+    def on_process_input(self):
+        # This method is called every 5 seconds
+        self.log_info(&quot;[Python] MyBusinessService:on_process_input() is called&quot;)
+</code></pre>
+<h2 id="flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</h2>
+<p>To send a message to a business service, use the following code:</p>
+<pre><code class="language-python">from flask import Flask, request
+from iop import Director
+
+app = Flask(__name__)
+
+director = Director()
+
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    message = request.json
+    bs = director.get_business_service(&quot;Python.MyBusinessService&quot;)
+    resp = bs.on_process_input(message)
+    return resp
+</code></pre>
+<h2 id="business-process">Business Process</h2>
+<p>To create a business process, use the following code:</p>
+<pre><code class="language-python">from iop import BusinessProcess
+
+class MyBusinessProcess(BusinessProcess):
+
+    def on_message(self, message_input: 'MyRequest'):
+        # Called from service/process/operation, message is of type MyRequest with property request_string
+        self.log_info(&quot;[Python] MyBusinessProcess:on_message() is called with message: &quot; + message_input.request_string)
+        response = MyResponse(&quot;MyBusinessProcess:on_message() echos&quot;)
+        return response
+</code></pre>
+<h3 id="async-calls">Async calls</h3>
+<p>There is three ways to make async calls in Python:</p>
+<ol>
+<li>Using the <code>asyncio</code> library.</li>
+<li>Using the native <code>send_request_async</code> method.</li>
+<li>Using the <code>send_multi_request_sync</code> method.</li>
+</ol>
+<h4 id="using-the-asyncio-library">Using the <code>asyncio</code> library</h4>
+<p>To make an async call with asyncio, use the following code:</p>
+<pre><code class="language-python">import asyncio
+import random
+
+from iop import BusinessProcess
+from msg import MyMessage
+
+
+class MyAsyncNGBP(BusinessProcess):
+
+    def on_message(self, request):
+
+        results = asyncio.run(self.await_response(request))
+
+        for result in results:
+            self.log_info(f&quot;Received response: {result.message}&quot;)
+
+    async def await_response(self, request):
+        # create 1 to 10 messages
+        tasks = []
+        for i in range(random.randint(1, 10)):
+            tasks.append(self.send_request_async_ng(&quot;Python.MyAsyncNGBO&quot;,
+                                                    MyMessage(message=f&quot;Message {i}&quot;)))
+
+        return await asyncio.gather(*tasks)
+</code></pre>
+<h4 id="using-the-native-send_request_async-method">Using the native <code>send_request_async</code> method</h4>
+<p>To make an async call with the native <code>send_request_async</code> method, use the following code:</p>
+<pre><code class="language-python">from grongier.pex import BusinessProcess
+from msg import MyMessage
+
+
+class MyBP(BusinessProcess):
+
+    def on_message(self, request):
+        msg_one = MyMessage(message=&quot;Message1&quot;)
+        msg_two = MyMessage(message=&quot;Message2&quot;)
+
+        self.send_request_async(&quot;Python.MyBO&quot;, msg_one,completion_key=&quot;1&quot;)
+        self.send_request_async(&quot;Python.MyBO&quot;, msg_two,completion_key=&quot;2&quot;)
+
+    def on_response(self, request, response, call_request, call_response, completion_key):
+        if completion_key == &quot;1&quot;:
+            self.response_one = call_response
+        elif completion_key == &quot;2&quot;:
+            self.response_two = call_response
+
+    def on_complete(self, request, response):
+        self.log_info(f&quot;Received response one: {self.response_one.message}&quot;)
+        self.log_info(f&quot;Received response two: {self.response_two.message}&quot;)
+</code></pre>
+<h4 id="using-the-send_multi_request_sync-method">Using the <code>send_multi_request_sync</code> method</h4>
+<p>To make an async call with the <code>send_multi_request_sync</code> method, use the following code:</p>
+<pre><code class="language-python">from iop import BusinessProcess
+from msg import MyMessage
+
+
+class MyMultiBP(BusinessProcess):
+
+    def on_message(self, request):
+        msg_one = MyMessage(message=&quot;Message1&quot;)
+        msg_two = MyMessage(message=&quot;Message2&quot;)
+
+        tuple_responses = self.send_multi_request_sync([(&quot;Python.MyMultiBO&quot;, msg_one),
+                                                        (&quot;Python.MyMultiBO&quot;, msg_two)])
+
+        self.log_info(&quot;All requests have been processed&quot;)
+        for target,request,response,status in tuple_responses:
+            self.log_info(f&quot;Received response: {response.message}&quot;)
 </code></pre>
               
             </div>

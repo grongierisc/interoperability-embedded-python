@@ -72,6 +72,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#migrate">migrate</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#init">init</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#test">test</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#export">export</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#status">status</a>
@@ -137,35 +141,51 @@
 <pre><code class="language-bash">iop 
 </code></pre>
 <p>output :</p>
-<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-S] [-k] [-r] [-x] [-m MIGRATE]
+                      [-e EXPORT] [-v] [-L] [-i INIT] [-t TEST] [-D] [-C CLASSNAME] [-B BODY]
+
 optional arguments:
   -h, --help            display help and default production name
   -d DEFAULT, --default DEFAULT
                         set the default production
-  -l, --lists           list productions
+  -l, --list           list productions
   -s START, --start START
                         start a production
-  -k, --kill            kill a production (force stop)
-  -S, --stop            stop a production
-  -r, --restart         restart a production
-  -M MIGRATE, --migrate MIGRATE
+  -S, --stop           stop a production
+  -k, --kill           kill a production
+  -r, --restart        restart a production
+  -x, --status         status a production
+  -m MIGRATE, -M MIGRATE, --migrate MIGRATE
                         migrate production and classes with settings file
   -e EXPORT, --export EXPORT
                         export a production
-  -x, --status          status a production
-  -v, --version         display version
-  -L, --log             display log
+  -v, --version        display version
+  -L, --log           display log
+  -i INIT, --init INIT
+                        init the pex module in iris
+  -t TEST, --test TEST
+                        test the pex module in iris
 
-default production: PEX.Production
+start arguments:
+  -D, --detach         start a production in detach mode
+
+test arguments:
+  -C CLASSNAME, --classname CLASSNAME
+                        test classname
+  -B BODY, --body BODY
+                        test body
+
+default production: IoP.Production
 </code></pre>
 <h2 id="help">help</h2>
 <p>The help command display the help and the default production name.</p>
 <pre><code class="language-bash">iop -h
 </code></pre>
 <p>output :</p>
-<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+<pre><code class="language-bash">usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-S] [-k] [-r] [-x] [-m MIGRATE]
+                      [-e EXPORT] [-v] [-L] [-i INIT] [-t TEST] [-D] [-C CLASSNAME] [-B BODY]
 ...
-default production: PEX.Production
+default production: IoP.Production
 </code></pre>
 <h2 id="default">default</h2>
 <p>The default command set the default production.</p>
@@ -173,10 +193,10 @@ default production: PEX.Production
 <pre><code class="language-bash">iop -d
 </code></pre>
 <p>output :</p>
-<pre><code class="language-bash">default production: PEX.Production
+<pre><code class="language-bash">default production: IoP.Production
 </code></pre>
 <p>With an argument, it set the default production.</p>
-<pre><code class="language-bash">iop -d PEX.Production
+<pre><code class="language-bash">iop -d IoP.Production
 </code></pre>
 <h2 id="lists">lists</h2>
 <p>The lists command list productions.</p>
@@ -184,7 +204,7 @@ default production: PEX.Production
 </code></pre>
 <p>output :</p>
 <pre><code class="language-bash">{
-    &quot;PEX.Production&quot;: {
+    &quot;IoP.Production&quot;: {
         &quot;Status&quot;: &quot;Stopped&quot;,
         &quot;LastStartTime&quot;: &quot;2023-05-31 11:13:51.000&quot;,
         &quot;LastStopTime&quot;: &quot;2023-05-31 11:13:54.153&quot;,
@@ -193,16 +213,14 @@ default production: PEX.Production
 }
 </code></pre>
 <h2 id="start">start</h2>
-<p>The start command start a production.</p>
-<p>To exit the command, you have to press CTRL+C.</p>
-<pre><code class="language-bash">iop -s PEX.Production
+<p>The start command starts a production.</p>
+<p>To exit the command, you have to press CTRL+C (unless using detach mode).</p>
+<pre><code class="language-bash">iop -s IoP.Production
 </code></pre>
-<p>output :</p>
-<pre><code class="language-bash">2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
-...
+<p>You can start a production in detach mode using the -D flag:</p>
+<pre><code class="language-bash">iop -s IoP.Production -D
 </code></pre>
+<p>In detach mode, the production starts and the command returns immediately without showing logs.</p>
 <h2 id="kill">kill</h2>
 <p>The kill command kill a production (force stop).</p>
 <p>Kill command is the same as stop command but with a force stop.</p>
@@ -226,18 +244,33 @@ default production: PEX.Production
 <pre><code class="language-bash">iop -M /tmp/settings.py
 </code></pre>
 <p>More details about the settings file can be found <a href="../getting-started/register-component/">here</a>.</p>
+<h2 id="init">init</h2>
+<p>The init command initializes the IoP module in IRIS.</p>
+<pre><code class="language-bash">iop -i
+</code></pre>
+<h2 id="test">test</h2>
+<p>The test command allows testing IoP components. You can optionally specify a test name, classname, and body.</p>
+<p>Basic test:</p>
+<pre><code class="language-bash">iop -t
+</code></pre>
+<p>Test with specific classname:</p>
+<pre><code class="language-bash">iop -t MyTest -C MyClass
+</code></pre>
+<p>Test with body:</p>
+<pre><code class="language-bash">iop -t MyTest -C MyClass -B &quot;test body&quot;
+</code></pre>
 <h2 id="export">export</h2>
 <p>The export command export a production.</p>
 <p>If no argument is given, the export command export the default production.</p>
 <pre><code class="language-bash">iop -e
 </code></pre>
 <p>If an argument is given, the export command export the production given in argument.</p>
-<pre><code class="language-bash">iop -e PEX.Production
+<pre><code class="language-bash">iop -e IoP.Production
 </code></pre>
 <p>output :</p>
 <pre><code class="language-bash">{
     &quot;Production&quot;: {
-        &quot;@Name&quot;: &quot;PEX.Production&quot;,
+        &quot;@Name&quot;: &quot;IoP.Production&quot;,
         &quot;@TestingEnabled&quot;: &quot;true&quot;,
         &quot;@LogGeneralTraceEvents&quot;: &quot;false&quot;,
         &quot;Description&quot;: &quot;&quot;,
@@ -282,7 +315,7 @@ default production: PEX.Production
 </code></pre>
 <p>output :</p>
 <pre><code class="language-bash">{
-    &quot;Production&quot;: &quot;PEX.Production&quot;,
+    &quot;Production&quot;: &quot;IoP.Production&quot;,
     &quot;Status&quot;: &quot;stopped&quot;
 }
 </code></pre>
@@ -304,9 +337,9 @@ default production: PEX.Production
 <pre><code class="language-bash">iop -L
 </code></pre>
 <p>output :</p>
-<pre><code class="language-bash">2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+<pre><code class="language-bash">2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.EmailOperation
 ...
 </code></pre>
               
