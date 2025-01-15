@@ -9,26 +9,41 @@ iop
 
 output :
 ```bash
-usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-S] [-k] [-r] [-x] [-m MIGRATE]
+                      [-e EXPORT] [-v] [-L] [-i INIT] [-t TEST] [-D] [-C CLASSNAME] [-B BODY]
+
 optional arguments:
   -h, --help            display help and default production name
   -d DEFAULT, --default DEFAULT
                         set the default production
-  -l, --lists           list productions
+  -l, --list           list productions
   -s START, --start START
                         start a production
-  -k, --kill            kill a production (force stop)
-  -S, --stop            stop a production
-  -r, --restart         restart a production
-  -M MIGRATE, --migrate MIGRATE
+  -S, --stop           stop a production
+  -k, --kill           kill a production
+  -r, --restart        restart a production
+  -x, --status         status a production
+  -m MIGRATE, -M MIGRATE, --migrate MIGRATE
                         migrate production and classes with settings file
   -e EXPORT, --export EXPORT
                         export a production
-  -x, --status          status a production
-  -v, --version         display version
-  -L, --log             display log
+  -v, --version        display version
+  -L, --log           display log
+  -i INIT, --init INIT
+                        init the pex module in iris
+  -t TEST, --test TEST
+                        test the pex module in iris
 
-default production: PEX.Production
+start arguments:
+  -D, --detach         start a production in detach mode
+
+test arguments:
+  -C CLASSNAME, --classname CLASSNAME
+                        test classname
+  -B BODY, --body BODY
+                        test body
+
+default production: IoP.Production
 ```
 
 ## help
@@ -41,9 +56,10 @@ iop -h
 
 output :
 ```bash
-usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-k] [-S] [-r] [-M MIGRATE] [-e EXPORT] [-x] [-v] [-L]
+usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-S] [-k] [-r] [-x] [-m MIGRATE]
+                      [-e EXPORT] [-v] [-L] [-i INIT] [-t TEST] [-D] [-C CLASSNAME] [-B BODY]
 ...
-default production: PEX.Production
+default production: IoP.Production
 ```
 
 ## default
@@ -58,13 +74,13 @@ iop -d
 
 output :
 ```bash
-default production: PEX.Production
+default production: IoP.Production
 ```
 
 With an argument, it set the default production.
 
 ```bash
-iop -d PEX.Production
+iop -d IoP.Production
 ```
 
 ## lists
@@ -78,7 +94,7 @@ iop -l
 output :
 ```bash
 {
-    "PEX.Production": {
+    "IoP.Production": {
         "Status": "Stopped",
         "LastStartTime": "2023-05-31 11:13:51.000",
         "LastStopTime": "2023-05-31 11:13:54.153",
@@ -89,21 +105,21 @@ output :
 
 ## start
 
-The start command start a production.
+The start command starts a production.
 
-To exit the command, you have to press CTRL+C.
+To exit the command, you have to press CTRL+C (unless using detach mode).
 
 ```bash
-iop -s PEX.Production
+iop -s IoP.Production
 ```
 
-output :
+You can start a production in detach mode using the -D flag:
+
 ```bash
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
-...
+iop -s IoP.Production -D
 ```
+
+In detach mode, the production starts and the command returns immediately without showing logs.
 
 ## kill
 
@@ -151,6 +167,33 @@ iop -M /tmp/settings.py
 
 More details about the settings file can be found [here](getting-started/register-component.md).
 
+## init
+
+The init command initializes the IoP module in IRIS.
+
+```bash
+iop -i
+```
+
+## test
+
+The test command allows testing IoP components. You can optionally specify a test name, classname, and body.
+
+Basic test:
+```bash
+iop -t
+```
+
+Test with specific classname:
+```bash
+iop -t MyTest -C MyClass
+```
+
+Test with body:
+```bash
+iop -t MyTest -C MyClass -B "test body"
+```
+
 ## export
 
 The export command export a production.
@@ -164,14 +207,14 @@ iop -e
 If an argument is given, the export command export the production given in argument.
 
 ```bash
-iop -e PEX.Production
+iop -e IoP.Production
 ```
 
 output :
 ```bash
 {
     "Production": {
-        "@Name": "PEX.Production",
+        "@Name": "IoP.Production",
         "@TestingEnabled": "true",
         "@LogGeneralTraceEvents": "false",
         "Description": "",
@@ -223,7 +266,7 @@ iop -x
 output :
 ```bash
 {
-    "Production": "PEX.Production",
+    "Production": "IoP.Production",
     "Status": "stopped"
 }
 ```
@@ -259,8 +302,8 @@ iop -L
 
 output :
 ```bash
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting production
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.FileOperation
-2021-08-30 15:13:51.000 [PEX.Production] INFO: Starting item Python.EmailOperation
+2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting production
+2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.FileOperation
+2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.EmailOperation
 ...
 ```
