@@ -467,6 +467,7 @@ ClassMethod HandleProperty(
     }
     
     If type = "array" Set key = key_"()"
+    Set pContents = idx
     Set pContents(idx,"name") = key
     Set pContents(idx,"alias") = key
 }
