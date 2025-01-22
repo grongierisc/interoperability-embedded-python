@@ -1,7 +1,6 @@
 import dataclasses
 from typing import Any, Type
-from pydantic import BaseModel
-from iop._message import _Message
+from iop._message import _Message, _PickleMessage, _PydanticPickleMessage, BaseModel
 
 
 def is_message_instance(obj: Any) -> bool:
@@ -17,6 +16,8 @@ def is_message_instance(obj: Any) -> bool:
 
 def is_pickle_message_instance(obj: Any) -> bool:
     """Check if object is a PickleMessage instance."""
+    if isinstance(obj, _PydanticPickleMessage):
+        return True
     if is_pickle_message_class(type(obj)):
         return True
     return False
@@ -31,8 +32,6 @@ def is_iris_object_instance(obj: Any) -> bool:
 
 def is_message_class(klass: Type) -> bool:
     """Check if class is a Message type."""
-    if issubclass(klass, BaseModel):
-        return True
     if issubclass(klass, _Message):
         return True
     return False
@@ -41,7 +40,8 @@ def is_message_class(klass: Type) -> bool:
 
 def is_pickle_message_class(klass: Type) -> bool:
     """Check if class is a PickleMessage type."""
-    name = f"{klass.__module__}.{klass.__qualname__}"
-    if name in ("iop.PickleMessage", "grongier.pex.PickleMessage"):
+    if issubclass(klass, _PickleMessage):
         return True
-    return any(is_pickle_message_class(c) for c in klass.__bases__)
+    if issubclass(klass, _PydanticPickleMessage):
+        return True
+    return False

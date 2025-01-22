@@ -14,6 +14,7 @@ from typing import Any, Dict, Type, Optional
 from dacite import Config, from_dict
 import iris
 
+from iop._message import _PydanticPickleMessage
 from iop._utils import _Utils
 from pydantic import BaseModel
 
@@ -137,6 +138,9 @@ class MessageSerializer:
     @staticmethod
     def serialize(message: Any, use_pickle: bool = False) -> iris.cls:
         """Serializes a message to IRIS format."""
+        # Check for PydanticPickleMessage first
+        if isinstance(message, _PydanticPickleMessage):
+            return MessageSerializer._serialize_pickle(message)
         if isinstance(message, BaseModel):
             return (MessageSerializer._serialize_pickle(message) 
                    if use_pickle else MessageSerializer._serialize_json(message))

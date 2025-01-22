@@ -6,7 +6,7 @@ from typing import List, Optional
 import pytest
 from pydantic import BaseModel
 
-from iop._pydantic_message import _PydanticMessage as PydanticMessage
+from iop._message import _PydanticMessage as PydanticMessage
 from iop._serialization import (
     serialize_message,
     deserialize_message,

@@ -15,7 +15,7 @@ from iop._dispatch import (
     dataclass_from_dict
 )
 from iop._message import _Message as Message
-from iop._pydantic_message import _PydanticMessage as PydanticMessage
+from iop._message import _PydanticMessage as PydanticMessage
 
 class SimpleModel(PydanticMessage):
     text: str
@@ -32,7 +32,7 @@ class ComplexModel(PydanticMessage):
 
 
 @dataclass 
-class TestMessage(Message):
+class MessageTest(Message):
     text: str
     number: int
     
@@ -62,17 +62,17 @@ def test_simple_message_serialization():
     assert result.number == msg.number
 
 def test_message_serialization():
-    msg = TestMessage(text="test", number=42)
+    msg = MessageTest(text="test", number=42)
     
     # Test serialization
     serial = serialize_message(msg)
     assert type(serial).__module__.startswith('iris')
     assert serial._IsA("IOP.Message")
-    assert serial.classname == f"{TestMessage.__module__}.{TestMessage.__name__}"
+    assert serial.classname == f"{MessageTest.__module__}.{MessageTest.__name__}"
     
     # Test deserialization
     result = deserialize_message(serial)
-    assert isinstance(result, TestMessage)
+    assert isinstance(result, MessageTest)
     assert result.text == msg.text
     assert result.number == msg.number
 
@@ -91,7 +91,7 @@ def test_pickle_message_serialization():
     assert result.number == msg.number
 
 def test_pickle_serialization():
-    msg = TestMessage(text="test", number=42)
+    msg = MessageTest(text="test", number=42)
     
     # Test serialization 
     serial = serialize_pickle_message(msg)
@@ -100,7 +100,7 @@ def test_pickle_serialization():
     
     # Test deserialization
     result = deserialize_pickle_message(serial)
-    assert isinstance(result, TestMessage)
+    assert isinstance(result, MessageTest)
     assert result.text == msg.text
     assert result.number == msg.number
 
@@ -165,8 +165,8 @@ def test_dataclass_from_dict():
         'extra_field': 'extra'
     }
     
-    result = dataclass_from_dict(TestMessage, data)
-    assert isinstance(result, TestMessage)
+    result = dataclass_from_dict(MessageTest, data)
+    assert isinstance(result, MessageTest)
     assert result.text == 'test'
     assert result.number == 42
     assert result.extra_field == 'extra'

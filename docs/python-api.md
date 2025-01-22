@@ -17,6 +17,20 @@ class MyRequest(Message):
     request_string: str = None
 ```
 
+### PydanticMessage 📦
+
+Base class for messages that use Pydantic models for validation and serialization. This class provides additional features for data validation and serialization.
+
+**Usage:** Subclass `PydanticMessage` and define a Pydantic model as a class attribute. This approach provides automatic validation and serialization.
+
+**Example:**
+```python
+from iop import PydanticMessage
+
+class MyRequest(PydanticMessage):
+    model : str = None
+```
+
 ### BusinessService 🔄
 Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.
 
