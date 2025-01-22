@@ -15,6 +15,7 @@ from dacite import Config, from_dict
 import iris
 
 from iop._utils import _Utils
+from pydantic import BaseModel
 
 # Constants
 DATETIME_FORMAT_LENGTH = 23
@@ -91,6 +92,8 @@ class IrisJSONEncoder(json.JSONEncoder):
     """JSONEncoder that handles dates, decimals, UUIDs, etc."""
     
     def default(self, obj: Any) -> Any:
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
         if obj.__class__.__name__ == 'DataFrame':
             return f'dataframe:{TypeConverter.convert_to_string("dataframe", obj)}'
         elif isinstance(obj, datetime.datetime):
@@ -134,6 +137,9 @@ class MessageSerializer:
     @staticmethod
     def serialize(message: Any, use_pickle: bool = False) -> iris.cls:
         """Serializes a message to IRIS format."""
+        if isinstance(message, BaseModel):
+            return (MessageSerializer._serialize_pickle(message) 
+                   if use_pickle else MessageSerializer._serialize_json(message))
         if use_pickle:
             return MessageSerializer._serialize_pickle(message)
         return MessageSerializer._serialize_json(message)
@@ -155,7 +161,11 @@ class MessageSerializer:
 
     @staticmethod
     def _serialize_json(message: Any) -> iris.cls:
-        json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
+        if isinstance(message, BaseModel):
+            json_string = json.dumps(message.model_dump(), cls=IrisJSONEncoder, ensure_ascii=False)
+        else:
+            json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
+            
         msg = iris.cls('IOP.Message')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         
@@ -187,7 +197,10 @@ class MessageSerializer:
         
         try:
             json_dict = json.loads(json_string, cls=IrisJSONDecoder)
-            return dataclass_from_dict(msg_class, json_dict)
+            if issubclass(msg_class, BaseModel):
+                return msg_class.model_validate(json_dict)
+            else:
+                return dataclass_from_dict(msg_class, json_dict)
         except Exception as e:
             raise SerializationError(f"Failed to deserialize JSON: {str(e)}")
 

@@ -30,6 +30,18 @@ class TestBenchIoP:
             'use_json': True
         },
         {
+            'name': 'Python BP to Python BO with Python Pydantic Message',
+            'component': 'Python.BenchIoPProcess',
+            'message_type': 'msg.MyPydanticMessage',
+            'use_json': True
+        },
+        {
+            'name': 'Python BP to ObjetScript BO with Python Pydantic Message',
+            'component': 'Python.BenchIoPProcess.To.Cls',
+            'message_type': 'msg.MyPydanticMessage',
+            'use_json': True
+        },
+        {
             'name': 'ObjetScript BP to Python BO with Iris Message',
             'component': 'Bench.Process',
             'message_type': 'iris.Ens.StringRequest',
@@ -51,6 +63,18 @@ class TestBenchIoP:
             'name': 'ObjetScript BP to ObjetScript BO with Python Message',
             'component': 'Bench.Process.To.Cls',
             'message_type': 'msg.MyMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to Python BO with Python Pydantic Message',
+            'component': 'Bench.Process',
+            'message_type': 'msg.MyPydanticMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to ObjetScript BO with Python Pydantic Message',
+            'component': 'Bench.Process.To.Cls',
+            'message_type': 'msg.MyPydanticMessage',
             'use_json': True
         }
     ]

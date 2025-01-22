@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Type
 
 import iris
 from dacite import Config, from_dict
+from pydantic import BaseModel
 
 from iop._utils import _Utils
 from iop._serialization import IrisJSONEncoder, IrisJSONDecoder
@@ -165,17 +166,20 @@ def dataclass_from_dict(klass: Type, dikt: Dict) -> Any:
     Returns:
         A dataclass object with the fields of the dataclass and the fields of the dictionary.
     """
-    ret = from_dict(klass, dikt, Config(check_types=False))
-    
-    try:
-        fieldtypes = klass.__annotations__
-    except Exception as e:
-        fieldtypes = []
-    
-    for key, val in dikt.items():
-        if key not in fieldtypes:
-            setattr(ret, key, val)
-    return ret
+    if issubclass(klass, BaseModel):
+        return klass.model_validate(dikt)
+    else:
+        ret = from_dict(klass, dikt, Config(check_types=False))
+        
+        try:
+            fieldtypes = klass.__annotations__
+        except Exception as e:
+            fieldtypes = []
+        
+        for key, val in dikt.items():
+            if key not in fieldtypes:
+                setattr(ret, key, val)
+        return ret
 
 def dispach_message(host, request: Any) -> Any:
     """Dispatches the message to the appropriate method.
