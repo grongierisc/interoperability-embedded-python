@@ -1,3 +1,4 @@
+from __future__ import annotations
 import base64
 import codecs
 import datetime
@@ -6,191 +7,213 @@ import importlib
 import json
 import pickle
 import uuid
-from typing import Any, Dict, Type
+from abc import ABC, abstractmethod
+from dataclasses import is_dataclass
+from typing import Any, Dict, Type, Optional
 
 from dacite import Config, from_dict
 import iris
 
 from iop._utils import _Utils
 
+# Constants
+DATETIME_FORMAT_LENGTH = 23
+TIME_FORMAT_LENGTH = 12
+TYPE_SEPARATOR = ':'
+SUPPORTED_TYPES = {
+    'datetime', 'date', 'time', 'dataframe', 
+    'decimal', 'uuid', 'bytes'
+}
+
+class SerializationError(Exception):
+    """Base exception for serialization errors."""
+    pass
+
+class TypeConverter:
+    """Handles type conversion for special data types."""
+    
+    @staticmethod
+    def convert_to_string(typ: str, obj: Any) -> str:
+        if typ == 'dataframe':
+            return obj.to_json(orient="table")
+        elif typ == 'datetime':
+            return TypeConverter._format_datetime(obj)
+        elif typ == 'date':
+            return obj.isoformat()
+        elif typ == 'time':
+            return TypeConverter._format_time(obj)
+        elif typ == 'bytes':
+            return base64.b64encode(obj).decode("UTF-8")
+        return str(obj)
+
+    @staticmethod
+    def convert_from_string(typ: str, val: str) -> Any:
+        try:
+            if typ == 'datetime':
+                return datetime.datetime.fromisoformat(val)
+            elif typ == 'date':
+                return datetime.date.fromisoformat(val)
+            elif typ == 'time':
+                return datetime.time.fromisoformat(val)
+            elif typ == 'dataframe':
+                try:
+                    import pandas as pd
+                except ImportError:
+                    raise SerializationError("Failed to load pandas module")
+                return pd.read_json(val, orient="table")
+            elif typ == 'decimal':
+                return decimal.Decimal(val)
+            elif typ == 'uuid':
+                return uuid.UUID(val)
+            elif typ == 'bytes':
+                return base64.b64decode(val.encode("UTF-8"))
+            return val
+        except Exception as e:
+            raise SerializationError(f"Failed to convert type {typ}: {str(e)}")
+
+    @staticmethod
+    def _format_datetime(dt: datetime.datetime) -> str:
+        r = dt.isoformat()
+        if dt.microsecond:
+            r = r[:DATETIME_FORMAT_LENGTH] + r[26:]
+        if r.endswith("+00:00"):
+            r = r[:-6] + "Z"
+        return r
+
+    @staticmethod
+    def _format_time(t: datetime.time) -> str:
+        r = t.isoformat()
+        if t.microsecond:
+            r = r[:TIME_FORMAT_LENGTH]
+        return r
+
 class IrisJSONEncoder(json.JSONEncoder):
     """JSONEncoder that handles dates, decimals, UUIDs, etc."""
     
-    def default(self, o: Any) -> Any:
-        if o.__class__.__name__ == 'DataFrame':
-            return 'dataframe:' + o.to_json(orient="table")
-        elif isinstance(o, datetime.datetime):
-            r = o.isoformat()
-            if o.microsecond:
-                r = r[:23] + r[26:]
-            if r.endswith("+00:00"):
-                r = r[:-6] + "Z"
-            return 'datetime:' + r
-        elif isinstance(o, datetime.date):
-            return 'date:' + o.isoformat()
-        elif isinstance(o, datetime.time):
-            r = o.isoformat()
-            if o.microsecond:
-                r = r[:12]
-            return 'time:' + r
-        elif isinstance(o, decimal.Decimal):
-            return 'decimal:' + str(o)
-        elif isinstance(o, uuid.UUID):
-            return 'uuid:' + str(o)
-        elif isinstance(o, bytes):
-            return 'bytes:' + base64.b64encode(o).decode("UTF-8")
-        elif hasattr(o, '__dict__'):
-            return o.__dict__
-        return super().default(o)
+    def default(self, obj: Any) -> Any:
+        if obj.__class__.__name__ == 'DataFrame':
+            return f'dataframe:{TypeConverter.convert_to_string("dataframe", obj)}'
+        elif isinstance(obj, datetime.datetime):
+            return f'datetime:{TypeConverter.convert_to_string("datetime", obj)}'
+        elif isinstance(obj, datetime.date):
+            return f'date:{TypeConverter.convert_to_string("date", obj)}'
+        elif isinstance(obj, datetime.time):
+            return f'time:{TypeConverter.convert_to_string("time", obj)}'
+        elif isinstance(obj, decimal.Decimal):
+            return f'decimal:{obj}'
+        elif isinstance(obj, uuid.UUID):
+            return f'uuid:{obj}'
+        elif isinstance(obj, bytes):
+            return f'bytes:{TypeConverter.convert_to_string("bytes", obj)}'
+        elif hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return super().default(obj)
 
 class IrisJSONDecoder(json.JSONDecoder):
     """JSONDecoder that handles special type annotations."""
     
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        json.JSONDecoder.__init__(
-            self, object_hook=self.object_hook, *args, **kwargs)
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj: Dict) -> Dict:
-        ret = {}
-        for key, value in obj.items():
-            i = 0
-            if isinstance(value, str):
-                i = value.find(":")
-            if i > 0:
-                typ = value[:i]
-                val = value[i+1:]
-                ret[key] = self._convert_typed_value(typ, val)
-            else:
-                ret[key] = value
-        return ret
+        return {
+            key: self._process_value(value)
+            for key, value in obj.items()
+        }
                 
-    def _convert_typed_value(self, typ: str, val: str) -> Any:
-        if typ == 'datetime':
-            return datetime.datetime.fromisoformat(val)
-        elif typ == 'date':
-            return datetime.date.fromisoformat(val)
-        elif typ == 'time':
-            return datetime.time.fromisoformat(val)
-        elif typ == 'dataframe':
-            module = importlib.import_module('pandas')
-            return module.read_json(val, orient="table")
-        elif typ == 'decimal':
-            return decimal.Decimal(val)
-        elif typ == 'uuid':
-            return uuid.UUID(val)
-        elif typ == 'bytes':
-            return base64.b64decode(val.encode("UTF-8"))
-        return val
+    def _process_value(self, value: Any) -> Any:
+        if isinstance(value, str) and TYPE_SEPARATOR in value:
+            typ, val = value.split(TYPE_SEPARATOR, 1)
+            if typ in SUPPORTED_TYPES:
+                return TypeConverter.convert_from_string(typ, val)
+        return value
 
+class MessageSerializer:
+    """Handles message serialization and deserialization."""
 
-def serialize_pickle_message(message: Any) -> iris.cls:
-    """Converts a python dataclass message into an iris iop.message.
+    @staticmethod
+    def serialize(message: Any, use_pickle: bool = False) -> iris.cls:
+        """Serializes a message to IRIS format."""
+        if use_pickle:
+            return MessageSerializer._serialize_pickle(message)
+        return MessageSerializer._serialize_json(message)
 
-    Args:
-        message: The message to serialize, an instance of a class that is a subclass of Message.
+    @staticmethod
+    def deserialize(serial: iris.cls, use_pickle: bool = False) -> Any:
+        """Deserializes a message from IRIS format."""
+        if use_pickle:
+            return MessageSerializer._deserialize_pickle(serial)
+        return MessageSerializer._deserialize_json(serial)
 
-    Returns:
-        The message in json format.
-    """
-    pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
-    module = message.__class__.__module__
-    classname = message.__class__.__name__
+    @staticmethod
+    def _serialize_pickle(message: Any) -> iris.cls:
+        pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
+        msg = iris.cls('IOP.PickleMessage')._New()
+        msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
+        msg.jstr = _Utils.string_to_stream(pickle_string)
+        return msg
 
-    msg = iris.cls('IOP.PickleMessage')._New()
-    msg.classname = module + "." + classname
-
-    stream = _Utils.string_to_stream(pickle_string)
-    msg.jstr = stream
-
-    return msg
-
-def serialize_message(message: Any) -> iris.cls:
-    """Converts a python dataclass message into an iris iop.message.
-
-    Args:
-        message: The message to serialize, an instance of a class that is a subclass of Message.
-
-    Returns:
-        The message in json format.
-    """
-    json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
-    module = message.__class__.__module__
-    classname = message.__class__.__name__
-
-    msg = iris.cls('IOP.Message')._New()
-    msg.classname = module + "." + classname
-
-    if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:
-        msg.json = _Utils.string_to_stream(json_string, msg.buffer)
-    else:
-        msg.json = json_string
-
-    return msg
-
-def deserialize_pickle_message(serial: iris.cls) -> Any:
-    """Converts an iris iop.message into a python dataclass message.
-    
-    Args:
-        serial: The serialized message
+    @staticmethod
+    def _serialize_json(message: Any) -> iris.cls:
+        json_string = json.dumps(message, cls=IrisJSONEncoder, ensure_ascii=False)
+        msg = iris.cls('IOP.Message')._New()
+        msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         
-    Returns:
-        The deserialized message
-    """
-    string = _Utils.stream_to_string(serial.jstr)
+        if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:
+            msg.json = _Utils.string_to_stream(json_string, msg.buffer)
+        else:
+            msg.json = json_string
+        return msg
 
-    msg = pickle.loads(codecs.decode(string.encode(), "base64"))
-    return msg
+    @staticmethod
+    def _deserialize_pickle(serial: iris.cls) -> Any:
+        string = _Utils.stream_to_string(serial.jstr)
+        return pickle.loads(codecs.decode(string.encode(), "base64"))
 
-def deserialize_message(serial: iris.cls) -> Any:
-    """Converts an iris iop.message into a python dataclass message.
-    
-    Args:
-        serial: The serialized message
+    @staticmethod
+    def _deserialize_json(serial: iris.cls) -> Any:
+        if not serial.classname:
+            raise SerializationError("JSON message malformed, must include classname")
         
-    Returns:
-        The deserialized message
-    """
-    if (serial.classname is None):
-        raise ValueError("JSON message malformed, must include classname")
-    classname = serial.classname
+        try:
+            module_name, class_name = MessageSerializer._parse_classname(serial.classname)
+            module = importlib.import_module(module_name)
+            msg_class = getattr(module, class_name)
+        except Exception as e:
+            raise SerializationError(f"Failed to load class {serial.classname}: {str(e)}")
 
-    j = classname.rindex(".")
-    if (j <= 0):
-        raise ValueError("Classname must include a module: " + classname)
-    try:
-        module = importlib.import_module(classname[:j])
-        msg = getattr(module, classname[j+1:])
-    except Exception:
-        raise ImportError("Class not found: " + classname)
+        json_string = (_Utils.stream_to_string(serial.json) 
+                      if serial.type == 'Stream' else serial.json)
+        
+        try:
+            json_dict = json.loads(json_string, cls=IrisJSONDecoder)
+            return dataclass_from_dict(msg_class, json_dict)
+        except Exception as e:
+            raise SerializationError(f"Failed to deserialize JSON: {str(e)}")
 
-    string = ""
-    if (serial.type == 'Stream'):
-        string = _Utils.stream_to_string(serial.json)
-    else:
-        string = serial.json
-
-    jdict = json.loads(string, cls=IrisJSONDecoder)
-    msg = dataclass_from_dict(msg, jdict)
-    return msg
+    @staticmethod
+    def _parse_classname(classname: str) -> tuple[str, str]:
+        j = classname.rindex(".")
+        if j <= 0:
+            raise SerializationError(f"Classname must include a module: {classname}")
+        return classname[:j], classname[j+1:]
 
 def dataclass_from_dict(klass: Type, dikt: Dict) -> Any:
-    """Converts a dictionary to a dataclass instance.
-    
-    Args:
-        klass: The dataclass to convert to
-        dikt: The dictionary to convert to a dataclass
-        
-    Returns:
-        A dataclass object with the fields of the dataclass and the fields of the dictionary.
-    """
+    """Converts a dictionary to a dataclass instance."""
     ret = from_dict(klass, dikt, Config(check_types=False))
     
     try:
         fieldtypes = klass.__annotations__
-    except Exception as e:
-        fieldtypes = []
+    except Exception:
+        fieldtypes = {}
     
     for key, val in dikt.items():
         if key not in fieldtypes:
             setattr(ret, key, val)
     return ret
+
+# Maintain backwards compatibility
+serialize_pickle_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=True)
+serialize_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=False)
+deserialize_pickle_message = lambda serial: MessageSerializer.deserialize(serial, use_pickle=True)
+deserialize_message = lambda serial: MessageSerializer.deserialize(serial, use_pickle=False)

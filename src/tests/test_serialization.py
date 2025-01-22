@@ -7,17 +7,23 @@ import pytest
 import iris
 
 from iop._serialization import (
+    SerializationError,
     serialize_message,
     deserialize_message,
     serialize_pickle_message,
     deserialize_pickle_message,
-    IrisJSONEncoder,
-    IrisJSONDecoder,
 )
+
+@dataclass
+class Object:
+    value: str
 
 @dataclass
 class FullMessge:
     text: str
+    dikt: dict
+    text_json: str
+    obj: Object
     number: int
     date: datetime.date
     time: datetime.time
@@ -35,6 +41,9 @@ def test_json_serialization():
     
     msg = FullMessge(
         text="test",
+        dikt={'key': 'value'},
+        text_json="{\"key\": \"value\"}",
+        obj=Object(value="test"),
         number=42,
         date=datetime.date(2023, 1, 1),
         time=datetime.time(12, 0),
@@ -54,6 +63,9 @@ def test_json_serialization():
     result = deserialize_message(serial)
     assert isinstance(result, FullMessge)
     assert result.text == msg.text
+    assert result.dikt == msg.dikt
+    assert result.text_json == msg.text_json
+    assert result.obj == msg.obj
     assert result.number == msg.number
     assert result.date == msg.date
     assert result.time == msg.time
@@ -66,6 +78,9 @@ def test_json_serialization():
 def test_pickle_serialization():
     msg = FullMessge(
         text="test",
+        dikt={'key': 'value'},
+        text_json="{\"key\": \"value\"}",
+        obj=Object(value="test"),
         number=42,
         date=datetime.date(2023, 1, 1),
         time=datetime.time(12, 0),
@@ -85,6 +100,9 @@ def test_pickle_serialization():
     result = deserialize_pickle_message(serial)
     assert isinstance(result, FullMessge)
     assert result.text == msg.text
+    assert result.dikt == msg.dikt
+    assert result.text_json == msg.text_json
+    assert result.obj == msg.obj
     assert result.number == msg.number
     assert result.date == msg.date
     assert result.time == msg.time
@@ -100,10 +118,10 @@ def test_invalid_message_deserialization():
     msg.classname = None
     msg.json = "{}"
     
-    with pytest.raises(ValueError, match="JSON message malformed, must include classname"):
+    with pytest.raises(SerializationError, match="JSON message malformed, must include classname"):
         deserialize_message(msg)
     
     # Test invalid module
     msg.classname = "invalid.module.Class"
-    with pytest.raises(ImportError, match="Class not found: invalid.module.Class"):
+    with pytest.raises(SerializationError, match="Failed to load class invalid.module.Class: No module named 'invalid'"):
         deserialize_message(msg)
