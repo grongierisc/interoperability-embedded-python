@@ -17,7 +17,19 @@ class _Common(metaclass=abc.ABCMeta):
     INFO_URL: ClassVar[str]
     ICON_URL: ClassVar[str]
     iris_handle: Any = None
-    log_to_console: bool = False
+    _log_to_console: bool = False
+
+    @property
+    def log_to_console(self) -> bool:
+        return self._log_to_console
+    
+    @log_to_console.setter
+    def log_to_console(self, value: bool) -> None:
+        self._log_to_console = value
+        self.logger = LogManager.get_logger(self.__class__.__name__,value)
+
+    def __init__(self):
+        self.logger = LogManager.get_logger(self.__class__.__name__)
 
     # Lifecycle methods
     def on_init(self) -> None:
@@ -172,7 +184,7 @@ class _Common(metaclass=abc.ABCMeta):
         except:
             pass
         return ret
-    
+
     # Logging methods
     def _log(self) -> Tuple[str, Optional[str]]:
         """Get class and method name for logging.
@@ -189,15 +201,27 @@ class _Common(metaclass=abc.ABCMeta):
             pass
         return current_class, current_method
 
-    @property
-    def logger(self) -> logging.Logger:
-        """Get a logger instance for this component.
+    def _logging(self, message: str, level: int, to_console: Optional[bool] = None) -> None:
+        """Write log entry.
         
-        Returns:
-            Logger configured for IRIS integration
+        Args:
+            message: Message to log
+            level: Log level
+            to_console: If True, log to console instead of IRIS
         """
-        class_name, method_name = self._log()
-        return LogManager.get_logger(class_name, method_name, self.log_to_console)
+        current_class, current_method = self._log()
+        if to_console is None:
+            to_console = self.log_to_console
+        if level == logging.DEBUG:
+            self.logger.debug(message, extra={'to_console': to_console, 'class_name': current_class, 'method_name': current_method})
+        elif level == logging.INFO:
+            self.logger.info(message, extra={'to_console': to_console, 'class_name': current_class, 'method_name': current_method})
+        elif level == logging.CRITICAL:
+            self.logger.critical(message, extra={'to_console': to_console, 'class_name': current_class, 'method_name': current_method})
+        elif level == logging.WARNING:
+            self.logger.warning(message, extra={'to_console': to_console, 'class_name': current_class, 'method_name': current_method})
+        elif level == logging.ERROR:
+            self.logger.error(message, extra={'to_console': to_console, 'class_name': current_class, 'method_name': current_method})
 
     def trace(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write trace log entry.
@@ -206,8 +230,7 @@ class _Common(metaclass=abc.ABCMeta):
             message: Message to log
             to_console: If True, log to console instead of IRIS
         """
-        self.logger.debug(message, extra={'to_console': to_console})
-
+        self._logging(message, logging.DEBUG, to_console)
 
     def log_info(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write info log entry.
@@ -216,7 +239,7 @@ class _Common(metaclass=abc.ABCMeta):
             message: Message to log
             to_console: If True, log to console instead of IRIS
         """
-        self.logger.info(message, extra={'to_console': to_console})
+        self._logging(message, logging.INFO, to_console)
 
     def log_alert(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write alert log entry.
@@ -225,7 +248,7 @@ class _Common(metaclass=abc.ABCMeta):
             message: Message to log
             to_console: If True, log to console instead of IRIS
         """
-        self.logger.critical(message, extra={'to_console': to_console})
+        self._logging(message, logging.CRITICAL, to_console)
 
     def log_warning(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write warning log entry.
@@ -234,7 +257,7 @@ class _Common(metaclass=abc.ABCMeta):
             message: Message to log
             to_console: If True, log to console instead of IRIS
         """
-        self.logger.warning(message, extra={'to_console': to_console})
+        self._logging(message, logging.WARNING, to_console)
 
     def log_error(self, message: str, to_console: Optional[bool] = None) -> None:
         """Write error log entry.
@@ -243,7 +266,7 @@ class _Common(metaclass=abc.ABCMeta):
             message: Message to log
             to_console: If True, log to console instead of IRIS
         """
-        self.logger.error(message, extra={'to_console': to_console})
+        self._logging(message, logging.ERROR, to_console)
 
     def log_assert(self, message: str) -> None:
         """Write a log entry of type "assert". Log entries can be viewed in the management portal.

@@ -45,6 +45,20 @@ class TestMessageClassification:
         assert is_iris_object_instance(msg_job) == False
 
 class TestLogging:
+
+    def test_log_info_loggger(self, common, random_string):
+        common.logger.info(random_string)
+        rs = self._check_log_entry(random_string, 'test_log_info_loggger')
+        assert len(rs) == 1
+
+    def test_log_info_loggger_to_console(self, common, random_string):
+        common.log_to_console = True
+        common.logger.info(random_string)
+
+        with open(MESSAGE_LOG_PATH, 'r') as file:
+            last_line = file.readlines()[-1]
+            assert random_string in last_line
+
     def test_log_info_to_console(self, common, random_string):
         common.log_to_console = True
         common.log_info(random_string)
