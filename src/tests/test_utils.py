@@ -5,6 +5,7 @@ import os
 import sys
 from iop._utils import _Utils
 from iop._message import _Message as Message
+from iop._message import _PydanticMessage as PydanticMessage
 from unittest.mock import patch, MagicMock
 
 @pytest.fixture
@@ -118,9 +119,22 @@ class TestSchemaOperations:
         class TestMessage(Message):
             test: str
 
+        class TestMessageSchema(PydanticMessage):
+            test: str
+
+        class FailMessage:
+            pass
+
         with patch('iop._utils._Utils.register_schema') as mock_register:
             _Utils.register_message_schema(TestMessage)
             mock_register.assert_called_once()
+
+        with patch('iop._utils._Utils.register_schema') as mock_register:
+            _Utils.register_message_schema(TestMessageSchema)
+            mock_register.assert_called_once()
+
+        with pytest.raises(ValueError):
+            _Utils.register_message_schema(FailMessage)
 
     def test_register_schema(self):
         with patch('iris.cls') as mock_cls:

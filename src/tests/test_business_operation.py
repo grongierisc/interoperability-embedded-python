@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from iop._business_operation import _BusinessOperation
 from iop._dispatch import dispach_message, dispatch_serializer
-from registerFiles.message import SimpleMessage
+from registerFilesIop.message import SimpleMessage
 
 @pytest.fixture
 def operation():
@@ -61,7 +61,7 @@ def test_dispatch_on_message(operation):
     # Test dispatch with no handlers
     request = iris.cls("IOP.Message")._New()
     request.json = '{"integer": 1, "string": "test"}'
-    request.classname = 'registerFiles.message.SimpleMessage'
+    request.classname = 'registerFilesIop.message.SimpleMessage'
     operation = CustomOperation()
     operation._dispatch_on_init(MagicMock())
     response = operation._dispatch_on_message(request)

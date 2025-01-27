@@ -3,7 +3,7 @@ import asyncio
 import iris
 import codecs
 from datetime import datetime, date, time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from iop._business_host import _BusinessHost

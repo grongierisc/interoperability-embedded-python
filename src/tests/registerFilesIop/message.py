@@ -1,11 +1,40 @@
 from typing import List, Dict
-from iop import Message, PickleMessage
+from iop import Message, PickleMessage, PydanticMessage
 
 from dataclasses import dataclass
 
 from obj import PostClass
 
 from datetime import datetime, date, time
+
+class PydanticPostClass(PydanticMessage):
+    Title: str
+    Selftext : str
+    Author: str
+    Url: str
+    CreatedUTC: float = None
+    OriginalJSON: str = None
+
+class PydanticSimpleMessage(PydanticMessage):
+    integer:int
+    string:str
+
+class PydanticFullMessage(PydanticMessage):
+    embedded:PydanticPostClass
+    embedded_list:List[PydanticPostClass]
+    embedded_dict:Dict[str,PydanticPostClass]
+    embedded_dataclass:PostClass
+    string:str
+    integer:int
+    float:float
+    boolean:bool
+    list:List
+    dikt:Dict
+    list_dict:List[Dict]
+    dict_list:Dict[str,List]
+    date:date
+    datetime:datetime
+    time:time
 
 @dataclass
 class FullMessage(Message):

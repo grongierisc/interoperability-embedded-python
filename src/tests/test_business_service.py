@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from iop._business_service import _BusinessService
-from registerFiles.message import SimpleMessage
+from registerFilesIop.message import SimpleMessage
 
 @pytest.fixture
 def service():

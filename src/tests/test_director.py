@@ -1,7 +1,7 @@
 import pytest
 import iris
 from iop._director import _Director
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 @pytest.fixture
 def mock_dispatch():
@@ -141,6 +141,6 @@ class TestLogging:
 
     @pytest.mark.asyncio
     async def test_log_production_async(self):
-        handler = MagicMock()
+        handler = AsyncMock()
         handler.sigint_log = True
         await _Director._log_production_async(handler)

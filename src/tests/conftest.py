@@ -4,7 +4,7 @@ from os.path import abspath, join
 root_dir = d(d(abspath(__file__)))
 sys.path.append(root_dir)
 # add registerFiles to the path
-sys.path.append(join(join(root_dir, 'tests'), 'registerFiles'))
+sys.path.append(join(join(root_dir, 'tests'), 'registerFilesIop'))
 
 # from iop import Utils
 
