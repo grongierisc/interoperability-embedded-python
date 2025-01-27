@@ -7,6 +7,7 @@ import xmltodict
 import pkg_resources
 import importlib
 import json
+from iop._message import _Message, _PydanticMessage
 from dc_schema import get_schema
 
 class _Utils():
@@ -42,7 +43,12 @@ class _Utils():
         
         :param cls: The class to register
         """
-        schema = get_schema(cls)
+        if issubclass(cls,_PydanticMessage):
+            schema = cls.model_json_schema()
+        elif issubclass(cls,_Message):
+            schema = get_schema(cls)
+        else:
+            raise ValueError("The class must be a subclass of _Message or _PydanticMessage")
         schema_name = cls.__module__ + '.' + cls.__name__
         schema_str = json.dumps(schema)
         categories = schema_name
