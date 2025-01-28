@@ -14,6 +14,8 @@ class MyAsyncNGBP(BusinessProcess):
         for result in results:
             self.log_info(f"Received response: {result.message}")
 
+        return MyMessage(message="All responses received")
+
     async def await_response(self, request):
         # create 1 to 10 messages
         tasks = []
