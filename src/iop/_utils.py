@@ -8,7 +8,7 @@ import pkg_resources
 import importlib
 import json
 from iop._message import _Message, _PydanticMessage
-from dc_schema import get_schema
+from pydantic import TypeAdapter
 
 class _Utils():
     @staticmethod
@@ -46,7 +46,8 @@ class _Utils():
         if issubclass(cls,_PydanticMessage):
             schema = cls.model_json_schema()
         elif issubclass(cls,_Message):
-            schema = get_schema(cls)
+            type_adapter = TypeAdapter(cls)
+            schema = type_adapter.json_schema()
         else:
             raise ValueError("The class must be a subclass of _Message or _PydanticMessage")
         schema_name = cls.__module__ + '.' + cls.__name__
