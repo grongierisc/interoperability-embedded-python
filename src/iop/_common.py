@@ -18,6 +18,17 @@ class _Common(metaclass=abc.ABCMeta):
     ICON_URL: ClassVar[str]
     iris_handle: Any = None
     _log_to_console: bool = False
+    _logger: logging.Logger = None
+
+    @property
+    def logger(self) -> logging.Logger:
+        if self._logger is None:
+            self._logger = LogManager.get_logger(self.__class__.__name__,self.log_to_console)
+        return self._logger
+    
+    @logger.setter
+    def logger(self, value: logging.Logger) -> None:
+        self._logger = value
 
     @property
     def log_to_console(self) -> bool:
@@ -27,9 +38,6 @@ class _Common(metaclass=abc.ABCMeta):
     def log_to_console(self, value: bool) -> None:
         self._log_to_console = value
         self.logger = LogManager.get_logger(self.__class__.__name__,value)
-
-    def __init__(self):
-        self.logger = LogManager.get_logger(self.__class__.__name__)
 
     # Lifecycle methods
     def on_init(self) -> None:
@@ -210,8 +218,6 @@ class _Common(metaclass=abc.ABCMeta):
             to_console: If True, log to console instead of IRIS
         """
         current_class, current_method = self._log()
-        if not hasattr(self, 'logger'):
-            self.logger = LogManager.get_logger(current_class)
         if to_console is None:
             to_console = self.log_to_console
         if level == logging.DEBUG:
