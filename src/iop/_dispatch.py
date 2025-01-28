@@ -1,15 +1,7 @@
-import codecs
-import importlib
 from inspect import signature
-import json
-import pickle
-from typing import Any, Dict, List, Type
+from typing import Any
 
-import iris
-from pydantic import BaseModel
-
-from iop._utils import _Utils
-from iop._serialization import IrisJSONEncoder, IrisJSONDecoder, serialize_message, serialize_pickle_message, deserialize_message, deserialize_pickle_message
+from iop._serialization import serialize_message, serialize_pickle_message, deserialize_message, deserialize_pickle_message
 from iop._message_validator import is_message_instance, is_pickle_message_instance, is_iris_object_instance
 
 def dispatch_serializer(message: Any) -> Any:
