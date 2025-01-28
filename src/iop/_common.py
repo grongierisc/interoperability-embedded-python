@@ -210,6 +210,8 @@ class _Common(metaclass=abc.ABCMeta):
             to_console: If True, log to console instead of IRIS
         """
         current_class, current_method = self._log()
+        if not hasattr(self, 'logger'):
+            self.logger = LogManager.get_logger(current_class)
         if to_console is None:
             to_console = self.log_to_console
         if level == logging.DEBUG:
