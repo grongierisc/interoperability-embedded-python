@@ -3,17 +3,20 @@ import datetime
 import decimal
 import uuid
 from dataclasses import dataclass
-import iris
 
 from iop._dispatch import (
-    serialize_message,
-    deserialize_message,
-    serialize_pickle_message,
-    deserialize_pickle_message,
     dispatch_serializer,
-    dispatch_deserializer,
-    dataclass_from_dict
-)
+    dispatch_deserializer
+    )
+
+from iop._serialization import (
+    dataclass_from_dict, 
+    serialize_message, 
+    deserialize_message, 
+    serialize_pickle_message, 
+    deserialize_pickle_message
+    )
+
 from iop._message import _Message as Message
 from iop._message import _PydanticMessage as PydanticMessage
 
