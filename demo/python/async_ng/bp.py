@@ -12,7 +12,7 @@ class MyAsyncNGBP(BusinessProcess):
         results = asyncio.run(self.await_response(request))
 
         for result in results:
-            self.log_info(f"Received response: {result.message}")
+            self.logger.info(f"Received response: {result.message}")
 
         return MyMessage(message="All responses received")
 
