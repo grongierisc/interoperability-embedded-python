@@ -64,8 +64,40 @@ def test_simple_message_serialization():
     assert result.text == msg.text
     assert result.number == msg.number
 
+def test_simple_message_serialization_with_extra():
+    msg = MessageTest(text="test", number=42)
+    msg.extra_field = "extra"
+    
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris')
+    assert serial._IsA("IOP.Message")
+    assert serial.classname == f"{MessageTest.__module__}.{MessageTest.__name__}"
+    
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, MessageTest)
+    assert result.text == msg.text
+    assert result.number == msg.number
+    assert result.extra_field == msg.extra_field
+
 def test_message_serialization():
     msg = MessageTest(text="test", number=42)
+    
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris')
+    assert serial._IsA("IOP.Message")
+    assert serial.classname == f"{MessageTest.__module__}.{MessageTest.__name__}"
+    
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, MessageTest)
+    assert result.text == msg.text
+    assert result.number == msg.number
+
+def test_message_serialization_wrong_type():
+    msg = MessageTest(text="test", number={"key": "value"})
     
     # Test serialization
     serial = serialize_message(msg)

@@ -52,7 +52,7 @@ class TestMessageSerialization:
         rsp = dispatch_serializer(message)
         
         assert rsp.classname == 'registerFilesIop.message.SimpleMessage'
-        assert rsp.GetObjectJson() == '{"integer": 1, "string": "test"}'
+        assert rsp.GetObjectJson() == '{"integer":1,"string":"test"}'
 
     def test_dispatch_serializer_none(self, business_host):
         assert dispatch_serializer(None) is None
@@ -62,12 +62,12 @@ class TestMessageSerialization:
         (SimpleMessageNotDataclass(), TypeError),
         ("test", TypeError)
     ])
-    def test_dispatch_serializer_invalid(self, business_host, invalid_message, expected_error):
+    def test_dispatch_serializer_invalid(self, invalid_message, expected_error):
         with pytest.raises(expected_error):
             dispatch_serializer(invalid_message)
 
 class TestMessageDeserialization:
-    def test_serialize_deserialize_simple(self, business_host):
+    def test_serialize_deserialize_simple(self):
         original = SimpleMessage(integer=1, string='test')
         serialized = serialize_message(original)
         deserialized = deserialize_message(serialized)
@@ -75,14 +75,14 @@ class TestMessageDeserialization:
         assert deserialized.integer == original.integer
         assert deserialized.string == original.string
 
-    def test_serialize_deserialize_japanese(self, business_host):
+    def test_serialize_deserialize_japanese(self):
         original = SimpleMessage(integer=1, string='あいうえお')
         serialized = serialize_message(original)
         deserialized = deserialize_message(serialized)
         
         assert deserialized.string == 'あいうえお'
 
-    def test_serialize_deserialize_large_string(self, business_host):
+    def test_serialize_deserialize_large_string(self):
         huge_string = 'test' * 1000000
         original = SimpleMessage(integer=1, string=huge_string)
         serialized = serialize_message(original)
@@ -91,7 +91,7 @@ class TestMessageDeserialization:
         assert deserialized.string == huge_string
 
 class TestPickledMessages:
-    def test_pickled_message_roundtrip(self, business_host):
+    def test_pickled_message_roundtrip(self):
         original = PickledMessage(integer=1, string='test')
         serialized = serialize_pickle_message(original)
         deserialized = deserialize_pickle_message(serialized)

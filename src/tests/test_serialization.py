@@ -37,7 +37,7 @@ def test_json_serialization():
     # Create test data
     test_items = [{'col1': 1, 'col2': 'a'}, {'col1': 2, 'col2': 'b'}]  # Simple list of dicts instead of DataFrame
     test_uuid = uuid.uuid4()
-    test_bytes = b'hello world'
+    test_bytes = b'hello world\x04'
     
     msg = FullMessge(
         text="test",

@@ -54,7 +54,7 @@ class TestPrivateSessionProcess:
             result = process._dispatch_on_private_session_stopped(host_object, 'test_source', 'self_generated', test_request)
             
             mock_handler.assert_called_once()
-            assert result.json == '{"value": "test"}'
+            assert result.json == '{"value":"test"}'
 
     def test_dispatch_on_private_session_started(self, process):
         host_object = MagicMock()
@@ -64,7 +64,7 @@ class TestPrivateSessionProcess:
             result = process._dispatch_on_private_session_started(host_object, 'test_source', test_request)
             
             mock_handler.assert_called_once()
-            assert result.json == '{"value": "test"}'
+            assert result.json == '{"value":"test"}'
 
     def test_dispatch_on_document(self, process):
         host_object = MagicMock()
@@ -74,4 +74,4 @@ class TestPrivateSessionProcess:
             result = process._dispatch_on_document(host_object, 'test_source', test_request)
             
             mock_handler.assert_called_once()
-            assert result.json == '{"value": "test"}'
+            assert result.json == '{"value":"test"}'
