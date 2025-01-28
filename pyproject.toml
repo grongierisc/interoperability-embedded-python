@@ -27,12 +27,10 @@ classifiers = [
 ]
 
 dependencies = [
-    "dacite >=1.6.0",
     "pydantic>=2.0.0",
     "xmltodict>=0.12.0",
     "iris-embedded-python-wrapper>=0.0.6",
     "setuptools>=40.8.0",
-    "dc-schema>=0.0.8",
     "jsonpath-ng>=1.7.0"
 ]
 

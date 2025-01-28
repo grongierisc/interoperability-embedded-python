@@ -1,6 +1,5 @@
 pytest
 pytest-asyncio
-dacite
 xmltodict
 intersystems_iris @ https://github.com/intersystems-community/intersystems-irispython/releases/download/3.8.0/intersystems_iris-3.8.0-py3-none-any.whl
 requests
@@ -8,6 +7,5 @@ dataclasses-json
 wheel
 twine
 iris-embedded-python-wrapper
-dc-schema
 jsonpath-ng
 pydantic>=2.0.0
