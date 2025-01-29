@@ -19,6 +19,18 @@ Property %settings As %String(MAXLEN = "");
 /// Instance of class
 Property %class As %SYS.Python;
 
+Method %OnNew(pConfigName As %String) As %Status
+{
+    set tSC = $$$OK
+    try {
+        $$$ThrowOnError(..Connect())
+        $$$ThrowOnError($method($this,"initConfig",.pConfigName)) ; call subclass
+    } catch ex {
+        set tSC = ex.AsStatus()
+    }
+    quit tSC
+}
+
 /// Get Class
 Method GetClass() As %SYS.Python
 {
@@ -41,7 +53,6 @@ Method OnInit() As %Status
 {
     set tSC = $$$OK
     try {
-        $$$ThrowOnError(..Connect())
         do ..%class."_dispatch_on_init"($this)
     } catch ex {
         set tSC = ex.AsStatus()
@@ -198,7 +209,6 @@ ClassMethod OnGetConnections(
     }
     Catch ex {
     }
-
 
     // Get settings
     do pItem.GetModifiedSetting("%classpaths", .tClasspaths)

@@ -33,7 +33,7 @@ class TestFileOperations:
 class TestComponentRegistration:
     @pytest.mark.parametrize("module,classname,iris_classname", [
         ('bo', 'EmailOperation', 'UnitTest.EmailOperation'),
-        # Add more test cases here
+        ('bo', 'MyOperation', 'UnitTest.MyOperation'),
     ])
     def test_register_component(self, register_path, module, classname, iris_classname):
         _Utils.register_component(

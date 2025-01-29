@@ -148,7 +148,9 @@ class _Common(metaclass=abc.ABCMeta):
                 if not member[0].startswith('_'):
                     # remove other methods and functions
                     if not inspect.ismethod(member[1]) and not inspect.isfunction(member[1]) and not inspect.isclass(member[1]):
-                        if member[0] not in ('INFO_URL','ICON_URL','PERSISTENT_PROPERTY_LIST') :
+                        if member[0] not in ('INFO_URL','ICON_URL','PERSISTENT_PROPERTY_LIST'
+                                             ,'log_to_console','logger','iris_handle'
+                                             ,'DISPATCH','adapter','Adapter','buffer'):
                             name = member[0]
                             req = 0
                             cat = "Additional"

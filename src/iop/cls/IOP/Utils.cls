@@ -275,6 +275,54 @@ ClassMethod GenerateProxyClass(
 		set:($Case(tSuperClass,"IOP.InboundAdapter":1,"IOP.OutboundAdapter":1,:0)) type = "Adapter"
 		set tSETTINGSParamValue = $REPLACE(tSETTINGSParamValue,"$type",type)
 		
+		#dim tCustomProp As %Dictionary.PropertyDefinition
+		#dim tPropInfo,tPropName,tDataType,tDefault,tDesc,tPropCat,tContext As %String
+
+		set builtins = ##class(%SYS.Python).Import("builtins")
+		#; each remote setting is of form $lb(propName,dataType,defaultVal,required,category,description,editorContext)
+		For i=0:1:builtins.len(pRemoteSettings)-1 {
+			Set tPropInfo = pRemoteSettings."__getitem__"(i)
+			Continue:""=tPropInfo ; this shouldn't happen, but just in case
+			Set tPropName = tPropInfo."__getitem__"(0)
+			Set tDataType = tPropInfo."__getitem__"(1)
+			If (""=tPropName) || (""=tDataType) {
+				Set tSC = $$$ERROR($$$EnsErrGeneral,"All properties must have a name and datatype defined")
+				Quit
+			}
+			Set tCustomProp = ##class(%Dictionary.PropertyDefinition).%New()
+			Set tCustomProp.Name = tPropName
+			If $Case(tDataType,"String":1,"Integer":1,"Boolean":1,"Numeric":1,:0) {
+				Set tDataType = "%"_tDataType
+			} ElseIf '##class(%Dictionary.ClassDefinition).%ExistsId(tDataType) {
+				Set tDataType = "%String"
+			}
+			Set tCustomProp.Type = tDataType
+			If tDataType["%String" {
+				Set tSC = tCustomProp.Parameters.SetAt("255","MAXLEN")
+				Quit:$$$ISERR(tSC)
+			}
+			Set tDefault = tPropInfo."__getitem__"(2)
+			If ""'=tDefault {
+				Set tCustomProp.InitialExpression = $$$quote(tDefault)
+			}
+			Set tCustomProp.Required = tPropInfo."__getitem__"(3)
+			
+			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
+			Quit:$$$ISERR(tSC)
+			
+			#dim tMethod As %Dictionary.MethodDefinition = ##class(%Dictionary.MethodDefinition).%New()
+			Set tMethod.Name = tPropName_"Set"
+			Set tMethod.ReturnType = "%Status"
+			Set tMethod.FormalSpec = "value:"_tDataType
+			Do tMethod.Implementation.WriteLine("	Set ..%class."""_tPropName_""" = value")
+			Do tMethod.Implementation.WriteLine("	Quit $$$OK")
+			Set tSC = tCOSClass.Methods.Insert(tMethod)
+
+			Set tPropCat = "Python Attributes"
+			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName_":"_tPropCat
+		}
+		Quit:$$$ISERR(tSC)
+
 		#dim tSETTINGSParam As %Dictionary.ParameterDefinition = ##class(%Dictionary.ParameterDefinition).%New()
 		Set tSETTINGSParam.Name = "SETTINGS"
 		Set tSETTINGSParam.Default = tSETTINGSParamValue

@@ -128,6 +128,13 @@ class FileOperationWithIrisAdapter(BusinessOperation):
 
 class MyOperation(BusinessOperation):
 
+    my_empty_var : str
+    my_none_var = None
+    my_int_var :int = 0
+    my_float_var : float = 0.0
+    my_untyped_var = 0
+    my_str_var = "foo"
+
     def OnMessage(self, request):
         self.LOGINFO('hello')
         return MyResponse(request.StringValue)
