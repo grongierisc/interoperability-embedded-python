@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/benchmarks/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/prod-settings/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Benchmarks - IoP (Interoperability On Python)</title>
+    <title>Production Settings - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Benchmarks";
-        var mkdocs_page_input_path = "benchmarks.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/benchmarks/";
+        var mkdocs_page_name = "Production Settings";
+        var mkdocs_page_input_path = "prod-settings.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/prod-settings/";
       </script>
     
     <!--[if lt IE 9]>
@@ -71,8 +71,16 @@
                 <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
                 </li>
               </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Production Settings</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#context">Context</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#use-the-settings-parameter">Use the %settings parameter</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#create-your-custom-settings">Create your custom settings</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
@@ -83,12 +91,10 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">About</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Benchmarks</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
                   </li>
               </ul>
       </div>
@@ -105,8 +111,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">About</li>
-      <li class="breadcrumb-item active">Benchmarks</li>
+      <li class="breadcrumb-item active">Production Settings</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -115,60 +120,87 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="benchmarks">Benchmarks</h1>
-<p>8 senarios with thoses parameters :
-- 100 messages
-- body : simple string <code>test</code></p>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Time (s)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Python BP to Python BO with Iris Message</td>
-<td>0.239</td>
-</tr>
-<tr>
-<td>Python BP to Python BO with Python Message</td>
-<td>0.232</td>
-</tr>
-<tr>
-<td>ObjetScript BP to Python BO with Iris Message</td>
-<td>0.294</td>
-</tr>
-<tr>
-<td>ObjetScript BP to Python BO with Python Message</td>
-<td>0.242</td>
-</tr>
-<tr>
-<td>Python BP to ObjetScript BO with Iris Message</td>
-<td>0.242</td>
-</tr>
-<tr>
-<td>Python BP to ObjetScript BO with Python Message</td>
-<td>0.275</td>
-</tr>
-<tr>
-<td>ObjetScript BP to ObjetScript BO with Iris Message</td>
-<td>0.159</td>
-</tr>
-<tr>
-<td>ObjetScript BP to ObjetScript BO with Python Message</td>
-<td>0.182</td>
-</tr>
-</tbody>
-</table>
-<p>Benchmarked can be run in the unit test with the following command :</p>
-<pre><code class="language-bash">pytest src/tests/test_bench.py
+                <h1 id="settings-in-production">Settings in production</h1>
+<p>To pass production settings to your component, you have two options:</p>
+<ul>
+<li>Use the <strong>%settings</strong> parameter</li>
+<li>Create your custom settings</li>
+</ul>
+<h2 id="context">Context</h2>
+<p>In production when you select a component, you can configure it by passing settings.</p>
+<p><img alt="Settings in production" src="../img/settings-in-production.png" /></p>
+<p>Those settings can be passed to your python code.</p>
+<h2 id="use-the-settings-parameter">Use the %settings parameter</h2>
+<p>All the settings passed to <strong>%settings</strong> are available in string format into your class as a root attribute.</p>
+<p>Each line of the <strong>%settings</strong> parameter is a key-value pair separated by a the equal sign.</p>
+<p>Key will be the name of the attribute and value will be the value of the attribute.</p>
+<p>For example, if you have the following settings:</p>
+<pre><code class="language-text">foo=bar
+my_number=42
 </code></pre>
+<p>You can access those settings in your class like this:</p>
+<pre><code class="language-python">from iop import BusinessOperation
+
+class MyBusinessOperation(BusinessOperation):
+
+    def on_init(self):
+        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
+        self.log_info(&quot;[Python] foo: &quot; + self.foo)
+        self.log_info(&quot;[Python] my_number: &quot; + self.my_number)
+        return
+</code></pre>
+<p>As <strong>%settings</strong> is a free text field, you can pass any settings you want.</p>
+<p>Meaning you should verify if the attribute exists before using it.</p>
+<pre><code class="language-python">from iop import BusinessOperation
+
+class MyBusinessOperation(BusinessOperation):
+
+    def on_init(self):
+        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
+        if hasattr(self, 'foo'):
+            self.log_info(&quot;[Python] foo: &quot; + self.foo)
+        if hasattr(self, 'my_number'):
+            self.log_info(&quot;[Python] my_number: &quot; + self.my_number)
+        return
+</code></pre>
+<h2 id="create-your-custom-settings">Create your custom settings</h2>
+<p>If you want to have a more structured way to pass settings, you can create your custom settings.</p>
+<p>To create a custom settings, you create an attribute in your class.</p>
+<p>This attribute must :</p>
+<ul>
+<li>have an default value. </li>
+<li>don't start with an underscore.</li>
+<li>be untyped or have the following types: <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>.</li>
+</ul>
+<p>Otherwise, it will not be available in the managment portal.</p>
+<pre><code class="language-python">from iop import BusinessOperation
+
+class MyBusinessOperation(BusinessOperation):
+
+    # This setting will be available in the managment portal
+    foo: str = &quot;default&quot;
+    my_number: int = 42
+    untyped_setting = None
+
+    # This setting will not be available in the managment portal
+    _my_internal_setting: str = &quot;default&quot;
+    no_aviable_setting
+
+    def on_init(self):
+        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
+        self.log_info(&quot;[Python] foo: &quot; + self.foo)
+        self.log_info(&quot;[Python] my_number: &quot; + str(self.my_number))
+        return
+</code></pre>
+<p>They will be available in the managment portal as the following:</p>
+<p><img alt="Custom settings" src="../img/custom_settings.png" /></p>
+<p>If you overwrite the default value in the managment portal, the new value will be passed to your class.</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../credits/" class="btn btn-neutral float-left" title="Credits"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../debug/" class="btn btn-neutral float-left" title="Debugging"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../example/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -191,8 +223,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../credits/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../debug/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
+    
+      <span><a href="../example/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
