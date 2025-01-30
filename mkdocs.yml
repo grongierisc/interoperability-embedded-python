@@ -15,6 +15,7 @@ nav:
   - DTL Support: dtl.md
   - Logging: logging.md
   - Debugging: debug.md
+  - Production Settings: prod-settings.md
   - Reference:
     - Examples: example.md
     - Useful Links: useful-links.md
