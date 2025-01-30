@@ -22,38 +22,35 @@ exit_on_error () {
 
 iris_start
 
-# run a python command
 cd src
-python3 -c "from grongier.pex import Utils; Utils.setup()"
+
+# print iris version
+echo "IRIS version:"
+python3 -c "import iris; print(iris.system.Version.GetVersion())"
+
+# setup the environment
+python3 -m iop --init
 exit_on_error
 
-# back to workdir
-cd ..
-
 # Unit tests
+cd ..
 python3 -m pytest
 exit_on_error
 
-# install pip
-pip install --upgrade pip
-# install main package
-pip install git+https://github.com/grongierisc/interoperability-embedded-python
-# install test dependencies
-pip install -r https://raw.githubusercontent.com/grongierisc/interoperability-embedded-python/master/requirements-dev.txt
-
 # Integration tests
-iop --migrate demo/python/reddit/settings.py
+cd src
+python3 -m iop --migrate ../demo/python/reddit/settings.py
 exit_on_error
 
-iop --default PEX.Production
+python3 -m iop --default PEX.Production
 exit_on_error
 
-iop --start PEX.Production --detach
+python3 -m iop --start PEX.Production --detach
 exit_on_error
 
-iop --log 10
+python3 -m iop --log 10
 
-iop -S
+python3 -m iop -S
 exit_on_error
 
 iris_stop

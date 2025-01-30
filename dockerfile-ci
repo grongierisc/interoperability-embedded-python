@@ -5,14 +5,19 @@ COPY --chown=irisowner:irisowner . /irisdev/app
 
 WORKDIR /irisdev/app
 
+# map the source code of iop into iris python lib
+RUN ln -s /irisdev/app/src/iop /usr/irissys/mgr/python/iop
+# for retrocompatibility
+RUN ln -s /irisdev/app/src/grongier /usr/irissys/mgr/python/grongier
+
 ## Python stuff
-ENV IRISUSERNAME "SuperUser"
-ENV IRISPASSWORD "SYS"
-ENV IRISNAMESPACE "IRISAPP"
+ENV IRISUSERNAME="SuperUser"
+ENV IRISPASSWORD="SYS"
+ENV IRISNAMESPACE="IRISAPP"
 ENV PYTHON_PATH=/usr/irissys/bin/
-ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin:${LD_LIBRARY_PATH}
-ENV PATH "/home/irisowner/.local/bin:/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
+ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin
+ENV PATH="/home/irisowner/.local/bin:/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
 RUN pip install -r requirements-dev.txt
 
-ENTRYPOINT /irisdev/app/test-in-docker.sh
+ENTRYPOINT [ "/irisdev/app/test-in-docker.sh" ]
