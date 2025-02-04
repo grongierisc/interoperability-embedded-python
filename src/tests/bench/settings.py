@@ -1,5 +1,5 @@
-from bo import BenchIoPOperation
-from bp import BenchIoPProcess
+from bench_bo import BenchIoPOperation
+from bench_bp import BenchIoPProcess
 
 import os
 

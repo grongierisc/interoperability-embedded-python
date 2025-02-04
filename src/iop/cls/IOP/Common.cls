@@ -37,11 +37,17 @@ Method GetModule() As %String
     Return ..%module
 }
 
+Method %OnNew(pConfigName As %String) As %Status
+{
+    $$$ThrowOnError(..Connect())
+	Quit $method($this,"initConfig",.pConfigName) ; call subclass
+}
+
 Method OnInit() As %Status
 {
     set tSC = $$$OK
     try {
-        $$$ThrowOnError(..Connect())
+        
         do ..%class."_dispatch_on_init"($this)
     } catch ex {
         set tSC = ex.AsStatus()

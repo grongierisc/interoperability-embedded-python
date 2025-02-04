@@ -6,6 +6,7 @@ import inspect
 import xmltodict
 import pkg_resources
 import importlib
+import importlib.util
 import json
 from iop._message import _Message, _PydanticMessage
 from pydantic import TypeAdapter
@@ -241,7 +242,7 @@ class _Utils():
             settings = _Utils.import_module_from_path('settings',filename)
         else:
             # import settings from the settings module
-            import settings
+            import settings # type: ignore
         # get the path of the settings file
         path = os.path.dirname(inspect.getfile(settings))
         try:
@@ -261,7 +262,7 @@ class _Utils():
         except AttributeError:
             print("No schemas to register")
         try:
-            sys.path.remove(path)
+            sys.path.remove(os.path.normpath(path))
         except ValueError:
             pass
 

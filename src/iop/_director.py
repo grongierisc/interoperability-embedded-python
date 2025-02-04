@@ -6,7 +6,6 @@ import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
 from dataclasses import dataclass
 
-from iop._business_host import _BusinessHost
 from iop._dispatch import dispatch_deserializer, dispatch_serializer
 from iop._utils import _Utils
 
@@ -278,7 +277,6 @@ class _Director():
                 else:
                     message.json = _Utils.string_to_stream("{}")
         # serialize the message
-        business_host = _BusinessHost()
         serial_message = dispatch_serializer(message)
         response = iris.cls('IOP.Utils').dispatchTestComponent(target,serial_message)
         try:

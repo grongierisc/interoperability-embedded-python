@@ -125,8 +125,13 @@ class FileOperationWithIrisAdapter(BusinessOperation):
         self.Adapter.PutLine(filename, " * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *")
 
         return
-
+    
 class MyOperation(BusinessOperation):
+
+    def OnMessage(self, request):
+        self.log_info("Received message: "+str(request))
+
+class MySettingOperation(BusinessOperation):
 
     my_empty_var : str
     my_none_var = None
@@ -136,8 +141,8 @@ class MyOperation(BusinessOperation):
     my_str_var = "foo"
 
     def OnMessage(self, request):
-        self.LOGINFO('hello')
-        return MyResponse(request.StringValue)
+        attr = request.StringValue
+        return MyResponse(self.__getattribute__(attr))
 
 if __name__ == "__main__":
     
