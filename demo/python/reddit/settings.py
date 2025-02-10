@@ -8,8 +8,10 @@ CLASSES = {
     "Python.RedditService": bs.RedditService,
     "Python.RedditServiceWithIrisAdapter": bs.RedditServiceWithIrisAdapter,
     "Python.RedditServiceWithPexAdapter": bs.RedditServiceWithPexAdapter,
+    "Python.RedditInboundAdapter": adapter.RedditInboundAdapter,
     "Python.FilterPostRoutingRule": bp.FilterPostRoutingRule,
     "Python.TestHeartBeat": adapter.TestHeartBeat,
+    "Python.Demo.MyBusinessOperation": bo.MyBusinessOperation,
     "Python.HeartBeat": bo.HeartBeatOperation,
 }
 

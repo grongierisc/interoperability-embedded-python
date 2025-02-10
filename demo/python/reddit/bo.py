@@ -153,6 +153,24 @@ class HeartBeatOperation(BusinessOperation):
         self.adapter.on_task()
         return 
 
+
+class MyBusinessOperation(BusinessOperation):
+
+    # This setting will be available in the managment portal
+    foo: str = "default"
+    my_number: int = 42
+    untyped_setting = None
+
+    # This setting will not be available in the managment portal
+    _my_internal_setting: str = "default"
+    no_aviable_setting: str
+    
+    def on_init(self):
+        self.log_info("[Python] MyBusinessOperation:on_init() is called")
+        self.log_info("[Python] foo: " + self.foo)
+        self.log_info("[Python] my_number: " + str(self.my_number))
+        return
+
 # Utils.register_component('adapter','TestHeartBeat','/irisdev/app/src/python/demo/',1,'Python.TestHeartBeat')
 # Utils.register_component('bo','HeartBeatOperation','/irisdev/app/src/python/demo/reddit/',1,'Python.HeartBeatOperation')
 
