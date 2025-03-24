@@ -8,7 +8,7 @@ from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, Type
 
 import iris
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from iop._message import _PydanticPickleMessage
 from iop._utils import _Utils
@@ -108,38 +108,42 @@ class MessageSerializer:
         return classname[:j], classname[j+1:]
 
 def dataclass_from_dict(klass: Type, dikt: Dict) -> Any:
-    field_types = {
-        key: val.annotation
-        for key, val in inspect.signature(klass).parameters.items()
-    }
-    processed_dict = {}
-    for key, val in inspect.signature(klass).parameters.items():
-        if key not in dikt and val.default != val.empty:
-            processed_dict[key] = val.default
+    """Converts a dictionary to a dataclass instance.
+    Handles non attended fields and nested dataclasses."""
+    
+    def process_field(value: Any, field_type: Type) -> Any:
+        if value is None:
+            return None
+        if is_dataclass(field_type):
+            return dataclass_from_dict(field_type, value)
+        if field_type != inspect.Parameter.empty:
+            try:
+                return TypeAdapter(field_type).validate_python(value)
+            except ValidationError:
+                return value
+        return value
+
+    # Get field definitions from class signature
+    fields = inspect.signature(klass).parameters
+    field_dict = {}
+
+    # Process each field
+    for field_name, field_info in fields.items():
+        if field_name not in dikt:
+            if field_info.default != field_info.empty:
+                field_dict[field_name] = field_info.default
             continue
         
-        value = dikt.get(key)
-        if value is None:
-            processed_dict[key] = None
-            continue
+        field_dict[field_name] = process_field(dikt[field_name], field_info.annotation)
 
-        try:
-            field_type = field_types[key]
-            if field_type != inspect.Parameter.empty:
-                adapter = TypeAdapter(field_type)
-                processed_dict[key] = adapter.validate_python(value)
-            else:
-                processed_dict[key] = value
-        except Exception:
-            processed_dict[key] = value
-
-    instance = klass(
-        **processed_dict
-    )
-    # handle any extra fields
-    for k, v in dikt.items():
-        if k not in processed_dict:
-            setattr(instance, k, v)
+    # Create instance
+    instance = klass(**field_dict)
+    
+    # Add any extra fields not in the dataclass definition
+    for key, value in dikt.items():
+        if key not in field_dict:
+            setattr(instance, key, value)
+    
     return instance
 
 def dataclass_to_dict(instance: Any) -> Dict:

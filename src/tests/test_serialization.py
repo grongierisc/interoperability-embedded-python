@@ -1,5 +1,6 @@
 import datetime
 import decimal
+from typing import Optional
 import uuid
 from dataclasses import dataclass
 
@@ -32,6 +33,44 @@ class FullMessge:
     uid: uuid.UUID
     data: bytes
     items: list  # Changed from df to a simple list
+
+@dataclass
+class MyObject:
+    value: str = None
+    foo: int = None
+    bar: float = 3.14
+
+@dataclass
+class Msg:
+    text: str
+    number: int
+    my_obj: MyObject
+
+def test_message_serialization():
+
+
+    msg = Msg(text="hello", number=42, my_obj=None)
+
+    my_obj = MyObject(value="test", foo=None)
+
+    # hack my_obj as a dict
+    msg.my_obj = {}
+    msg.my_obj['value'] = "test"
+    msg.my_obj['foo'] = None
+    msg.my_obj['other'] = 3.14
+
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.Message")
+    assert serial.classname == f"{Msg.__module__}.{Msg.__name__}"
+
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, Msg)
+    assert result.text == msg.text
+    assert result.number == msg.number
+    assert result.my_obj == my_obj
+
 
 def test_json_serialization():
     # Create test data
