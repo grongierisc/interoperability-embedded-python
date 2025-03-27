@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, Type
 
-import iris
+from . import _iris
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from iop._message import _PydanticPickleMessage
@@ -37,17 +37,17 @@ class MessageSerializer:
             raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass")
 
     @staticmethod
-    def serialize(message: Any, use_pickle: bool = False) -> iris.cls:
+    def serialize(message: Any, use_pickle: bool = False) -> Any:
         """Serializes a message to IRIS format."""
         if isinstance(message, _PydanticPickleMessage) or use_pickle:
             return MessageSerializer._serialize_pickle(message)
         return MessageSerializer._serialize_json(message)
 
     @staticmethod
-    def _serialize_json(message: Any) -> iris.cls:
+    def _serialize_json(message: Any) -> Any:
         json_string = MessageSerializer._convert_to_json_safe(message)
         
-        msg = iris.cls('IOP.Message')._New()
+        msg = _iris.get_iris().cls('IOP.Message')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         
         if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:
@@ -57,13 +57,13 @@ class MessageSerializer:
         return msg
 
     @staticmethod
-    def deserialize(serial: iris.cls, use_pickle: bool = False) -> Any:
+    def deserialize(serial: Any, use_pickle: bool = False) -> Any:
         if use_pickle:
             return MessageSerializer._deserialize_pickle(serial)
         return MessageSerializer._deserialize_json(serial)
 
     @staticmethod
-    def _deserialize_json(serial: iris.cls) -> Any:
+    def _deserialize_json(serial: Any) -> Any:
         if not serial.classname:
             raise SerializationError("JSON message malformed, must include classname")
         
@@ -88,15 +88,15 @@ class MessageSerializer:
             raise SerializationError(f"Failed to deserialize JSON: {str(e)}")
 
     @staticmethod
-    def _serialize_pickle(message: Any) -> iris.cls:
+    def _serialize_pickle(message: Any) -> Any:
         pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
-        msg = iris.cls('IOP.PickleMessage')._New()
+        msg = _iris.get_iris().cls('IOP.PickleMessage')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         msg.jstr = _Utils.string_to_stream(pickle_string)
         return msg
 
     @staticmethod
-    def _deserialize_pickle(serial: iris.cls) -> Any:
+    def _deserialize_pickle(serial: Any) -> Any:
         string = _Utils.stream_to_string(serial.jstr)
         return pickle.loads(codecs.decode(string.encode(), "base64"))
 

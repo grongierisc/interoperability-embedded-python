@@ -7,9 +7,9 @@ from enum import Enum, auto
 import sys
 from typing import Optional, Callable
 from importlib.metadata import version
-
 from iop._director import _Director
 from iop._utils import _Utils
+
 
 class CommandType(Enum):
     DEFAULT = auto()
@@ -46,10 +46,15 @@ class CommandArgs:
     test: Optional[str] = None
     classname: Optional[str] = None
     body: Optional[str] = None
+    namespace: Optional[str] = None
 
 class Command:
     def __init__(self, args: CommandArgs):
         self.args = args
+
+        if self.args.namespace and self.args.namespace != 'not_set':
+            # set environment variable IRISNAMESPACE
+            os.environ['IRISNAMESPACE'] = self.args.namespace
 
     def execute(self) -> None:
         command_type = self._determine_command_type()
@@ -182,6 +187,9 @@ def create_parser() -> argparse.ArgumentParser:
     test = main_parser.add_argument_group('test arguments')
     test.add_argument('-C', '--classname', help='test classname', nargs='?', const='not_set')
     test.add_argument('-B', '--body', help='test body', nargs='?', const='not_set')
+
+    namespace = main_parser.add_argument_group('namespace arguments')
+    namespace.add_argument('-n', '--namespace', help='set namespace', nargs='?', const='not_set')
     
     return main_parser
 

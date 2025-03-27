@@ -1,5 +1,5 @@
 import traceback
-import iris
+from . import _iris
 import logging
 from typing import Optional, Tuple
 
@@ -41,11 +41,11 @@ class IRISLogHandler(logging.Handler):
 
         # Map Python logging levels to IRIS logging methods
         self.level_map = {
-            logging.DEBUG: iris.cls("Ens.Util.Log").LogTrace,
-            logging.INFO: iris.cls("Ens.Util.Log").LogInfo,
-            logging.WARNING: iris.cls("Ens.Util.Log").LogWarning,
-            logging.ERROR: iris.cls("Ens.Util.Log").LogError,
-            logging.CRITICAL: iris.cls("Ens.Util.Log").LogAlert,
+            logging.DEBUG: _iris.get_iris().cls("Ens.Util.Log").LogTrace,
+            logging.INFO: _iris.get_iris().cls("Ens.Util.Log").LogInfo,
+            logging.WARNING: _iris.get_iris().cls("Ens.Util.Log").LogWarning,
+            logging.ERROR: _iris.get_iris().cls("Ens.Util.Log").LogError,
+            logging.CRITICAL: _iris.get_iris().cls("Ens.Util.Log").LogAlert,
         }
         # Map Python logging levels to IRIS logging Console level
         self.level_map_console = {
@@ -76,8 +76,8 @@ class IRISLogHandler(logging.Handler):
         class_name = record.class_name if hasattr(record, "class_name") else record.name
         method_name = record.method_name if hasattr(record, "method_name") else record.funcName
         if self.to_console or (hasattr(record, "to_console") and record.to_console):
-            iris.cls("%SYS.System").WriteToConsoleLog(self.format(record),
+            _iris.get_iris().cls("%SYS.System").WriteToConsoleLog(self.format(record),
                 0,self.level_map_console.get(record.levelno, 0),class_name+"."+method_name)
         else:
-            log_func = self.level_map.get(record.levelno, iris.cls("Ens.Util.Log").LogInfo)
+            log_func = self.level_map.get(record.levelno, _iris.get_iris().cls("Ens.Util.Log").LogInfo)
             log_func(class_name, method_name, self.format(record))

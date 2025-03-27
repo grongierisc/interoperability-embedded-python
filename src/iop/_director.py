@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import functools
-import iris
+from . import _iris
 import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
 from dataclasses import dataclass
@@ -55,7 +55,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        iris_object = iris.cls("IOP.Director").dispatchCreateBusinessService(target)
+        iris_object = _iris.get_iris().cls("IOP.Director").dispatchCreateBusinessService(target)
         return iris_object
 
     @staticmethod
@@ -69,7 +69,7 @@ class _Director():
         Returns:
             an object that contains an instance of IRISBusinessService
         """
-        iris_object = iris.cls("IOP.Director").dispatchCreateBusinessService(target)
+        iris_object = _iris.get_iris().cls("IOP.Director").dispatchCreateBusinessService(target)
         return iris_object.GetClass()
     
     ### List of function to manage the production
@@ -102,37 +102,37 @@ class _Director():
     def start_production(production_name=None):
         if production_name is None or production_name == '':
             production_name = _Director.get_default_production()
-        iris.cls('Ens.Director').StartProduction(production_name)
+        _iris.get_iris().cls('Ens.Director').StartProduction(production_name)
 
     ### stop production
     @staticmethod
     def stop_production():
-        iris.cls('Ens.Director').StopProduction()
+        _iris.get_iris().cls('Ens.Director').StopProduction()
 
     ### restart production
     @staticmethod
     def restart_production():
-        iris.cls('Ens.Director').RestartProduction()
+        _iris.get_iris().cls('Ens.Director').RestartProduction()
 
     ### shutdown production
     @staticmethod
     def shutdown_production():
-        iris.cls('Ens.Director').StopProduction(10,1)
+        _iris.get_iris().cls('Ens.Director').StopProduction(10,1)
 
     ### update production
     @staticmethod
     def update_production():
-        iris.cls('Ens.Director').UpdateProduction()
+        _iris.get_iris().cls('Ens.Director').UpdateProduction()
 
     ### list production
     @staticmethod
     def list_productions():
-        return iris.cls('IOP.Director').dispatchListProductions()
+        return _iris.get_iris().cls('IOP.Director').dispatchListProductions()
     
     ### status production
     @staticmethod
     def status_production():
-        dikt = iris.cls('IOP.Director').StatusProduction()
+        dikt = _iris.get_iris().cls('IOP.Director').StatusProduction()
         if dikt['Production'] is None or dikt['Production'] == '':
             dikt['Production'] = _Director.get_default_production()
         return dikt
@@ -141,13 +141,13 @@ class _Director():
     @staticmethod
     def set_default_production(production_name=''):
         #set ^Ens.Configuration("SuperUser","LastProduction")
-        glb = iris.gref("^Ens.Configuration")
+        glb = _iris.get_iris().gref("^Ens.Configuration")
         glb['csp', "LastProduction"] = production_name
 
     ### get default production
     @staticmethod
     def get_default_production():
-        glb = iris.gref("^Ens.Configuration")
+        glb = _iris.get_iris().gref("^Ens.Configuration")
         default_production_name = glb['csp', "LastProduction"]
         if default_production_name is None or default_production_name == '':
             default_production_name = 'Not defined'
@@ -257,20 +257,20 @@ class _Director():
         body: the body of the message
         """
         if not message:
-            message = iris.cls('Ens.Request')._New()
+            message = _iris.get_iris().cls('Ens.Request')._New()
         if classname:
             # if classname start with 'iris.' then create an iris object
             if classname.startswith('iris.'):
                 # strip the iris. prefix
                 classname = classname[5:]
                 if body:
-                    message = iris.cls(classname)._New(body)
+                    message = _iris.get_iris().cls(classname)._New(body)
                 else:
-                    message = iris.cls(classname)._New()
+                    message = _iris.get_iris().cls(classname)._New()
             # else create a python object
             else:
                 # python message are casted to Grongier.PEX.Message
-                message = iris.cls("IOP.Message")._New()
+                message = _iris.get_iris().cls("IOP.Message")._New()
                 message.classname = classname
                 if body:
                     message.json = body
@@ -278,7 +278,7 @@ class _Director():
                     message.json = _Utils.string_to_stream("{}")
         # serialize the message
         serial_message = dispatch_serializer(message)
-        response = iris.cls('IOP.Utils').dispatchTestComponent(target,serial_message)
+        response = _iris.get_iris().cls('IOP.Utils').dispatchTestComponent(target,serial_message)
         try:
             deserialized_response = dispatch_deserializer(response)
         except ImportError as e:

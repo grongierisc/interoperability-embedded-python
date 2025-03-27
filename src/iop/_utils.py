@@ -1,7 +1,7 @@
 import os
 import sys
 import ast
-import iris
+from . import _iris
 import inspect
 import xmltodict
 import pkg_resources
@@ -19,8 +19,8 @@ class _Utils():
         
         :param sc: The status code returned by the Iris API
         """
-        if iris.system.Status.IsError(sc):
-            raise RuntimeError(iris.system.Status.GetOneStatusText(sc))
+        if _iris.get_iris().system.Status.IsError(sc):
+            raise RuntimeError(_iris.get_iris().system.Status.GetOneStatusText(sc))
 
     @staticmethod
     def setup(path:str = None):
@@ -29,13 +29,13 @@ class _Utils():
             # get the path of the data folder with pkg_resources
             path = pkg_resources.resource_filename('iop', 'cls')
 
-        _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+        _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
         # for retrocompatibility load grongier.pex
         path = pkg_resources.resource_filename('grongier', 'cls')
 
         if path:
-            _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
     @staticmethod
     def register_message_schema(cls):
@@ -68,7 +68,7 @@ class _Utils():
         :param categories: The categories of the schema
         :type categories: str
         """
-        _Utils.raise_on_error(iris.cls('IOP.Message.JSONSchema').Import(schema_str,categories,schema_name))
+        _Utils.raise_on_error(_iris.get_iris().cls('IOP.Message.JSONSchema').Import(schema_str,categories,schema_name))
 
     @staticmethod
     def register_component(module:str,classname:str,path:str,overwrite:int=1,iris_classname:str='Python'):
@@ -90,7 +90,7 @@ class _Utils():
         path = os.path.abspath(os.path.normpath(path))
         fullpath = _Utils.guess_path(module,path)
         try:
-            iris.cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,fullpath,overwrite,iris_classname)
+            _iris.get_iris().cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,fullpath,overwrite,iris_classname)
         except RuntimeError as e:
             # New message error : Make sure the iop package is installed in iris 
             raise RuntimeError("Iris class : IOP.Utils not found. Make sure the iop package is installed in iris eg: iop --init.") from e
@@ -403,7 +403,7 @@ class _Utils():
         production_name = production_name.split('.')[-1]
         stream = _Utils.string_to_stream(xml)
         # register the production
-        _Utils.raise_on_error(iris.cls('IOP.Utils').CreateProduction(package,production_name,stream))
+        _Utils.raise_on_error(_iris.get_iris().cls('IOP.Utils').CreateProduction(package,production_name,stream))
 
     @staticmethod
     def export_production(production_name):
@@ -418,7 +418,7 @@ class _Utils():
                 return key, ''
             return key, value
         # export the production
-        xdata = iris.cls('IOP.Utils').ExportProduction(production_name)
+        xdata = _iris.get_iris().cls('IOP.Utils').ExportProduction(production_name)
         # for each chunk of 1024 characters
         string = _Utils.stream_to_string(xdata)
         # convert the xml to a dictionary
@@ -436,7 +436,7 @@ class _Utils():
     
     @staticmethod
     def string_to_stream(string:str,buffer=1000000):
-        stream = iris.cls('%Stream.GlobalCharacter')._New()
+        stream = _iris.get_iris().cls('%Stream.GlobalCharacter')._New()
         n = buffer
         chunks = [string[i:i+n] for i in range(0, len(string), n)]
         for chunk in chunks:

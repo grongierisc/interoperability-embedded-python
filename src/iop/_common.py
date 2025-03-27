@@ -3,7 +3,7 @@ import inspect
 import traceback
 from typing import Any, ClassVar, List, Optional, Tuple
 
-import iris
+from . import _iris
 
 from iop._log_manager import LogManager, logging
 
@@ -285,6 +285,7 @@ class _Common(metaclass=abc.ABCMeta):
         Parameters:
         message: a string that is written to the log.
         """
+        iris = _iris.get_iris()
         current_class, current_method = self._log()
         iris.cls("Ens.Util.Log").LogAssert(current_class, current_method, message)
 

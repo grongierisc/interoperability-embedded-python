@@ -1,5 +1,5 @@
 import asyncio
-import iris
+from . import _iris
 from typing import Any, Optional, Union
 from iop._dispatch import dispatch_deserializer, dispatch_serializer
 from iop._message import _Message as Message
@@ -24,6 +24,7 @@ class AsyncRequest(asyncio.Future):
 
     async def send(self) -> None:
         # init parameters
+        iris = _iris.get_iris()
         message_header_id = iris.ref()
         queue_name = iris.ref()
         end_time = iris.ref()
@@ -46,6 +47,7 @@ class AsyncRequest(asyncio.Future):
         self.set_result(self._response)
 
     def is_done(self) -> None:
+        iris = _iris.get_iris()
         response = iris.ref()
         status = self._iris_handle.dispatchIsRequestDone(self.timeout, self._end_time,
                                                        self._queue_name, self._message_header_id,

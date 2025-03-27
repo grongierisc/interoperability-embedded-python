@@ -1,7 +1,7 @@
 from inspect import getsource
 from typing import Any,List, Optional, Tuple, Union
 
-import iris
+from . import _iris
 
 from iop._common import _Common
 from iop._message import _Message as Message
@@ -109,6 +109,7 @@ class _BusinessHost(_Common):
 
     def _create_call_structure(self, target: str, request: Union[Message, Any]) -> Any:
         """Create an Ens.CallStructure object for the request."""
+        iris = _iris.get_iris()
         call = iris.cls("Ens.CallStructure")._New()
         call.TargetDispatchName = target
         call.Request = dispatch_serializer(request)
