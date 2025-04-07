@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Add namespace selection in the `iop` command
+  - `-n` or `--namespace` option to select a namespace
+
+### Changed
+- Change how `iris` module is loaded
+  - Create a new `_iris` module in the `iop` package
+
 ## [3.4.0] - 2025-03-24
 
 ### Added
