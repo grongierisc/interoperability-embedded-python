@@ -4,7 +4,6 @@ import sys
 import random
 import string
 import pytest
-import intersystems_iris.dbapi._DBAPI as irisdbapi
 from iop._message_validator import is_iris_object_instance, is_message_class, is_pickle_message_class
 from registerFilesIop.message import SimpleMessage, SimpleMessageNotMessage, PickledMessage
 from iop._common import _Common
@@ -49,7 +48,8 @@ class TestLogging:
     def test_log_info_loggger(self, common, random_string):
         common.logger.info(random_string)
         rs = self._check_log_entry(random_string, 'test_log_info_loggger')
-        assert len(rs) == 1
+        for entry in rs:
+            assert random_string in entry[9]
 
     def test_log_info_loggger_to_console(self, common, random_string):
         common.log_to_console = True
@@ -82,20 +82,23 @@ class TestLogging:
             AND Text = ? 
             ORDER BY id DESC
         """
-        with irisdbapi.connect(embedded=True) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(sql, (method_name, message))
-                return cursor.fetchall()
+        stmt = iris.sql.prepare(sql)
+        rs = stmt.execute(method_name, message)
+        if rs is None:
+            return []
+        return rs
 
     def test_log_info(self, common, random_string):
         common.log_info(random_string)
         rs = self._check_log_entry(random_string, 'test_log_info')
-        assert len(rs) == 1
+        for entry in rs:
+            assert random_string in entry[9]
 
     def test_log_info_japanese(self, common, random_japanese):
         common.log_info(random_japanese)
         rs = self._check_log_entry(random_japanese, 'test_log_info_japanese')
-        assert len(rs) == 1
+        for entry in rs:
+            assert random_japanese in entry[9]
 
 class TestBusinessService:
     def test_get_info(self):

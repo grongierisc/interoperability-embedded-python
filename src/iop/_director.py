@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import functools
 from . import _iris
-import intersystems_iris.dbapi._DBAPI as irisdbapi
 import signal
 from dataclasses import dataclass
 
@@ -178,7 +177,7 @@ class _Director():
         return str(row[9]) + ' ' + typ + ' ' + str(row[1]) + ' ' + str(row[2]) + ' ' + str(row[3]) + ' ' + str(row[4]) + ' ' + str(row[5]) + ' ' + str(row[6]) + ' ' + str(row[8])
 
     @staticmethod
-    def read_top_log(cursor,top) -> list:
+    def read_top_log(top) -> list:
         sql = """
         SELECT top ?
         ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
@@ -186,13 +185,14 @@ class _Director():
         order by id desc
         """
         result = []
-        cursor.execute(sql, top)
-        for row in cursor:
+        stmt = _iris.get_iris().sql.prepare(sql)
+        rs = stmt.execute(top)
+        for row in rs:
             result.append(_Director.format_log(row))
         return result
 
     @staticmethod
-    def read_log(cursor) -> list:
+    def read_log() -> list:
         sql = """
         SELECT 
         ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Stack, Text, TimeLogged, TraceCat, Type
@@ -201,8 +201,12 @@ class _Director():
         order by id desc
         """
         result = []
-        cursor.execute(sql, (datetime.datetime.now() - datetime.timedelta(seconds=1),))
-        for row in cursor:
+        stmt = _iris.get_iris().sql.prepare(sql)
+        time = datetime.datetime.now() - datetime.timedelta(seconds=1)
+        # convert to utc time
+        time = time.astimezone(datetime.timezone.utc)
+        rs = stmt.execute(time.isoformat(sep=' '))
+        for row in rs:
             result.append(_Director.format_log(row))
         return result
 
@@ -211,14 +215,12 @@ class _Director():
         """ Log production 
             if ctrl+c is pressed, the log is stopped
         """
-        with irisdbapi.connect(embedded=True) as conn:
-            with conn.cursor() as cursor:
-                while True:
-                    for row in reversed(_Director.read_log(cursor)):
-                        print(row)
-                    if handler.sigint_log:
-                        break
-                    await asyncio.sleep(1)
+        while True:
+            for row in reversed(_Director.read_log()):
+                print(row)
+            if handler.sigint_log:
+                break
+            await asyncio.sleep(1)
 
     @staticmethod
     def log_production_top(top=10):
@@ -227,10 +229,8 @@ class _Director():
         Parameters:
         top: the number of log to display
         """
-        with irisdbapi.connect(embedded=True) as conn:
-            with conn.cursor() as cursor:
-                for row in reversed(_Director.read_top_log(cursor, top)):
-                    print(row)
+        for row in reversed(_Director.read_top_log(top)):
+            print(row)
 
     @staticmethod
     def log_production():
@@ -240,10 +240,10 @@ class _Director():
         loop = asyncio.get_event_loop()
         handler = SigintHandler(log_only=True)
         loop.add_signal_handler(signal.SIGINT, functools.partial(handler.signal_handler, signal.SIGINT, loop))
-        with irisdbapi.connect(embedded=True) as conn:
-            with conn.cursor() as cursor:
-                for row in reversed(_Director.read_top_log(cursor, 10)):
-                    print(row)
+
+        for row in reversed(_Director.read_top_log( 10)):
+            print(row)
+    
         loop.run_until_complete(_Director._log_production_async(handler))
         loop.close()
 
