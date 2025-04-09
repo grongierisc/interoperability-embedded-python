@@ -10,7 +10,7 @@ from typing import Any, Dict, Type
 from . import _iris
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from iop._message import _PydanticPickleMessage
+from iop._message import _PydanticPickleMessage, _Message
 from iop._utils import _Utils
 
 class SerializationError(Exception):
@@ -31,10 +31,10 @@ class MessageSerializer:
         """Convert objects to JSON-safe format."""
         if isinstance(obj, BaseModel):
             return obj.model_dump_json()
-        elif is_dataclass(obj):
+        elif is_dataclass(obj) and isinstance(obj, _Message):
             return TempPydanticModel.model_validate(dataclass_to_dict(obj)).model_dump_json()
         else:
-            raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass")
+            raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass Message")
 
     @staticmethod
     def serialize(message: Any, use_pickle: bool = False) -> Any:

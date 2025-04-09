@@ -15,16 +15,23 @@ from iop._serialization import (
     deserialize_pickle_message,
 )
 
+from iop import Message
+
 class NonDataclass:
     def __init__(self, value):
         self.value = value
+
+@dataclass
+class Empty(Message):
+    pass
 
 @dataclass
 class Object:
     value: str
 
 @dataclass
-class FullMessge:
+class FullMessge(Message):
+    """Full message class with various fields."""
     text: str
     dikt: dict
     text_json: str
@@ -48,10 +55,27 @@ class MyObject:
     bar: float = 3.14
 
 @dataclass
-class Msg:
+class Msg(Message):
     text: str
     number: int
     my_obj: MyObject
+
+def test_empty_serialization():
+    # Create an empty message
+    msg = Empty()
+    msg.foo = 42
+    msg.bar = "hello"
+
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.Message")
+    assert serial.classname == f"{Empty.__module__}.{Empty.__name__}"
+    
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, Empty)
+    assert result.foo == msg.foo
+    assert result.bar == msg.bar
 
 def test_message_serialization():
     msg = Msg(text="hello", number=42, my_obj=None)
@@ -75,6 +99,15 @@ def test_message_serialization():
     assert result.text == msg.text
     assert result.number == msg.number
     assert result.my_obj == my_obj
+
+def test_raise_not_message():
+    # Create a message with an invalid object
+    msg = MyObject(value="test", foo=None)
+
+    # Test serialization
+    with pytest.raises(SerializationError):
+        serialize_message(msg)
+
 
 def test_unexpexted_obj_serialization():
     # Create an invalid message
