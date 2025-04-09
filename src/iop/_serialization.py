@@ -4,7 +4,7 @@ import importlib
 import inspect
 import pickle
 import json
-from dataclasses import asdict, is_dataclass
+from dataclasses import is_dataclass
 from typing import Any, Dict, Type
 
 from . import _iris
@@ -149,12 +149,20 @@ def dataclass_from_dict(klass: Type, dikt: Dict) -> Any:
 def dataclass_to_dict(instance: Any) -> Dict:
     """Converts a class instance to a dictionary.
     Handles non attended fields."""
-    dikt = asdict(instance)
-    # assign any extra fields
-    for k, v in vars(instance).items():
-        if k not in dikt:
-            dikt[k] = v
-    return dikt
+    result = {}
+    for field in instance.__dict__:
+        value = getattr(instance, field)
+        if is_dataclass(value):
+            result[field] = dataclass_to_dict(value)
+        elif isinstance(value, list):
+            result[field] = [dataclass_to_dict(i) if is_dataclass(i) else i for i in value]
+        elif isinstance(value, dict):
+            result[field] = {k: dataclass_to_dict(v) if is_dataclass(v) else v for k, v in value.items()}
+        elif hasattr(value, '__dict__'):
+            result[field] = dataclass_to_dict(value)
+        else:
+            result[field] = value
+    return result
 
 # Maintain backwards compatibility
 serialize_pickle_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=True)

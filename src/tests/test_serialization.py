@@ -15,6 +15,10 @@ from iop._serialization import (
     deserialize_pickle_message,
 )
 
+class NonDataclass:
+    def __init__(self, value):
+        self.value = value
+
 @dataclass
 class Object:
     value: str
@@ -33,6 +37,9 @@ class FullMessge:
     uid: uuid.UUID
     data: bytes
     items: list  # Changed from df to a simple list
+    list_obj: list[Object] = None
+    dict_obj: dict[str, Object] = None
+    optional_obj: Optional[Object] = None
 
 @dataclass
 class MyObject:
@@ -47,8 +54,6 @@ class Msg:
     my_obj: MyObject
 
 def test_message_serialization():
-
-
     msg = Msg(text="hello", number=42, my_obj=None)
 
     my_obj = MyObject(value="test", foo=None)
@@ -69,6 +74,46 @@ def test_message_serialization():
     assert isinstance(result, Msg)
     assert result.text == msg.text
     assert result.number == msg.number
+    assert result.my_obj == my_obj
+
+def test_unexpexted_obj_serialization():
+    # Create an invalid message
+    msg = Msg(text="hello", number=42, my_obj=None)
+    msg.my_obj = NonDataclass(value="test")
+
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.Message")
+    assert serial.classname == f"{Msg.__module__}.{Msg.__name__}"
+
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, Msg)
+    assert result.text == msg.text
+    assert result.number == msg.number
+    assert result.my_obj.value == msg.my_obj.value
+
+
+def test_unexpected_fields():
+    # Create a message with unexpected fields
+    msg = Msg(text="hello", number=42, my_obj=None)
+    msg.unexpected_field = "unexpected"
+
+    my_obj = MyObject(value="test", foo=None)
+    my_obj.unexpected_field = "unexpected"
+    msg.my_obj = my_obj
+
+    # Test serialization
+    serial = serialize_message(msg)
+    assert type(serial).__module__.startswith('iris') and serial._IsA("IOP.Message")
+    assert serial.classname == f"{Msg.__module__}.{Msg.__name__}"
+
+    # Test deserialization
+    result = deserialize_message(serial)
+    assert isinstance(result, Msg)
+    assert result.text == msg.text
+    assert result.number == msg.number
+    assert result.unexpected_field == msg.unexpected_field
     assert result.my_obj == my_obj
 
 
@@ -127,7 +172,10 @@ def test_pickle_serialization():
         dec=decimal.Decimal("3.14"),
         uid=uuid.uuid4(),
         data=b'hello world',
-        items=[{'col1': 1, 'col2': 'a'}, {'col1': 2, 'col2': 'b'}]
+        items=[{'col1': 1, 'col2': 'a'}, {'col1': 2, 'col2': 'b'}],
+        list_obj=[Object(value="item1"), Object(value="item2")],
+        dict_obj={'key1': Object(value="item1"), 'key2': Object(value="item2")},
+        optional_obj=Object(value="optional")
     )
     
     # Test serialization
@@ -150,6 +198,9 @@ def test_pickle_serialization():
     assert result.uid == msg.uid
     assert result.data == msg.data
     assert result.items == msg.items
+    assert result.list_obj == msg.list_obj
+    assert result.dict_obj == msg.dict_obj
+    assert result.optional_obj == msg.optional_obj
 
 def test_invalid_message_deserialization():
     # Create an invalid message without classname

@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove dependency on community driver
   - Use `iris` module instead
 
+### Fixed
+- Fix dataclass message serialization
+  - Go back to best effort serialization type check is not forced
+
 ## [3.4.0] - 2025-03-24
 
 ### Added
