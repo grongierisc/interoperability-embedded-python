@@ -31,7 +31,7 @@ Here you can choose between:
 - [Local installation of IRIS](https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=PAGE_deployment_install)
 - [Python interpreter compatible with the version of IRIS](https://docs.intersystems.com/iris20243/csp/docbook/Doc.View.cls?KEY=GEPYTHON_prereqs#GEPYTHON_prereqs_version)
 - [Iris embedded python wrapper](https://github.com/grongierisc/iris-embedded-python-wrapper)
-  - Make sure to follow the [instructions to install the wrapper in your IRIS instance.](https://github.com/grongierisc/iris-embedded-python-wrapper?tab=readme-ov-file#pre-requisites)
+    - Make sure to follow the [instructions to install the wrapper in your IRIS instance.](https://github.com/grongierisc/iris-embedded-python-wrapper?tab=readme-ov-file#pre-requisites)
 
 
 2. Then, symbolically this git to the IRIS pyhton directory:
