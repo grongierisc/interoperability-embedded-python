@@ -20,7 +20,11 @@ nav:
     - Examples: example.md
     - Useful Links: useful-links.md
   - About:
+    - Changelog: changelog.md
     - Credits: credits.md
     - Benchmarks: benchmarks.md
 
 theme: readthedocs
+
+markdown_extensions:
+- pymdownx.snippets
