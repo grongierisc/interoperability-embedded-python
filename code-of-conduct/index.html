@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/prod-settings/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/code-of-conduct/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Production Settings - IoP (Interoperability On Python)</title>
+    <title>Code of Conduct - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Production Settings";
-        var mkdocs_page_input_path = "prod-settings.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/prod-settings/";
+        var mkdocs_page_name = "Code of Conduct";
+        var mkdocs_page_input_path = "code-of-conduct.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/code-of-conduct/";
       </script>
     
     <!--[if lt IE 9]>
@@ -71,23 +71,17 @@
                 <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
                 </li>
               </ul>
-              <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="#">Production Settings</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#context">Context</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#use-the-settings-parameter">Use the %settings parameter</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#create-your-custom-settings">Create your custom settings</a>
-    </li>
-    </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Contributing</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Code of Conduct</a>
+    <ul class="current">
+    </ul>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
@@ -120,7 +114,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Production Settings</li>
+          <li class="breadcrumb-item">Contributing</li>
+      <li class="breadcrumb-item active">Code of Conduct</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -129,87 +124,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="settings-in-production">Settings in production</h1>
-<p>To pass production settings to your component, you have two options:</p>
-<ul>
-<li>Use the <strong>%settings</strong> parameter</li>
-<li>Create your custom settings</li>
-</ul>
-<h2 id="context">Context</h2>
-<p>In production when you select a component, you can configure it by passing settings.</p>
-<p><img alt="Settings in production" src="../img/settings-in-production.png" /></p>
-<p>Those settings can be passed to your python code.</p>
-<h2 id="use-the-settings-parameter">Use the %settings parameter</h2>
-<p>All the settings passed to <strong>%settings</strong> are available in string format into your class as a root attribute.</p>
-<p>Each line of the <strong>%settings</strong> parameter is a key-value pair separated by a the equal sign.</p>
-<p>Key will be the name of the attribute and value will be the value of the attribute.</p>
-<p>For example, if you have the following settings:</p>
-<pre><code class="language-text">foo=bar
-my_number=42
-</code></pre>
-<p>You can access those settings in your class like this:</p>
-<pre><code class="language-python">from iop import BusinessOperation
-
-class MyBusinessOperation(BusinessOperation):
-
-    def on_init(self):
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        self.log_info(&quot;[Python] foo: &quot; + self.foo)
-        self.log_info(&quot;[Python] my_number: &quot; + self.my_number)
-        return
-</code></pre>
-<p>As <strong>%settings</strong> is a free text field, you can pass any settings you want.</p>
-<p>Meaning you should verify if the attribute exists before using it.</p>
-<pre><code class="language-python">from iop import BusinessOperation
-
-class MyBusinessOperation(BusinessOperation):
-
-    def on_init(self):
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        if hasattr(self, 'foo'):
-            self.log_info(&quot;[Python] foo: &quot; + self.foo)
-        if hasattr(self, 'my_number'):
-            self.log_info(&quot;[Python] my_number: &quot; + self.my_number)
-        return
-</code></pre>
-<h2 id="create-your-custom-settings">Create your custom settings</h2>
-<p>If you want to have a more structured way to pass settings, you can create your custom settings.</p>
-<p>To create a custom settings, you create an attribute in your class.</p>
-<p>This attribute must :</p>
-<ul>
-<li>have an default value. </li>
-<li>don't start with an underscore.</li>
-<li>be untyped or have the following types: <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>.</li>
-</ul>
-<p>Otherwise, it will not be available in the managment portal.</p>
-<pre><code class="language-python">from iop import BusinessOperation
-
-class MyBusinessOperation(BusinessOperation):
-
-    # This setting will be available in the managment portal
-    foo: str = &quot;default&quot;
-    my_number: int = 42
-    untyped_setting = None
-
-    # This setting will not be available in the managment portal
-    _my_internal_setting: str = &quot;default&quot;
-    no_aviable_setting
-
-    def on_init(self):
-        self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
-        self.log_info(&quot;[Python] foo: &quot; + self.foo)
-        self.log_info(&quot;[Python] my_number: &quot; + str(self.my_number))
-        return
-</code></pre>
-<p>They will be available in the managment portal as the following:</p>
-<p><img alt="Custom settings" src="../img/custom_settings.png" /></p>
-<p>If you overwrite the default value in the managment portal, the new value will be passed to your class.</p>
+                <h1 id="code-of-conduct">Code of conduct</h1>
+<p>TODO</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../debug/" class="btn btn-neutral float-left" title="Debugging"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../contributing/" class="btn btn-neutral float-right" title="Contributing">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../contributing/" class="btn btn-neutral float-left" title="Contributing"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../example/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -232,10 +154,10 @@ class MyBusinessOperation(BusinessOperation):
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../debug/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../contributing/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../contributing/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../example/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
