@@ -81,9 +81,17 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#run-the-unit-tests">Run the unit tests</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#local-installation-of-iris">Local installation of IRIS</a>
+    <li class="toctree-l3"><a class="reference internal" href="#create-a-virtual-environment">Create a virtual environment.</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#docker-installation-of-iris">Docker installation of IRIS</a>
+    <li class="toctree-l3"><a class="reference internal" href="#install-the-dependencies">Install the dependencies.</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#have-a-running-iris-instance">Have a running IRIS instance.</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#local-installation-of-iris">Local installation of IRIS</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#docker-installation-of-iris">Docker installation of IRIS</a>
+    </li>
+        </ul>
     </li>
         </ul>
     </li>
@@ -135,52 +143,37 @@
                 <h1 id="contributing">Contributing</h1>
 <h2 id="run-the-unit-tests">Run the unit tests</h2>
 <p>To run the unit tests, you must follow the steps below:</p>
-<ol>
-<li>Create a virtual environment.</li>
-</ol>
+<h3 id="create-a-virtual-environment">Create a virtual environment.</h3>
 <pre><code class="language-bash">python -m venv .venv
 source .venv/bin/activate
 </code></pre>
-<ol>
-<li>Install the dependencies.</li>
-</ol>
+<h3 id="install-the-dependencies">Install the dependencies.</h3>
 <pre><code class="language-bash">pip install -r requirements-dev.txt
 </code></pre>
-<ol>
-<li>Have a running IRIS instance.</li>
-</ol>
+<h3 id="have-a-running-iris-instance">Have a running IRIS instance.</h3>
 <p>Here you can choose between:</p>
 <ul>
 <li>Local installation of IRIS</li>
 <li>Docker installation of IRIS</li>
 </ul>
-<h3 id="local-installation-of-iris">Local installation of IRIS</h3>
-<ol>
-<li>
-<p>Install IRIS locally.</p>
-</li>
-<li>
-<p><a href="https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=PAGE_deployment_install">Local installation of IRIS</a></p>
-</li>
-<li><a href="https://docs.intersystems.com/iris20243/csp/docbook/Doc.View.cls?KEY=GEPYTHON_prereqs#GEPYTHON_prereqs_version">Python interpreter compatible with the version of IRIS</a></li>
-<li>
-<p><a href="https://github.com/grongierisc/iris-embedded-python-wrapper">Iris embedded python wrapper</a></p>
+<h4 id="local-installation-of-iris">Local installation of IRIS</h4>
+<h5 id="install-iris-locally">Install IRIS locally.</h5>
 <ul>
+<li><a href="https://docs.intersystems.com/irislatest/csp/docbook/Doc.View.cls?KEY=PAGE_deployment_install">Local installation of IRIS</a></li>
+<li><a href="https://docs.intersystems.com/iris20243/csp/docbook/Doc.View.cls?KEY=GEPYTHON_prereqs#GEPYTHON_prereqs_version">Python interpreter compatible with the version of IRIS</a></li>
+<li><a href="https://github.com/grongierisc/iris-embedded-python-wrapper">Iris embedded python wrapper</a><ul>
 <li>Make sure to follow the <a href="https://github.com/grongierisc/iris-embedded-python-wrapper?tab=readme-ov-file#pre-requisites">instructions to install the wrapper in your IRIS instance.</a></li>
 </ul>
 </li>
-<li>
+</ul>
+<h5 id="set-up-the-iris-instance">Set up the IRIS instance.</h5>
 <p>Then, symbolically this git to the IRIS pyhton directory:</p>
-</li>
-</ol>
 <pre><code class="language-bash">ln -s &lt;your_git_dir&gt;/src/iop $IRISINSTALLDIR/python/iop
 </code></pre>
-<ol>
-<li>Run the unit tests.</li>
-</ol>
+<h5 id="run-the-unit-tests_1">Run the unit tests.</h5>
 <pre><code class="language-bash">pytest
 </code></pre>
-<h3 id="docker-installation-of-iris">Docker installation of IRIS</h3>
+<h4 id="docker-installation-of-iris">Docker installation of IRIS</h4>
 <p>No prerequisites are needed. Just run the following command:</p>
 <pre><code class="language-bash">docker build -t pytest-iris -f dockerfile-ci .
 docker run -i --rm pytest-iris
