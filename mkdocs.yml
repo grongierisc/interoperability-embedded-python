@@ -16,6 +16,9 @@ nav:
   - Logging: logging.md
   - Debugging: debug.md
   - Production Settings: prod-settings.md
+  - Contributing:
+    - Contributing: contributing.md
+    - Code of Conduct: code-of-conduct.md
   - Reference:
     - Examples: example.md
     - Useful Links: useful-links.md
