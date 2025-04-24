@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix dataclass message serialization
   - Go back to best effort serialization : type check is not forced
   - For checking use PydanticMessage
+- Logger now uses the correct level for `debug`, `info` and similar methods
 
 ## [3.4.0] - 2025-03-24
 
