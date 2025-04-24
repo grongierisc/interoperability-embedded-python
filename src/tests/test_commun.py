@@ -74,16 +74,17 @@ class TestLogging:
             last_line = file.readlines()[-1]
             assert random_string in last_line
 
-    def _check_log_entry(self, message, method_name):
+    def _check_log_entry(self, message, method_name, level=4):
         sql = """
             SELECT * FROM Ens_Util.Log 
             WHERE SourceClass = '_Common' 
             AND SourceMethod = ? 
             AND Text = ? 
+            AND Type = ?
             ORDER BY id DESC
         """
         stmt = iris.sql.prepare(sql)
-        rs = stmt.execute(method_name, message)
+        rs = stmt.execute(method_name, message, level)
         if rs is None:
             return []
         return rs
@@ -91,6 +92,12 @@ class TestLogging:
     def test_log_info(self, common, random_string):
         common.log_info(random_string)
         rs = self._check_log_entry(random_string, 'test_log_info')
+        for entry in rs:
+            assert random_string in entry[9]
+
+    def test_log_warning(self, common, random_string):
+        common.log_warning(random_string)
+        rs = self._check_log_entry(random_string, 'test_log_info', 3)
         for entry in rs:
             assert random_string in entry[9]
 

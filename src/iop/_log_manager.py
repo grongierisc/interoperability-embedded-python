@@ -41,11 +41,11 @@ class IRISLogHandler(logging.Handler):
 
         # Map Python logging levels to IRIS logging methods
         self.level_map = {
-            logging.DEBUG: _iris.get_iris().cls("Ens.Util.Log").LogTrace,
-            logging.INFO: _iris.get_iris().cls("Ens.Util.Log").LogInfo,
-            logging.WARNING: _iris.get_iris().cls("Ens.Util.Log").LogWarning,
-            logging.ERROR: _iris.get_iris().cls("Ens.Util.Log").LogError,
-            logging.CRITICAL: _iris.get_iris().cls("Ens.Util.Log").LogAlert,
+            logging.DEBUG: 5,
+            logging.INFO: 4,
+            logging.WARNING: 3,
+            logging.ERROR: 2,
+            logging.CRITICAL: 6,
         }
         # Map Python logging levels to IRIS logging Console level
         self.level_map_console = {
@@ -79,5 +79,5 @@ class IRISLogHandler(logging.Handler):
             _iris.get_iris().cls("%SYS.System").WriteToConsoleLog(self.format(record),
                 0,self.level_map_console.get(record.levelno, 0),class_name+"."+method_name)
         else:
-            log_func = self.level_map.get(record.levelno, _iris.get_iris().cls("Ens.Util.Log").LogInfo)
-            log_func(class_name, method_name, self.format(record))
+            log_lvl = self.level_map.get(record.levelno, 4)
+            _iris.get_iris().cls("Ens.Util.Log").Log(log_lvl,class_name, method_name, self.format(record))
