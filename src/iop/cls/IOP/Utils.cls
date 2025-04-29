@@ -61,7 +61,7 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
-	#dim tIsPEX As %Boolean = 0
+	#dim tIsIOP As %Boolean = 0
 	#dim tClass As %Dictionary.CompiledClass
 	
 	Quit:(""=pClassname) $$$ERROR($$$EnsErrGeneral,"Remote class name must be specified.")
@@ -79,16 +79,16 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 				Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Proxy class for remote class '%1' could not be opened.",pClassname))
 				Quit
 			}
-			Set tIsPEX = ("IOP.Utils" = tClass.GeneratedBy)
+			Set tIsIOP = ("IOP.Utils" = tClass.GeneratedBy)
 		}
-		If tIsPEX {
+		If tIsIOP {
 			Set tSC = ##class(%Dictionary.ClassDefinition).%DeleteId(pClassname)
 			If $$$ISERR(tSC) {
 				Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Unable to delete proxy class for remote class '%1' : '%2'.",pClassname,$System.Status.GetErrorText(tSC)))
 				Quit
 			}
 		} Else {
-			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot delete class '%1' because it is not a PEX proxy class.",pClassname))
+			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot delete class '%1' because it is not a IOP proxy class.",pClassname))
 			Quit
 		}
 		
@@ -179,23 +179,23 @@ ClassMethod GenerateProxyClass(
 				Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Proxy class '%1' already exists.",pClassname))
 				Quit
 			} Else {
-				#dim tIsPEX As %Boolean = 0
+				#dim tIsIOP As %Boolean = 0
 				If $classmethod(pClassname,"%Extends","IOP.Common") {
 					#dim tClass As %Dictionary.CompiledClass = ##class(%Dictionary.CompiledClass).%OpenId(pClassname)
 					If '$IsObject(tClass) {
 						Set tSC = $$$ERROR($$$EnsErrGeneral,"Class not found")
 						Quit
 					}
-					Set tIsPEX = ("IOP.Utils" = tClass.GeneratedBy)
+					Set tIsIOP = ("IOP.Utils" = tClass.GeneratedBy)
 				}
-				If tIsPEX {
+				If tIsIOP {
 					Set tSC = ##class(%Dictionary.ClassDefinition).%DeleteId(pClassname)
 					If $$$ISERR(tSC) {
 						Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Unable to delete existing proxy class '%1' : '%2'.",pClassname,$System.Status.GetErrorText(tSC)))
 						Quit
 					}
 				} Else {
-					Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot overwrite class '%1' because it is not a PEX proxy class.",pClassname))
+					Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot overwrite class '%1' because it is not a IOP proxy class.",pClassname))
 					Quit
 				}
 			}
@@ -208,7 +208,7 @@ ClassMethod GenerateProxyClass(
 
 		#dim tSuperClass As %String = pClassDetails."__getitem__"(0)
 		If (""=tSuperClass) {
-			Set tSC = $$$ERROR($$$EnsErrGeneral,"No PEX superclass found.")
+			Set tSC = $$$ERROR($$$EnsErrGeneral,"No IOP superclass found.")
 			Quit
 		}
 		If '$Case($P(tSuperClass,".",*),"DuplexProcess":1,"DuplexService":1,"DuplexOperation":1,"InboundAdapter":1,"OutboundAdapter":1,"BusinessService":1,"BusinessProcess":1,"BusinessOperation":1,:0) {
@@ -322,6 +322,56 @@ ClassMethod GenerateProxyClass(
 			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName_":"_tPropCat
 		}
 		Quit:$$$ISERR(tSC)
+
+		#; Add debug settings, three settings are always available debug a boolean, port an integer and a timeout an integer
+		Set tPropCat = "Python Debug"
+		#; Debug property
+		Set tPropDebug = ##class(%Dictionary.PropertyDefinition).%New()
+		Set tPropDebug.Name = "enable"
+		Set tPropDebug.Type = "%Boolean"
+		Set tPropDebug.InitialExpression = $$$quote(0)
+		Set tPropDebug.Description = "Enable or disable debug"
+		
+		Set tSC = tCOSClass.Properties.Insert(tPropDebug)
+		Quit:$$$ISERR(tSC)
+
+		#; Add the settings parameter
+		Set tSETTINGSParamValue = tSETTINGSParamValue_",enable:"_tPropCat
+
+		#; Port property
+		Set tPropPort = ##class(%Dictionary.PropertyDefinition).%New()
+		Set tPropPort.Name = "port"
+		Set tPropPort.Type = "%Integer"
+		Set tPropPort.InitialExpression = $$$quote(0)
+		Set tPropPort.Description = "Port to use for the debug connection, if 0 an random port will be used"
+		Set tSC = tCOSClass.Properties.Insert(tPropPort)
+		Quit:$$$ISERR(tSC)
+
+		#; Add the settings parameter
+		Set tSETTINGSParamValue = tSETTINGSParamValue_",port:"_tPropCat
+
+		#; Timeout property
+		Set tPropTimeout = ##class(%Dictionary.PropertyDefinition).%New()
+		Set tPropTimeout.Name = "timeout"
+		Set tPropTimeout.Type = "%Integer"
+		Set tPropTimeout.InitialExpression = $$$quote(30)
+		Set tSC = tCOSClass.Properties.Insert(tPropTimeout)
+		Quit:$$$ISERR(tSC)
+
+		#; Add the settings parameter
+		Set tSETTINGSParamValue = tSETTINGSParamValue_",timeout:"_tPropCat
+
+		#; PythonInterpreterPath property
+		Set tPropInterpre = ##class(%Dictionary.PropertyDefinition).%New()
+		Set tPropInterpre.Name = "PythonInterpreterPath"
+		Set tPropInterpre.Type = "%String"
+		Set tPropInterpre.Description = "Path to the Python interpreter, if not set the default one will be used"
+		Do tPropInterpre.Parameters.SetAt("255","MAXLEN")
+		Set tSC = tCOSClass.Properties.Insert(tPropInterpre)
+		Quit:$$$ISERR(tSC)
+
+		#; Add the settings parameter
+		Set tSETTINGSParamValue = tSETTINGSParamValue_",PythonInterpreterPath:"_tPropCat
 
 		#dim tSETTINGSParam As %Dictionary.ParameterDefinition = ##class(%Dictionary.ParameterDefinition).%New()
 		Set tSETTINGSParam.Name = "SETTINGS"

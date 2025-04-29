@@ -31,7 +31,8 @@ dependencies = [
     "xmltodict>=0.12.0",
     "iris-embedded-python-wrapper>=0.0.6",
     "setuptools>=40.8.0",
-    "jsonpath-ng>=1.7.0"
+    "jsonpath-ng>=1.7.0",
+    "debugpy>=1.8.0",
 ]
 
 license = { file = "LICENSE" }

@@ -68,6 +68,9 @@ def test_persistent_properties():
 
 def test_dispatch_methods(process):
     mock_host = MagicMock()
+    mock_host.port=0
+    mock_host.enable=False
+
     request = SimpleMessage(integer=1, string='test')
     response = SimpleMessage(integer=2, string='response')
 

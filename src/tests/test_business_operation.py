@@ -44,6 +44,8 @@ def test_dispatch_methods(operation):
     # Test dispatch initialization
     operation.DISPATCH = [("MessageType1", "handle_type1")]
     mock_host = MagicMock()
+    mock_host.port=0
+    mock_host.enable=False
     
     operation._dispatch_on_init(mock_host)
     
@@ -63,7 +65,10 @@ def test_dispatch_on_message(operation):
     request.json = '{"integer": 1, "string": "test"}'
     request.classname = 'registerFilesIop.message.SimpleMessage'
     operation = CustomOperation()
-    operation._dispatch_on_init(MagicMock())
+    mock_host = MagicMock()
+    mock_host.port=0
+    mock_host.enable=False
+    operation._dispatch_on_init(mock_host)
     response = operation._dispatch_on_message(request)
     excepted_response = dispatch_serializer(SimpleMessage(integer=2, string='handled'))
     
@@ -75,7 +80,10 @@ def test_dispatch_with_custom_handlers():
             return SimpleMessage(integer=request.integer + 1, string="handled")
     
     operation = CustomOperation()
-    operation._dispatch_on_init(MagicMock())
+    mock_host = MagicMock()
+    mock_host.port=0
+    mock_host.enable=False
+    operation._dispatch_on_init(mock_host)
     operation.iris_handle = MagicMock()
     
     request = SimpleMessage(integer=1, string='test')

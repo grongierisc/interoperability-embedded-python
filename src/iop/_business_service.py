@@ -16,6 +16,15 @@ class _BusinessService(_BusinessHost):
     Adapter = adapter = None
     _wait_for_next_call_interval = False
 
+    def _dispatch_on_init(self, host_object) -> None:
+        """For internal use only."""
+
+        self._debugpy(host_object=host_object)
+
+        self.on_init()
+
+        return
+
     def on_process_input(self, message_input):
         """ Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
         If the business service does not specify an adapter, then the default adapter calls this method with no message 

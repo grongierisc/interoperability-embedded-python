@@ -10,3 +10,4 @@ jsonpath-ng
 pydantic>=2.0.0
 mkdocs
 pymdown-extensions
+debugpy
