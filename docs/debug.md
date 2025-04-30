@@ -16,15 +16,84 @@ IoP is based on [Embedded Python in IRIS](https://docs.intersystems.com/iris2024
 
 Embedded Python is a feature of IRIS that allows you to run Python code inside IRIS.
 
-That means the python code is not running by a python interpreter, but by the IRIS process.
+That means the python code is not running by a python interpreter, but by an IRIS process.
 
-That comes with some limitations, like the lack of a debugger. It's planned to have a debugger in the future. eg: IRIS 2025.2+.
+## Remote Debugging
 
-Meanwhile, we **have** some ways to debug the code.
+To remote debbug your code, you need IoP version 3.4.1 or later.
 
-## Debugging
+You will then have access to new options in the management portal.
 
-Today (2025.2-), the best way to debug the code is to use an native python interpreter and run the code outside IRIS. This way you can use the python debugger.
+![Remote Debugging](./img/RemoteDebugOptions.png)
+
+### Debugging Options
+
+- **Enable Debugging**: This option will enable the remote debugging.
+- **Debugging Port**: This option will set the port for the remote debugging. The default port is 0. If you set it to 0, the system will choose a random port. You can also set it to a specific port.
+- **Debugging Interpreter**: In the background, the system will create a new python interpreter. This option will set the interpreter to use. **In most cases, you don't need to change this option.**
+
+Then when you start the process, you will see the following message in the logs:
+
+![Debugging Port](./img/RemoteDebugWaiting.png)
+
+This means that the system is waiting for a connection on the port you set.
+
+Then you can connect to the port with your IDE.
+
+If you wait too long, the system will close the port and you will need to restart the process.
+![Debugging Port](./img/RemoteDebugToLate.png)
+
+If VsCode is connected to the port, you will see the following message in the logs:
+![Debugging Port](./img/RemoteDebugSuccess.png)
+This means that the system is connected to the port and you can start debugging.
+
+### Debugging with VSCode
+
+To debug the code with VSCode, you need to have the following:
+- [VSCode](https://code.visualstudio.com/)
+- [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+
+Then you need to create a new launch configuration for remote debugging.
+
+You can follow the steps in the [VSCode documentation](https://code.visualstudio.com/docs/python/debugging#_initialize-configurations) to initialize the configurations.
+You can also use the following configuration:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Remote Debug",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "<IRIS_HOST>",
+                "port": <IRIS_DEBUG_PORT>
+            },
+            "pathMappings": [
+                {
+                "localRoot": "${workspaceFolder}",
+                "remoteRoot": "/irisdev/app" // for example path inside the container
+                }
+            ],
+        }
+    ]
+}
+```
+You need to change the `<IRIS_HOST>` and `<IRIS_DEBUG_PORT>` to the host and port of your IRIS instance.
+You also need to change the `pathMappings` to the path of your python file in IRIS and the path of your python file in your local machine.
+The path in IRIS is the path of the file in the IRIS instance. The path in your local machine is the path of the file in your local machine.
+
+### Example
+
+<video controls width="640" height="360">
+  <source src="/img/IoPRemoteDebug.mp4" type="video/mp4">
+</video>
+
+
+## Local Debugging
+
+The idea of local debugging is to use an native python interpreter and run the code outside IRIS. This way you can use the python debugger.
 
 The main issue with this approach is that you must have a local instance of IRIS to be able to run the code.
 
