@@ -72,11 +72,21 @@
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#context">Context</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#debugging">Debugging</a>
+    <li class="toctree-l2"><a class="reference internal" href="#remote-debugging">Remote Debugging</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#debugging-options">Debugging Options</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#debugging-with-vscode">Debugging with VSCode</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example">Example</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#local-debugging">Local Debugging</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#local-installation">Local Installation</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#debugging_1">Debugging</a>
+    <li class="toctree-l4"><a class="reference internal" href="#debugging">Debugging</a>
     </li>
         </ul>
     </li>
@@ -154,11 +164,64 @@
 <p>IoP is a Python library that helps to build interoperability solutions with IRIS.</p>
 <p>IoP is based on <a href="https://docs.intersystems.com/iris20243/csp/docbook/DocBook.UI.Page.cls?KEY=AFL_epython">Embedded Python in IRIS</a>.</p>
 <p>Embedded Python is a feature of IRIS that allows you to run Python code inside IRIS.</p>
-<p>That means the python code is not running by a python interpreter, but by the IRIS process.</p>
-<p>That comes with some limitations, like the lack of a debugger. It's planned to have a debugger in the future. eg: IRIS 2025.2+.</p>
-<p>Meanwhile, we <strong>have</strong> some ways to debug the code.</p>
-<h2 id="debugging">Debugging</h2>
-<p>Today (2025.2-), the best way to debug the code is to use an native python interpreter and run the code outside IRIS. This way you can use the python debugger.</p>
+<p>That means the python code is not running by a python interpreter, but by an IRIS process.</p>
+<h2 id="remote-debugging">Remote Debugging</h2>
+<p>To remote debbug your code, you need IoP version 3.4.1 or later.</p>
+<p>You will then have access to new options in the management portal.</p>
+<p><img alt="Remote Debugging" src="../img/RemoteDebugOptions.png" /></p>
+<h3 id="debugging-options">Debugging Options</h3>
+<ul>
+<li><strong>Enable Debugging</strong>: This option will enable the remote debugging.</li>
+<li><strong>Debugging Port</strong>: This option will set the port for the remote debugging. The default port is 0. If you set it to 0, the system will choose a random port. You can also set it to a specific port.</li>
+<li><strong>Debugging Interpreter</strong>: In the background, the system will create a new python interpreter. This option will set the interpreter to use. <strong>In most cases, you don't need to change this option.</strong></li>
+</ul>
+<p>Then when you start the process, you will see the following message in the logs:</p>
+<p><img alt="Debugging Port" src="../img/RemoteDebugWaiting.png" /></p>
+<p>This means that the system is waiting for a connection on the port you set.</p>
+<p>Then you can connect to the port with your IDE.</p>
+<p>If you wait too long, the system will close the port and you will need to restart the process.
+<img alt="Debugging Port" src="../img/RemoteDebugToLate.png" /></p>
+<p>If VsCode is connected to the port, you will see the following message in the logs:
+<img alt="Debugging Port" src="../img/RemoteDebugSuccess.png" />
+This means that the system is connected to the port and you can start debugging.</p>
+<h3 id="debugging-with-vscode">Debugging with VSCode</h3>
+<p>To debug the code with VSCode, you need to have the following:
+- <a href="https://code.visualstudio.com/">VSCode</a>
+- <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python extension</a></p>
+<p>Then you need to create a new launch configuration for remote debugging.</p>
+<p>You can follow the steps in the <a href="https://code.visualstudio.com/docs/python/debugging#_initialize-configurations">VSCode documentation</a> to initialize the configurations.
+You can also use the following configuration:</p>
+<pre><code class="language-json">{
+    &quot;version&quot;: &quot;0.2.0&quot;,
+    &quot;configurations&quot;: [
+        {
+            &quot;name&quot;: &quot;Python: Remote Debug&quot;,
+            &quot;type&quot;: &quot;python&quot;,
+            &quot;request&quot;: &quot;attach&quot;,
+            &quot;connect&quot;: {
+                &quot;host&quot;: &quot;&lt;IRIS_HOST&gt;&quot;,
+                &quot;port&quot;: &lt;IRIS_DEBUG_PORT&gt;
+            },
+            &quot;pathMappings&quot;: [
+                {
+                &quot;localRoot&quot;: &quot;${workspaceFolder}&quot;,
+                &quot;remoteRoot&quot;: &quot;/irisdev/app&quot; // for example path inside the container
+                }
+            ],
+        }
+    ]
+}
+</code></pre>
+<p>You need to change the <code>&lt;IRIS_HOST&gt;</code> and <code>&lt;IRIS_DEBUG_PORT&gt;</code> to the host and port of your IRIS instance.
+You also need to change the <code>pathMappings</code> to the path of your python file in IRIS and the path of your python file in your local machine.
+The path in IRIS is the path of the file in the IRIS instance. The path in your local machine is the path of the file in your local machine.</p>
+<h3 id="example">Example</h3>
+<video controls width="640" height="360">
+  <source src="/img/IoPRemoteDebug.mp4" type="video/mp4">
+</video>
+
+<h2 id="local-debugging">Local Debugging</h2>
+<p>The idea of local debugging is to use an native python interpreter and run the code outside IRIS. This way you can use the python debugger.</p>
 <p>The main issue with this approach is that you must have a local instance of IRIS to be able to run the code.</p>
 <p>When I mean a local instance, it can be a local installation of IRIS, or a docker container running IRIS.</p>
 <p>I will explain first with a local installation of IRIS. Then I will show how to do the same with a docker container.</p>
@@ -170,7 +233,7 @@
 <li><a href="https://github.com/grongierisc/iris-embedded-python-wrapper">Iris embedded python wrapper</a></li>
 </ul>
 <p>After you have all the requirements, you can start the IRIS instance and run the python code.</p>
-<h4 id="debugging_1">Debugging</h4>
+<h4 id="debugging">Debugging</h4>
 <p>To debug the code, you can use the python debugger.</p>
 <p>Example with VsCode:</p>
 <ol>
