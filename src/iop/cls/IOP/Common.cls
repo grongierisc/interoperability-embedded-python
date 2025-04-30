@@ -40,7 +40,9 @@ Method GetModule() As %String
 Method %OnNew(pConfigName As %String) As %Status
 {
     $$$ThrowOnError(..Connect())
-	Quit $method($this,"initConfig",.pConfigName) ; call subclass
+	$$$ThrowOnError($method($this,"initConfig",.pConfigName)) ; call subclass
+    do ..%class."_debugpy"($this)
+    Quit $$$OK
 }
 
 Method OnInit() As %Status

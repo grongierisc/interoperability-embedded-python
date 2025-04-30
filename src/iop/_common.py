@@ -8,6 +8,8 @@ from . import _iris
 
 from iop._log_manager import LogManager, logging
 
+from iop._debugpy import debugpython
+
 class _Common(metaclass=abc.ABCMeta):
     """Base class that defines common methods for all component types.
     
@@ -59,77 +61,7 @@ class _Common(metaclass=abc.ABCMeta):
 
     def _dispatch_on_init(self, host_object: Any) -> None:
         """Initialize component when started."""
-        self._debugpy(host_object)
         self.on_init()
-
-    def _debugpy(self, host_object: Any) -> None:
-        """Enable debugpy for debugging purposes."""
-        # iris.cls('%SYS.Python').Debugging(1)
-        from iop._debugpy import enable_debugpy, wait_for_debugpy_connected, find_free_port, is_debugpy_installed
-        import sys, os
-
-        # hack to set __file__ for os module in debugpy
-        # This is a workaround for the issue where debugpy cannot find the __file__ attribute of the os module.
-        if not hasattr(os, '__file__'):
-            setattr(os, '__file__', __file__)
-
-        if host_object is not None:
-            port = host_object.port
-            timeout = host_object.timeout
-            enabled = host_object.enable
-            python_interpreter_path = host_object.PythonInterpreterPath
-        else:
-            self.log_alert("No host object found, cannot enable debugpy.")
-            return
-        
-        if python_interpreter_path != "":
-            # the user has set a specific python interpreter path, so we need to set the path to the python executable
-            # to the one that is running this script
-            if os.path.exists(python_interpreter_path):
-                sys.executable = python_interpreter_path
-            else:
-                self.log_alert(f"Python path {python_interpreter_path} does not exist, cannot set python path for debugpy.")
-                return
-        elif sys.executable.find('irisdb') > 0:
-            # the executable is the IRIS executable, so we need to set the path to the python executable
-            # to the one that is running this script
-            installdir = os.environ.get('IRISINSTALLDIR') or os.environ.get('ISC_PACKAGE_INSTALLDIR')
-            if installdir is not None:
-                if sys.platform == 'win32':
-                    python_path = os.path.join(installdir, 'bin', 'irispython.exe')
-                else:
-                    python_path = os.path.join(installdir, 'bin', 'irispython')
-                if os.path.exists(python_path):
-                    sys.executable = python_path
-                else:
-                    self.log_alert(f"Python path {python_path} does not exist, cannot set python path for debugpy.")
-                    return
-            else:
-                self.log_alert("IRISINSTALLDIR or ISC_PACKAGE_INSTALLDIR not set, cannot set python path for debugpy.")
-                return
-
-        if enabled:
-            self.log_info(f"Debugpy is running in {sys.executable}.")
-            if is_debugpy_installed():
-                if port is None or port <= 0:
-                    port = find_free_port()
-                self.log_info(f"Debugpy enabled.")
-                try:
-                    enable_debugpy(port=port, address=None)
-                except Exception as e:
-                    self.log_alert(f"Error enabling debugpy: {e}")
-                    return
-
-                self.trace(f"Waiting for {timeout} sec to debugpy connection on port {port}...")
-                if wait_for_debugpy_connected(timeout=timeout, port=port):
-                    self.log_info("Debugpy connected.")
-                else:
-                    self.log_alert(f"Debugpy connection timed out after {timeout} seconds.")
-            else:
-                self.log_alert("Debugpy is not installed.")
-        else:
-            self.log_info("Debugpy is not enabled.")
-
 
     def _dispatch_on_tear_down(self, host_object: Any) -> None:
         self.on_tear_down()
@@ -137,6 +69,11 @@ class _Common(metaclass=abc.ABCMeta):
     def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
         """Internal method to set IRIS handles."""
         pass
+
+    def _debugpy(self, host) -> None:
+        """Set up debugpy for debugging."""
+        if debugpython is not None:
+            debugpython(self=self, host_object=host)
 
     # Component information methods
     @classmethod
