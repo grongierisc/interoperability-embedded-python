@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "iris_pex_embedded_python"
-version = "3.4.2"
+version = "3.4.3"
 description = "Iris Interoperability based on Embedded Python"
 readme = "README.md"
 authors = [
