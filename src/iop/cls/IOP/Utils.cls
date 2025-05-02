@@ -309,14 +309,6 @@ ClassMethod GenerateProxyClass(
 			
 			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
 			Quit:$$$ISERR(tSC)
-			
-			#dim tMethod As %Dictionary.MethodDefinition = ##class(%Dictionary.MethodDefinition).%New()
-			Set tMethod.Name = tPropName_"Set"
-			Set tMethod.ReturnType = "%Status"
-			Set tMethod.FormalSpec = "value:"_tDataType
-			Do tMethod.Implementation.WriteLine("	Set ..%class."""_tPropName_""" = value")
-			Do tMethod.Implementation.WriteLine("	Quit $$$OK")
-			Set tSC = tCOSClass.Methods.Insert(tMethod)
 
 			Set tPropCat = "Python Attributes"
 			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName_":"_tPropCat

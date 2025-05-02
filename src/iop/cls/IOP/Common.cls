@@ -37,19 +37,12 @@ Method GetModule() As %String
     Return ..%module
 }
 
-Method %OnNew(pConfigName As %String) As %Status
-{
-    $$$ThrowOnError(..Connect())
-	$$$ThrowOnError($method($this,"initConfig",.pConfigName)) ; call subclass
-    do ..%class."_debugpy"($this)
-    Quit $$$OK
-}
-
 Method OnInit() As %Status
 {
     set tSC = $$$OK
     try {
-        
+        $$$ThrowOnError(..Connect())
+        do ..%class."_debugpy"($this)
         do ..%class."_dispatch_on_init"($this)
     } catch ex {
         set tSC = ex.AsStatus()
@@ -149,6 +142,40 @@ Method SetPropertyValues()
             $$$LOGWARNING(ex.DisplayString())
         }
     }
+    // Now process the Python Attributes Settings
+    // First list all the properties of the current class
+    set class = $CLASSNAME()
+    set tSQL = "SELECT * FROM %Dictionary.PropertyDefinition WHERE parent = ?"
+    set tSQL = tSQL _ " AND name <> 'timeout'"
+    set tSQL = tSQL _ " and name <> 'enable'"
+    set tSQL = tSQL _ " and name <> '%classpaths'"
+    set tSQL = tSQL _ " and name <> '%classname'"
+    set tSQL = tSQL _ " and name <> '%module'"
+    set tSQL = tSQL _ " and name <> 'port'"
+    set tSQL = tSQL _ " and name <> 'PythonInterpreterPath'"
+
+    set tStmt = ##class(%SQL.Statement).%New()
+
+    set tSC = tStmt.%Prepare(tSQL)
+    if $$$ISERR(tSC) {
+        $$$LOGERROR("Error preparing SQL statement: "_tSC)
+        quit
+    }
+    set tRs = tStmt.%Execute(class)
+
+    while tRs.%Next() {
+        set property = tRs.%Get("Name")
+        set value = $property($this,property)
+
+        if value'="" {
+            try {
+                set $property(..%class,property) = value
+            } catch ex {
+                $$$LOGWARNING(ex.DisplayString())
+            }
+        }
+    }
+
     quit
 }
 

@@ -16,7 +16,7 @@ class TestProductionSettings:
 
     def test_my_none_var(self):
         rsp = _Director.test_component('UnitTest.MySettingOperation',None,'iris.Ens.StringRequest',"my_none_var")
-        assert rsp.value == ''
+        assert rsp.value == None
 
     def test_my_str_var(self):
         rsp = _Director.test_component('UnitTest.MySettingOperation',None,'iris.Ens.StringRequest',"my_str_var")
