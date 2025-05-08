@@ -453,7 +453,7 @@ ClassMethod HandleProperty(
 {
     Set type = value.type
     
-    If type = "string" || type = "number" || type = "boolean" {
+    If (type = "string") || (type = "number") || (type = "boolean") {
         Do ..HandlePrimitiveType(type, idx, .pContents)
     }
     ElseIf type = "array" {
@@ -464,6 +464,13 @@ ClassMethod HandleProperty(
     }
     ElseIf $IsObject(value.allOf) {
         Do ..HandleAllOfType(value, key, idx, .pContents, schema)
+    }
+    ElseIf value.%Get("$ref")'="" {
+        Set tDef = schema."$defs".%Get($Piece(value."$ref", "/", *))
+        Do ..HandleObjectType(tDef, idx, .pContents)
+    }
+    Else {
+        Set pContents(idx,"type") = type
     }
     
     If type = "array" Set key = key_"()"
@@ -491,9 +498,8 @@ ClassMethod HandleArrayType(
 	schema As %DynamicObject)
 {
     Set pContents(idx,"type") = "()"
-    If $IsObject(value.items) && $IsObject(value.items.allOf) {
-        Do ..HandleAllOfType(value.items, key, idx, .pContents, schema)
-    }
+    // Handle array as a Handle Property
+    Do ..HandleProperty(value.items, key, idx, .pContents, schema)
 }
 
 ClassMethod HandleObjectType(
@@ -504,7 +510,7 @@ ClassMethod HandleObjectType(
     Set pContents(idx,"type") = "object"
     If $IsObject(value.properties) {
         Do ..SchemaToContents(value, .subContents)
-        Merge @pContents(idx) = subContents
+        Merge pContents(idx) = subContents
     }
 }
 
