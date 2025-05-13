@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix a regression in DTL to display sub-objects
 
+### Changed
+- Cahnge debugger settings to be prefixed with `%` to avoid conflict with other settings
+
+### Added
+- Improve upgrade compatibility with 3.4.0 (pre-debugger)
+
 ## [3.4.2] - 2025-05-2
 ### Fixed
 - Fix regression in version 3.4.0 and 3.4.1 where production settings were not properly loaded
