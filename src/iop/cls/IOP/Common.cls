@@ -19,6 +19,14 @@ Property %settings As %String(MAXLEN = "");
 /// Instance of class
 Property %class As %SYS.Python;
 
+Property %enable As %Boolean;
+
+Property %timeout As %Numeric [ InitialExpression = 30 ];
+
+Property %port As %Numeric [ InitialExpression = 0 ];
+
+Property %PythonInterpreterPath As %String(MAXLEN = 255);
+
 /// Get Class
 Method GetClass() As %SYS.Python
 {

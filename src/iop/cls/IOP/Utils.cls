@@ -226,7 +226,7 @@ ClassMethod GenerateProxyClass(
 		}
 		
 		#; Do not display any of the connection settings
-		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type"
+		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type,%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"
@@ -270,10 +270,6 @@ ClassMethod GenerateProxyClass(
 				Quit:$$$ISERR(tSC)
 			}
 		}
-
-		set type = ""
-		set:($Case(tSuperClass,"IOP.InboundAdapter":1,"IOP.OutboundAdapter":1,:0)) type = "Adapter"
-		set tSETTINGSParamValue = $REPLACE(tSETTINGSParamValue,"$type",type)
 		
 		#dim tCustomProp As %Dictionary.PropertyDefinition
 		#dim tPropInfo,tPropName,tDataType,tDefault,tDesc,tPropCat,tContext As %String
@@ -310,60 +306,14 @@ ClassMethod GenerateProxyClass(
 			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
 			Quit:$$$ISERR(tSC)
 
-			Set tPropCat = "Python Attributes"
+			Set tPropCat = "Python Attributes $type"
 			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName_":"_tPropCat
 		}
 		Quit:$$$ISERR(tSC)
 
-		#; Add debug settings, three settings are always available debug a boolean, port an integer and a timeout an integer
-		Set tPropCat = "Python Debug"
-		#; Debug property
-		Set tPropDebug = ##class(%Dictionary.PropertyDefinition).%New()
-		Set tPropDebug.Name = "enable"
-		Set tPropDebug.Type = "%Boolean"
-		Set tPropDebug.InitialExpression = $$$quote(0)
-		Set tPropDebug.Description = "Enable or disable debug"
-		
-		Set tSC = tCOSClass.Properties.Insert(tPropDebug)
-		Quit:$$$ISERR(tSC)
-
-		#; Add the settings parameter
-		Set tSETTINGSParamValue = tSETTINGSParamValue_",enable:"_tPropCat
-
-		#; Port property
-		Set tPropPort = ##class(%Dictionary.PropertyDefinition).%New()
-		Set tPropPort.Name = "port"
-		Set tPropPort.Type = "%Integer"
-		Set tPropPort.InitialExpression = $$$quote(0)
-		Set tPropPort.Description = "Port to use for the debug connection, if 0 an random port will be used"
-		Set tSC = tCOSClass.Properties.Insert(tPropPort)
-		Quit:$$$ISERR(tSC)
-
-		#; Add the settings parameter
-		Set tSETTINGSParamValue = tSETTINGSParamValue_",port:"_tPropCat
-
-		#; Timeout property
-		Set tPropTimeout = ##class(%Dictionary.PropertyDefinition).%New()
-		Set tPropTimeout.Name = "timeout"
-		Set tPropTimeout.Type = "%Integer"
-		Set tPropTimeout.InitialExpression = $$$quote(30)
-		Set tSC = tCOSClass.Properties.Insert(tPropTimeout)
-		Quit:$$$ISERR(tSC)
-
-		#; Add the settings parameter
-		Set tSETTINGSParamValue = tSETTINGSParamValue_",timeout:"_tPropCat
-
-		#; PythonInterpreterPath property
-		Set tPropInterpre = ##class(%Dictionary.PropertyDefinition).%New()
-		Set tPropInterpre.Name = "PythonInterpreterPath"
-		Set tPropInterpre.Type = "%String"
-		Set tPropInterpre.Description = "Path to the Python interpreter, if not set the default one will be used"
-		Do tPropInterpre.Parameters.SetAt("255","MAXLEN")
-		Set tSC = tCOSClass.Properties.Insert(tPropInterpre)
-		Quit:$$$ISERR(tSC)
-
-		#; Add the settings parameter
-		Set tSETTINGSParamValue = tSETTINGSParamValue_",PythonInterpreterPath:"_tPropCat
+		set type = ""
+		set:($Case(tSuperClass,"IOP.InboundAdapter":1,"IOP.OutboundAdapter":1,:0)) type = "Adapter"
+		set tSETTINGSParamValue = $REPLACE(tSETTINGSParamValue,"$type",type)
 
 		#dim tSETTINGSParam As %Dictionary.ParameterDefinition = ##class(%Dictionary.ParameterDefinition).%New()
 		Set tSETTINGSParam.Name = "SETTINGS"

@@ -112,7 +112,7 @@ def debugpython(self, host_object: Any) -> None:
         self.log_alert("No host object found, cannot enable debugpy.")
         return
 
-    if host_object.enable != 1:
+    if host_object._enable != 1:
         self.log_info("Debugpy is not enabled.")
         return
 
@@ -121,7 +121,7 @@ def debugpython(self, host_object: Any) -> None:
         return
 
     # Configure Python interpreter
-    if host_object.PythonInterpreterPath != '':
+    if host_object._PythonInterpreterPath != '':
         success = configure_debugpy(self, host_object.PythonInterpreterPath)
     else:
         success = configure_debugpy(self)
@@ -130,16 +130,16 @@ def debugpython(self, host_object: Any) -> None:
         return
 
     # Setup debugging server
-    port = host_object.port if host_object.port and host_object.port > 0 else find_free_port()
+    port = host_object._port if host_object._port and host_object._port > 0 else find_free_port()
     
     try:
         enable_debugpy(port=port)
         self.log_info(f"Debugpy enabled on port {port}")
         
-        self.trace(f"Waiting {host_object.timeout} seconds for debugpy connection...")
-        if wait_for_debugpy_connected(timeout=host_object.timeout, port=port):
+        self.trace(f"Waiting {host_object._timeout} seconds for debugpy connection...")
+        if wait_for_debugpy_connected(timeout=host_object._timeout, port=port):
             self.log_info("Debugpy connected successfully")
         else:
-            self.log_alert(f"Debugpy connection timed out after {host_object.timeout} seconds")
+            self.log_alert(f"Debugpy connection timed out after {host_object._timeout} seconds")
     except Exception as e:
         self.log_alert(f"Error enabling debugpy: {e}")
