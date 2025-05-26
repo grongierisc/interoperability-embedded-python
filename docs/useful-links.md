@@ -13,7 +13,7 @@ Explore the following resources to learn more about the project and see it in ac
 ### Project Links
 - [PyPI](https://pypi.org/project/iris-pex-embedded-python/)  
   The project on PyPI.
-- [GitHub](https://github.com/grongierisc/iris-python-interoperability-template)  
+- [GitHub](https://github.com/grongierisc/interoperability-embedded-python)  
   The project on GitHub.
 
 ### Demos
