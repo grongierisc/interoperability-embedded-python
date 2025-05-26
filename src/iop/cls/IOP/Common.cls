@@ -27,6 +27,8 @@ Property %port As %Numeric [ InitialExpression = 0 ];
 
 Property %PythonInterpreterPath As %String(MAXLEN = 255);
 
+Property %traceback As %Boolean;
+
 /// Get Class
 Method GetClass() As %SYS.Python
 {
@@ -45,15 +47,45 @@ Method GetModule() As %String
     Return ..%module
 }
 
+Method DisplayTraceback(ex) As %Status
+{
+    set tSC = ex.AsStatus()
+    // Check if traceback is enabled
+    if ..%traceback {
+        // Import Modules
+        set sys = ##class(%SYS.Python).Import("sys")
+        set tracebackModule = ##class(%SYS.Python).Import("traceback")
+        set builtins = ##class(%SYS.Python).Import("builtins")
+        // Get the last traceback
+        set traceback = sys."last_traceback"
+        set exType = sys."last_type"."__name__"
+        set exValue = sys."last_value"."__str__"()
+        // Check if traceback is an object
+        if $isObject(traceback) {
+            // Format the traceback
+            set tb = tracebackModule."format_exception"(sys."last_type", sys."last_value", traceback)
+            set tbString = ""
+            for i=0:1:(tb."__len__"()-1) {
+                set tbString = tbString _ $c(10)_$c(13) _ tb."__getitem__"(i)
+            }
+            $$$LOGERROR(tbString)
+            set tSC = $$$ERROR($$$EnsErrGeneral,"Exception in Python class: "_..%classname_" - "_exType_" - "_exValue)
+        }
+    }
+    return tSC
+}
+
 Method OnInit() As %Status
 {
     set tSC = $$$OK
     try {
+        do $system.Python.Debugging(..%traceback)
         $$$ThrowOnError(..Connect())
         do ..%class."_debugpy"($this)
         do ..%class."_dispatch_on_init"($this)
     } catch ex {
-        set tSC = ex.AsStatus()
+
+        set tSC = ..DisplayTraceback(ex)
     }
     quit tSC
 }
@@ -154,13 +186,14 @@ Method SetPropertyValues()
     // First list all the properties of the current class
     set class = $CLASSNAME()
     set tSQL = "SELECT * FROM %Dictionary.PropertyDefinition WHERE parent = ?"
-    set tSQL = tSQL _ " AND name <> 'timeout'"
-    set tSQL = tSQL _ " and name <> 'enable'"
+    set tSQL = tSQL _ " AND name <> '%timeout'"
+    set tSQL = tSQL _ " and name <> '%enable'"
     set tSQL = tSQL _ " and name <> '%classpaths'"
     set tSQL = tSQL _ " and name <> '%classname'"
     set tSQL = tSQL _ " and name <> '%module'"
-    set tSQL = tSQL _ " and name <> 'port'"
-    set tSQL = tSQL _ " and name <> 'PythonInterpreterPath'"
+    set tSQL = tSQL _ " and name <> '%port'"
+    set tSQL = tSQL _ " and name <> '%PythonInterpreterPath'"
+    set tSQL = tSQL _ " and name <> '%traceback'"
 
     set tStmt = ##class(%SQL.Statement).%New()
 

@@ -9,8 +9,13 @@ Parameter SETTINGS = "%classname:Python BusinessService,%module:Python BusinessS
 
 Method dispatchProcessInput(pInput As %RegisteredObject) As %RegisteredObject
 {
-	
-	quit ..%class."on_process_input"(pInput)
+	try {
+		set response = ..%class."_dispatch_on_process_input"(pInput)
+	} catch ex {
+		set tSC = ..DisplayTraceback(ex)
+		throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
+	}
+	quit response
 }
 
 Method OnProcessInput(
@@ -27,7 +32,7 @@ Method OnProcessInput(
 			set ..%WaitForNextCallInterval = ..%class."_wait_for_next_call_interval"
 		} catch {}
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }

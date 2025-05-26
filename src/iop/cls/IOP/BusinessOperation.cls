@@ -15,7 +15,7 @@ Method OnMessage(
 	try {
 		set response = ..%class."_dispatch_on_message"(request)
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }
@@ -27,7 +27,7 @@ Method OnKeepalive(pStatus As %Status = {$$$OK}) As %Status
 		$$$ThrowOnError(##super(pStatus))
 		do ..%class."on_keepalive"()
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }

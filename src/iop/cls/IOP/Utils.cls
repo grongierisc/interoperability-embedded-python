@@ -226,7 +226,7 @@ ClassMethod GenerateProxyClass(
 		}
 		
 		#; Do not display any of the connection settings
-		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type,%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type"
+		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type,%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type,%traceback:Python Debug $type"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"

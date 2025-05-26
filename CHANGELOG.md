@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix a regression in DTL to display sub-objects
 
 ### Changed
-- Cahnge debugger settings to be prefixed with `%` to avoid conflict with other settings
+- Change debugger settings to be prefixed with `%` to avoid conflict with other settings
 
 ### Added
 - Improve upgrade compatibility with 3.4.0 (pre-debugger)
+- Add `%traceback` setting to enable or disable traceback in message log
 
 ## [3.4.2] - 2025-05-2
 ### Fixed

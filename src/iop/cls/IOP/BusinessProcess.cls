@@ -32,8 +32,13 @@ Method dispatchSendRequestAsync(
 	completionKey,
 	description)
 {
-    set tSC = ..SendRequestAsync(target,request,responseRequired,completionKey,description)
-    if $$$ISERR(tSC) throw ##class(%Exception.StatusException).CreateFromStatus(tSC)
+	Try {
+		$$$ThrowOnError(..SendRequestAsync(target,request,responseRequired,completionKey,description))
+	}
+	Catch ex {
+		set tSC = ..DisplayTraceback(ex)
+	}
+
     quit
 }
 
@@ -45,7 +50,7 @@ Method OnRequest(
 	try {
 		set response = ..%class."_dispatch_on_request"($this,request)
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }
@@ -62,7 +67,7 @@ Method OnResponse(
 	try {
 		set response = ..%class."_dispatch_on_response"($this,request,response,callRequest,callResponse,pCompletionKey)
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }
@@ -75,7 +80,7 @@ Method OnComplete(
 	try {
 		set response = ..%class."_dispatch_on_complete"($this,request,response)
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }
@@ -110,6 +115,21 @@ Storage Default
 </Value>
 <Value name="5">
 <Value>%class</Value>
+</Value>
+<Value name="6">
+<Value>%enable</Value>
+</Value>
+<Value name="7">
+<Value>%timeout</Value>
+</Value>
+<Value name="8">
+<Value>%port</Value>
+</Value>
+<Value name="9">
+<Value>%PythonInterpreterPath</Value>
+</Value>
+<Value name="10">
+<Value>%traceback</Value>
 </Value>
 </Data>
 <Data name="persistentProperties">

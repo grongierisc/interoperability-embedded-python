@@ -14,7 +14,7 @@ Method OnTask() As %Status
 		$$$ThrowOnError(..Connect())
 		do ..%class."on_task"()
 	} catch ex {
-		set tSC = ex.AsStatus()
+		set tSC = ..DisplayTraceback(ex)
 	}
 	quit tSC
 }
