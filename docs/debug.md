@@ -212,4 +212,11 @@ Since iop version 3.4.3, you can use the `%traceback` setting to enable or disab
 
 This can help you to see the stack trace of the error and understand what is happening in the code.
 
+With traebacks enabled: 
+
+![Traceback enabled](./img/traceback_enable.png)
+
+With tracebacks disabled:
+
+![Traceback disabled](./img/traceback_disable.png)
 
