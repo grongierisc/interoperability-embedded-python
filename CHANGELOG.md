@@ -5,15 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [unreleased] - Unreleased
+### Added
+
+### Changed
+
+### Fixed
+
+## [3.4.3] - 2025-05-26
+
 ### Fixed
 - Fix a regression in DTL to display sub-objects
+- Improve upgrade compatibility with 3.4.0 (pre-debugger)
 
 ### Changed
 - Change debugger settings to be prefixed with `%` to avoid conflict with other settings
 
 ### Added
-- Improve upgrade compatibility with 3.4.0 (pre-debugger)
 - Add `%traceback` setting to enable or disable traceback in message log
 
 ## [3.4.2] - 2025-05-2
