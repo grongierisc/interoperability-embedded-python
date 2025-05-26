@@ -206,7 +206,10 @@ if __name__ == '__main__':
 
 You also have examples in [iris-python-interoperability-template](https://github.com/grongierisc/iris-python-interoperability-template/blob/master/src/python/reddit/bo.py#L86).
 
+### Use tracebacks
 
+Since iop version 3.4.3, you can use the `%traceback` setting to enable or disable tracebacks in the message log.
 
+This can help you to see the stack trace of the error and understand what is happening in the code.
 
 
