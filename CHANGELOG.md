@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- `%traceback` setting default value is now `True` to show traceback in message log
+- serializer is now more permissive for iris objects, allowing iris object type of `%Persistent` and `%Stream` to support http inbound/outbound adapters
 
 ### Fixed
 

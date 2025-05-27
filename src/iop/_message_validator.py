@@ -27,7 +27,8 @@ def is_iris_object_instance(obj: Any) -> bool:
     """Check if object is an IRIS persistent object."""
     return (obj is not None and 
             type(obj).__module__.startswith('iris') and 
-            obj._IsA("%Persistent"))
+            (obj._IsA("%Persistent") or obj._IsA("%Stream.Object"))) 
+            # Stream.Object are used for HTTP InboundAdapter/OutboundAdapter
 
 
 def is_message_class(klass: Type) -> bool:

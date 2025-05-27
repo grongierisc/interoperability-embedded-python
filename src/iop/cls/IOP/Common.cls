@@ -27,7 +27,7 @@ Property %port As %Numeric [ InitialExpression = 0 ];
 
 Property %PythonInterpreterPath As %String(MAXLEN = 255);
 
-Property %traceback As %Boolean;
+Property %traceback As %Boolean [ InitialExpression = 1 ];
 
 /// Get Class
 Method GetClass() As %SYS.Python
