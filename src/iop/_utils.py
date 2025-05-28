@@ -4,9 +4,9 @@ import ast
 from . import _iris
 import inspect
 import xmltodict
-import pkg_resources
 import importlib
 import importlib.util
+import importlib.resources
 import json
 from iop._message import _Message, _PydanticMessage
 from pydantic import TypeAdapter
@@ -26,13 +26,22 @@ class _Utils():
     def setup(path:str = None):
 
         if path is None:
-            # get the path of the data folder with pkg_resources
-            path = pkg_resources.resource_filename('iop', 'cls')
+            # get the path of the data folder with importlib.resources
+            try:
+                path = importlib.resources.files('iop').joinpath('cls')
+                path = str(path)
+            except ModuleNotFoundError:
+                path = None
 
-        _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+        if path:
+            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
         # for retrocompatibility load grongier.pex
-        path = pkg_resources.resource_filename('grongier', 'cls')
+        try:
+            path = importlib.resources.files('grongier').joinpath('cls')
+            path = str(path)
+        except ModuleNotFoundError:
+            path = None
 
         if path:
             _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
