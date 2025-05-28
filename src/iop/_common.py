@@ -106,7 +106,8 @@ class _Common(metaclass=abc.ABCMeta):
                     super_class = classname[1:-1]
                     adapter = cls.get_adapter_type()
                     if adapter is None:
-                        adapter = cls.getAdapterType() # For backwards compatibility
+                        # for retro-compatibility
+                        adapter = cls.getAdapterType() # type: ignore
                     break
                 elif classname in ["'iop.BusinessProcess'","'iop.DuplexProcess'","'iop.InboundAdapter'","'iop.OutboundAdapter'",
                                    "'grongier.pex.BusinessProcess'","'grongier.pex.DuplexProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :

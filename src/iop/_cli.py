@@ -98,7 +98,7 @@ class Command:
     def _handle_default(self) -> None:
         if self.args.default == 'not_set':
             print(_Director.get_default_production())
-        else:
+        elif self.args.default is not None:
             _Director.set_default_production(self.args.default)
 
     def _handle_list(self) -> None:
@@ -144,15 +144,16 @@ class Command:
 
     def _handle_migrate(self) -> None:
         migrate_path = self.args.migrate
-        if not os.path.isabs(migrate_path):
-            migrate_path = os.path.join(os.getcwd(), migrate_path)
-        _Utils.migrate(migrate_path)
+        if migrate_path is not None:
+            if not os.path.isabs(migrate_path):
+                migrate_path = os.path.join(os.getcwd(), migrate_path)
+            _Utils.migrate(migrate_path)
 
     def _handle_log(self) -> None:
         if self.args.log == 'not_set':
             print(_Director.log_production())
-        else:
-            print(_Director.log_production_top(self.args.log))
+        elif self.args.log is not None:
+            print(_Director.log_production_top(int(self.args.log)))
 
     def _handle_init(self) -> None:
         _Utils.setup(None)

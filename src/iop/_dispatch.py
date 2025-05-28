@@ -1,5 +1,5 @@
-from inspect import signature
-from typing import Any
+from inspect import signature, Parameter
+from typing import Any, List, Tuple, Callable
 
 from ._serialization import serialize_message, serialize_pickle_message, deserialize_message, deserialize_pickle_message
 from ._message_validator import is_message_instance, is_pickle_message_instance, is_iris_object_instance
@@ -59,7 +59,7 @@ def dispatch_deserializer(serial: Any) -> Any:
     else:
         return serial
 
-def dispach_message(host, request: Any) -> Any:
+def dispach_message(host: Any, request: Any) -> Any:
     """Dispatches the message to the appropriate method.
     
     Args:
@@ -79,23 +79,43 @@ def dispach_message(host, request: Any) -> Any:
 
     return getattr(host, call)(request)
 
-def create_dispatch(host) -> None:
-    """Creates a list of tuples, where each tuple contains the name of a class and the name of a method
-    that takes an instance of that class as its only argument.
+def create_dispatch(host: Any) -> None:
+    """Creates a dispatch table mapping class names to their handler methods.
+    The dispatch table consists of tuples of (fully_qualified_class_name, method_name).
+    Only methods that take a single typed parameter are considered as handlers.
     """
-    if len(host.DISPATCH) == 0:
-        method_list = [func for func in dir(host) if callable(getattr(host, func)) and not func.startswith("_")]
-        for method in method_list:
-            try:
-                param = signature(getattr(host, method)).parameters
-            except ValueError as e:
-                param = ''
-            if (len(param) == 1):
-                annotation = str(param[list(param)[0]].annotation)
-                i = annotation.find("'")
-                j = annotation.rfind("'")
-                if j == -1:
-                    j = None
-                classname = annotation[i+1:j]
-                host.DISPATCH.append((classname, method))
-    return
+    if len(host.DISPATCH) > 0:
+        return
+
+    for method_name in get_callable_methods(host):
+        handler_info = get_handler_info(host, method_name)
+        if handler_info:
+            host.DISPATCH.append(handler_info)
+
+def get_callable_methods(host: Any) -> List[str]:
+    """Returns a list of callable method names that don't start with underscore."""
+    return [
+        func for func in dir(host) 
+        if callable(getattr(host, func)) and not func.startswith("_")
+    ]
+
+def get_handler_info(host: Any, method_name: str) -> Tuple[str, str] | None:
+    """Analyzes a method to determine if it's a valid message handler.
+    Returns a tuple of (fully_qualified_class_name, method_name) if valid,
+    None otherwise.
+    """
+    try:
+        params = signature(getattr(host, method_name)).parameters
+        if len(params) != 1:
+            return None
+
+        param: Parameter = next(iter(params.values()))
+        annotation = param.annotation
+        
+        if annotation == Parameter.empty or not isinstance(annotation, type):
+            return None
+
+        return f"{annotation.__module__}.{annotation.__name__}", method_name
+            
+    except ValueError:
+        return None

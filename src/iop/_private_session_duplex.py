@@ -2,6 +2,7 @@ import importlib
 
 from ._business_host import _BusinessHost
 from ._decorators import input_deserializer, input_serializer_param, output_serializer, input_serializer, output_deserializer
+from ._dispatch import create_dispatch, dispach_message
 
 class _PrivateSessionDuplex(_BusinessHost):
     
@@ -27,7 +28,7 @@ class _PrivateSessionDuplex(_BusinessHost):
     @output_serializer
     def _dispatch_on_message(self, request):
         """ For internal use only. """
-        return self._dispach_message(request)
+        return dispach_message(self,request)
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """ For internal use only. """

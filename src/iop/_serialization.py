@@ -107,7 +107,7 @@ class MessageSerializer:
             raise SerializationError(f"Classname must include a module: {classname}")
         return classname[:j], classname[j+1:]
 
-def dataclass_from_dict(klass: Type, dikt: Dict) -> Any:
+def dataclass_from_dict(klass: Type | Any, dikt: Dict) -> Any:
     """Converts a dictionary to a dataclass instance.
     Handles non attended fields and nested dataclasses."""
     

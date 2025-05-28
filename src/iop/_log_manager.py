@@ -72,9 +72,9 @@ class IRISLogHandler(logging.Handler):
         Args:
             record: The logging record to emit
         """
-        class_name = record.class_name if hasattr(record, "class_name") else record.name
-        method_name = record.method_name if hasattr(record, "method_name") else record.funcName
-        if self.to_console or (hasattr(record, "to_console") and record.to_console):
+        class_name = record.class_name if hasattr(record, "class_name") else record.name # type: ignore has been added as extra attribute in LogRecord
+        method_name = record.method_name if hasattr(record, "method_name") else record.funcName # type: ignore has been added as extra attribute in LogRecord
+        if self.to_console or (hasattr(record, "to_console") and record.to_console): # type: ignore has been added as extra attribute in LogRecord
             _iris.get_iris().cls("%SYS.System").WriteToConsoleLog(self.format(record),
                 0,self.level_map_console.get(record.levelno, 0),class_name+"."+method_name)
         else:

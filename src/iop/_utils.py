@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 import importlib.resources
 import json
+from typing import Any, Dict, Optional, Union
 
 import xmltodict
 from pydantic import TypeAdapter
@@ -25,13 +26,12 @@ class _Utils():
             raise RuntimeError(_iris.get_iris().system.Status.GetOneStatusText(sc))
 
     @staticmethod
-    def setup(path:str = None):
+    def setup(path:Optional[str] = None):
 
         if path is None:
             # get the path of the data folder with importlib.resources
             try:
-                path = importlib.resources.files('iop').joinpath('cls')
-                path = str(path)
+                path = str(importlib.resources.files('iop').joinpath('cls'))
             except ModuleNotFoundError:
                 path = None
 
@@ -40,8 +40,7 @@ class _Utils():
 
         # for retrocompatibility load grongier.pex
         try:
-            path = importlib.resources.files('grongier').joinpath('cls')
-            path = str(path)
+            path = str(importlib.resources.files('grongier').joinpath('cls'))
         except ModuleNotFoundError:
             path = None
 
@@ -49,20 +48,20 @@ class _Utils():
             _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
 
     @staticmethod
-    def register_message_schema(cls):
+    def register_message_schema(msg_cls: type):
         """
         It takes a class and registers the schema
         
         :param cls: The class to register
         """
-        if issubclass(cls,_PydanticMessage):
-            schema = cls.model_json_schema()
-        elif issubclass(cls,_Message):
-            type_adapter = TypeAdapter(cls)
+        if issubclass(msg_cls,_PydanticMessage):
+            schema = msg_cls.model_json_schema()
+        elif issubclass(msg_cls,_Message):
+            type_adapter = TypeAdapter(msg_cls)
             schema = type_adapter.json_schema()
         else:
             raise ValueError("The class must be a subclass of _Message or _PydanticMessage")
-        schema_name = cls.__module__ + '.' + cls.__name__
+        schema_name = msg_cls.__module__ + '.' + msg_cls.__name__
         schema_str = json.dumps(schema)
         categories = schema_name
         _Utils.register_schema(schema_name,schema_str,categories)
@@ -172,10 +171,11 @@ class _Utils():
             for klass in classes:
                 extend = ''
                 if len(klass.bases) == 1:
-                    if hasattr(klass.bases[0],'id'):
-                        extend = klass.bases[0].id
-                    else:
-                        extend = klass.bases[0].attr
+                    base = klass.bases[0]
+                    if isinstance(base, ast.Name):
+                        extend = base.id
+                    elif isinstance(base, ast.Attribute):
+                        extend = base.attr
                 if extend in ('BusinessOperation','BusinessProcess','BusinessService','DuplexService','DuplexProcess','DuplexOperation','InboundAdapter','OutboundAdapter'):
                     module = _Utils.filename_to_module(filename)
                     iris_class_name = f"{iris_package_name}.{module}.{klass.name}"
@@ -283,7 +283,7 @@ class _Utils():
             raise ValueError("The file path must be absolute")
         
         spec = importlib.util.spec_from_file_location(module_name, file_path)
-        if spec is None:
+        if spec is None or spec.loader is None:
             raise ImportError(f"Cannot find module named {module_name} at {file_path}")
         
         module = importlib.util.module_from_spec(spec)

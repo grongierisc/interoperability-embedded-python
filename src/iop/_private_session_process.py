@@ -12,7 +12,7 @@ class _PrivateSessionProcess(_BusinessProcess):
         self._save_persistent_properties(host_object)
         return return_object
 
-    def on_document(source_config_name,request):
+    def on_document(self,source_config_name,request):
         pass
 
 
