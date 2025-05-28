@@ -1,12 +1,24 @@
 import asyncio
 import datetime
 import functools
-from . import _iris
 import signal
 from dataclasses import dataclass
 
-from iop._dispatch import dispatch_deserializer, dispatch_serializer
-from iop._utils import _Utils
+from . import _iris
+from ._dispatch import dispatch_deserializer, dispatch_serializer
+from ._utils import _Utils
+
+@dataclass
+class SigintHandler():
+    
+    sigint: bool = False
+    sigint_log: bool = False
+    log_only: bool = False
+
+    def signal_handler(self, signal, frame):
+        if self.sigint or self.log_only:
+            self.sigint_log = True
+        self.sigint = True
 
 class _Director():
     """ The Directorclass is used for nonpolling business services, that is, business services which are not automatically
@@ -89,7 +101,7 @@ class _Director():
         loop.close()
 
     @staticmethod
-    async def _start_production_async(production_name=None, handler=None):
+    async def _start_production_async(production_name:str, handler: SigintHandler):
         _Director.start_production(production_name)
         while True:
             if handler.sigint:
@@ -286,15 +298,3 @@ class _Director():
             deserialized_response = f'{response.classname} : {_Utils.stream_to_string(response.jstr)}'
         return deserialized_response
 
-            
-@dataclass
-class SigintHandler():
-    
-    sigint: bool = False
-    sigint_log: bool = False
-    log_only: bool = False
-
-    def signal_handler(self, signal, frame):
-        if self.sigint or self.log_only:
-            self.sigint_log = True
-        self.sigint = True

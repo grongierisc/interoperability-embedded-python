@@ -1,4 +1,4 @@
-from iop._common import _Common
+from ._common import _Common
 
 class _OutboundAdapter(_Common):
     """ Responsible for sending the data to the external system."""

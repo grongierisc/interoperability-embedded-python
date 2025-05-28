@@ -1,5 +1,5 @@
-from iop._business_process import _BusinessProcess
-from iop._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
+from ._business_process import _BusinessProcess
+from ._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
 
 class _PrivateSessionProcess(_BusinessProcess):
     

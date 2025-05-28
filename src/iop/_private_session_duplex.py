@@ -1,6 +1,7 @@
 import importlib
-from iop._business_host import _BusinessHost
-from iop._decorators import input_deserializer, input_serializer_param, output_serializer, input_serializer, output_deserializer
+
+from ._business_host import _BusinessHost
+from ._decorators import input_deserializer, input_serializer_param, output_serializer, input_serializer, output_deserializer
 
 class _PrivateSessionDuplex(_BusinessHost):
     

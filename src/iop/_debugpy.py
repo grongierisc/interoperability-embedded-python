@@ -83,7 +83,7 @@ def wait_for_debugpy_connected(timeout: float = 30, port: int = 0) -> bool:
 
     def timeout_handler():
         time.sleep(timeout)
-        debugpy.wait_for_client.cancel()
+        debugpy.wait_for_client.cancel() # type: ignore
 
     threading.Thread(target=timeout_handler, daemon=True).start()
     

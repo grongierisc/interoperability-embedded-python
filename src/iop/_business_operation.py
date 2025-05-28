@@ -1,8 +1,9 @@
 import importlib
 from typing import Any, List, Optional, Union, Tuple
-from iop._business_host import _BusinessHost
-from iop._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
-from iop._dispatch import create_dispatch, dispach_message
+
+from ._business_host import _BusinessHost
+from ._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
+from ._dispatch import create_dispatch, dispach_message
 
 class _BusinessOperation(_BusinessHost):
     """Business operation component that handles outbound communication.

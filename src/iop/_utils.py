@@ -1,15 +1,17 @@
 import os
 import sys
 import ast
-from . import _iris
 import inspect
-import xmltodict
 import importlib
 import importlib.util
 import importlib.resources
 import json
-from iop._message import _Message, _PydanticMessage
+
+import xmltodict
 from pydantic import TypeAdapter
+
+from . import _iris
+from ._message import _Message, _PydanticMessage
 
 class _Utils():
     @staticmethod

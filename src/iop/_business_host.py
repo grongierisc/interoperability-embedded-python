@@ -2,12 +2,11 @@ from inspect import getsource
 from typing import Any,List, Optional, Tuple, Union
 
 from . import _iris
-
-from iop._common import _Common
-from iop._message import _Message as Message
-from iop._decorators import input_serializer_param, output_deserializer
-from iop._dispatch import dispatch_serializer, dispatch_deserializer
-from iop._async_request import AsyncRequest
+from ._common import _Common
+from ._message import _Message as Message
+from ._decorators import input_serializer_param, output_deserializer
+from ._dispatch import dispatch_serializer, dispatch_deserializer
+from ._async_request import AsyncRequest
 
 class _BusinessHost(_Common):
     """Base class for business components that defines common methods.

@@ -7,11 +7,11 @@ import json
 from dataclasses import is_dataclass
 from typing import Any, Dict, Type
 
-from . import _iris
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from iop._message import _PydanticPickleMessage, _Message
-from iop._utils import _Utils
+from . import _iris
+from ._message import _PydanticPickleMessage, _Message
+from ._utils import _Utils
 
 class SerializationError(Exception):
     """Exception raised for serialization errors."""

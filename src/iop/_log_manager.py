@@ -1,7 +1,6 @@
-import traceback
-from . import _iris
 import logging
-from typing import Optional, Tuple
+
+from . import _iris
 
 class LogManager:
     """Manages logging integration between Python's logging module and IRIS."""

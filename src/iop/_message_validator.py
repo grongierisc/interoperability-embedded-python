@@ -1,6 +1,7 @@
 import dataclasses
 from typing import Any, Type
-from iop._message import _Message, _PickleMessage, _PydanticPickleMessage, BaseModel
+
+from ._message import _Message, _PickleMessage, _PydanticPickleMessage, BaseModel
 
 
 def is_message_instance(obj: Any) -> bool:

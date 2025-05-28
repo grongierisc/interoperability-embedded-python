@@ -1,14 +1,11 @@
 import abc
 import inspect
 import traceback
-
 from typing import Any, ClassVar, List, Optional, Tuple
 
 from . import _iris
-
-from iop._log_manager import LogManager, logging
-
-from iop._debugpy import debugpython
+from ._log_manager import LogManager, logging
+from ._debugpy import debugpython
 
 class _Common(metaclass=abc.ABCMeta):
     """Base class that defines common methods for all component types.
@@ -21,7 +18,12 @@ class _Common(metaclass=abc.ABCMeta):
     ICON_URL: ClassVar[str]
     iris_handle: Any = None
     _log_to_console: bool = False
-    _logger: logging.Logger = None
+    _logger: Optional[logging.Logger] = None
+
+    @staticmethod
+    def get_adapter_type() -> Optional[str]:
+        """Get the adapter type for this component. Override in subclasses."""
+        return None
 
     @property
     def logger(self) -> logging.Logger:
@@ -104,7 +106,7 @@ class _Common(metaclass=abc.ABCMeta):
                     super_class = classname[1:-1]
                     adapter = cls.get_adapter_type()
                     if adapter is None:
-                        adapter = cls.getAdapterType()
+                        adapter = cls.getAdapterType() # For backwards compatibility
                     break
                 elif classname in ["'iop.BusinessProcess'","'iop.DuplexProcess'","'iop.InboundAdapter'","'iop.OutboundAdapter'",
                                    "'grongier.pex.BusinessProcess'","'grongier.pex.DuplexProcess'","'grongier.pex.InboundAdapter'","'grongier.pex.OutboundAdapter'"] :
@@ -113,7 +115,7 @@ class _Common(metaclass=abc.ABCMeta):
                     break
 
             if ""==super_class:
-                return ""
+                return []
             ret.append(super_class)
 
             # Get the class documentation, if any

@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Any, Callable
-from iop._dispatch import dispatch_deserializer, dispatch_serializer
+
+from ._dispatch import dispatch_deserializer, dispatch_serializer
 
 def input_serializer(fonction: Callable) -> Callable:
     """Decorator that serializes all input arguments."""

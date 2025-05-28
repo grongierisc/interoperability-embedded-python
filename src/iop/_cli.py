@@ -7,8 +7,9 @@ from enum import Enum, auto
 import sys
 from typing import Optional, Callable
 from importlib.metadata import version
-from iop._director import _Director
-from iop._utils import _Utils
+
+from ._director import _Director
+from ._utils import _Utils
 
 
 class CommandType(Enum):

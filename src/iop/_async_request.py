@@ -1,8 +1,9 @@
 import asyncio
-from . import _iris
 from typing import Any, Optional, Union
-from iop._dispatch import dispatch_deserializer, dispatch_serializer
-from iop._message import _Message as Message
+
+from . import _iris
+from ._dispatch import dispatch_deserializer, dispatch_serializer
+from ._message import _Message as Message
 
 class AsyncRequest(asyncio.Future):
     _message_header_id: int = 0
@@ -19,6 +20,8 @@ class AsyncRequest(asyncio.Future):
         self.timeout = timeout
         self.description = description
         self.host = host
+        if host is None:
+            raise ValueError("host parameter cannot be None")
         self._iris_handle = host.iris_handle
         asyncio.create_task(self.send())
 
