@@ -12,8 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `%traceback` setting default value is now `True` to show traceback in message log
 - serializer is now more permissive for iris objects, allowing iris object type of `%Stream` to support http inbound/outbound adapters
 - remove usage of `pkg_resources` in favor of `importlib.resources`
+- refactor import statements for better clarity and organization
 
 ### Fixed
+- fix typing issues in python code
 
 ## [3.4.3] - 2025-05-26
 
