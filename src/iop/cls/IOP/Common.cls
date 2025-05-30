@@ -171,6 +171,7 @@ Method OnTearDown() As %Status
 
 Method SetPropertyValues()
 {
+    // First process the %settings property
     set remoteSettings = $tr(..%settings,$c(13))
     for i=1:1:$l(remoteSettings,$c(10)) {
         set oneLine = $p(remoteSettings,$c(10),i)
@@ -182,6 +183,7 @@ Method SetPropertyValues()
             $$$LOGWARNING(ex.DisplayString())
         }
     }
+    
     // Now process the Python Attributes Settings
     // First list all the properties of the current class
     set class = $CLASSNAME()
