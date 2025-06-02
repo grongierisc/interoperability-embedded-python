@@ -76,6 +76,54 @@ class TestBenchIoP:
             'component': 'Bench.Process.To.Cls',
             'message_type': 'msg.MyPydanticMessage',
             'use_json': True
+        },
+        {
+            'name': 'Python BP to Python BO with Pickle Message',
+            'component': 'Python.BenchIoPProcess',
+            'message_type': 'msg.MyPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'Python BP to ObjetScript BO with Pickle Message',
+            'component': 'Python.BenchIoPProcess.To.Cls',
+            'message_type': 'msg.MyPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to Python BO with Pickle Message',
+            'component': 'Bench.Process',
+            'message_type': 'msg.MyPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to ObjetScript BO with Pickle Message',
+            'component': 'Bench.Process.To.Cls',
+            'message_type': 'msg.MyPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'Python BP to Python BO with Pydantic Pickle Message',
+            'component': 'Python.BenchIoPProcess',
+            'message_type': 'msg.MyPydanticPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'Python BP to ObjetScript BO with Pydantic Pickle Message',
+            'component': 'Python.BenchIoPProcess.To.Cls',
+            'message_type': 'msg.MyPydanticPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to Python BO with Pydantic Pickle Message',
+            'component': 'Bench.Process',
+            'message_type': 'msg.MyPydanticPickleMessage',
+            'use_json': True
+        },
+        {
+            'name': 'ObjetScript BP to ObjetScript BO with Pydantic Pickle Message',
+            'component': 'Bench.Process.To.Cls',
+            'message_type': 'msg.MyPydanticPickleMessage',
+            'use_json': True
         }
     ]
 

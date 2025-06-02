@@ -30,6 +30,9 @@ XData MessageMap
     <MapItem MessageType="IOP.Message">
         <Method>Method</Method>
     </MapItem>
+    <MapItem MessageType="IOP.PickleMessage">
+        <Method>Method</Method>
+    </MapItem>
 </MapItems>
 }
 
