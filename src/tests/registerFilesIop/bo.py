@@ -139,6 +139,7 @@ class MySettingOperation(BusinessOperation):
     my_float_var : float = 0.0
     my_untyped_var = 0
     my_str_var = "foo"
+    my_very_long_var = "a" * 1000  # Long string for testing
 
     def OnMessage(self, request):
         attr = request.StringValue

@@ -300,6 +300,10 @@ ClassMethod GenerateProxyClass(
 			Set tDefault = tPropInfo."__getitem__"(2)
 			If ""'=tDefault {
 				Set tCustomProp.InitialExpression = $$$quote(tDefault)
+				if $LENGTH(tDefault)>255 {
+					Set tSC = tCustomProp.Parameters.SetAt("","MAXLEN")
+					Quit:$$$ISERR(tSC)
+				}
 			}
 			Set tCustomProp.Required = tPropInfo."__getitem__"(3)
 			
