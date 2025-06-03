@@ -86,7 +86,7 @@ Method OnInit() As %Status
     set tSC = $$$OK
     try {
         LOCK +^PythonSettings:5
-        do ..SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion)
+        do ##class(IOP.Utils).SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion)
 
         do ..DisplayPythonVersion()
 
@@ -103,37 +103,6 @@ Method OnInit() As %Status
         set tSC = ..DisplayTraceback(ex)
     }
     quit tSC
-}
-
-ClassMethod SetPythonSettings(
-	pPythonLib,
-	pPythonPath,
-	pPythonVersion)
-{
-    set currentNS = $namespace
-    set $NAMESPACE = "%SYS"
-    try {
-        // Get Config
-        $$$ThrowOnError(##Class(Config.config).Get(.Properties))
-        // Set the Python interpreter path
-        if ..%PythonInterpreterPath'="" {
-            set Properties("PythonPath") = pPythonPath
-        }
-    
-        // Set the Python runtime library
-        if ..%PythonRuntimeLibrary'="" {
-            set Properties("PythonRuntimeLibrary") = pPythonLib
-        }
-    
-        // Set the Python runtime library version
-        if ..%PythonRuntimeLibraryVersion'="" {
-            set Properties("PythonRuntimeLibraryVersion") = pPythonVersion
-        }
-        $$$ThrowOnError(##Class(Config.config).Modify(.Properties))
-    } catch ex {
-        
-    }
-    set $NAMESPACE = currentNS
 }
 
 Method DisplayPythonVersion()

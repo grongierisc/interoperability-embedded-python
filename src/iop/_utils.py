@@ -88,6 +88,9 @@ class _Utils():
         pythonpath = _Utils._get_python_path()
         pythonversion = sys.version[:4]
 
+        if not pythonlib:
+            pythonlib = ""
+            
         return pythonlib, pythonpath, pythonversion
 
     @staticmethod

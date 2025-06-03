@@ -23,23 +23,6 @@ ClassMethod dispatchRegisterComponent(
 	return tSc
 }
 
-ClassMethod SetPythonSettings(
-	pPythonLib As %String = "",
-	pPythonPath As %String = "",
-	pPythonVersion As %String = "") As %Status
-{
-	#dim tSC As %Status = $$$OK
-	#dim ex As %Exception.AbstractException
-	
-	Try {
-		Do ##class(IOP.Common).SetPythonSettings(pPythonLib, pPythonPath, pPythonVersion)
-	} Catch ex {
-		Set tSC = ex.AsStatus()
-	}
-	
-	Quit tSC
-}
-
 /// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
 ClassMethod RegisterComponent(
 	pModule As %String,
@@ -64,7 +47,7 @@ ClassMethod RegisterComponent(
 	Try {
 		LOCK +^PythonSettings:10
 		// Set the Python settings
-		$$$ThrowOnError(##class(IOP.Utils).SetPythonSettings(pPythonLib, pPythonPath, pPythonVersion))
+		do ..SetPythonSettings(pPythonLib, pPythonPath, pPythonVersion)
 
 		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,pFullpath,.tClassDetails,.tRemoteSettings))
 
@@ -476,6 +459,39 @@ ClassMethod dispatchTestComponent(
     $$$ThrowOnError(##class(Ens.Director).CreateBusinessService("EnsLib.Testing.Service", .tService))
     $$$ThrowOnError(tService.SendTestRequest(pTargetName, pInput, .tOutput, .sessionID , 1))
 	Quit tOutput
+}
+
+ClassMethod SetPythonSettings(
+	pPythonLib,
+	pPythonPath,
+	pPythonVersion)
+{
+    set currentNS = $namespace
+    set $NAMESPACE = "%SYS"
+    try {
+        // Get Config
+        $$$ThrowOnError(##Class(Config.config).Get(.Properties))
+        // Set the Python interpreter path
+        if pPythonPath'="" {
+            set Properties("PythonPath") = pPythonPath
+        }
+    
+        // Set the Python runtime library
+        if pPythonLib'="" {
+            set Properties("PythonRuntimeLibrary") = pPythonLib
+        }
+    
+        // Set the Python runtime library version
+        if pPythonVersion'="" {
+            set Properties("PythonRuntimeLibraryVersion") = pPythonVersion
+        }
+        $$$ThrowOnError(##Class(Config.config).Modify(.Properties))
+    } catch ex {
+        set msg = $System.Status.GetOneStatusText(ex.AsStatus(),1)
+        set ^PLOG=msg
+    }
+
+    set $NAMESPACE = currentNS
 }
 
 }
