@@ -29,6 +29,12 @@ Property %PythonInterpreterPath As %String(MAXLEN = 255);
 
 Property %traceback As %Boolean [ InitialExpression = 1 ];
 
+Property %PythonPath As %String(MAXLEN = 255);
+
+Property %PythonRuntimeLibrary As %String(MAXLEN = 255);
+
+Property %PythonRuntimeLibraryVersion As %String;
+
 /// Get Class
 Method GetClass() As %SYS.Python
 {
@@ -79,15 +85,70 @@ Method OnInit() As %Status
 {
     set tSC = $$$OK
     try {
+        LOCK +^PythonSettings:5
+        do ..SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion)
+
+        do ..DisplayPythonVersion()
+
         do $system.Python.Debugging(..%traceback)
+
         $$$ThrowOnError(..Connect())
+        LOCK -^PythonSettings
+
         do ..%class."_debugpy"($this)
+
         do ..%class."_dispatch_on_init"($this)
     } catch ex {
 
         set tSC = ..DisplayTraceback(ex)
     }
     quit tSC
+}
+
+ClassMethod SetPythonSettings(
+	pPythonLib,
+	pPythonPath,
+	pPythonVersion)
+{
+    set currentNS = $namespace
+    set $NAMESPACE = "%SYS"
+    try {
+        // Get Config
+        $$$ThrowOnError(##Class(Config.config).Get(.Properties))
+        // Set the Python interpreter path
+        if ..%PythonInterpreterPath'="" {
+            set Properties("PythonPath") = pPythonPath
+        }
+    
+        // Set the Python runtime library
+        if ..%PythonRuntimeLibrary'="" {
+            set Properties("PythonRuntimeLibrary") = pPythonLib
+        }
+    
+        // Set the Python runtime library version
+        if ..%PythonRuntimeLibraryVersion'="" {
+            set Properties("PythonRuntimeLibraryVersion") = pPythonVersion
+        }
+        $$$ThrowOnError(##Class(Config.config).Modify(.Properties))
+    } catch ex {
+        
+    }
+    set $NAMESPACE = currentNS
+}
+
+Method DisplayPythonVersion()
+{
+    set sys = ##class(%SYS.Python).Import("sys")
+    set version = sys.version
+    set versionInfo = sys."version_info"
+    set major = versionInfo.major
+    set minor = versionInfo.minor
+    set micro = versionInfo.micro
+    set releaseLevel = versionInfo.releaselevel
+    set serial = versionInfo.serial
+
+    $$$LOGINFO("Python Version: "_ version)
+    $$$LOGINFO("Version Info: "_ major_ "."_ minor_ "."_ micro_" ("_ releaseLevel_ ", "_serial_ ")")
 }
 
 ClassMethod SetPythonPath(pClasspaths)

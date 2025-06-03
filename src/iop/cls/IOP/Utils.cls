@@ -13,11 +13,31 @@ ClassMethod dispatchRegisterComponent(
 	pCLASSPATHS As %String = "",
 	pFullpath As %String = "",
 	pOverwrite As %Boolean = 0,
-	pProxyClassname As %String = "") As %Status
+	pProxyClassname As %String = "",
+	pPythonLib,
+	pPythonPath,
+	pPythonVersion) As %Status
 {
 	set tSc = $$$OK
-	$$$ThrowOnError(##class(IOP.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pFullpath, pOverwrite , pProxyClassname))
+	$$$ThrowOnError(##class(IOP.Utils).RegisterComponent(pModule, pRemoteClassname, pCLASSPATHS, pFullpath, pOverwrite , pProxyClassname,pPythonLib, pPythonPath, pPythonVersion))
 	return tSc
+}
+
+ClassMethod SetPythonSettings(
+	pPythonLib As %String = "",
+	pPythonPath As %String = "",
+	pPythonVersion As %String = "") As %Status
+{
+	#dim tSC As %Status = $$$OK
+	#dim ex As %Exception.AbstractException
+	
+	Try {
+		Do ##class(IOP.Common).SetPythonSettings(pPythonLib, pPythonPath, pPythonVersion)
+	} Catch ex {
+		Set tSC = ex.AsStatus()
+	}
+	
+	Quit tSC
 }
 
 /// "bo","Duplex","/irisdev/app/src/python/demo/duplex/",1,"Duplex.Duplex"
@@ -27,7 +47,10 @@ ClassMethod RegisterComponent(
 	pCLASSPATHS As %String = "",
 	pFullpath As %String = "",
 	pOverwrite As %Boolean = 0,
-	pProxyClassname As %String = "") As %Status
+	pProxyClassname As %String = "",
+	pPythonLib,
+	pPythonPath,
+	pPythonVersion) As %Status
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -39,6 +62,9 @@ ClassMethod RegisterComponent(
 	Quit:(""=pModule) $$$ERROR($$$EnsErrGeneral,"Must specify the module of the remote code.")
 		
 	Try {
+		LOCK +^PythonSettings:10
+		// Set the Python settings
+		$$$ThrowOnError(##class(IOP.Utils).SetPythonSettings(pPythonLib, pPythonPath, pPythonVersion))
 
 		$$$ThrowOnError(..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,pFullpath,.tClassDetails,.tRemoteSettings))
 
@@ -47,13 +73,13 @@ ClassMethod RegisterComponent(
 		Set tConnectionSettings("Classname") = pRemoteClassname
 		Set:(""=pProxyClassname) pProxyClassname = "User."_pRemoteClassname
 		
-		$$$ThrowOnError(..GenerateProxyClass(pProxyClassname,.tConnectionSettings,tClassDetails,tRemoteSettings,pOverwrite))
+		$$$ThrowOnError(..GenerateProxyClass(pProxyClassname,.tConnectionSettings,tClassDetails,tRemoteSettings,pOverwrite, pPythonLib, pPythonPath, pPythonVersion))
 
 	} Catch ex {
 		set msg = $System.Status.GetOneStatusText(ex.AsStatus(),1)
 		set tSC = $$$ERROR($$$EnsErrGeneral,msg)
 	}
-
+	LOCK -PythonSettings
 	Quit tSC
 }
 
@@ -165,7 +191,10 @@ ClassMethod GenerateProxyClass(
 	ByRef pConnectionSettings,
 	pClassDetails As %String = "",
 	pRemoteSettings As %String = "",
-	pOverwrite As %Boolean = 0) As %Status [ Internal, Private ]
+	pOverwrite As %Boolean = 0,
+	pPythonLib,
+	pPythonPath,
+	pPythonVersion) As %Status [ Internal, Private ]
 {
 	#dim tSC As %Status = $$$OK
 	#dim ex As %Exception.AbstractException
@@ -226,7 +255,9 @@ ClassMethod GenerateProxyClass(
 		}
 		
 		#; Do not display any of the connection settings
-		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type,%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type,%traceback:Python Debug $type"
+ 		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type"
+		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type,%traceback:Python Debug $type"
+		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%PythonPath:Python Settings $type,%PythonRuntimeLibrary:Python Settings $type,%PythonRuntimeLibraryVersion:Python Settings $type"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"
@@ -255,6 +286,38 @@ ClassMethod GenerateProxyClass(
 		Set tPropLanguage.InitialExpression = $$$quote(pConnectionSettings("Module"))
 		Set tSC = tCOSClass.Properties.Insert(tPropLanguage)
 		Quit:$$$ISERR(tSC)
+
+		if pPythonLib'="" {
+			#dim tPropPythonLib As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
+			Set tPropPythonLib.Name = "%PythonRuntimeLibrary"
+			Set tPropPythonLib.Type = "%String"
+			Set tPropPythonLib.Internal = 1
+			Set tSC = tPropPythonLib.Parameters.SetAt("","MAXLEN")
+			Quit:$$$ISERR(tSC)
+			Set tPropPythonLib.InitialExpression = $$$quote(pPythonLib)
+			Set tSC = tCOSClass.Properties.Insert(tPropPythonLib)
+			Quit:$$$ISERR(tSC)
+		}
+		if pPythonPath'="" {
+			#dim tPropPythonPath As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
+			Set tPropPythonPath.Name = "%PythonPath"
+			Set tPropPythonPath.Type = "%String"
+			Set tSC = tPropPythonPath.Parameters.SetAt("","MAXLEN")
+			Quit:$$$ISERR(tSC)
+			Set tPropPythonPath.Internal = 1
+			Set tPropPythonPath.InitialExpression = $$$quote(pPythonPath)
+			Set tSC = tCOSClass.Properties.Insert(tPropPythonPath)
+			Quit:$$$ISERR(tSC)
+		}
+		if pPythonVersion'="" {
+			#dim tPropPythonVersion As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
+			Set tPropPythonVersion.Name = "%PythonRuntimeLibraryVersion"
+			Set tPropPythonVersion.Type = "%String"
+			Set tPropPythonVersion.Internal = 1
+			Set tPropPythonVersion.InitialExpression = $$$quote(pPythonVersion)
+			Set tSC = tCOSClass.Properties.Insert(tPropPythonVersion)
+			Quit:$$$ISERR(tSC)
+		}
 		
 		If $Case(tSuperClass,"IOP.BusinessService":1,"IOP.BusinessOperation":1,"IOP.DuplexService":1,"IOP.DuplexOperation":1,:0) {
 			set builtins = ##class(%SYS.Python).Import("builtins")

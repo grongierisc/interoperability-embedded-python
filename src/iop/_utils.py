@@ -1,12 +1,12 @@
 import os
 import sys
-import ast
-import inspect
 import importlib
 import importlib.util
 import importlib.resources
 import json
-from typing import Any, Dict, Optional, Union
+import inspect
+import ast
+from typing import Any, Dict, Optional, Union, Tuple
 
 import xmltodict
 from pydantic import TypeAdapter
@@ -81,6 +81,28 @@ class _Utils():
         _Utils.raise_on_error(_iris.get_iris().cls('IOP.Message.JSONSchema').Import(schema_str,categories,schema_name))
 
     @staticmethod
+    def get_python_settings() -> Tuple[str,str,str]:
+        import iris_utils._cli
+
+        pythonlib = iris_utils._cli.find_libpython()
+        pythonpath = _Utils._get_python_path()
+        pythonversion = sys.version[:4]
+
+        return pythonlib, pythonpath, pythonversion
+
+    @staticmethod
+    def _get_python_path() -> str:
+
+        if "VIRTUAL_ENV" in os.environ:
+            return os.path.join(
+                os.environ["VIRTUAL_ENV"],
+                "lib", 
+                f"python{sys.version[:4]}", 
+                "site-packages"
+            )
+        return ""
+
+    @staticmethod
     def register_component(module:str,classname:str,path:str,overwrite:int=1,iris_classname:str='Python'):
         """
         It registers a component in the Iris database.
@@ -99,8 +121,9 @@ class _Utils():
         """
         path = os.path.abspath(os.path.normpath(path))
         fullpath = _Utils.guess_path(module,path)
+        pythonlib, pythonpath, pythonversion = _Utils.get_python_settings()
         try:
-            _iris.get_iris().cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,fullpath,overwrite,iris_classname)
+            _iris.get_iris().cls('IOP.Utils').dispatchRegisterComponent(module,classname,path,fullpath,overwrite,iris_classname,pythonlib,pythonpath,pythonversion)
         except RuntimeError as e:
             # New message error : Make sure the iop package is installed in iris 
             raise RuntimeError("Iris class : IOP.Utils not found. Make sure the iop package is installed in iris eg: iop --init.") from e

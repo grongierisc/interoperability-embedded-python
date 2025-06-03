@@ -131,6 +131,15 @@ Storage Default
 <Value name="10">
 <Value>%traceback</Value>
 </Value>
+<Value name="11">
+<Value>%PythonPath</Value>
+</Value>
+<Value name="12">
+<Value>%PythonRuntimeLibrary</Value>
+</Value>
+<Value name="13">
+<Value>%PythonRuntimeLibraryVersion</Value>
+</Value>
 </Data>
 <Data name="persistentProperties">
 <Attribute>persistentProperties</Attribute>
