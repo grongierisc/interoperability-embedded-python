@@ -137,7 +137,7 @@ class TestBenchIoP:
         cls.results = []
 
     def test_bench_iris(self):
-        _Director.test_component('Python.BenchIoPProcess')
+        _Director.test_component('Python.BenchIoPProcess', '', 'msg.MyMessage', '{"message":"test"}')
 
     def run_benchmark(self, test_case):
         body = "test"

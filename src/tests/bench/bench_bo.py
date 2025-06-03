@@ -1,10 +1,10 @@
 from iop import BusinessOperation
+import time
 
 class BenchIoPOperation(BusinessOperation):
 
     my_param = "BenchIoPOperation"
 
     def on_message(self, request):
-        self.log_info("BenchIoPOperation received message")
-        # raise NotImplementedError("BenchIoPOperation is not implemented yet")
+        time.sleep(0.01)  # Simulate some processing delay
         return request

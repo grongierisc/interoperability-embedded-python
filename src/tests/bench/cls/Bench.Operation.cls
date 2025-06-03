@@ -11,6 +11,8 @@ Method Method(
     set pResponse = ##class(Ens.Response).%New()
 
     try{
+        // Simulate some processing time
+        hang 0.01
         set pResponse = pRequest
 
     }
