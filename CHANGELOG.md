@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - fix typing issues in python code
+- fix long string attribute from production settings ( greatter than 255 characters )
 
 ## [3.4.3] - 2025-05-26
 
