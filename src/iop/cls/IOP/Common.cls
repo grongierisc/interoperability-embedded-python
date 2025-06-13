@@ -86,11 +86,7 @@ Method DisplayTraceback(ex) As %Status
 Method OnInit() As %Status
 {
     set tSC = $$$OK
-    set tSemName = "^PythonSettings"
-    if $SYSTEM.Semaphore.Open(tSemName) '= 1 {
-        // Create the semaphore if it does not exist
-        set tSC = $SYSTEM.Semaphore.Create(tSemName)
-    }
+
     try {
         LOCK +^PythonSettings:5
 
