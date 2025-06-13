@@ -6,6 +6,8 @@ How to set up a virtual environment for the Iris IOP framework.
 
 >! Note: This is a proof-of-concept and not a production-ready solution.
 
+As it's a proof-of-concept, a toggle is available and called `%Venv` if you want to enable or disable the virtual environment support.
+
 ## How everything is set up
 
 The source code are migrated to iris thanks to the `iop --migrate` command.
