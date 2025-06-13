@@ -240,7 +240,7 @@ ClassMethod GenerateProxyClass(
 		#; Do not display any of the connection settings
  		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type"
 		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type,%traceback:Python Debug $type"
-		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%PythonPath:Python Settings $type,%PythonRuntimeLibrary:Python Settings $type,%PythonRuntimeLibraryVersion:Python Settings $type"
+		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%PythonPath:Python Settings $type,%PythonRuntimeLibrary:Python Settings $type,%PythonRuntimeLibraryVersion:Python Settings $type,%Venv:Python Settings $type"
 		
 		#dim tPropClassname As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
 		Set tPropClassname.Name = "%classname"
@@ -468,10 +468,12 @@ ClassMethod dispatchTestComponent(
 ClassMethod SetPythonSettings(
 	pPythonLib,
 	pPythonPath,
-	pPythonVersion)
+	pPythonVersion) As %Status
 {
     set currentNS = $namespace
     set $NAMESPACE = "%SYS"
+	set tSC = $$$OK
+
     try {
         // Get Config
         $$$ThrowOnError(##Class(Config.config).Get(.Properties))
@@ -491,11 +493,11 @@ ClassMethod SetPythonSettings(
         }
         $$$ThrowOnError(##Class(Config.config).Modify(.Properties))
     } catch ex {
-        set msg = $System.Status.GetOneStatusText(ex.AsStatus(),1)
-        set ^PLOG=msg
+        set tSC = ex.AsStatus()
     }
 
     set $NAMESPACE = currentNS
+	Quit tSC
 }
 
 }

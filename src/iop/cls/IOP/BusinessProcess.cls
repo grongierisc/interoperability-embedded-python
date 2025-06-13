@@ -140,6 +140,9 @@ Storage Default
 <Value name="13">
 <Value>%PythonRuntimeLibraryVersion</Value>
 </Value>
+<Value name="14">
+<Value>%Venv</Value>
+</Value>
 </Data>
 <Data name="persistentProperties">
 <Attribute>persistentProperties</Attribute>

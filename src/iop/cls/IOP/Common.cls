@@ -29,6 +29,8 @@ Property %PythonInterpreterPath As %String(MAXLEN = 255);
 
 Property %traceback As %Boolean [ InitialExpression = 1 ];
 
+Property %Venv As %Boolean [ InitialExpression = 0 ];
+
 Property %PythonPath As %String(MAXLEN = 255);
 
 Property %PythonRuntimeLibrary As %String(MAXLEN = 255);
@@ -84,9 +86,17 @@ Method DisplayTraceback(ex) As %Status
 Method OnInit() As %Status
 {
     set tSC = $$$OK
+    set tSemName = "^PythonSettings"
+    if $SYSTEM.Semaphore.Open(tSemName) '= 1 {
+        // Create the semaphore if it does not exist
+        set tSC = $SYSTEM.Semaphore.Create(tSemName)
+    }
     try {
         LOCK +^PythonSettings:5
-        do ##class(IOP.Utils).SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion)
+
+        if ..%Venv {
+            $$$ThrowOnError(##class(IOP.Utils).SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion))
+        }
 
         do ..DisplayPythonVersion()
 
@@ -102,6 +112,7 @@ Method OnInit() As %Status
 
         set tSC = ..DisplayTraceback(ex)
     }
+    LOCK -^PythonSettings
     quit tSC
 }
 
@@ -226,6 +237,11 @@ Method SetPropertyValues()
     set tSQL = tSQL _ " and name <> '%port'"
     set tSQL = tSQL _ " and name <> '%PythonInterpreterPath'"
     set tSQL = tSQL _ " and name <> '%traceback'"
+    set tSQL = tSQL _ " and name <> '%PythonPath'"
+    set tSQL = tSQL _ " and name <> '%PythonRuntimeLibrary'"
+    set tSQL = tSQL _ " and name <> '%PythonRuntimeLibraryVersion'"
+    set tSQL = tSQL _ " and name <> '%settings'"
+    set tSQL = tSQL _ " and name <> '%Venv'"
 
     set tStmt = ##class(%SQL.Statement).%New()
 
