@@ -12,10 +12,11 @@ nav:
   - API documentation:
     - Command Line Interface: command-line.md
     - Python API: python-api.md
-  - DTL Support: dtl.md
-  - Logging: logging.md
-  - Debugging: debug.md
-  - Production Settings: prod-settings.md
+    - DTL Support: dtl.md
+    - Logging: logging.md
+    - Debugging: debug.md
+    - Production Settings: prod-settings.md
+    - Venv Support: venv.md
   - Contributing:
     - Contributing: contributing.md
     - Code of Conduct: code-of-conduct.md
