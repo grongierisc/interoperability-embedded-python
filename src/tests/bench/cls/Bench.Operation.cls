@@ -12,7 +12,7 @@ Method Method(
 
     try{
         // Simulate some processing time
-        hang 0.01
+        hang 0.001
         set pResponse = pRequest
 
     }

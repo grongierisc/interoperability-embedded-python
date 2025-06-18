@@ -6,5 +6,5 @@ class BenchIoPOperation(BusinessOperation):
     my_param = "BenchIoPOperation"
 
     def on_message(self, request):
-        time.sleep(0.01)  # Simulate some processing delay
+        time.sleep(0.001)  # Simulate some processing delay
         return request
