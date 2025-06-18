@@ -37,6 +37,22 @@ Property %PythonRuntimeLibrary As %String(MAXLEN = 255);
 
 Property %PythonRuntimeLibraryVersion As %String;
 
+/// The sessionId if the private session has been established
+Property %PrivateSessionId As %Integer;
+
+/// A flag indicates if the private session has been established
+Property %InPrivateSession As %Boolean [ Calculated ];
+
+Method %InPrivateSessionGet() As %Boolean
+{
+	Quit ..%PrivateSessionId'=""
+}
+
+Method QueueName() As %String
+{
+	Quit $s(..%InPrivateSession:$$$queueBusinessDuplexQueueName,1:..%ConfigName)
+}
+
 /// Get Class
 Method GetClass() As %SYS.Python
 {
@@ -198,6 +214,7 @@ Method OnTearDown() As %Status
     set tSC = $$$OK
     if $isObject(..%class) {
         try {
+            If ..%InPrivateSession Set tSC=..StopPrivateSession() Quit:$$$ISERR(tSC)
             do ..%class."_dispatch_on_tear_down"()
         } catch ex {
             set tSC = ex.AsStatus()
@@ -460,6 +477,178 @@ Method dispatchIsRequestDone(
         }
     }
 	catch ex {
+		set tSC = ex.AsStatus()
+	}
+	quit tSC
+}
+
+XData MessageMap
+{
+<MapItems>
+<MapItem MessageType="IOP.PrivateSession.Message.Start"><Method>OnMsgPrivateSessionStart</Method></MapItem>
+<MapItem MessageType="IOP.PrivateSession.Message.Stop"><Method>OnMsgPrivateSessionStop</Method></MapItem>
+<MapItem MessageType="IOP.PrivateSession.Message.Poll"><Method>OnMsgPrivateSessionPoll</Method></MapItem>
+</MapItems>
+}
+
+Method OnMsgPrivateSessionStart(
+	pRequest As IOP.PrivateSession.Message.Start,
+	Output pResponse As %Library.Persistent) As %Status
+{
+    #dim tSC As %Status = $$$OK
+    try {
+        Set tSC=..RegisterPrivateSession() Quit:$$$ISERR(tSC)
+        Set tSC=..OnPrivateSessionStarted(pRequest) Quit:$$$ISERR(tSC)
+        Kill %objlasterror Set pResponse=##class(IOP.PrivateSession.Message.Ack).%New()
+        If '$IsObject(pResponse) Set tSC=$$$ERROR($$$FailedToNewClass,"IOP.PrivateSession.Message.Ack") Quit
+    } catch {
+        Set tSC=$$$EnsSystemError
+    }
+    Quit tSC
+}
+
+Method OnMsgPrivateSessionStop(
+	pRequest As IOP.PrivateSession.Message.Stop,
+	Output pResponse As %Library.Persistent) As %Status
+{
+    #dim tSC As %Status = $$$OK
+    try {
+        Set tSC=..UnRegisterPrivateSession() Quit:$$$ISERR(tSC)
+        set ..DeferredResponseToken=""
+        do ..ReceivedDataQueue.Clear()
+        Set tSC=..OnPrivateSessionStopped(pRequest.AttachedMessage) Quit:$$$ISERR(tSC)
+    } catch {
+        Set tSC=$$$EnsSystemError
+    }
+    Quit tSC
+}
+
+Method OnMsgPrivateSessionPoll(
+	pPollIn As IOP.PrivateSession.Message.Poll,
+	Output pResponse As %Library.Persistent) As %Status
+{
+    #dim tSC As %Status = $$$OK
+    #dim tToken As %String
+    try  {
+        Set tSC = ..OnPrivateSessionPoll(.pResponse)
+    } catch {
+        Set tSC=$$$EnsSystemError
+    }
+    Quit tSC
+}
+
+Method StartPrivateSession() As %Status
+{
+    #dim tSC As %Status = $$$OK
+    try {
+        If ..%InPrivateSession Quit
+        Set tSC = ..RegisterPrivateSession() Quit:$$$ISERR(tSC)
+        Set tSC=..SendRequestAsync(..DuplexTargetConfigName,##class(IOP.PrivateSession.Message.Start).%New()) Quit:$$$ISERR(tSC)
+        Set tSC = ..OnPrivateSessionStarted() Quit:$$$ISERR(tSC)
+    } catch {
+        Set tSC=$$$EnsSystemError
+    }
+    Quit tSC
+}
+
+Method StopPrivateSession(pAttachedMessage As %Persistent = "") As %Status
+{
+    #dim tSC As %Status = $$$OK
+    #dim tMessageHeaderId As %String
+    #dim tRequestHeader As Ens.MessageHeader
+    try {
+	    If ..%InPrivateSession {
+	        #; Target might receive stop message before this job unregisters and therefore need to remove queue pointer 
+	        If ..DeferredResponseToken'="" {
+		        try {
+					Set tMessageHeaderId=$p(..DeferredResponseToken,"|",1)
+					Set tRequestHeader=##Class(Ens.MessageHeader).%OpenId(tMessageHeaderId,,.tSC) Quit:$$$ISERR(tSC)
+					If $$$ConfigSessionQueueName(..%ConfigName,..%PrivateSessionId)'=tRequestHeader.ReturnQueueName {
+			        	Kill $$$ConfigSessionQueueName(..%ConfigName,..%PrivateSessionId)
+					}
+					Set tRequestHeader=""
+		        } catch {}
+	        }
+			Set tSC=..SendDocumentToProcess(##class(IOP.PrivateSession.Message.Stop).%New(pAttachedMessage)) Quit:$$$ISERR(tSC)
+            Set tSC=..UnRegisterPrivateSession()
+            set ..DeferredResponseToken=""
+            
+            #; Ensure all messages are delivered including STOP message (JN1098)
+            #; Do ..ReceivedDataQueue.Clear()
+            Set tSC=..OnPrivateSessionStopped() Quit:$$$ISERR(tSC)
+        }
+    } catch {
+        Set tSC=$$$EnsSystemError
+    }
+    Quit tSC
+}
+
+Method RegisterPrivateSession() As %Status
+{
+	If ..%InPrivateSession Quit $$$OK
+	If ..%SessionId="" Set tSC=..ForceSessionId() Quit:$$$ISERR(tSC) tSC
+	Set ..%PrivateSessionId=..%SessionId
+	Set tSC = ##class(Ens.Queue).Create(..QueueName()) Quit:$$$ISERR(tSC) tSC
+
+    try {
+        Set tSC=..Adapter.OpenEventDevice() 
+    }
+    catch {
+
+    }
+	
+	Set $$$ConfigSessionQueueName(..%ConfigName,..%SessionId)=..QueueName()
+	$$$sysTRACE("Registered Private Session '"_..%PrivateSessionId_"'")
+	Quit $$$OK
+}
+
+Method UnRegisterPrivateSession(pDuplexConfigName As %String) As %Status
+{
+	If '..%InPrivateSession Quit $$$OK
+	Kill $$$ConfigSessionQueueName(..%ConfigName,..%PrivateSessionId)
+    try {
+        Set tSC=..Adapter.CloseEventDevice()
+    }
+    catch {
+
+    }
+	 
+	Set tSC=##class(Ens.Queue).Delete(..QueueName(),"*") Quit:$$$ISERR(tSC) tSC
+	$$$sysTRACE("Unregistered Private Session '"_..%PrivateSessionId_"'")
+	Set ..%PrivateSessionId=""
+	Set ..%SessionId=""
+	Kill $$$JobSessionId
+	Quit $$$OK
+}
+
+Method OnPrivateSessionStarted(pRequest) As %Status
+{
+	set tSC = $$$OK
+	try {
+		do ..%class."_dispatch_private_session_started"(pRequest)
+	} catch ex {
+		set tSC = ex.AsStatus()
+	}
+	quit tSC
+}
+
+Method OnPrivateSessionPoll(Output pResponse) As %Status
+{
+    set tSC = $$$OK
+    try {
+        set pResponse = ..%class."_dispatch_private_session_poll"()
+    } catch ex {
+        set tSC = ex.AsStatus()
+    }
+    quit tSC
+}
+
+Method OnPrivateSessionStopped(pAttachedMessage As %Persistent = "") As %Status
+{
+	set tSC = $$$OK
+	try {
+		set response = ..%class."_dispatch_private_session_stopped"($this,pAttachedMessage)
+	} catch ex {
 		set tSC = ex.AsStatus()
 	}
 	quit tSC

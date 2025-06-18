@@ -27,3 +27,6 @@ class _PydanticPickleMessage(BaseModel):
     
     def __init__(self, **data: Any):
         super().__init__(**data)
+
+class _GeneratorMessage(_Message):
+    """"Base message to initialize generator function"""

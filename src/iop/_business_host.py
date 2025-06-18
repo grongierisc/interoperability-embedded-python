@@ -7,6 +7,7 @@ from ._message import _Message as Message
 from ._decorators import input_serializer_param, output_deserializer
 from ._dispatch import dispatch_serializer, dispatch_deserializer
 from ._async_request import AsyncRequest
+from ._generator_request import _GeneratorRequest
 
 class _BusinessHost(_Common):
     """Base class for business components that defines common methods.
@@ -67,6 +68,22 @@ class _BusinessHost(_Common):
             Response from target component
         """
         return await AsyncRequest(target, request, timeout, description, self)
+    
+    @input_serializer_param(1, 'request')
+    def send_generator_request(self, target: str, request: Union[Message, Any], 
+                              timeout: int = -1, description: Optional[str] = None) -> _GeneratorRequest:
+        """Send message as a generator request to target component.
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever
+            description: Optional description for logging
+        Returns:
+            _GeneratorRequest: An instance of _GeneratorRequest to iterate over responses
+        Raises:
+            TypeError: If request is not of type Message or _GeneratorMessage
+        """
+        return _GeneratorRequest(self, target, request, timeout, description)
 
     def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
                                timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:

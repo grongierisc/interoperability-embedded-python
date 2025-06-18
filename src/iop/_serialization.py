@@ -10,7 +10,7 @@ from typing import Any, Dict, Type
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from . import _iris
-from ._message import _PydanticPickleMessage, _Message
+from ._message import _PydanticPickleMessage, _Message, _GeneratorMessage
 from ._utils import _Utils
 
 class SerializationError(Exception):
@@ -47,7 +47,10 @@ class MessageSerializer:
     def _serialize_json(message: Any) -> Any:
         json_string = MessageSerializer._convert_to_json_safe(message)
         
-        msg = _iris.get_iris().cls('IOP.Message')._New()
+        if isinstance(json_string, _GeneratorMessage):
+            msg = _iris.get_iris().cls('IOP.PrivateSession.Message.Start')._New()
+        else:
+            msg = _iris.get_iris().cls('IOP.Message')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         
         if hasattr(msg, 'buffer') and len(json_string) > msg.buffer:

@@ -4,6 +4,8 @@ from typing import Any, List, Tuple, Callable
 from ._serialization import serialize_message, serialize_pickle_message, deserialize_message, deserialize_pickle_message
 from ._message_validator import is_message_instance, is_pickle_message_instance, is_iris_object_instance
 
+from ._message import _GeneratorMessage
+
 def dispatch_serializer(message: Any) -> Any:
     """Serializes the message based on its type.
     
@@ -72,6 +74,9 @@ def dispach_message(host: Any, request: Any) -> Any:
 
     module = request.__class__.__module__
     classname = request.__class__.__name__
+
+    if isinstance(request, _GeneratorMessage):
+        return getattr(host, '_dispatch_private_session_started')(request)
 
     for msg, method in host.DISPATCH:
         if msg == module + "." + classname:
