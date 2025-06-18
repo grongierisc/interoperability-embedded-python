@@ -59,7 +59,7 @@ Method OnResponse(
 		; handle SessionStop message
 		If $IsObject(callresponse)&&($classname(callresponse)="IOP.PrivateSession.Message.Stop") {
 			Set tSC=..UnRegisterPrivateSession(tSourceConfigName) Quit:$$$ISERR(tSC)
-			Set tSC=..OnPrivateSessionStoppedCustom(tSourceConfigName,0,callresponse.AttachedMessage) Quit:$$$ISERR(tSC)
+			Set tSC=..OnPrivateSessionStopped(tSourceConfigName,0,callresponse.AttachedMessage) Quit:$$$ISERR(tSC)
 			Quit
 		}
 		; send poll request again back to the same ConfigItem if this this is in response to a poll request
@@ -89,7 +89,7 @@ Method StartPrivateSession(pDuplexConfigName As %String = "") As %Status
 	Quit tSC
 }
 
-Method StopPrivateSessionCustom(
+Method StopPrivateSession(
 	pDuplexConfigName As %String = "",
 	pAttachedMessage As %Persistent = "") As %Status
 {
@@ -99,7 +99,7 @@ Method StopPrivateSessionCustom(
 		If '..IsInPrivateSession(pDuplexConfigName) Quit
 		Set tSC=..SendRequestAsync(pDuplexConfigName,##class(IOP.PrivateSession.Message.Stop).%New(pAttachedMessage),0) Quit:$$$ISERR(tSC)
 		Set tSC=..UnRegisterPrivateSession(pDuplexConfigName)
-		Set tSC=..OnPrivateSessionStoppedCustom(pDuplexConfigName,1) Quit:$$$ISERR(tSC)
+		Set tSC=..OnPrivateSessionStopped(pDuplexConfigName,1) Quit:$$$ISERR(tSC)
 	} catch {
 		Set tSC=$$$EnsSystemError
 	}
@@ -113,7 +113,7 @@ Method StopAllPrivateSessions(pAttachedMessage As %Persistent = "") As %Status
 	try {
 		Set tItem="" For  {
 			Set tItem=..%IsInPrivateSession.Next(tItem) Quit:tItem=""
-			Set tSC=..StopPrivateSessionCustom(tItem,pAttachedMessage) Quit:$$$ISERR(tSC)
+			Set tSC=..StopPrivateSession(tItem,pAttachedMessage) Quit:$$$ISERR(tSC)
 		}
 	} catch {
 		Set tSC=$$$EnsSystemError
@@ -121,7 +121,7 @@ Method StopAllPrivateSessions(pAttachedMessage As %Persistent = "") As %Status
 	Quit tSC
 }
 
-Method UnRegisterPrivateSession(pDuplexConfigName As %String) As %Status
+Method UnRegisterPrivateSession(pDuplexConfigName As %String) As %String
 {
 	#dim tSC As %Status = $$$OK
 	try {
@@ -169,7 +169,7 @@ Method OnDocument(
 	quit tSC
 }
 
-Method OnPrivateSessionStartedCustom(
+Method OnPrivateSessionStarted(
 	pSourceConfigName As %String,
 	pSelfGenerated As %Boolean) As %Status
 {
@@ -182,7 +182,7 @@ Method OnPrivateSessionStartedCustom(
 	quit tSC
 }
 
-Method OnPrivateSessionStoppedCustom(
+Method OnPrivateSessionStopped(
 	pSourceConfigName As %String,
 	pSelfGenerated As %Boolean,
 	pAttachedMessage As %Persistent = "") As %Status

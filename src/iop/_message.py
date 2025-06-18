@@ -9,7 +9,7 @@ class _Message:
     """
     pass
 
-class _PickleMessage:
+class _PickleMessage(_Message):
     """ The abstract class that is the superclass for persistent messages sent from one component to another.
     This class has no properties or methods. Users subclass Message and add properties.
     The IOP framework provides the persistence to objects derived from the Message class.
@@ -28,5 +28,3 @@ class _PydanticPickleMessage(BaseModel):
     def __init__(self, **data: Any):
         super().__init__(**data)
 
-class _GeneratorMessage(_Message):
-    """"Base message to initialize generator function"""

@@ -71,7 +71,7 @@ Method StartPrivateSession() As %Status
         If ..%InPrivateSession Quit
         Set tSC = ..RegisterPrivateSession() Quit:$$$ISERR(tSC)
         Set tSC=..SendRequestAsync(..DuplexTargetConfigName,##class(IOP.PrivateSession.Message.Start).%New()) Quit:$$$ISERR(tSC)
-        Set tSC = ..OnPrivateSessionStartedCustom(1) Quit:$$$ISERR(tSC)
+        Set tSC = ..OnPrivateSessionStarted(1) Quit:$$$ISERR(tSC)
     } catch {
         Set tSC=$$$EnsSystemError
     }
@@ -102,7 +102,7 @@ Method StopPrivateSession(pAttachedMessage As %Persistent = "") As %Status
             
             #; Ensure all messages are delivered including STOP message (JN1098)
             #; Do ..ReceivedDataQueue.Clear()
-            Set tSC=..OnPrivateSessionStoppedCustom(1) Quit:$$$ISERR(tSC)
+            Set tSC=..OnPrivateSessionStopped(1) Quit:$$$ISERR(tSC)
         }
     } catch {
         Set tSC=$$$EnsSystemError
@@ -164,7 +164,7 @@ Method OnMsgPrivateSessionStart(
     #dim tSC As %Status = $$$OK
     try {
         Set tSC=..RegisterPrivateSession() Quit:$$$ISERR(tSC)
-        Set tSC=..OnPrivateSessionStartedCustom(0) Quit:$$$ISERR(tSC)
+        Set tSC=..OnPrivateSessionStarted(0) Quit:$$$ISERR(tSC)
         Kill %objlasterror Set pResponse=##class(IOP.PrivateSession.Message.Ack).%New()
         If '$IsObject(pResponse) Set tSC=$$$ERROR($$$FailedToNewClass,"IOP.PrivateSession.Message.Ack") Quit
     } catch {
@@ -182,7 +182,7 @@ Method OnMsgPrivateSessionStop(
         Set tSC=..UnRegisterPrivateSession() Quit:$$$ISERR(tSC)
         set ..DeferredResponseToken=""
         do ..ReceivedDataQueue.Clear()
-        Set tSC=..OnPrivateSessionStoppedCustom(0,pRequest.AttachedMessage) Quit:$$$ISERR(tSC)
+        Set tSC=..OnPrivateSessionStopped(0,pRequest.AttachedMessage) Quit:$$$ISERR(tSC)
     } catch {
         Set tSC=$$$EnsSystemError
     }
@@ -221,7 +221,7 @@ ClassMethod OnGetConnections(
     }
 }
 
-Method OnPrivateSessionStartedCustom(pSelfGenerated As %Boolean) As %Status
+Method OnPrivateSessionStarted(pSelfGenerated As %Boolean) As %Status
 {
 	set tSC = $$$OK
 	try {
@@ -232,7 +232,7 @@ Method OnPrivateSessionStartedCustom(pSelfGenerated As %Boolean) As %Status
 	quit tSC
 }
 
-Method OnPrivateSessionStoppedCustom(
+Method OnPrivateSessionStopped(
 	pSelfGenerated As %Boolean,
 	pAttachedMessage As %Persistent = "") As %Status
 {

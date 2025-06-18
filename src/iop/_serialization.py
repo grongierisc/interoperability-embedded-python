@@ -10,7 +10,7 @@ from typing import Any, Dict, Type
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from . import _iris
-from ._message import _PydanticPickleMessage, _Message, _GeneratorMessage
+from ._message import _PydanticPickleMessage, _Message
 from ._utils import _Utils
 
 class SerializationError(Exception):
@@ -37,18 +37,18 @@ class MessageSerializer:
             raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass Message")
 
     @staticmethod
-    def serialize(message: Any, use_pickle: bool = False) -> Any:
+    def serialize(message: Any, use_pickle: bool = False, is_generator:bool = False) -> Any:
         """Serializes a message to IRIS format."""
-        if isinstance(message, _PydanticPickleMessage) or use_pickle:
-            return MessageSerializer._serialize_pickle(message)
-        return MessageSerializer._serialize_json(message)
+        if use_pickle:
+            return MessageSerializer._serialize_pickle(message, is_generator)
+        return MessageSerializer._serialize_json(message, is_generator)
 
     @staticmethod
-    def _serialize_json(message: Any) -> Any:
+    def _serialize_json(message: Any, is_generator: bool = False) -> Any:
         json_string = MessageSerializer._convert_to_json_safe(message)
         
-        if isinstance(json_string, _GeneratorMessage):
-            msg = _iris.get_iris().cls('IOP.PrivateSession.Message.Start')._New()
+        if is_generator:
+            msg = _iris.get_iris().cls('IOP.Generator.Message.Start')._New()
         else:
             msg = _iris.get_iris().cls('IOP.Message')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
@@ -91,9 +91,12 @@ class MessageSerializer:
             raise SerializationError(f"Failed to deserialize JSON: {str(e)}")
 
     @staticmethod
-    def _serialize_pickle(message: Any) -> Any:
+    def _serialize_pickle(message: Any, is_generator: bool = False) -> Any:
         pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
-        msg = _iris.get_iris().cls('IOP.PickleMessage')._New()
+        if is_generator:
+            msg = _iris.get_iris().cls('IOP.Generator.Message.StartPickle')._New()
+        else:
+            msg = _iris.get_iris().cls('IOP.PickleMessage')._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
         msg.jstr = _Utils.string_to_stream(pickle_string)
         return msg
@@ -168,7 +171,9 @@ def dataclass_to_dict(instance: Any) -> Dict:
     return result
 
 # Maintain backwards compatibility
-serialize_pickle_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=True)
-serialize_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=False)
+serialize_pickle_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=True, is_generator=False)
+serialize_pickle_message_generator = lambda msg: MessageSerializer.serialize(msg, use_pickle=True, is_generator=True)
+serialize_message = lambda msg: MessageSerializer.serialize(msg, use_pickle=False, is_generator=False)
+serialize_message_generator = lambda msg: MessageSerializer.serialize(msg, use_pickle=False, is_generator=True)
 deserialize_pickle_message = lambda serial: MessageSerializer.deserialize(serial, use_pickle=True)
 deserialize_message = lambda serial: MessageSerializer.deserialize(serial, use_pickle=False)

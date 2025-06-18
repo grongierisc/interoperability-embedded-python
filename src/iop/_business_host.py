@@ -4,8 +4,8 @@ from typing import Any,List, Optional, Tuple, Union
 from . import _iris
 from ._common import _Common
 from ._message import _Message as Message
-from ._decorators import input_serializer_param, output_deserializer
-from ._dispatch import dispatch_serializer, dispatch_deserializer
+from ._decorators import input_serializer_param, output_deserializer, input_deserializer, output_serializer
+from ._dispatch import dispatch_serializer, dispatch_deserializer, dispach_message
 from ._async_request import AsyncRequest
 from ._generator_request import _GeneratorRequest
 
@@ -68,8 +68,7 @@ class _BusinessHost(_Common):
             Response from target component
         """
         return await AsyncRequest(target, request, timeout, description, self)
-    
-    @input_serializer_param(1, 'request')
+
     def send_generator_request(self, target: str, request: Union[Message, Any], 
                               timeout: int = -1, description: Optional[str] = None) -> _GeneratorRequest:
         """Send message as a generator request to target component.
@@ -81,7 +80,7 @@ class _BusinessHost(_Common):
         Returns:
             _GeneratorRequest: An instance of _GeneratorRequest to iterate over responses
         Raises:
-            TypeError: If request is not of type Message or _GeneratorMessage
+            TypeError: If request is not of type Message
         """
         return _GeneratorRequest(self, target, request, timeout, description)
 
@@ -196,7 +195,7 @@ class _BusinessHost(_Common):
         """
         ## Parse the class code to find all invocations of send_request_sync and send_request_async
         ## and return the targets
-        targer_list = []
+        target_list = []
         # get the source code of the class
         source = getsource(self.__class__)
         # find all invocations of send_request_sync and send_request_async
@@ -211,29 +210,47 @@ class _BusinessHost(_Common):
                         if target.find("=") != -1:
                             # it's a keyword argument, remove the keyword
                             target = target[target.find("=")+1:].strip()
-                        if target not in targer_list:
-                            targer_list.append(target)
+                        if target not in target_list:
+                            target_list.append(target)
                 i = source.find(method, i+1)
 
-        for target in targer_list:
+        for target in target_list:
             # if target is a string, remove the quotes
             if target[0] == "'" and target[-1] == "'":
-                targer_list[targer_list.index(target)] = target[1:-1]
+                target_list[target_list.index(target)] = target[1:-1]
             elif target[0] == '"' and target[-1] == '"':
-                targer_list[targer_list.index(target)] = target[1:-1]
+                target_list[target_list.index(target)] = target[1:-1]
             # if target is a variable, try to find the value of the variable
             else:
                 self.on_init()
                 try:
                     if target.find("self.") != -1:
                         # it's a class variable
-                        targer_list[targer_list.index(target)] = getattr(self, target[target.find(".")+1:])
+                        target_list[target_list.index(target)] = getattr(self, target[target.find(".")+1:])
                     elif target.find(".") != -1:
                         # it's a class variable
-                        targer_list[targer_list.index(target)] = getattr(getattr(self, target[:target.find(".")]), target[target.find(".")+1:])
+                        target_list[target_list.index(target)] = getattr(getattr(self, target[:target.find(".")]), target[target.find(".")+1:])
                     else:
-                        targer_list[targer_list.index(target)] = getattr(self, target)
+                        target_list[target_list.index(target)] = getattr(self, target)
                 except Exception as e:
                     pass
 
-        return targer_list
+        return target_list
+
+    @input_deserializer
+    def _dispatch_generator_started(self, request: Any) -> Any:
+        """For internal use only."""
+        self._gen = dispach_message(self, request)
+        # check if self._gen is a generator
+        if not hasattr(self._gen, '__iter__'):
+            raise TypeError("Expected a generator or iterable object, got: {}".format(type(self._gen).__name__))
+        
+        return _iris.get_iris().IOP.Generator.Message.Ack._New()
+    
+    @output_serializer
+    def _dispatch_generator_poll(self) -> Any:
+        """For internal use only."""
+        try:
+            return next(self._gen)
+        except StopIteration:
+            return _iris.get_iris().IOP.Generator.Message.Stop._New()

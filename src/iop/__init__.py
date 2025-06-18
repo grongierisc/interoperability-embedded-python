@@ -3,7 +3,7 @@ from iop._business_process import _BusinessProcess
 from iop._business_service import _BusinessService
 from iop._director import _Director
 from iop._inbound_adapter import _InboundAdapter
-from iop._message import _Message, _PickleMessage, _PydanticMessage, _PydanticPickleMessage, _GeneratorMessage
+from iop._message import _Message, _PickleMessage, _PydanticMessage, _PydanticPickleMessage
 from iop._outbound_adapter import _OutboundAdapter
 from iop._private_session_duplex import _PrivateSessionDuplex
 from iop._private_session_process import _PrivateSessionProcess
@@ -22,5 +22,4 @@ class Message(_Message): pass
 class PickleMessage(_PickleMessage): pass
 class PydanticMessage(_PydanticMessage): pass
 class PydanticPickleMessage(_PydanticPickleMessage): pass
-class GeneratorMessage(_GeneratorMessage): pass
 class Director(_Director): pass

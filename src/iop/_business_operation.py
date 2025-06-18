@@ -73,33 +73,3 @@ class _BusinessOperation(_BusinessHost):
         """
         return
     
-    @input_deserializer
-    @output_serializer
-    def _dispatch_private_session_started(self, request: Any) -> Any:
-        """For internal use only."""
-        self._gen = self.on_private_session_started(request)
-        from . import _iris
-        return _iris.get_iris().IOP.PrivateSession.Message.Ack._New()
-    
-    def on_private_session_started(self, request: Any) -> Any:
-        """Called when a private session is started.
-        
-        This method can be overridden to handle the start of a private session.
-        
-        Args:
-            request: The request object containing session details.
-            
-        Returns:
-            Any response object or None.
-        """
-        return None
-    
-    @input_serializer
-    @output_deserializer
-    def _dispatch_private_session_poll(self, request: Any) -> Any:
-        """For internal use only."""
-        try:
-            return next(self._gen)
-        except StopIteration:
-            import _iris
-            return _iris.get_iris().IOP.PrivateSession.Message.Stop._New()

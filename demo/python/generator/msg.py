@@ -1,8 +1,8 @@
-from iop import GeneratorMessage,Message
+from iop import Message
 from dataclasses import dataclass
 
 @dataclass
-class MyGenerator(GeneratorMessage):
+class MyGenerator(Message):
     """Base message to initialize generator function"""
     my_string: str
 
