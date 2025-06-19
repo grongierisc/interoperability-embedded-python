@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/component-interation/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/component-interaction/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
     <title>Component Interaction - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
@@ -13,8 +13,8 @@
       <script>
         // Current page data
         var mkdocs_page_name = "Component Interaction";
-        var mkdocs_page_input_path = "component-interation.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/component-interation/";
+        var mkdocs_page_input_path = "component-interaction.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/component-interaction/";
       </script>
     
     <!--[if lt IE 9]>
@@ -53,12 +53,60 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API documentation</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
                   </li>
-                  <li class="toctree-l1"><a class="" href="../component-interaction.md">Component Interaction</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Component Interaction</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#how-to-exchange-messages">How to exchange messages</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send_request_sync">send_request_sync</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature">Function signature</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage">Example usage</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send_request_async">send_request_async</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature-for-businessservice-and-businessoperation">Function signature (for BusinessService and BusinessOperation)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage-for-businessservice-and-businessoperation">Example usage (for BusinessService and BusinessOperation)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature-for-businessprocess">Function signature (for BusinessProcess)</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage-for-businessprocess">Example usage (for BusinessProcess)</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send_request_async_ng">send_request_async_ng</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature_1">Function signature</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage_1">Example usage</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send_multi_request_sync">send_multi_request_sync</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature_2">Function signature</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage_2">Example usage</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#send_generator_request">send_generator_request</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#function-signature_3">Function signature</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#example-usage_3">Example usage</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
                   </li>
@@ -108,6 +156,7 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API documentation</li>
       <li class="breadcrumb-item active">Component Interaction</li>
     <li class="wy-breadcrumbs-aside">
     </li>
@@ -377,6 +426,10 @@ class MyGeneratorOperation(BusinessOperation):
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../dtl/" class="btn btn-neutral float-right" title="DTL Support">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -398,6 +451,10 @@ class MyGeneratorOperation(BusinessOperation):
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../dtl/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
