@@ -1,7 +1,7 @@
 from typing import Any, Optional, Union
 
 from . import _iris
-from ._dispatch import dispatch_serializer, dispatch_deserializer
+from ._dispatch import dispatch_serializer
 
 class _GeneratorRequest:
     """Generator class to interetate over responses from a request.

@@ -46,6 +46,58 @@ class TestBusinessHostAsync:
         
         assert result == [('test', SimpleMessage(integer=1, string='test'), MyResponse(value='test'), 1)]
 
+class TestGeneratorRequest:
+    def test_generator_request_initialization(self, business_host):
+        business_host.iris_handle.dispatchSendRequestSync = MagicMock()
+        business_host.iris_handle.dispatchSendRequestSync.return_value = iris.cls("IOP.Generator.Message.Ack")._New()
+
+        from iop._generator_request import _GeneratorRequest
+        generator = _GeneratorRequest(business_host, "test_target", SimpleMessage(integer=1, string='test'))
+
+        assert generator.host == business_host
+        assert generator.target == "test_target"
+        assert generator.request == SimpleMessage(integer=1, string='test')
+
+    @patch('iop._business_host._iris.get_iris')
+    @patch('iop._business_host.dispach_message')
+    def test_dispatch_generator_started(self, mock_dispatch, mock_iris, business_host):
+        mock_generator = iter([1, 2, 3])
+        mock_dispatch.return_value = mock_generator
+        mock_ack = MagicMock()
+        mock_iris.return_value.IOP.Generator.Message.Ack._New.return_value = mock_ack
+        
+        result = business_host._dispatch_generator_started("request")
+        
+        assert result == mock_ack
+        assert hasattr(business_host, '_gen')
+
+    @patch('iop._business_host.dispach_message')
+    def test_dispatch_generator_started_not_iterable(self, mock_dispatch, business_host):
+        mock_dispatch.return_value = SimpleMessage(integer=1, string='test')
+        
+        with pytest.raises(TypeError):
+            business_host._dispatch_generator_started("request")
+
+    def test_dispatch_generator_poll_next(self, business_host):
+        # Configure the mock to return proper buffer size
+        mock_msg = SimpleMessage(integer=1, string='test')
+        
+        business_host._gen = iter([SimpleMessage(integer=1, string='test'), SimpleMessage(integer=2, string='test2')])
+        
+        result = business_host._dispatch_generator_poll()
+
+        # deserialize the message
+        result = deserialize_message(result)
+        
+        assert result == SimpleMessage(integer=1, string='test')
+
+    def test_dispatch_generator_poll_stop(self, business_host):
+        business_host._gen = iter([])
+        
+        result = business_host._dispatch_generator_poll()
+        
+        assert result._IsA("IOP.Generator.Message.Stop")
+
 class TestMessageSerialization:
     def test_dispatch_serializer_valid(self, business_host):
         message = SimpleMessage(integer=1, string='test')
