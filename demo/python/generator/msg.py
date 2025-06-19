@@ -10,3 +10,8 @@ class MyGenerator(Message):
 class MyGeneratorResponse(Message):
     """Base message to return generator function response"""
     my_other_string: str
+
+@dataclass
+class MyOtherGeneratorCall(Message):
+    """Base message to call a generator function"""
+    StringValue: str
