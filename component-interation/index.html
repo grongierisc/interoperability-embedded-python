@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/component-interation/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Component Interaction - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Component Interaction";
+        var mkdocs_page_input_path = "component-interation.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/component-interation/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../component-interaction.md">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Component Interaction</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="component-interaction">Component Interaction</h1>
+<p>This is the IRIS Framework.</p>
+<p><img alt="IRIS Framework" src="../img/FrameworkFull.png" /></p>
+<p>The components inside of IRIS represent a production. </p>
+<p>You have 3 main components:
+- <strong>BusinessService</strong>: This component aims to recieve requests from external applications.
+- <strong>BusinessProcess</strong>: This component is responsible for processing the requests and orchestrating the business logic.
+- <strong>BusinessOperation</strong>: This component is responsible for executing the technical operations that are needed to fulfill the requests.</p>
+<p>The composite applications will give us access to the production through external applications like REST services.</p>
+<p>The <strong>arrows</strong> between them all of this components are <strong>messages</strong>.</p>
+<p>The messages are the way that the components interact with each other.</p>
+<h2 id="how-to-exchange-messages">How to exchange messages</h2>
+<p>To exchange messages between components, you can use the following methods:</p>
+<ul>
+<li><code>send_request_sync</code>: This method is used to send a request synchronously. It will wait for a response before continuing.</li>
+<li><code>send_request_async</code>: This method is used to send a request asynchronously. It will not wait for a response before continuing.</li>
+<li><code>send_request_async_ng</code>: Same as <code>send_request_async</code>, but with an ayncio implementation.</li>
+<li><code>send_multi_request_sync</code>: This method is used to send multiple requests synchronously. It will wait for all responses before continuing.</li>
+<li><code>send_generator_request</code>: This method is used to send a request synchronously and return a generator.</li>
+</ul>
+<h2 id="send_request_sync">send_request_sync</h2>
+<p>This method is used to send a request synchronously. It will wait for a response before continuing.</p>
+<h3 id="function-signature">Function signature</h3>
+<pre><code class="language-python">def send_request_sync(self, target: str, request: Union[Message, Any], 
+                        timeout: int = -1, description: Optional[str] = None) -&gt; Any:
+    &quot;&quot;&quot;Send message synchronously to target component.
+
+    Args:
+        target: Name of target component
+        request: Message to send
+        timeout: Timeout in seconds, -1 means wait forever 
+        description: Optional description for logging
+
+    Returns:
+        Response from target component
+
+    Raises:
+        TypeError: If request is invalid type
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="example-usage">Example usage</h3>
+<pre><code class="language-python">from iop import BusinessProcess
+from msg import MyMessage
+
+class MyBP(BusinessProcess):
+
+    def on_message(self, request):
+        msg = MyMessage(message=&quot;Hello World&quot;)
+        # Send a synchronous request to the target component
+        response = self.send_request_sync(&quot;Python.MyBO&quot;, msg)
+        self.log_info(f&quot;Received response: {response}&quot;)
+</code></pre>
+<h2 id="send_request_async">send_request_async</h2>
+<p>This method is used to send a request asynchronously. It will not wait for a response before continuing.</p>
+<h3 id="function-signature-for-businessservice-and-businessoperation">Function signature (for BusinessService and BusinessOperation)</h3>
+<pre><code class="language-python">def send_request_async(self, target: str, request: Union[Message, Any], 
+                        description: Optional[str] = None) -&gt; None:
+    &quot;&quot;&quot;Send message asynchronously to target component.
+
+    Args:
+        target: Name of target component
+        request: Message to send
+        description: Optional description for logging
+
+    Raises:
+        TypeError: If request is invalid type
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="example-usage-for-businessservice-and-businessoperation">Example usage (for BusinessService and BusinessOperation)</h3>
+<pre><code class="language-python">from iop import BusinessService
+from msg import MyMessage
+
+class MyBS(BusinessService):
+
+    def on_message(self, request):
+        msg = MyMessage(message=&quot;Hello World&quot;)
+        # Send an asynchronous request to the target component
+        self.send_request_async(&quot;Python.MyBO&quot;, msg)
+        self.log_info(&quot;Request sent asynchronously&quot;)
+</code></pre>
+<h3 id="function-signature-for-businessprocess">Function signature (for BusinessProcess)</h3>
+<pre><code class="language-python">def send_request_async(self, target: str, request: Any, description: Optional[str]=None, completion_key: Optional[str]=None, response_required: bool=True) -&gt; None:
+    &quot;&quot;&quot;Send the specified message to the target business process or business operation asynchronously.
+
+    Args:
+        target: The name of the business process or operation to receive the request
+        request: The message to send to the target
+        description: An optional description property in the message header
+        completion_key: A token to identify the completion of the request
+        response_required: Whether a response is required
+
+    Raises:
+        TypeError: If request is not of type Message or IRISObject
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="example-usage-for-businessprocess">Example usage (for BusinessProcess)</h3>
+<pre><code class="language-python">from iop import BusinessProcess
+from msg import MyMessage
+
+class MyBP(BusinessProcess):
+
+    def on_message(self, request):
+        msg_one = MyMessage(message=&quot;Message1&quot;)
+        msg_two = MyMessage(message=&quot;Message2&quot;)
+
+        self.send_request_async(&quot;Python.MyBO&quot;, msg_one,completion_key=&quot;1&quot;)
+        self.send_request_async(&quot;Python.MyBO&quot;, msg_two,completion_key=&quot;2&quot;)
+
+    def on_response(self, request, response, call_request, call_response, completion_key):
+        if completion_key == &quot;1&quot;:
+            self.response_one = call_response
+        elif completion_key == &quot;2&quot;:
+            self.response_two = call_response
+
+    def on_complete(self, request, response):
+        self.log_info(f&quot;Received response one: {self.response_one.message}&quot;)
+        self.log_info(f&quot;Received response two: {self.response_two.message}&quot;)
+</code></pre>
+<h2 id="send_request_async_ng">send_request_async_ng</h2>
+<p>This method is used to send a request asynchronously using an asyncio implementation.</p>
+<h3 id="function-signature_1">Function signature</h3>
+<pre><code class="language-python">async def send_request_async_ng(self, target: str, request: Union[Message, Any], 
+                                   timeout: int = -1, description: Optional[str] = None) -&gt; Any:
+    &quot;&quot;&quot;Send message asynchronously to target component with asyncio.
+
+    Args:
+        target: Name of target component
+        request: Message to send
+        timeout: Timeout in seconds, -1 means wait forever 
+        description: Optional description for logging
+
+    Returns:
+        Response from target component
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="example-usage_1">Example usage</h3>
+<pre><code class="language-python">import asyncio
+import random
+
+from iop import BusinessProcess
+from msg import MyMessage
+
+
+class MyAsyncNGBP(BusinessProcess):
+
+    def on_message(self, request):
+
+        results = asyncio.run(self.await_response(request))
+
+        for result in results:
+            self.logger.info(f&quot;Received response: {result.message}&quot;)
+
+        return MyMessage(message=&quot;All responses received&quot;)
+
+    async def await_response(self, request):
+        # create 1 to 10 messages
+        tasks = []
+        for i in range(random.randint(1, 10)):
+            tasks.append(self.send_request_async_ng(&quot;Python.MyAsyncNGBO&quot;,
+                                                    MyMessage(message=f&quot;Message {i}&quot;)))
+
+        return await asyncio.gather(*tasks)
+
+</code></pre>
+<h2 id="send_multi_request_sync">send_multi_request_sync</h2>
+<p>This method is used to send multiple requests synchronously. It will wait for all responses before continuing.</p>
+<h3 id="function-signature_2">Function signature</h3>
+<pre><code class="language-python">def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
+                               timeout: int = -1, description: Optional[str] = None) -&gt; List[Tuple[str, Union[Message, Any], Any, int]]:
+    &quot;&quot;&quot;Send multiple messages synchronously to target components.
+
+    Args:
+        target_request: List of tuples (target, request) to send
+        timeout: Timeout in seconds, -1 means wait forever 
+        description: Optional description for logging
+
+    Returns:
+        List of tuples (target, request, response, status)
+
+    Raises:
+        TypeError: If target_request is not a list of tuples
+        ValueError: If target_request is empty
+    &quot;&quot;&quot;
+...
+</code></pre>
+<h3 id="example-usage_2">Example usage</h3>
+<pre><code class="language-python">from iop import BusinessProcess
+from msg import MyMessage
+
+
+class MyMultiBP(BusinessProcess):
+
+    def on_message(self, request):
+        msg_one = MyMessage(message=&quot;Message1&quot;)
+        msg_two = MyMessage(message=&quot;Message2&quot;)
+
+        tuple_responses = self.send_multi_request_sync([(&quot;Python.MyMultiBO&quot;, msg_one),
+                                                        (&quot;Python.MyMultiBO&quot;, msg_two)])
+
+        self.log_info(&quot;All requests have been processed&quot;)
+        for target,request,response,status in tuple_responses:
+            self.log_info(f&quot;Received response: {response.message}&quot;)
+</code></pre>
+<h2 id="send_generator_request">send_generator_request</h2>
+<p>This method is used to send a request synchronously and return a generator.</p>
+<h3 id="function-signature_3">Function signature</h3>
+<pre><code class="language-python">    def send_generator_request(self, target: str, request: Union[Message, Any], 
+                              timeout: int = -1, description: Optional[str] = None) -&gt; _GeneratorRequest:
+    &quot;&quot;&quot;Send message as a generator request to target component.
+    Args:
+        target: Name of target component
+        request: Message to send
+        timeout: Timeout in seconds, -1 means wait forever
+        description: Optional description for logging
+    Returns:
+        _GeneratorRequest: An instance of _GeneratorRequest to iterate over responses
+    Raises:
+        TypeError: If request is not of type Message
+    &quot;&quot;&quot;
+    ...
+</code></pre>
+<h3 id="example-usage_3">Example usage</h3>
+<pre><code class="language-python">from typing import Any
+from iop import BusinessProcess,BusinessOperation
+
+from msg import MyGenerator,MyGeneratorResponse
+
+class MyGeneratorProcess(BusinessProcess):
+
+    def on_request(self, request: Any) -&gt; Any:
+        gen = self.send_generator_request(
+            target=&quot;User.MyGeneratorOperation&quot;,
+            request=MyGenerator(my_string=&quot;Hello, World!&quot;),
+            timeout=10,
+            description=&quot;My generator request&quot;)
+
+        for response in gen:
+            self.log_info(f&quot;Received response: {response}&quot;)
+
+class MyGeneratorOperation(BusinessOperation):
+
+    def on_private_session_started(self, request: MyGenerator) -&gt; Any:
+        # return the generator to the process that called it
+        return self.my_generator(request)
+
+    def my_generator(self, request: Any) -&gt; Any:
+        self.log_info(f&quot;Processing request: {request}&quot;)
+        # Simulate some processing and yield responses
+        for i in range(5):
+            response = f&quot;Response {i} from MyGeneratorOperation&quot;
+            self.log_info(response)
+            yield MyGeneratorResponse(my_other_string=response) # notice that we yield a response here
+</code></pre>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
