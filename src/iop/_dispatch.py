@@ -31,6 +31,9 @@ def dispatch_serializer(message: Any, is_generator: bool = False) -> Any:
     if message == "" or message is None:
         return message
 
+    if hasattr(message, '__iter__'):
+        raise TypeError("You may have tried to invoke a generator function without using the 'send_generator_request' method. Please use that method to handle generator functions.")
+
     raise TypeError("The message must be an instance of a class that is a subclass of Message or IRISObject %Persistent class.")
 
 def dispatch_deserializer(serial: Any) -> Any:
@@ -115,6 +118,10 @@ def get_handler_info(host: Any, method_name: str) -> Tuple[str, str] | None:
 
         param: Parameter = next(iter(params.values()))
         annotation = param.annotation
+
+        if isinstance(annotation, str):
+            # return it as is, assuming it's a fully qualified class name
+            return annotation, method_name
         
         if annotation == Parameter.empty or not isinstance(annotation, type):
             return None
