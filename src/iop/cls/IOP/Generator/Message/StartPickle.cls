@@ -2,7 +2,7 @@
    Cambridge, Massachusetts, U.S.A.  All rights reserved.
    Confidential property of InterSystems Corporation. */
 
-Class IOP.Generator.Message.StartPickle Extends IOP.PickleMessage [ ClassType = persistent, Inheritance = right, ProcedureBlock, System = 4 ]
+Class IOP.Generator.Message.StartPickle Extends IOP.PickleMessage [ ClassType = persistent, Inheritance = right, ProcedureBlock ]
 {
 
 Parameter DOMAIN = "Generator";
