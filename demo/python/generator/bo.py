@@ -1,13 +1,9 @@
 from typing import Any
 from iop import BusinessOperation
 
-from msg import MyGeneratorResponse, MyGenerator  # Import the generator message class
+from msg import MyGeneratorResponse, MyGenerator
 
 class MyGeneratorOperation(BusinessOperation):
-
-    def on_other_request(self, request: MyGeneratorResponse) -> Any:
-        self.log_info("Received other request")
-        return MyGeneratorResponse(my_other_string="Hello, World!")
 
     def on_private_session_started(self, request: MyGenerator) -> Any:
         self.log_info("Private session started")

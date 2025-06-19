@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - Unreleased
 ### Added
 - Initial support for venv
+- New `send_generator_request` method in `iop` module to send generator requests
 
 ## [3.4.4] - 2025-06-13
 ### Added
