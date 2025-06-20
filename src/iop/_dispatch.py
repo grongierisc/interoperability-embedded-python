@@ -123,7 +123,11 @@ def get_handler_info(host: Any, method_name: str) -> Tuple[str, str] | None:
             # return it as is, assuming it's a fully qualified class name
             return annotation, method_name
         
+        if is_iris_object_instance(annotation):
+            return f"{type(annotation).__module__}.{type(annotation).__name__}", method_name
+        
         if annotation == Parameter.empty or not isinstance(annotation, type):
+
             return None
 
         return f"{annotation.__module__}.{annotation.__name__}", method_name
