@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial support for venv
 - New `send_generator_request` method in `iop` module to send generator requests
+- Add `get_iris_id` method to `Message*` classes to retrieve the IRIS ID of a message
 
 ## [3.4.4] - 2025-06-13
 ### Added

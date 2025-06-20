@@ -9,4 +9,4 @@ class BenchIoPProcess(BusinessProcess):
 
     def on_message(self, request):
         for _ in range(self.size):
-            _ = self.send_request_sync(self.target,request)
+            rsp = self.send_request_sync(self.target,request)

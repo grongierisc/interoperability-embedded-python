@@ -27,18 +27,9 @@ class MessageSerializer:
     """Handles message serialization and deserialization."""
 
     @staticmethod
-    def _convert_to_json_safe(obj: Any) -> Any:
-        """Convert objects to JSON-safe format."""
-        if isinstance(obj, BaseModel):
-            return obj.model_dump_json()
-        elif is_dataclass(obj) and isinstance(obj, _Message):
-            return TempPydanticModel.model_validate(dataclass_to_dict(obj)).model_dump_json()
-        else:
-            raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass Message")
-
-    @staticmethod
     def serialize(message: Any, use_pickle: bool = False, is_generator:bool = False) -> Any:
         """Serializes a message to IRIS format."""
+        message = remove_iris_id(message)
         if use_pickle:
             return MessageSerializer._serialize_pickle(message, is_generator)
         return MessageSerializer._serialize_json(message, is_generator)
@@ -58,12 +49,34 @@ class MessageSerializer:
         else:
             msg.json = json_string
         return msg
+    
+    @staticmethod
+    def _serialize_pickle(message: Any, is_generator: bool = False) -> Any:
+        """Serializes a message to IRIS format using pickle."""
+        message = remove_iris_id(message)
+        pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
+        if is_generator:
+            msg = _iris.get_iris().cls('IOP.Generator.Message.StartPickle')._New()
+        else:
+            msg = _iris.get_iris().cls('IOP.PickleMessage')._New()
+        msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
+        msg.jstr = _Utils.string_to_stream(pickle_string)
+        return msg
 
     @staticmethod
     def deserialize(serial: Any, use_pickle: bool = False) -> Any:
         if use_pickle:
-            return MessageSerializer._deserialize_pickle(serial)
-        return MessageSerializer._deserialize_json(serial)
+            msg=MessageSerializer._deserialize_pickle(serial)
+        else:
+            msg=MessageSerializer._deserialize_json(serial)
+    
+        try:
+            iris_id = serial._Id()
+            msg._iris_id = iris_id if iris_id else None
+        except Exception as e:
+            pass
+
+        return msg
 
     @staticmethod
     def _deserialize_json(serial: Any) -> Any:
@@ -91,17 +104,6 @@ class MessageSerializer:
             raise SerializationError(f"Failed to deserialize JSON: {str(e)}")
 
     @staticmethod
-    def _serialize_pickle(message: Any, is_generator: bool = False) -> Any:
-        pickle_string = codecs.encode(pickle.dumps(message), "base64").decode()
-        if is_generator:
-            msg = _iris.get_iris().cls('IOP.Generator.Message.StartPickle')._New()
-        else:
-            msg = _iris.get_iris().cls('IOP.PickleMessage')._New()
-        msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
-        msg.jstr = _Utils.string_to_stream(pickle_string)
-        return msg
-
-    @staticmethod
     def _deserialize_pickle(serial: Any) -> Any:
         string = _Utils.stream_to_string(serial.jstr)
         return pickle.loads(codecs.decode(string.encode(), "base64"))
@@ -112,6 +114,24 @@ class MessageSerializer:
         if j <= 0:
             raise SerializationError(f"Classname must include a module: {classname}")
         return classname[:j], classname[j+1:]
+    
+    @staticmethod
+    def _convert_to_json_safe(obj: Any) -> Any:
+        """Convert objects to JSON-safe format."""
+        if isinstance(obj, BaseModel):
+            return obj.model_dump_json()
+        elif is_dataclass(obj) and isinstance(obj, _Message):
+            return TempPydanticModel.model_validate(dataclass_to_dict(obj)).model_dump_json()
+        else:
+            raise SerializationError(f"Object {obj} must be a Pydantic model or dataclass Message")
+
+    
+def remove_iris_id(message: Any) -> Any:
+    try:
+        del message._iris_id
+    except AttributeError:
+        pass
+    return message
 
 def dataclass_from_dict(klass: Type | Any, dikt: Dict) -> Any:
     """Converts a dictionary to a dataclass instance.
