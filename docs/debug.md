@@ -4,7 +4,7 @@ How to debug IoP code.
 
 Before anything, I will put some context about IoP and IRIS.
 
-Next I will show how to debug the code.
+Next, I will show how to debug the code.
 
 Finally, we will give some tips about debugging.
 
@@ -20,7 +20,7 @@ That means the python code is not running by a python interpreter, but by an IRI
 
 ## Remote Debugging
 
-To remote debbug your code, you need IoP version 3.4.1 or later.
+To remote debug your code, you need IoP version 3.4.1 or later.
 
 You will then have access to new options in the management portal.
 
@@ -212,7 +212,7 @@ Since iop version 3.4.3, you can use the `%traceback` setting to enable or disab
 
 This can help you to see the stack trace of the error and understand what is happening in the code.
 
-With traebacks enabled: 
+With tracebacks enabled: 
 
 ![Traceback enabled](./img/traceback_enable.png)
 

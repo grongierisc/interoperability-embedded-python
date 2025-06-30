@@ -47,7 +47,7 @@ class MyResponse(Message):
 
 To register a component, create a `setting.py` file in the root of your project. This file will be used to register your classes and productions.
 
-### Example of `setting.py`
+### Example of `settings.py`
 
 ```python
 import bo
@@ -62,7 +62,7 @@ CLASSES = {
 Use the `iop` command line to register your component:
 
 ```bash
-iop --migrate /path/to/your/project/setting.py
+iop --migrate /path/to/your/project/settings.py
 ```
 
 ## Business Service
@@ -188,7 +188,7 @@ class MyAsyncNGBP(BusinessProcess):
 To make an async call with the native `send_request_async` method, use the following code:
 
 ```python
-from grongier.pex import BusinessProcess
+from iop import BusinessProcess
 from msg import MyMessage
 
 

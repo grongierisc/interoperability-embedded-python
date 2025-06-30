@@ -7,7 +7,7 @@ This is the IRIS Framework.
 The components inside of IRIS represent a production. 
 
 You have 3 main components:
-- **BusinessService**: This component aims to recieve requests from external applications.
+- **BusinessService**: This component aims to receive requests from external applications.
 - **BusinessProcess**: This component is responsible for processing the requests and orchestrating the business logic.
 - **BusinessOperation**: This component is responsible for executing the technical operations that are needed to fulfill the requests.
 

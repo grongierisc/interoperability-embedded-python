@@ -83,9 +83,9 @@ With an argument, it set the default production.
 iop -d IoP.Production
 ```
 
-## lists
+## list
 
-The lists command list productions.
+The list command lists productions.
 
 ```bash
 iop -l

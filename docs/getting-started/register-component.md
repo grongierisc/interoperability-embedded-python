@@ -28,7 +28,7 @@ CLASSES = {
 Use the `iop` command line to register your component:
 
 ```bash
-iop --migrate /path/to/your/project/setting.py
+iop --migrate /path/to/your/project/settings.py
 ```
 
 ## Using the Python Shell

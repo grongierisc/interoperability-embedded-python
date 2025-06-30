@@ -2,7 +2,7 @@
 
 Starting with version 3.2.0, IoP supports DTL transformations.
 
-DTL the Data Transformation Layer in IRIS Interoperability. 
+DTL is the Data Transformation Layer in IRIS Interoperability. 
 
 DTL transformations are used to transform data from one format to another with a graphical editor.
 It supports also `jsonschema` structures.
@@ -63,7 +63,7 @@ Then select the source and target message classes.
 
 ![DTL Transformation](./img/dtl_wizard.png)
 
-And it's schema.
+And its schema.
 
 ![DTL Transformation](./img/vdoc_type.png)
 
@@ -97,7 +97,7 @@ Starting with version 3.2.0, IoP supports `jsonschema` structures for DTL transf
 
 Same as for message classes, you need to register your `jsonschema`.
 
-To do so, you need to invoke his iris command:
+To do so, you need to invoke this IRIS command:
 
 ```objectscript
 zw ##class(IOP.Message.JSONSchema).ImportFromFile("/irisdev/app/random_jsonschema.json","Demo","Demo")

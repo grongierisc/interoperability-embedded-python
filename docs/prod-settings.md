@@ -68,25 +68,25 @@ To create a custom settings, you create an attribute in your class.
 
 This attribute must :
 
-- have an default value. 
-- don't start with an underscore.
+- have a default value. 
+- not start with an underscore.
 - be untyped or have the following types: `str`, `int`, `float`, `bool`.
 
-Otherwise, it will not be available in the managment portal.
+Otherwise, it will not be available in the management portal.
 
 ```python
 from iop import BusinessOperation
 
 class MyBusinessOperation(BusinessOperation):
 
-    # This setting will be available in the managment portal
+    # This setting will be available in the management portal
     foo: str = "default"
     my_number: int = 42
     untyped_setting = None
 
-    # This setting will not be available in the managment portal
+    # This setting will not be available in the management portal
     _my_internal_setting: str = "default"
-    no_aviable_setting
+    # no_available_setting  # This line would cause a syntax error
     
     def on_init(self):
         self.log_info("[Python] MyBusinessOperation:on_init() is called")
@@ -95,8 +95,8 @@ class MyBusinessOperation(BusinessOperation):
         return
 ```
 
-They will be available in the managment portal as the following:
+They will be available in the management portal as the following:
 
 ![Custom settings](img/custom_settings.png)
 
-If you overwrite the default value in the managment portal, the new value will be passed to your class.
+If you overwrite the default value in the management portal, the new value will be passed to your class.

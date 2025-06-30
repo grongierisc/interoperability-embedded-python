@@ -6,11 +6,11 @@ How to set up a virtual environment for the Iris IOP framework.
 
 >! Note: This is a proof-of-concept and not a production-ready solution.
 
-As it's a proof-of-concept, a toggle is available and called `%Venv` if you want to enable or disable the virtual environment support.
+As this is a proof-of-concept, a toggle is available and called `%Venv` if you want to enable or disable the virtual environment support.
 
 ## How everything is set up
 
-The source code are migrated to iris thanks to the `iop --migrate` command.
+The source code is migrated to IRIS thanks to the `iop --migrate` command.
 
 Both virtual environments are created using the vanilla `python -m venv` command.
 
@@ -54,7 +54,7 @@ See the full example in the [iris-venv-demo](https://github.com/grongierisc/iris
 
 ### How it works
 
-As the interoperability framework works with independent processes, it's manageable to run each process in its own virtual environment.
+As the interoperability framework works with independent processes, it is manageable to run each process in its own virtual environment.
 
 This allows for easy management of dependencies and versions.
 
@@ -62,14 +62,14 @@ For this demo, we will be using two virtual environments:
 
 - `.venv` 
     - This is the main virtual environment that will run source code in `./src/python/reddit`
-    - It will use it's own dependencies in `./src/python/reddit/requirements.txt`
+    - It will use its own dependencies in `./src/python/reddit/requirements.txt`
         - `requests`
         - `dataclasses-json`
     - The version of python will be `3.12`
     - The venv folder will be in `/opt/irisapp/.venv/`
 - `.venv3.11`
     - This is a secondary virtual environment that will run source code in `./src/python/other`
-    - It will use it's own dependencies in `./src/python/other/requirements.txt`
+    - It will use its own dependencies in `./src/python/other/requirements.txt`
         - `deepdiff`
     - The version of python will be `3.11`
     - The venv folder will be in `/opt/irisapp/.venv3.11/`

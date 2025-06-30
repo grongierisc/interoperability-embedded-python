@@ -36,7 +36,7 @@ Here you can choose between:
 
 ##### Set up the IRIS instance.
 
-Then, symbolically this git to the IRIS pyhton directory:
+Then, symbolically link this git repository to the IRIS python directory:
 
 ```bash
 ln -s <your_git_dir>/src/iop $IRISINSTALLDIR/python/iop
