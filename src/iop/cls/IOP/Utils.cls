@@ -238,7 +238,7 @@ ClassMethod GenerateProxyClass(
 		}
 		
 		#; Do not display any of the connection settings
- 		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type"
+ 		#dim tSETTINGSParamValue As %String = "%classname:Python $type,%module:Python $type,%settings:Python $type,%classpaths:Python $type:directorySelector"
 		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%enable:Python Debug $type,%timeout:Python Debug $type,%port:Python Debug $type,%PythonInterpreterPath:Python Debug $type,%traceback:Python Debug $type"
 		set tSETTINGSParamValue = tSETTINGSParamValue_","_"%PythonPath:Python Settings $type,%PythonRuntimeLibrary:Python Settings $type,%PythonRuntimeLibraryVersion:Python Settings $type,%Venv:Python Settings $type"
 		

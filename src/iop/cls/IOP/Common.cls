@@ -7,34 +7,50 @@ Include Ensemble
 Class IOP.Common [ Abstract, ClassType = "", ProcedureBlock, System = 4 ]
 {
 
-/// One or more Classpaths (separated by '|' character) needed in addition to the ones configured in the Java Gateway Service
+/// One or more Classpaths (separated by '|' character)
 Property %classpaths As %String(MAXLEN = "");
 
+/// Classname of the Python class to use
 Property %classname As %String(MAXLEN = "");
 
+/// Module of the Python class to use
 Property %module As %String(MAXLEN = "");
 
+/// Settings for the Python class, in the form of "property=value" pairs, separated by newlines
+/// Example: "property1=value1\nproperty2=value2"
+/// Note: This property is used to set the properties of the Python class dynamically
 Property %settings As %String(MAXLEN = "");
 
 /// Instance of class
 Property %class As %SYS.Python;
 
+/// Enable debugging
+/// If set to 1, the Python class will be debugged using the debugpy module
+/// If set to 0, the Python class will not be debugged
 Property %enable As %Boolean;
 
+/// Timeout in seconds for the an client debugging connection
 Property %timeout As %Numeric [ InitialExpression = 30 ];
 
+/// Port to use for the an client debugging connection
 Property %port As %Numeric [ InitialExpression = 0 ];
 
+/// Path to the Python interpreter for debugpy
 Property %PythonInterpreterPath As %String(MAXLEN = 255);
 
+/// Enable traceback display
 Property %traceback As %Boolean [ InitialExpression = 1 ];
 
+/// Enable virtual environment
 Property %Venv As %Boolean [ InitialExpression = 0 ];
 
+/// Virtual environment site-packages path
 Property %PythonPath As %String(MAXLEN = 255);
 
+/// Path to the Python runtime library
 Property %PythonRuntimeLibrary As %String(MAXLEN = 255);
 
+/// Version of the Python runtime library
 Property %PythonRuntimeLibraryVersion As %String;
 
 /// Get Class
