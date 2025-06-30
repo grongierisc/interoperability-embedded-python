@@ -138,9 +138,9 @@
 <blockquote>
 <p>! Note: This is a proof-of-concept and not a production-ready solution.</p>
 </blockquote>
-<p>As it's a proof-of-concept, a toggle is available and called <code>%Venv</code> if you want to enable or disable the virtual environment support.</p>
+<p>As this is a proof-of-concept, a toggle is available and called <code>%Venv</code> if you want to enable or disable the virtual environment support.</p>
 <h2 id="how-everything-is-set-up">How everything is set up</h2>
-<p>The source code are migrated to iris thanks to the <code>iop --migrate</code> command.</p>
+<p>The source code is migrated to IRIS thanks to the <code>iop --migrate</code> command.</p>
 <p>Both virtual environments are created using the vanilla <code>python -m venv</code> command.</p>
 <p>The <code>iop</code> command is used to run the source code <strong>in the virtual environments.</strong></p>
 <pre><code class="language-bash"># activate the secondary virtual environment
@@ -175,13 +175,13 @@ iop --start dc.Python.Production
 <h2 id="full-example">Full example</h2>
 <p>See the full example in the <a href="https://github.com/grongierisc/iris-venv-test">iris-venv-demo</a>.</p>
 <h3 id="how-it-works">How it works</h3>
-<p>As the interoperability framework works with independent processes, it's manageable to run each process in its own virtual environment.</p>
+<p>As the interoperability framework works with independent processes, it is manageable to run each process in its own virtual environment.</p>
 <p>This allows for easy management of dependencies and versions.</p>
 <p>For this demo, we will be using two virtual environments:</p>
 <ul>
 <li><code>.venv</code> <ul>
 <li>This is the main virtual environment that will run source code in <code>./src/python/reddit</code></li>
-<li>It will use it's own dependencies in <code>./src/python/reddit/requirements.txt</code><ul>
+<li>It will use its own dependencies in <code>./src/python/reddit/requirements.txt</code><ul>
 <li><code>requests</code></li>
 <li><code>dataclasses-json</code></li>
 </ul>
@@ -192,7 +192,7 @@ iop --start dc.Python.Production
 </li>
 <li><code>.venv3.11</code><ul>
 <li>This is a secondary virtual environment that will run source code in <code>./src/python/other</code></li>
-<li>It will use it's own dependencies in <code>./src/python/other/requirements.txt</code><ul>
+<li>It will use its own dependencies in <code>./src/python/other/requirements.txt</code><ul>
 <li><code>deepdiff</code></li>
 </ul>
 </li>

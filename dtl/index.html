@@ -134,7 +134,7 @@
               
                 <h1 id="dtl-support">DTL Support</h1>
 <p>Starting with version 3.2.0, IoP supports DTL transformations.</p>
-<p>DTL the Data Transformation Layer in IRIS Interoperability. </p>
+<p>DTL is the Data Transformation Layer in IRIS Interoperability. </p>
 <p>DTL transformations are used to transform data from one format to another with a graphical editor.
 It supports also <code>jsonschema</code> structures.</p>
 <h2 id="how-to-use-dtl-in-with-message">How to use DTL in with Message</h2>
@@ -172,7 +172,7 @@ SCHEMAS = [MyMessage]
 <p><img alt="DTL Transformation" src="../img/interop_dtl_management_portal.png" /></p>
 <p>Then select the source and target message classes.</p>
 <p><img alt="DTL Transformation" src="../img/dtl_wizard.png" /></p>
-<p>And it's schema.</p>
+<p>And its schema.</p>
 <p><img alt="DTL Transformation" src="../img/vdoc_type.png" /></p>
 <p>Then you can start building your transformation.</p>
 <p><img alt="DTL Transformation" src="../img/complex_transform.png" /></p>
@@ -194,7 +194,7 @@ SCHEMAS = [MyMessage]
 <h2 id="jsonschema-support">JsonSchema Support</h2>
 <p>Starting with version 3.2.0, IoP supports <code>jsonschema</code> structures for DTL transformations.</p>
 <p>Same as for message classes, you need to register your <code>jsonschema</code>.</p>
-<p>To do so, you need to invoke his iris command:</p>
+<p>To do so, you need to invoke this IRIS command:</p>
 <pre><code class="language-objectscript">zw ##class(IOP.Message.JSONSchema).ImportFromFile(&quot;/irisdev/app/random_jsonschema.json&quot;,&quot;Demo&quot;,&quot;Demo&quot;)
 </code></pre>
 <p>Where the first argument is the path to the jsonschema file, the second argument is the package name and the third argument is the name of the schema.</p>

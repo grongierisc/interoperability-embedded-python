@@ -90,7 +90,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#register-a-component">Register a Component</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingpy">Example of setting.py</a>
+    <li class="toctree-l3"><a class="reference internal" href="#example-of-settingspy">Example of settings.py</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#registering-the-component">Registering the Component</a>
     </li>
@@ -199,7 +199,7 @@ class MyResponse(Message):
 </ul>
 <h2 id="register-a-component">Register a Component</h2>
 <p>To register a component, create a <code>setting.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
-<h3 id="example-of-settingpy">Example of <code>setting.py</code></h3>
+<h3 id="example-of-settingspy">Example of <code>settings.py</code></h3>
 <pre><code class="language-python">import bo
 
 CLASSES = {
@@ -208,7 +208,7 @@ CLASSES = {
 </code></pre>
 <h3 id="registering-the-component">Registering the Component</h3>
 <p>Use the <code>iop</code> command line to register your component:</p>
-<pre><code class="language-bash">iop --migrate /path/to/your/project/setting.py
+<pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
 </code></pre>
 <h2 id="business-service">Business Service</h2>
 <p>Two kinds of business services can be created in Python:</p>
@@ -307,7 +307,7 @@ class MyAsyncNGBP(BusinessProcess):
 </code></pre>
 <h4 id="using-the-native-send_request_async-method">Using the native <code>send_request_async</code> method</h4>
 <p>To make an async call with the native <code>send_request_async</code> method, use the following code:</p>
-<pre><code class="language-python">from grongier.pex import BusinessProcess
+<pre><code class="language-python">from iop import BusinessProcess
 from msg import MyMessage
 
 

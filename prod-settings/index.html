@@ -174,23 +174,23 @@ class MyBusinessOperation(BusinessOperation):
 <p>To create a custom settings, you create an attribute in your class.</p>
 <p>This attribute must :</p>
 <ul>
-<li>have an default value. </li>
-<li>don't start with an underscore.</li>
+<li>have a default value. </li>
+<li>not start with an underscore.</li>
 <li>be untyped or have the following types: <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>.</li>
 </ul>
-<p>Otherwise, it will not be available in the managment portal.</p>
+<p>Otherwise, it will not be available in the management portal.</p>
 <pre><code class="language-python">from iop import BusinessOperation
 
 class MyBusinessOperation(BusinessOperation):
 
-    # This setting will be available in the managment portal
+    # This setting will be available in the management portal
     foo: str = &quot;default&quot;
     my_number: int = 42
     untyped_setting = None
 
-    # This setting will not be available in the managment portal
+    # This setting will not be available in the management portal
     _my_internal_setting: str = &quot;default&quot;
-    no_aviable_setting
+    # no_available_setting  # This line would cause a syntax error
 
     def on_init(self):
         self.log_info(&quot;[Python] MyBusinessOperation:on_init() is called&quot;)
@@ -198,9 +198,9 @@ class MyBusinessOperation(BusinessOperation):
         self.log_info(&quot;[Python] my_number: &quot; + str(self.my_number))
         return
 </code></pre>
-<p>They will be available in the managment portal as the following:</p>
+<p>They will be available in the management portal as the following:</p>
 <p><img alt="Custom settings" src="../img/custom_settings.png" /></p>
-<p>If you overwrite the default value in the managment portal, the new value will be passed to your class.</p>
+<p>If you overwrite the default value in the management portal, the new value will be passed to your class.</p>
               
             </div>
           </div><footer>
