@@ -104,7 +104,6 @@ Method OnInit() As %Status
     set tSC = $$$OK
 
     try {
-        LOCK +^PythonSettings:5
 
         if ..%Venv {
             $$$ThrowOnError(##class(IOP.Utils).SetPythonSettings(..%PythonRuntimeLibrary, ..%PythonPath, ..%PythonRuntimeLibraryVersion))
@@ -115,7 +114,6 @@ Method OnInit() As %Status
         do $system.Python.Debugging(..%traceback)
 
         $$$ThrowOnError(..Connect())
-        LOCK -^PythonSettings
 
         do ..%class."_debugpy"($this)
 
@@ -124,7 +122,7 @@ Method OnInit() As %Status
 
         set tSC = ..DisplayTraceback(ex)
     }
-    LOCK -^PythonSettings
+
     quit tSC
 }
 
@@ -147,18 +145,19 @@ ClassMethod SetPythonPath(pClasspaths)
 {
     set sys = ##class(%SYS.Python).Import("sys")
 
-    for i=0:1:(sys.path."__len__"()-1) {
-        Try {
-            if sys.path."__getitem__"(i) = pClasspaths {
-                do sys.path."__delitem__"(i)
-            }
+    // Add the classpaths to the Python sys.path only if they are not already present
+    // Check if the path is already in sys.path
+    set found = 0
+    for j=1:1:sys.path."__len__"() {
+        if sys.path."__getitem__"(j-1) = pClasspaths {
+            set found = 1
+            quit
         }
-        Catch ex {
-            // do nothing
-        }
-
     }
-    do sys.path.insert(0, pClasspaths)
+    if found = 0 {
+        // If not found, add to sys.path
+        do sys.path."append"(pClasspaths)
+    }
 }
 
 Method Connect() As %Status
@@ -167,24 +166,39 @@ Method Connect() As %Status
     try {
         
         set container = $this
-        
-        //set classpass
-        if ..%classpaths '="" {
-            set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
-            set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
-            for i=1:1:$l(extraClasspaths,"|") {
-                set onePath = $p(extraClasspaths,"|",i)
-                set onePath = ##class(%File).NormalizeDirectory(onePath)
-                do ..SetPythonPath(onePath)
-            }
-        }
-        if $isObject(..%class)=0 {
-            set importlib = ##class(%SYS.Python).Import("importlib")
+
+        // Before anything, try to check if the module is already present in the sys.modules
+        set sys = ##class(%SYS.Python).Import("sys")
+        set moduleName = ..%module
+        set module = sys.modules.get(moduleName, $$$NULLOREF)
+        if $isObject(module) {
+            $$$LOGINFO("Module "_moduleName_" is already imported in sys.modules")
+            // If the module is already present, we can skip the import
             set builtins = ##class(%SYS.Python).Import("builtins")
-            set module = importlib."import_module"(..%module)
             set class = builtins.getattr(module, ..%classname)
             set ..%class = class."__new__"(class)
         }
+        else {
+
+            //set classpass
+            if ..%classpaths '="" {
+                set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
+                set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
+                for i=1:1:$l(extraClasspaths,"|") {
+                    set onePath = $p(extraClasspaths,"|",i)
+                    set onePath = ##class(%File).NormalizeDirectory(onePath)
+                    do ..SetPythonPath(onePath)
+                }
+            }
+
+            if $isObject(..%class)=0 {
+                set builtins = ##class(%SYS.Python).Import("builtins")
+                set module = ##class(%SYS.Python).Import(..%module)
+                set class = builtins.getattr(module, ..%classname)
+                set ..%class = class."__new__"(class)
+            }
+        }
+
         ;
         if ..%Extends("IOP.InboundAdapter") || ..%Extends("IOP.OutboundAdapter") {
             do ..%class."_set_iris_handles"($this,..BusinessHost)
@@ -352,9 +366,9 @@ ClassMethod OnGetConnections(
                 if onePath'="" do sys.path.append(onePath)
             }
     }
-    set importlib = ##class(%SYS.Python).Import("importlib")
+
     set builtins = ##class(%SYS.Python).Import("builtins")
-    set module = importlib."import_module"(tModule)
+    set module = ##class(%SYS.Python).Import(tModule)
     set class = builtins.getattr(module, tClassname)
     set tClass = class."__new__"(class)
 
