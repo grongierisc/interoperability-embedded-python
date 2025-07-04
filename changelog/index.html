@@ -89,6 +89,12 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Changelog</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#unreleased-unreleased">[unreleased] - Unreleased</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#350-2025-06-30">[3.5.0] - 2025-06-30</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added">Added</a>
@@ -101,7 +107,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_1">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_1">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_1">Fixed</a>
     </li>
@@ -111,7 +117,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_2">Fixed</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_1">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_2">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#added_2">Added</a>
     </li>
@@ -127,7 +133,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_3">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_2">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_3">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_4">Fixed</a>
     </li>
@@ -137,7 +143,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_4">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_3">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_4">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_5">Fixed</a>
     </li>
@@ -147,7 +153,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_5">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_4">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_5">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_6">Fixed</a>
     </li>
@@ -157,7 +163,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_6">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_5">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_6">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_7">Fixed</a>
     </li>
@@ -167,7 +173,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_7">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_6">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_7">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_8">Fixed</a>
     </li>
@@ -175,7 +181,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#300-2024-07-08">[3.0.0] - 2024-07-08</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_7">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_8">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#added_8">Added</a>
     </li>
@@ -223,7 +229,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_13">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_8">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_9">Changed</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#fixed_12">Fixed</a>
     </li>
@@ -251,7 +257,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added_14">Added</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#changed_9">Changed</a>
+    <li class="toctree-l3"><a class="reference internal" href="#changed_10">Changed</a>
     </li>
         </ul>
     </li>
@@ -316,6 +322,12 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="unreleased-unreleased">[unreleased] - Unreleased</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li>Improve module loading and initialization for better performance in BusinessProcess by checking if the module is already loaded</li>
+<li>Change OnMessage to MessageHandler in BusinessOperation for better performance and clarity</li>
+</ul>
 <h2 id="350-2025-06-30">[3.5.0] - 2025-06-30</h2>
 <h3 id="added">Added</h3>
 <ul>
@@ -329,7 +341,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h2 id="344-2025-06-13">[3.4.4] - 2025-06-13</h2>
 <h3 id="added_1">Added</h3>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><code>%traceback</code> setting default value is now <code>True</code> to show traceback in message log</li>
 <li>serializer is now more permissive for iris objects, allowing iris object type of <code>%Stream</code> to support http inbound/outbound adapters</li>
@@ -347,7 +359,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Fix a regression in DTL to display sub-objects</li>
 <li>Improve upgrade compatibility with 3.4.0 (pre-debugger)</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li>Change debugger settings to be prefixed with <code>%</code> to avoid conflict with other settings</li>
 </ul>
@@ -367,7 +379,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><code>-n</code> or <code>--namespace</code> option to select a namespace</li>
 <li>Initial remote debugging support</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li>Change how <code>iris</code> module is loaded</li>
 <li>Create a new <code>_iris</code> module in the <code>iop</code> package</li>
@@ -390,7 +402,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Improved Pydantic integration for message validation</li>
 <li>Logger property in _Common class for better logging management</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li>Refactored _director and _utils modules</li>
 <li>Enhanced serialization module</li>
@@ -416,7 +428,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>New test framework with pytest-asyncio support</li>
 <li>Improved error handling and validation</li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li>Refactored core components for better maintainability</li>
 <li>Enhanced message serialization system</li>
@@ -436,7 +448,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>JsonPath support for data manipulation</li>
 <li>Comprehensive schema validation system</li>
 </ul>
-<h3 id="changed_5">Changed</h3>
+<h3 id="changed_6">Changed</h3>
 <ul>
 <li>Improved message transformation handling</li>
 <li>Enhanced error reporting for schema validation</li>
@@ -457,7 +469,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>New benchmarking tools</li>
 <li>Improved session handling</li>
 </ul>
-<h3 id="changed_6">Changed</h3>
+<h3 id="changed_7">Changed</h3>
 <ul>
 <li>Refactored business host dispatch system</li>
 <li>Enhanced message serialization</li>
@@ -470,7 +482,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Various async operation bugs</li>
 </ul>
 <h2 id="300-2024-07-08">[3.0.0] - 2024-07-08</h2>
-<h3 id="changed_7">Changed</h3>
+<h3 id="changed_8">Changed</h3>
 <ul>
 <li>Renamed package from grongier.pex to iop</li>
 <li>Major refactoring of core components</li>
@@ -531,7 +543,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <ul>
 <li>New command line option test</li>
 </ul>
-<h3 id="changed_8">Changed</h3>
+<h3 id="changed_9">Changed</h3>
 <ul>
 <li>Refactored some code</li>
 </ul>
@@ -561,7 +573,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Initial WSGI support</li>
 <li>Settings.py support</li>
 </ul>
-<h3 id="changed_9">Changed</h3>
+<h3 id="changed_10">Changed</h3>
 <ul>
 <li>Aligned version with pypi</li>
 </ul>
