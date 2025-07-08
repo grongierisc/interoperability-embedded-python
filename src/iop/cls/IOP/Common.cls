@@ -164,58 +164,22 @@ Method Connect() As %Status
 {
     set tSC = $$$OK
     try {
+        // Initialize Python class instance
+        $$$ThrowOnError(..InitializePythonClass())
         
-        set container = $this
-
-        // Before anything, try to check if the module is already present in the sys.modules
-        set sys = ##class(%SYS.Python).Import("sys")
-        set moduleName = ..%module
-        set module = sys.modules.get(moduleName, $$$NULLOREF)
-        if $isObject(module) {
-            $$$LOGINFO("Module "_moduleName_" is already imported in sys.modules")
-            // If the module is already present, we can skip the import
-            set builtins = ##class(%SYS.Python).Import("builtins")
-            set class = builtins.getattr(module, ..%classname)
-            set ..%class = class."__new__"(class)
-        }
-        else {
-
-            //set classpass
-            if ..%classpaths '="" {
-                set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
-                set extraClasspaths = $tr(container.%classpaths,delimiter,"|")
-                for i=1:1:$l(extraClasspaths,"|") {
-                    set onePath = $p(extraClasspaths,"|",i)
-                    set onePath = ##class(%File).NormalizeDirectory(onePath)
-                    do ..SetPythonPath(onePath)
-                }
-            }
-
-            if $isObject(..%class)=0 {
-                set builtins = ##class(%SYS.Python).Import("builtins")
-                set module = ##class(%SYS.Python).Import(..%module)
-                set class = builtins.getattr(module, ..%classname)
-                set ..%class = class."__new__"(class)
-            }
-        }
-
-        ;
-        if ..%Extends("IOP.InboundAdapter") || ..%Extends("IOP.OutboundAdapter") {
-            do ..%class."_set_iris_handles"($this,..BusinessHost)
-        } elseif $this.%Extends("IOP.BusinessProcess") {
-            do ..%class."_set_iris_handles"($this,$$$NULLOREF)
-        } else {
-            do ..%class."_set_iris_handles"($this,..Adapter)
-        }
-        ;
+        // Set IRIS handles based on component type
+        do ..SetIrisHandles()
+        
+        // Apply property values to Python instance
         do ..SetPropertyValues()
-        ;
+        
+        // Notify Python class of connection
         try {
             do ..%class."_dispatch_on_connected"($this)
         } catch ex {
             $$$LOGWARNING(ex.DisplayString())
         }
-        ;
+        
     } catch ex {
         set msg = $System.Status.GetOneStatusText(ex.AsStatus(),1)
         set tSC = $$$ERROR($$$EnsErrGeneral,msg)
@@ -543,6 +507,63 @@ Method OnMsgGeneratorPoll(
         set tSC = ..DisplayTraceback(ex)
     }
     quit tSC
+}
+
+Method InitializePythonClass() As %Status [ Private ]
+{
+    set tSC = $$$OK
+    try {
+        // Check if module is already imported
+        set sys = ##class(%SYS.Python).Import("sys")
+        set module = sys.modules.get(..%module, $$$NULLOREF)
+        
+        if $isObject(module) {
+            $$$LOGINFO("Module "_..%module_" is already imported in sys.modules")
+            set ..%class = ..CreateClassInstance(module)
+        } else {
+            // Setup classpaths if specified
+            if ..%classpaths '= "" {
+                do ..SetupClasspaths()
+            }
+            
+            // Import module and create class instance
+            set module = ##class(%SYS.Python).Import(..%module)
+            set ..%class = ..CreateClassInstance(module)
+        }
+    } catch ex {
+        set tSC = ex.AsStatus()
+    }
+    quit tSC
+}
+
+Method CreateClassInstance(module As %SYS.Python) As %SYS.Python [ Private ]
+{
+    set builtins = ##class(%SYS.Python).Import("builtins")
+    set class = builtins.getattr(module, ..%classname)
+    quit class."__new__"(class)
+}
+
+Method SetupClasspaths() [ Private ]
+{
+    set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
+    set extraClasspaths = $tr(..%classpaths, delimiter, "|")
+    
+    for i=1:1:$l(extraClasspaths,"|") {
+        set onePath = $p(extraClasspaths,"|",i)
+        set onePath = ##class(%File).NormalizeDirectory(onePath)
+        do ..SetPythonPath(onePath)
+    }
+}
+
+Method SetIrisHandles() [ Private ]
+{
+    if ..%Extends("IOP.InboundAdapter") || ..%Extends("IOP.OutboundAdapter") {
+        do ..%class."_set_iris_handles"($this, ..BusinessHost)
+    } elseif $this.%Extends("IOP.BusinessProcess") {
+        do ..%class."_set_iris_handles"($this, $$$NULLOREF)
+    } else {
+        do ..%class."_set_iris_handles"($this, ..Adapter)
+    }
 }
 
 }
