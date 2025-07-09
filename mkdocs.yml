@@ -18,6 +18,7 @@ nav:
     - Debugging: debug.md
     - Production Settings: prod-settings.md
     - Venv Support: venv.md
+    - Wrapper Support: wrapper.md
   - Contributing:
     - Contributing: contributing.md
     - Code of Conduct: code-of-conduct.md

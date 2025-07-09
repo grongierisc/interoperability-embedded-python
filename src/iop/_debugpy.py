@@ -143,3 +143,45 @@ def debugpython(self, host_object: Any) -> None:
             self.log_alert(f"Debugpy connection timed out after {host_object._timeout} seconds")
     except Exception as e:
         self.log_alert(f"Error enabling debugpy: {e}")
+
+def debugpy_in_iris(iris_dir, port) -> bool:
+
+    if not hasattr(os, '__file__'):
+        setattr(os, '__file__', __file__)
+
+    if not is_debugpy_installed():
+        print("debugpy is not installed.")
+        return False
+    if not iris_dir:
+        print("IRIS directory is not specified.")
+        return False
+    
+    import debugpy
+    python_path = _get_python_interpreter_path(mgr_dir_to_install_dir(iris_dir))
+    if not python_path:
+        return False
+    debugpy.configure(_get_debugpy_config(python_path))
+
+    try:
+        enable_debugpy(port=port)
+    except Exception as e:
+        print(f"Failed to enable debugpy: {e}")
+        return False
+
+    print(f"Debugpy is waiting for connection on port {port}...")
+    if wait_for_debugpy_connected(timeout=30, port=port):
+        print(f"Debugpy is connected on port {port}")
+        return True
+    else:
+        print(f"Debugpy connection timed out after 30 seconds on port {port}")
+        return False
+
+def mgr_dir_to_install_dir(mgr_dir: str) -> Optional[str]:
+    """Convert manager directory to install directory."""
+    import os
+    if not mgr_dir:
+        return None
+    install_dir = os.path.dirname(os.path.dirname(mgr_dir))
+    if os.path.exists(install_dir):
+        return install_dir
+    return None
