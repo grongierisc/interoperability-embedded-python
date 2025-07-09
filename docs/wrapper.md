@@ -23,6 +23,8 @@ def main():
     # Print the value of the environment variable
     print(f'MY_ENV_VAR: {my_env_var}')
 
+    return "Hello from my_script!"
+
 
 if __name__ == "__main__":
     main()
@@ -40,3 +42,34 @@ Set myModule = ##class(IoP.Wrapper).Import(pythonModule, pythonPath, debugPort)
 do myModule.main()
 ```
 
+## Remarks
+
+By the nature of python, to test it effectively, you must start a new job in IRIS each time you modify the Python code. This is because the Python interpreter does not automatically reload modules when they are changed, unlike some other languages (eg: objectscript).
+
+For example, given the above code
+
+```objectscript
+Class Demo.PEX.NonProduction Extends %RegisteredObject
+{
+
+ClassMethod WrapperDemo() As %Status
+{
+
+    // Import the module
+    set tModule = ##class(IOP.Wrapper).Import("my_script", "/path/to/your/python/scripts", 54132)
+    
+    // Call the function
+    set result = tModule.main()
+
+    // Print the result
+    write result
+}
+
+}
+```
+
+You can run this objectscript code as :
+
+```bash
+iris session iris -U%IRISAPP '##class(Demo.PEX.NonProduction).WrapperDemo()'
+```

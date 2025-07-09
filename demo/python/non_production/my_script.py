@@ -7,6 +7,8 @@ def main():
     # Print the value of the environment variable
     print(f'MY_ENV_VAR: {my_env_var}')
 
+    return "Script executed successfully!"
+
 
 if __name__ == "__main__":
     main()
