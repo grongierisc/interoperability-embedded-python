@@ -76,6 +76,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#remarks">Remarks</a>
+    </li>
     </ul>
                   </li>
               </ul>
@@ -146,6 +148,8 @@ def main():
     # Print the value of the environment variable
     print(f'MY_ENV_VAR: {my_env_var}')
 
+    return &quot;Hello from my_script!&quot;
+
 
 if __name__ == &quot;__main__&quot;:
     main()
@@ -158,6 +162,30 @@ Set myModule = ##class(IoP.Wrapper).Import(pythonModule, pythonPath, debugPort)
 // The process will automatically handle the import and setup for remote debugging and wait for the client debugger to attach.
 // Once the client debugger is attached, you can run the main function of your Python module.
 do myModule.main()
+</code></pre>
+<h2 id="remarks">Remarks</h2>
+<p>By the nature of python, to test it effectively, you must start a new job in IRIS each time you modify the Python code. This is because the Python interpreter does not automatically reload modules when they are changed, unlike some other languages (eg: objectscript).</p>
+<p>For example, given the above code</p>
+<pre><code class="language-objectscript">Class Demo.PEX.NonProduction Extends %RegisteredObject
+{
+
+ClassMethod WrapperDemo() As %Status
+{
+
+    // Import the module
+    set tModule = ##class(IOP.Wrapper).Import(&quot;my_script&quot;, &quot;/path/to/your/python/scripts&quot;, 54132)
+
+    // Call the function
+    set result = tModule.main()
+
+    // Print the result
+    write result
+}
+
+}
+</code></pre>
+<p>You can run this objectscript code as :</p>
+<pre><code class="language-bash">iris session iris -U%IRISAPP '##class(Demo.PEX.NonProduction).WrapperDemo()'
 </code></pre>
               
             </div>
