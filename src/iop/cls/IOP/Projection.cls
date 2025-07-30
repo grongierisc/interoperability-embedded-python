@@ -18,6 +18,7 @@ ClassMethod CreateProjection(
         set webName = "/api/iop" 
         set webProperties("NameSpace") = tCurrentNamespace 
         set webProperties("Enabled") = 1 
+        set webProperties("DispatchClass") = "IOP.Service.Remote.Handler"
         set webProperties("AutheEnabled") = 32 
         set webProperties("ServeFiles")=2
         set webProperties("Recurse")=1

@@ -264,9 +264,9 @@ class _Utils():
     def migrate_remote(filename=None):
         """
         Read a settings file from the filename
-        If the settings.py file has a key 'REMOTE_SETTING' then it will use the value of that key
+        If the settings.py file has a key 'REMOTE_SETTINGS' then it will use the value of that key
         as the remote host to connect to.
-        the REMOTE_SETTING is a RemoteSettings dictionary with the following keys:
+        the REMOTE_SETTINGS is a RemoteSettings dictionary with the following keys:
             * 'url': the host url to connect to (mandatory)
             * 'namespace': the namespace to use (optional, default is 'USER')
             * 'package': the package to use (optional, default is 'python')
@@ -285,7 +285,7 @@ class _Utils():
         'body' will be constructed with all the files in the folder if the folder is not empty else use root folder of settings.py
         """
         settings, path = _Utils._load_settings(filename)
-        remote_settings: Optional[RemoteSettings] = getattr(settings, 'REMOTE_SETTING', None) if settings else None
+        remote_settings: Optional[RemoteSettings] = getattr(settings, 'REMOTE_SETTINGS', None) if settings else None
 
         if not remote_settings:
             _Utils.migrate(filename)
@@ -293,7 +293,7 @@ class _Utils():
         
         # Validate required fields
         if 'url' not in remote_settings:
-            raise ValueError("REMOTE_SETTING must contain 'url' field")
+            raise ValueError("REMOTE_SETTINGS must contain 'url' field")
         
         # prepare the payload with defaults
         payload = {
@@ -333,11 +333,9 @@ class _Utils():
             timeout=10
         )
 
-        # check the response status
-        if response.status_code != 200:
-            raise RuntimeError(f"Failed to migrate: {response.status_code} - {response.text}")
-        else:
-            print(f"Migration successful: {response.status_code} - {response.text}")
+        print(f"Response from remote migration: {response.text}")
+
+        response.raise_for_status()  # Raise an error for bad responses
 
     @staticmethod
     def migrate(filename=None):
@@ -359,6 +357,8 @@ class _Utils():
         _Utils._register_settings_components(settings, path)
         
         _Utils._cleanup_sys_path(path)
+
+        raise ValueError("Migration is not implemented yet. Please use the remote migration feature.")
 
     @staticmethod
     def _load_settings(filename):
