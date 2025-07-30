@@ -6,13 +6,23 @@ import importlib.resources
 import json
 import inspect
 import ast
-from typing import Any, Dict, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Union, Tuple, TypedDict
 
 import xmltodict
+import requests
 from pydantic import TypeAdapter
 
 from . import _iris
 from ._message import _Message, _PydanticMessage
+
+class RemoteSettings(TypedDict, total=False):
+    """Typed dictionary for remote migration settings."""
+    url: str  # Required: the host url to connect to
+    namespace: str  # Optional: the namespace to use (default: 'USER')
+    package: str  # Optional: the package to use (default: 'python')
+    remote_folder: str  # Optional: the folder to use (default: '')
+    username: str  # Optional: the username to use to connect (default: '')
+    password: str  # Optional: the password to use to connect (default: '')
 
 class _Utils():
     @staticmethod
@@ -251,6 +261,85 @@ class _Utils():
         return module
 
     @staticmethod
+    def migrate_remote(filename=None):
+        """
+        Read a settings file from the filename
+        If the settings.py file has a key 'REMOTE_SETTING' then it will use the value of that key
+        as the remote host to connect to.
+        the REMOTE_SETTING is a RemoteSettings dictionary with the following keys:
+            * 'url': the host url to connect to (mandatory)
+            * 'namespace': the namespace to use (optional, default is 'USER')
+            * 'package': the package to use (optional, default is 'python')
+            * 'remote_folder': the folder to use (optional, default is '')
+            * 'username': the username to use to connect (optional, default is '')
+            * 'password': the password to use to connect (optional, default is '')
+        
+        The remote host is a rest API that will be used to register the components
+        The payload will be a json object with the following keys:
+            * 'namespace': the namespace to use
+            * 'package': the package to use
+            * 'body': the body of the request, it will be a json object with the following keys:
+                * 'name': name of the file
+                * 'data': the data of the file, it will be an UTF-8 encoded string
+
+        'body' will be constructed with all the files in the folder if the folder is not empty else use root folder of settings.py
+        """
+        settings, path = _Utils._load_settings(filename)
+        remote_settings: Optional[RemoteSettings] = getattr(settings, 'REMOTE_SETTING', None) if settings else None
+
+        if not remote_settings:
+            _Utils.migrate(filename)
+            return
+        
+        # Validate required fields
+        if 'url' not in remote_settings:
+            raise ValueError("REMOTE_SETTING must contain 'url' field")
+        
+        # prepare the payload with defaults
+        payload = {
+            'namespace': remote_settings.get('namespace', 'USER'),
+            'package': remote_settings.get('package', 'python'),
+            'remote_folder': remote_settings.get('remote_folder', ''),
+            'body': []
+        }
+        
+        # get the folder to register
+        folder = _Utils._get_folder_path(filename, path)
+
+        # iterate over all files in the folder
+        for root, _, files in os.walk(folder):
+            for file in files:
+                if file.endswith('.py') or file.endswith('.cls'):
+                    file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(file_path, folder)
+                    # Normalize path separators for cross-platform compatibility
+                    relative_path = relative_path.replace(os.sep, '/')
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = f.read()
+                        payload['body'].append({
+                            'name': relative_path,
+                            'data': data
+                        })
+        
+        # send the request to the remote settings
+        response = requests.put(
+            url=f"{remote_settings['url']}/api/iop/migrate",
+            json=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            auth=(remote_settings.get('username', ''), remote_settings.get('password', '')),
+            timeout=10
+        )
+
+        # check the response status
+        if response.status_code != 200:
+            raise RuntimeError(f"Failed to migrate: {response.status_code} - {response.text}")
+        else:
+            print(f"Migration successful: {response.status_code} - {response.text}")
+
+    @staticmethod
     def migrate(filename=None):
         """ 
         Read the settings.py file and register all the components
@@ -265,43 +354,96 @@ class _Utils():
             * SCHEMAS
                 List of classes
         """
-        path = None
-        # try to load the settings file
+        settings, path = _Utils._load_settings(filename)
+        
+        _Utils._register_settings_components(settings, path)
+        
+        _Utils._cleanup_sys_path(path)
+
+    @staticmethod
+    def _load_settings(filename):
+        """Load settings module from file or default location.
+        
+        Returns:
+            tuple: (settings_module, path_added_to_sys)
+        """
+        path_added = None
+        
         if filename:
             # check if the filename is absolute or relative
-            if os.path.isabs(filename):
-                path = os.path.dirname(filename)
-            else:
+            if not os.path.isabs(filename):
                 raise ValueError("The filename must be absolute")
+            
             # add the path to the system path to the beginning
-            sys.path.insert(0,os.path.normpath(path))
+            path_added = os.path.normpath(os.path.dirname(filename))
+            sys.path.insert(0, path_added)
             # import settings from the specified file
-            settings = _Utils.import_module_from_path('settings',filename)
+            settings = _Utils.import_module_from_path('settings', filename)
         else:
             # import settings from the settings module
-            import settings # type: ignore
-        # get the path of the settings file
-        path = os.path.dirname(inspect.getfile(settings))
+            import settings  # type: ignore
+            
+        return settings, path_added
+
+    @staticmethod
+    def _get_folder_path(filename, path_added_to_sys):
+        """Get the folder path for migration operations.
+        
+        Args:
+            filename: Original filename parameter
+            path_added_to_sys: Path that was added to sys.path
+            
+        Returns:
+            str: Folder path to use for migration
+        """
+        if filename:
+            return os.path.dirname(filename)
+        else:
+            return os.getcwd()
+
+    @staticmethod
+    def _register_settings_components(settings, path):
+        """Register all components from settings (classes, productions, schemas).
+        
+        Args:
+            settings: Settings module containing CLASSES, PRODUCTIONS, SCHEMAS
+            path: Base path for component registration
+        """
+        # Use settings file location if path not provided
+        if not path:
+            path = os.path.dirname(inspect.getfile(settings))
+            
         try:
             # set the classes settings
-            _Utils.set_classes_settings(settings.CLASSES,path)
+            _Utils.set_classes_settings(settings.CLASSES, path)
         except AttributeError:
             print("No classes to register")
+        
         try:
             # set the productions settings
-            _Utils.set_productions_settings(settings.PRODUCTIONS,path)
+            _Utils.set_productions_settings(settings.PRODUCTIONS, path)
         except AttributeError:
             print("No productions to register")
+        
         try:
             # set the schemas
             for cls in settings.SCHEMAS:
                 _Utils.register_message_schema(cls)
         except AttributeError:
             print("No schemas to register")
-        try:
-            sys.path.remove(os.path.normpath(path))
-        except ValueError:
-            pass
+
+    @staticmethod
+    def _cleanup_sys_path(path):
+        """Remove path from sys.path if it was added.
+        
+        Args:
+            path: Path to remove from sys.path
+        """
+        if path:
+            try:
+                sys.path.remove(os.path.normpath(path))
+            except ValueError:
+                pass
 
     @staticmethod
     def import_module_from_path(module_name, file_path):

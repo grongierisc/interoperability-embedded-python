@@ -147,7 +147,7 @@ class Command:
         if migrate_path is not None:
             if not os.path.isabs(migrate_path):
                 migrate_path = os.path.join(os.getcwd(), migrate_path)
-            _Utils.migrate(migrate_path)
+            _Utils.migrate_remote(migrate_path)
 
     def _handle_log(self) -> None:
         if self.args.log == 'not_set':

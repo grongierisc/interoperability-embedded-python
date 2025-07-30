@@ -75,14 +75,14 @@ class TestIOPCli(unittest.TestCase):
     def test_migration(self):
         """Test migration functionality."""
         # Test relative path
-        with patch('iop._utils._Utils.migrate') as mock_migrate:
+        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', 'settings.json'])
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
 
         # Test absolute path
-        with patch('iop._utils._Utils.migrate') as mock_migrate:
+        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json'])
             self.assertEqual(cm.exception.code, 0)
