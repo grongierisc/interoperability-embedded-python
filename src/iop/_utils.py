@@ -358,8 +358,6 @@ class _Utils():
         
         _Utils._cleanup_sys_path(path)
 
-        raise ValueError("Migration is not implemented yet. Please use the remote migration feature.")
-
     @staticmethod
     def _load_settings(filename):
         """Load settings module from file or default location.
