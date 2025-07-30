@@ -79,6 +79,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#the-schemas-section">The SCHEMAS Section</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#the-remote_settings-section">The REMOTE_SETTINGS Section</a>
+    </li>
         </ul>
     </li>
     </ul>
@@ -103,6 +105,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../venv/">Venv Support</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../settings/">Settings</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Contributing</span></p>
@@ -219,6 +223,7 @@ Utils.migrate()
 <li><code>CLASSES</code>: Stores the classes of the interoperability components.</li>
 <li><code>PRODUCTIONS</code>: Stores the productions of the interoperability components.</li>
 <li><code>SCHEMAS</code>: Stores the schemas of the interoperability components.</li>
+<li><code>REMOTE_SETTINGS</code>: Stores the remote settings for migration.</li>
 </ul>
 <p>Example:</p>
 <pre><code class="language-python">import bp
@@ -434,6 +439,30 @@ PRODUCTIONS = [
 
 SCHEMAS = [RedditPost]
 </code></pre>
+<h3 id="the-remote_settings-section">The <code>REMOTE_SETTINGS</code> Section</h3>
+<p>This section stores the remote settings for migration. It is used to configure the connection to the remote IRIS instance for importing Python IOP modules.</p>
+<p>The dictionary has the following structure:
+- <code>url</code>: The URL of the remote IRIS instance (mandatory)
+- <code>username</code>: The username for authentication (optional, default is "")
+- <code>password</code>: The password for authentication (optional, default is "")
+- <code>namespace</code>: The namespace for the connection (optional, default is "USER")
+- <code>remote_folder</code>: The folder where the components are stored (optional, default is the routine database folder)
+- <code>package</code>: The package name for the components (optional, default is "python")</p>
+<p>Example:</p>
+<pre><code class="language-python">from bo import FileOperation
+
+REMOTE_SETTINGS = {
+    &quot;url&quot;: &quot;http://localhost:8080&quot;,
+    &quot;username&quot;: &quot;SuperUser&quot;,
+    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;namespace&quot;: &quot;IRISAPP&quot;,
+}
+
+CLASSES = {
+    'Python.FileOperation': FileOperation,
+}
+</code></pre>
+<p>This will import <code>FileOperation</code> from the <code>bo</code> module and register it under the key <code>'Python.FileOperation'</code> in the <code>CLASSES</code> dictionary.</p>
               
             </div>
           </div><footer>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/settings/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Settings - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Settings";
+        var mkdocs_page_input_path = "settings.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/settings/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Settings</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#quick-start">Quick Start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#configuration-sections">Configuration Sections</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#classes-section">CLASSES Section</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#basic-usage">Basic Usage</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#productions-section">PRODUCTIONS Section</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#minimal-production">Minimal Production</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#full-production-configuration">Full Production Configuration</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#schemas-section">SCHEMAS Section</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#remote_settings-section">REMOTE_SETTINGS Section</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#complete-example">Complete Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#best-practices">Best Practices</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API documentation</li>
+      <li class="breadcrumb-item active">Settings</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="settings-configuration">Settings Configuration</h1>
+<p>The <code>settings.py</code> file is the central configuration file for registering your interoperability components. It defines classes, productions, schemas, and remote connection settings.</p>
+<h2 id="quick-start">Quick Start</h2>
+<p>Create a <code>settings.py</code> file in your project root:</p>
+<pre><code class="language-python">import bo
+
+CLASSES = {
+    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
+}
+</code></pre>
+<p>Register your components:</p>
+<pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
+</code></pre>
+<h2 id="configuration-sections">Configuration Sections</h2>
+<p>The <code>settings.py</code> file supports four main sections:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Purpose</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CLASSES</code></td>
+<td>Define interoperability components</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>PRODUCTIONS</code></td>
+<td>Configure production workflows</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><code>SCHEMAS</code></td>
+<td>Register message schemas for DTL</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><code>REMOTE_SETTINGS</code></td>
+<td>Configure remote IRIS connections</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<h2 id="classes-section">CLASSES Section</h2>
+<p>Register your interoperability components (BusinessOperations, BusinessProcesses, BusinessServices).</p>
+<h3 id="basic-usage">Basic Usage</h3>
+<pre><code class="language-python">import bo
+from bs import RedditService
+
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FileOperation': bo.FileOperation,
+}
+</code></pre>
+<h2 id="productions-section">PRODUCTIONS Section</h2>
+<p>Define complete production configurations with multiple components.</p>
+<h3 id="minimal-production">Minimal Production</h3>
+<pre><code class="language-python">PRODUCTIONS = [
+    {
+        'MyApp.Production': {
+            &quot;@Name&quot;: &quot;MyApp.Production&quot;,
+            &quot;Item&quot;: [
+                {
+                    &quot;@Name&quot;: &quot;FileProcessor&quot;,
+                    &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                },
+                {
+                    &quot;@Name&quot;: &quot;EmailSender&quot;, 
+                    &quot;@ClassName&quot;: &quot;Python.EmailOperation&quot;
+                }
+            ]
+        }
+    }
+]
+</code></pre>
+<h3 id="full-production-configuration">Full Production Configuration</h3>
+<pre><code class="language-python">import os
+from bo import FileOperation
+
+PRODUCTIONS = [
+    {
+        'Demo.Production': {
+            &quot;@Name&quot;: &quot;Demo.Production&quot;,
+            &quot;@TestingEnabled&quot;: &quot;true&quot;,
+            &quot;@LogGeneralTraceEvents&quot;: &quot;false&quot;,
+            &quot;Description&quot;: &quot;Sample production for demonstration&quot;,
+            &quot;ActorPoolSize&quot;: &quot;2&quot;,
+            &quot;Item&quot;: [
+                {
+                    &quot;@Name&quot;: &quot;FileProcessor&quot;,
+                    &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                    &quot;@PoolSize&quot;: &quot;1&quot;,
+                    &quot;@Enabled&quot;: &quot;true&quot;,
+                    &quot;@LogTraceEvents&quot;: &quot;true&quot;,
+                    &quot;Setting&quot;: {
+                        &quot;@Target&quot;: &quot;Host&quot;,
+                        &quot;@Name&quot;: &quot;%settings&quot;,
+                        &quot;#text&quot;: f&quot;path={os.environ.get('DATA_PATH', '/tmp')}&quot;
+                    }
+                }
+            ]
+        }
+    }
+]
+</code></pre>
+<p><strong>Production Attributes:</strong>
+- <code>@Name</code>: Production display name
+- <code>@TestingEnabled</code>: Enable testing mode (<code>"true"</code>/<code>"false"</code>)
+- <code>@LogGeneralTraceEvents</code>: Enable general logging
+- <code>ActorPoolSize</code>: Number of concurrent actors</p>
+<p><strong>Item Attributes:</strong>
+- <code>@Name</code>: Component instance name
+- <code>@ClassName</code>: Class reference (from CLASSES or direct class)
+- <code>@PoolSize</code>: Component pool size
+- <code>@Enabled</code>: Enable/disable component
+- <code>@LogTraceEvents</code>: Enable component-specific logging
+- <code>Setting</code>: Component configuration settings</p>
+<h2 id="schemas-section">SCHEMAS Section</h2>
+<p>Register message schemas for Data Transformation Language (DTL) operations.</p>
+<pre><code class="language-python">from msg import RedditPost, UserProfile
+
+SCHEMAS = [RedditPost, UserProfile]
+</code></pre>
+<h2 id="remote_settings-section">REMOTE_SETTINGS Section</h2>
+<p>Configure connections to remote IRIS instances for component migration.</p>
+<pre><code class="language-python">REMOTE_SETTINGS = {
+    &quot;url&quot;: &quot;http://localhost:8080&quot;,           # Required
+    &quot;username&quot;: &quot;SuperUser&quot;,                  # Optional
+    &quot;password&quot;: &quot;SYS&quot;,                        # Optional  
+    &quot;namespace&quot;: &quot;IRISAPP&quot;,                   # Optional (default: &quot;USER&quot;)
+    &quot;remote_folder&quot;: &quot;&quot;,                      # Optional (default: folder of the routine database)
+    &quot;package&quot;: &quot;python&quot;                       # Optional (default: &quot;python&quot;)
+}
+</code></pre>
+<p><strong>Configuration Options:</strong>
+- <code>url</code>: Remote IRIS instance URL (required)
+- <code>username</code>: Authentication username
+- <code>password</code>: Authentication password<br />
+- <code>namespace</code>: Target namespace for components
+- <code>remote_folder</code>: Remote storage folder
+- <code>package</code>: Package name for components</p>
+<h2 id="complete-example">Complete Example</h2>
+<pre><code class="language-python">import os
+import bp
+from bo import FileOperation, EmailOperation
+from bs import RedditService
+from msg import RedditPost
+
+# Remote connection settings
+REMOTE_SETTINGS = {
+    &quot;url&quot;: &quot;http://iris-server:8080&quot;,
+    &quot;username&quot;: &quot;SuperUser&quot;, 
+    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;namespace&quot;: &quot;IRISAPP&quot;
+}
+
+# Component registration
+CLASSES = {
+    'Python.RedditService': RedditService,
+    'Python.FileOperation': FileOperation,
+    'Python.EmailOperation': EmailOperation,
+    'Python.FilterRule': bp.FilterPostRoutingRule,
+}
+
+# Message schemas
+SCHEMAS = [RedditPost]
+
+# Production configuration
+PRODUCTIONS = [
+    {
+        'Reddit.Production': {
+            &quot;@Name&quot;: &quot;Reddit Processing Pipeline&quot;,
+            &quot;@TestingEnabled&quot;: &quot;true&quot;,
+            &quot;ActorPoolSize&quot;: &quot;3&quot;,
+            &quot;Item&quot;: [
+                {
+                    &quot;@Name&quot;: &quot;RedditFeed&quot;,
+                    &quot;@ClassName&quot;: &quot;Python.RedditService&quot;,
+                    &quot;@Enabled&quot;: &quot;true&quot;,
+                    &quot;Setting&quot;: {
+                        &quot;@Target&quot;: &quot;Host&quot;,
+                        &quot;@Name&quot;: &quot;%settings&quot;, 
+                        &quot;#text&quot;: f&quot;limit={os.environ.get('REDDIT_LIMIT', '10')}&quot;
+                    }
+                },
+                {
+                    &quot;@Name&quot;: &quot;PostFilter&quot;,
+                    &quot;@ClassName&quot;: &quot;Python.FilterRule&quot;,
+                    &quot;@Enabled&quot;: &quot;true&quot;
+                },
+                {
+                    &quot;@Name&quot;: &quot;FileExporter&quot;, 
+                    &quot;@ClassName&quot;: &quot;Python.FileOperation&quot;,
+                    &quot;@Enabled&quot;: &quot;true&quot;
+                }
+            ]
+        }
+    }
+]
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Use descriptive names</strong> for components and productions</li>
+<li><strong>Import modules at the top</strong> of your settings file</li>
+<li><strong>Use environment variables</strong> for sensitive data and paths</li>
+<li><strong>Group related components</strong> in the same production</li>
+<li><strong>Enable logging</strong> during development and testing</li>
+<li><strong>Document complex productions</strong> with clear descriptions</li>
+</ol>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../wrapper/" class="btn btn-neutral float-left" title="Wrapper Support"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../contributing/" class="btn btn-neutral float-right" title="Contributing">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../wrapper/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../contributing/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
