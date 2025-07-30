@@ -28,9 +28,9 @@ ClassMethod CreateProjection(
         $$$ThrowOnError(##class(Security.Applications).Create(webName, .webProperties))
     }
     Catch ex {
-        Set tSC=ex.AsStatus()
-        Write "Error creating web application: ", ex.DisplayString(), !
-        Set tSC = $$$OK
+
+        Write !,"Error creating web application: ", ex.DisplayString(), !
+
     }
 
     znspace tCurrentNamespace
