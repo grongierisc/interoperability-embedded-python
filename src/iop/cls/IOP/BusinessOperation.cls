@@ -7,7 +7,7 @@ Class IOP.BusinessOperation Extends (Ens.BusinessOperation, IOP.Common) [ Inheri
 
 Parameter SETTINGS = "%classname:Python BusinessOperation,%module:Python BusinessOperation,%settings:Python BusinessOperation,%classpaths:Python BusinessOperation";
 
-Method MessageHandler(
+Method OnMessage(
 	pRequest As %Library.Persistent,
 	Output pResponse As %Library.Persistent) As %Status
 {
