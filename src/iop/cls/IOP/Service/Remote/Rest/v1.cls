@@ -53,7 +53,7 @@ ClassMethod PutMigrate() As %DynamicObject
 		}
 		Else {
 			// Set targetDirectory to the CODE DATABASE directory
-			do ##class(%SYS.Namespace).GetAllNSInfo("USER",.info)
+			do ##class(%SYS.Namespace).GetAllNSInfo(namespace,.info)
 			Set targetDirectory = info("RoutineDB","Directory")
 		}
 		
