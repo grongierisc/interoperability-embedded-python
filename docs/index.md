@@ -28,6 +28,21 @@ To start using this proof of concept, install it using pip:
 pip install iris-pex-embedded-python
 ```
 
+with zpm/ipm:
+
+install zpm : 
+
+```objectscript
+set r = ##class(%Net.HttpRequest).%New(),r.Server="pm.community.intersystems.com",r.SSLConfiguration="ISC.FeatureTracker.SSL.Config" d r.Get("/packages/zpm/0.9.0/installer"),$system.OBJ.LoadStream(r.HttpResponse.Data,"c") 
+````
+
+Then install the package:
+
+```objectscript
+zpm "install pex-embbeded-python"
+```
+
+
 ## Getting Started
 
 If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation). Then, follow the [first steps](getting-started/first-steps) to create your first Business Operation.

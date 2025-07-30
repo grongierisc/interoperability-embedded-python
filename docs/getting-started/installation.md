@@ -31,6 +31,6 @@ Check the documentation about the command line interface [here](/interoperabilit
 To install the application using ZPM or IPM, run the following command:
 
 ```objectscript
-zpm "install iris-pex-embedded-python"
+zpm "install pex-embbeded-python"
 ```
 
