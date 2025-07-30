@@ -94,6 +94,7 @@ This file is used to store the settings of the interoperability components. It h
 - `CLASSES`: Stores the classes of the interoperability components.
 - `PRODUCTIONS`: Stores the productions of the interoperability components.
 - `SCHEMAS`: Stores the schemas of the interoperability components.
+- `REMOTE_SETTINGS`: Stores the remote settings for migration.
 
 Example:
 ```python
@@ -325,3 +326,33 @@ from msg import RedditPost
 
 SCHEMAS = [RedditPost]
 ```
+
+### The `REMOTE_SETTINGS` Section
+
+This section stores the remote settings for migration. It is used to configure the connection to the remote IRIS instance for importing Python IOP modules.
+
+The dictionary has the following structure:
+- `url`: The URL of the remote IRIS instance (mandatory)
+- `username`: The username for authentication (optional, default is "")
+- `password`: The password for authentication (optional, default is "")
+- `namespace`: The namespace for the connection (optional, default is "USER")
+- `remote_folder`: The folder where the components are stored (optional, default is the routine database folder)
+- `package`: The package name for the components (optional, default is "python")
+
+Example:
+```python
+from bo import FileOperation
+
+REMOTE_SETTINGS = {
+    "url": "http://localhost:8080",
+    "username": "SuperUser",
+    "password": "SYS",
+    "namespace": "IRISAPP",
+}
+
+CLASSES = {
+    'Python.FileOperation': FileOperation,
+}
+```
+
+This will import `FileOperation` from the `bo` module and register it under the key `'Python.FileOperation'` in the `CLASSES` dictionary.
