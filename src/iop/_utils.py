@@ -333,7 +333,7 @@ class _Utils():
             timeout=10
         )
 
-        print(f"Response from remote migration:\n {response.text}")
+        print(f"Response from remote migration:\n{response.text}")
 
         response.raise_for_status()  # Raise an error for bad responses
 
