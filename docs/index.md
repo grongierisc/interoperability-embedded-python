@@ -34,7 +34,7 @@ install zpm :
 
 ```objectscript
 set r = ##class(%Net.HttpRequest).%New(),r.Server="pm.community.intersystems.com",r.SSLConfiguration="ISC.FeatureTracker.SSL.Config" d r.Get("/packages/zpm/0.9.0/installer"),$system.OBJ.LoadStream(r.HttpResponse.Data,"c") 
-````
+```
 
 Then install the package:
 
