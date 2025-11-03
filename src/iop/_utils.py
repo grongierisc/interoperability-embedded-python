@@ -23,6 +23,7 @@ class RemoteSettings(TypedDict, total=False):
     remote_folder: str  # Optional: the folder to use (default: '')
     username: str  # Optional: the username to use to connect (default: '')
     password: str  # Optional: the password to use to connect (default: '')
+    verify_ssl: bool  # Optional: verify SSL certificates (default: True, set to False for self-signed certs)
 
 class _Utils():
     @staticmethod
@@ -261,7 +262,7 @@ class _Utils():
         return module
 
     @staticmethod
-    def migrate_remote(filename=None):
+    def migrate_remote(filename=None, force_local=False):
         """
         Read a settings file from the filename
         If the settings.py file has a key 'REMOTE_SETTINGS' then it will use the value of that key
@@ -273,6 +274,7 @@ class _Utils():
             * 'remote_folder': the folder to use (optional, default is '')
             * 'username': the username to use to connect (optional, default is '')
             * 'password': the password to use to connect (optional, default is '')
+            * 'verify_ssl': verify SSL certificates (optional, default is True)
         
         The remote host is a rest API that will be used to register the components
         The payload will be a json object with the following keys:
@@ -283,11 +285,15 @@ class _Utils():
                 * 'data': the data of the file, it will be an UTF-8 encoded string
 
         'body' will be constructed with all the files in the folder if the folder is not empty else use root folder of settings.py
+        
+        Args:
+            filename: Path to the settings file
+            force_local: If True, skip remote migration even if REMOTE_SETTINGS is present
         """
         settings, path = _Utils._load_settings(filename)
         remote_settings: Optional[RemoteSettings] = getattr(settings, 'REMOTE_SETTINGS', None) if settings else None
 
-        if not remote_settings:
+        if not remote_settings or force_local:
             _Utils.migrate(filename)
             return
         
@@ -321,21 +327,35 @@ class _Utils():
                             'data': data
                         })
         
+        # Get SSL verification setting (default to True for security)
+        verify_ssl = remote_settings.get('verify_ssl', True)
+        
+        # Disable SSL warnings if verify_ssl is False
+        if not verify_ssl:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        
         # send the request to the remote settings
-        response = requests.put(
-            url=f"{remote_settings['url']}/api/iop/migrate",
-            json=payload,
-            headers={
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            auth=(remote_settings.get('username', ''), remote_settings.get('password', '')),
-            timeout=10
-        )
+        try:
+            response = requests.put(
+                url=f"{remote_settings['url']}/api/iop/migrate",
+                json=payload,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                auth=(remote_settings.get('username', ''), remote_settings.get('password', '')),
+                timeout=10,
+                verify=verify_ssl
+            )
 
-        print(f"Response from remote migration:\n{response.text}")
+            print(f"Response from remote migration:\n{response.text}")
 
-        response.raise_for_status()  # Raise an error for bad responses
+            response.raise_for_status()  # Raise an error for bad responses
+        except requests.exceptions.SSLError as e:
+            print(f"SSL Error: {e}")
+            print("If you're using a self-signed certificate, set 'verify_ssl': False in REMOTE_SETTINGS")
+            raise
 
     @staticmethod
     def migrate(filename=None):

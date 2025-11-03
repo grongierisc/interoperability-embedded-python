@@ -338,6 +338,7 @@ The dictionary has the following structure:
 - `namespace`: The namespace for the connection (optional, default is "USER")
 - `remote_folder`: The folder where the components are stored (optional, default is the routine database folder)
 - `package`: The package name for the components (optional, default is "python")
+- `verify_ssl`: Whether to verify SSL certificates (optional, default is True). Set to False for self-signed certificates
 
 Example:
 ```python
@@ -356,3 +357,29 @@ CLASSES = {
 ```
 
 This will import `FileOperation` from the `bo` module and register it under the key `'Python.FileOperation'` in the `CLASSES` dictionary.
+
+#### Using HTTPS with Self-Signed Certificates
+
+If your remote IRIS instance uses HTTPS with a self-signed certificate, you need to disable SSL verification:
+
+```python
+REMOTE_SETTINGS = {
+    "url": "https://localhost:8443",
+    "username": "SuperUser",
+    "password": "SYS",
+    "namespace": "IRISAPP",
+    "verify_ssl": False  # Disable SSL verification for self-signed certificates
+}
+```
+
+**Note:** Disabling SSL verification should only be used in development or trusted environments, as it makes the connection vulnerable to man-in-the-middle attacks.
+
+#### Force Local Migration
+
+You can force local migration (skip remote migration even if `REMOTE_SETTINGS` is present) by using the `--force-local` flag:
+
+```bash
+iop -m /path/to/settings.py --force-local
+```
+
+This is useful when you want to test local migration while keeping your `REMOTE_SETTINGS` configuration in the settings file.

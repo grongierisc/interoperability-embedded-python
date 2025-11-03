@@ -48,6 +48,7 @@ class CommandArgs:
     classname: Optional[str] = None
     body: Optional[str] = None
     namespace: Optional[str] = None
+    force_local: bool = False
 
 class Command:
     def __init__(self, args: CommandArgs):
@@ -147,7 +148,7 @@ class Command:
         if migrate_path is not None:
             if not os.path.isabs(migrate_path):
                 migrate_path = os.path.join(os.getcwd(), migrate_path)
-            _Utils.migrate_remote(migrate_path)
+            _Utils.migrate_remote(migrate_path, force_local=self.args.force_local)
 
     def _handle_log(self) -> None:
         if self.args.log == 'not_set':
@@ -189,6 +190,9 @@ def create_parser() -> argparse.ArgumentParser:
     test = main_parser.add_argument_group('test arguments')
     test.add_argument('-C', '--classname', help='test classname', nargs='?', const='not_set')
     test.add_argument('-B', '--body', help='test body', nargs='?', const='not_set')
+
+    migrate = main_parser.add_argument_group('migrate arguments')
+    migrate.add_argument('--force-local', help='force local migration, skip remote even if REMOTE_SETTINGS is present', action='store_true')
 
     namespace = main_parser.add_argument_group('namespace arguments')
     namespace.add_argument('-n', '--namespace', help='set namespace', nargs='?', const='not_set')

@@ -79,14 +79,21 @@ class TestIOPCli(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', 'settings.json'])
             self.assertEqual(cm.exception.code, 0)
-            mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
+            mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'), force_local=False)
 
         # Test absolute path
         with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json'])
             self.assertEqual(cm.exception.code, 0)
-            mock_migrate.assert_called_once_with('/tmp/settings.json')
+            mock_migrate.assert_called_once_with('/tmp/settings.json', force_local=False)
+
+        # Test with force_local flag
+        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
+            with self.assertRaises(SystemExit) as cm:
+                main(['-m', '/tmp/settings.json', '--force-local'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_migrate.assert_called_once_with('/tmp/settings.json', force_local=True)
 
     def test_initialization(self):
         """Test initialization command."""
