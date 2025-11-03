@@ -80,6 +80,12 @@
     <li class="toctree-l3"><a class="reference internal" href="#the-schemas-section">The SCHEMAS Section</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#the-remote_settings-section">The REMOTE_SETTINGS Section</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#using-https-with-self-signed-certificates">Using HTTPS with Self-Signed Certificates</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#force-local-migration">Force Local Migration</a>
+    </li>
+        </ul>
     </li>
         </ul>
     </li>
@@ -447,7 +453,8 @@ SCHEMAS = [RedditPost]
 - <code>password</code>: The password for authentication (optional, default is "")
 - <code>namespace</code>: The namespace for the connection (optional, default is "USER")
 - <code>remote_folder</code>: The folder where the components are stored (optional, default is the routine database folder)
-- <code>package</code>: The package name for the components (optional, default is "python")</p>
+- <code>package</code>: The package name for the components (optional, default is "python")
+- <code>verify_ssl</code>: Whether to verify SSL certificates (optional, default is True). Set to False for self-signed certificates</p>
 <p>Example:</p>
 <pre><code class="language-python">from bo import FileOperation
 
@@ -463,6 +470,22 @@ CLASSES = {
 }
 </code></pre>
 <p>This will import <code>FileOperation</code> from the <code>bo</code> module and register it under the key <code>'Python.FileOperation'</code> in the <code>CLASSES</code> dictionary.</p>
+<h4 id="using-https-with-self-signed-certificates">Using HTTPS with Self-Signed Certificates</h4>
+<p>If your remote IRIS instance uses HTTPS with a self-signed certificate, you need to disable SSL verification:</p>
+<pre><code class="language-python">REMOTE_SETTINGS = {
+    &quot;url&quot;: &quot;https://localhost:8443&quot;,
+    &quot;username&quot;: &quot;SuperUser&quot;,
+    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;namespace&quot;: &quot;IRISAPP&quot;,
+    &quot;verify_ssl&quot;: False  # Disable SSL verification for self-signed certificates
+}
+</code></pre>
+<p><strong>Note:</strong> Disabling SSL verification should only be used in development or trusted environments, as it makes the connection vulnerable to man-in-the-middle attacks.</p>
+<h4 id="force-local-migration">Force Local Migration</h4>
+<p>You can force local migration (skip remote migration even if <code>REMOTE_SETTINGS</code> is present) by using the <code>--force-local</code> flag:</p>
+<pre><code class="language-bash">iop -m /path/to/settings.py --force-local
+</code></pre>
+<p>This is useful when you want to test local migration while keeping your <code>REMOTE_SETTINGS</code> configuration in the settings file.</p>
               
             </div>
           </div><footer>
