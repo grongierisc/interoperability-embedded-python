@@ -681,6 +681,24 @@ Method %ShowContents(pZenOutput As %Boolean = 0)
 	&html<<script>$(function() {$('#element').jsonView(makeCompleteJSON(#(jsonObject)#,false));});</script>>
 }
 
+ClassMethod %OnDelete(oid As %ObjectIdentity) As %Status [ Private ]
+{
+      // Delete the property object references.
+      Set tSC = $$$OK
+      // Kill the global references in ^Ens.MessageBodyD(oid) and all its sub-nodes
+      Do ##class(Ens.MessageBody).%DeleteId(oid,.tSC)
+      Quit tSC
+}
+
+/// Callback/Trigger for SQL delete
+Trigger OnDelete [ Event = DELETE ]
+{
+      // Delete the property object references. {%%ID} holds the id of the record being deleted.
+      Set tID={%%ID}
+      Do ##class(Ens.MessageBody).%DeleteId(tID,.tSC)
+      Quit
+}
+
 Storage Default
 {
 <Data name="MessageDefaultData">
