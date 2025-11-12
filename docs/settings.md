@@ -140,7 +140,8 @@ REMOTE_SETTINGS = {
     "password": "SYS",                        # Optional  
     "namespace": "IRISAPP",                   # Optional (default: "USER")
     "remote_folder": "",                      # Optional (default: folder of the routine database)
-    "package": "python"                       # Optional (default: "python")
+    "package": "python",                      # Optional (default: "python")
+    "verify_ssl": True                        # Optional (default: True)
 }
 ```
 
@@ -151,6 +152,7 @@ REMOTE_SETTINGS = {
 - `namespace`: Target namespace for components
 - `remote_folder`: Remote storage folder
 - `package`: Package name for components
+- `verify_ssl`: Enable/disable SSL verification
 
 ## Complete Example
 
