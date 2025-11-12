@@ -268,21 +268,22 @@ class _Director():
         classname: the name of the class to test
         body: the body of the message
         """
+        iris = _iris.get_iris()
         if not message:
-            message = _iris.get_iris().cls('Ens.Request')._New()
+            message = iris.cls('Ens.Request')._New()
         if classname:
             # if classname start with 'iris.' then create an iris object
             if classname.startswith('iris.'):
                 # strip the iris. prefix
                 classname = classname[5:]
                 if body:
-                    message = _iris.get_iris().cls(classname)._New(body)
+                    message = iris.cls(classname)._New(body)
                 else:
-                    message = _iris.get_iris().cls(classname)._New()
+                    message = iris.cls(classname)._New()
             # else create a python object
             else:
                 # python message are casted to Grongier.PEX.Message
-                message = _iris.get_iris().cls("IOP.Message")._New()
+                message = iris.cls("IOP.Message")._New()
                 message.classname = classname
                 if body:
                     message.json = body
@@ -290,7 +291,7 @@ class _Director():
                     message.json = _Utils.string_to_stream("{}")
         # serialize the message
         serial_message = dispatch_serializer(message)
-        response = _iris.get_iris().cls('IOP.Utils').dispatchTestComponent(target,serial_message)
+        response = iris.cls('IOP.Utils').dispatchTestComponent(target,serial_message)
         try:
             deserialized_response = dispatch_deserializer(response)
         except ImportError as e:

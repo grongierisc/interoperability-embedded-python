@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 import json
+import logging
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -161,7 +162,10 @@ class Command:
 
     def _handle_help(self) -> None:
         create_parser().print_help()
-        print(f"\nDefault production: {_Director.get_default_production()}")
+        try:
+            print(f"\nDefault production: {_Director.get_default_production()}")
+        except Exception:
+            logging.warning("Could not retrieve default production.")
 
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure argument parser"""
