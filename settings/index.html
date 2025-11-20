@@ -284,7 +284,8 @@ SCHEMAS = [RedditPost, UserProfile]
     &quot;password&quot;: &quot;SYS&quot;,                        # Optional  
     &quot;namespace&quot;: &quot;IRISAPP&quot;,                   # Optional (default: &quot;USER&quot;)
     &quot;remote_folder&quot;: &quot;&quot;,                      # Optional (default: folder of the routine database)
-    &quot;package&quot;: &quot;python&quot;                       # Optional (default: &quot;python&quot;)
+    &quot;package&quot;: &quot;python&quot;,                      # Optional (default: &quot;python&quot;)
+    &quot;verify_ssl&quot;: True                        # Optional (default: True)
 }
 </code></pre>
 <p><strong>Configuration Options:</strong>
@@ -293,7 +294,8 @@ SCHEMAS = [RedditPost, UserProfile]
 - <code>password</code>: Authentication password<br />
 - <code>namespace</code>: Target namespace for components
 - <code>remote_folder</code>: Remote storage folder
-- <code>package</code>: Package name for components</p>
+- <code>package</code>: Package name for components
+- <code>verify_ssl</code>: Enable/disable SSL verification</p>
 <h2 id="complete-example">Complete Example</h2>
 <pre><code class="language-python">import os
 import bp
