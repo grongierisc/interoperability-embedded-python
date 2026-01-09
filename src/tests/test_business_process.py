@@ -46,6 +46,51 @@ def test_async_operations(process):
         timeout, completion_key
     )
 
+def test_send_request_async_response_required_boolean_conversion(process):
+    """Test that response_required boolean is correctly converted to int (0 or 1) for Iris API."""
+    target = "target_service"
+    request = SimpleMessage(integer=1, string='test')
+    
+    # Test with response_required=True (should be converted to 1)
+    process.send_request_async(target, request, response_required=True)
+    args, kwargs = process.iris_handle.dispatchSendRequestAsync.call_args
+    # args[0] = target, args[1] = request (serialized), args[2] = response_required, args[3] = completion_key, args[4] = description
+    assert args[2] == 1, "response_required=True should be converted to 1"
+    assert args[0] == target, "Target should be passed correctly"
+    
+    # Reset mock
+    process.iris_handle.reset_mock()
+    
+    # Test with response_required=False (should be converted to 0)
+    process.send_request_async(target, request, response_required=False)
+    args, kwargs = process.iris_handle.dispatchSendRequestAsync.call_args
+    assert args[2] == 0, "response_required=False should be converted to 0"
+    assert args[0] == target, "Target should be passed correctly"
+    
+    # Reset mock
+    process.iris_handle.reset_mock()
+    
+    # Test default value (should be True, converted to 1)
+    process.send_request_async(target, request)
+    args, kwargs = process.iris_handle.dispatchSendRequestAsync.call_args
+    assert args[2] == 1, "Default response_required should be True (converted to 1)"
+    
+    # Verify all parameters are passed correctly with response_required=False
+    process.iris_handle.reset_mock()
+    description = "Test description"
+    completion_key = "test_key"
+    process.send_request_async(
+        target, request, 
+        description=description, 
+        completion_key=completion_key, 
+        response_required=False
+    )
+    args, kwargs = process.iris_handle.dispatchSendRequestAsync.call_args
+    assert args[0] == target, "Target should be passed correctly"
+    assert args[2] == 0, "response_required=False should be converted to 0"
+    assert args[3] == completion_key, "Completion key should be passed correctly"
+    assert args[4] == description, "Description should be passed correctly"
+
 def test_persistent_properties():
     # Test persistent property handling
     class ProcessWithProperties(_BusinessProcess):

@@ -86,10 +86,11 @@ class _BusinessProcess(_BusinessHost):
         Raises:
             TypeError: If request is not of type Message or IRISObject
         """
+        # Convert boolean to int for Iris API
         if response_required:
-            response_required = True
+            response_required = 1 # type: ignore
         else:
-            response_required = False
+            response_required = 0 # type: ignore
         return self.iris_handle.dispatchSendRequestAsync(target, request, response_required, completion_key, description)
 
     def set_timer(self, timeout: Union[int, str], completion_key: Optional[str]=None) -> None:

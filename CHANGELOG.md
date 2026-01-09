@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+- Fix issue with boolean `response_required` parameter in `send_request_async` method of BusinessProcess
+  - Now converts boolean to integer (1 or 0) to ensure compatibility with IRIS API
+
 ## [3.5.4] - 2025-11-25
 ### Added
 - new option for migrate `--force-local` to force local migration even if remote url is provided in the `settings.py` file
