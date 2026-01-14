@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `iop --update` command to update a production from the command line
 - New info displayed in `iop --help` command showing current namespace
 - `iop --status` command now shows if production needs update, if so a message is displayed
+- Command line option `--namespace` alone will show the current namespace
 
 ### Fixed
 - Fix issue with boolean `response_required` parameter in `send_request_async` method of BusinessProcess

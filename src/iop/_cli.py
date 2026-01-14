@@ -61,7 +61,29 @@ class Command:
             # set environment variable IRISNAMESPACE
             os.environ['IRISNAMESPACE'] = self.args.namespace
 
+    def _has_primary_command(self) -> bool:
+        return any([
+            self.args.default,
+            self.args.list,
+            self.args.start,
+            self.args.stop,
+            self.args.kill,
+            self.args.restart,
+            self.args.status,
+            self.args.test,
+            self.args.version,
+            self.args.export,
+            self.args.migrate,
+            self.args.log,
+            self.args.init,
+            self.args.update,
+        ])
+
     def execute(self) -> None:
+        if self.args.namespace == 'not_set' and not self._has_primary_command():
+            print(os.getenv('IRISNAMESPACE', 'not set'))
+            return
+
         command_type = self._determine_command_type()
         command_handlers = {
             CommandType.DEFAULT: self._handle_default,

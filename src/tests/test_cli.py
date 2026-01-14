@@ -23,6 +23,28 @@ class TestIOPCli(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
             self.assertIn('Namespace:', fake_out.getvalue())
 
+    def test_namespace_prints_current(self):
+        """Test namespace display when no value is provided."""
+        with patch.dict(os.environ, {"IRISNAMESPACE": "TESTNS"}, clear=True):
+            with patch('sys.stdout', new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(['-n'])
+                self.assertEqual(cm.exception.code, 0)
+                self.assertEqual(fake_out.getvalue().strip(), 'TESTNS')
+
+    def test_namespace_with_value_prints_help(self):
+        """Test namespace assignment prints help when no other command is provided."""
+        with patch.dict(os.environ, {}, clear=True):
+            with patch('iop._director._Director.get_default_production') as mock_default:
+                mock_default.return_value = 'UnitTest.Production'
+                with patch('sys.stdout', new=StringIO()) as fake_out:
+                    with self.assertRaises(SystemExit) as cm:
+                        main(['-n', 'MyNS'])
+                    self.assertEqual(cm.exception.code, 0)
+                    output = fake_out.getvalue()
+                    self.assertIn('usage:', output)
+                    self.assertIn('Namespace: MyNS', output)
+
     def test_default_settings(self):
         """Test default production settings."""
         # Test with name
