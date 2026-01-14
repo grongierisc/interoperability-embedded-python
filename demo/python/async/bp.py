@@ -10,6 +10,7 @@ class MyBP(BusinessProcess):
 
         self.send_request_async("Python.MyBO", msg_one,completion_key="1")
         self.send_request_async("Python.MyBO", msg_two,completion_key="2")
+        self.send_request_async("Python.MyBO", msg_two,completion_key="3", response_required=False)
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         if completion_key == "1":
