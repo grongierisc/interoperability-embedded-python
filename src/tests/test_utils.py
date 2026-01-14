@@ -140,3 +140,61 @@ class TestSchemaOperations:
         with patch('iris.cls') as mock_cls:
             _Utils.register_schema("test.schema", "{}", "test")
             mock_cls.return_value.Import.assert_called_once()
+
+
+class TestRemoteMigration:
+    @patch('requests.put')
+    @patch('iop._utils._Utils._load_settings')
+    @patch('os.walk')
+    def test_migrate_remote_verify_ssl_true(self, mock_walk, mock_load_settings, mock_put):
+        # Setup mocks
+        mock_load_settings.return_value = (
+            MagicMock(
+                REMOTE_SETTINGS = {
+                    'url': 'http://test.com',
+                    'verify_ssl': True,
+                    'username': 'user',
+                    'password': 'password',
+                    'namespace': 'USER',
+                    'remote_folder': '/remote'
+                }
+            ), 
+            '/path/to/sys'
+        )
+        mock_walk.return_value = [] # No files
+        mock_put.return_value.status_code = 200
+        mock_put.return_value.text = '{"status": "OK"}'
+        
+        # Run
+        _Utils.migrate_remote('settings.py')
+        
+        # Assert verify=True
+        mock_put.assert_called_once()
+        assert mock_put.call_args[1]['verify'] == True
+
+    @patch('requests.put')
+    @patch('iop._utils._Utils._load_settings')
+    @patch('os.walk')
+    def test_migrate_remote_verify_ssl_false(self, mock_walk, mock_load_settings, mock_put):
+        # Setup mocks
+        mock_load_settings.return_value = (
+            MagicMock(
+                REMOTE_SETTINGS = {
+                    'url': 'http://test.com',
+                    'verify_ssl': False,
+                    'username': 'user',
+                    'password': 'password'
+                }
+            ), 
+            '/path/to/sys'
+        )
+        mock_walk.return_value = []
+        mock_put.return_value.status_code = 200
+        mock_put.return_value.text = '{"status": "OK"}'
+        
+        # Run
+        _Utils.migrate_remote('settings.py')
+        
+        # Assert verify=False
+        mock_put.assert_called_once()
+        assert mock_put.call_args[1]['verify'] == False

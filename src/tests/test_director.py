@@ -123,6 +123,17 @@ class TestProductionManagement:
         result = _Director.status_production()
         assert result == mock_status
 
+    def test_status_production_needs_update(self):
+        mock_status = {
+            'Production': 'test_prod', 
+            'Status': 'running',
+            'NeedsUpdate': True,
+            'UpdateMessage': 'Update available'
+        }
+        iris.cls('IOP.Director').StatusProduction = MagicMock(return_value=mock_status)
+        result = _Director.status_production()
+        assert result == mock_status
+
 class TestLogging:
     def test_format_log(self):
         test_row = [1, 'Config1', 'Job1', 'Msg1', 'Session1', 'Source1', 'Method1', 

@@ -28,6 +28,7 @@ class CommandType(Enum):
     LOG = auto()
     INIT = auto()
     HELP = auto()
+    UPDATE = auto()
 
 @dataclass
 class CommandArgs:
@@ -50,6 +51,7 @@ class CommandArgs:
     body: Optional[str] = None
     namespace: Optional[str] = None
     force_local: bool = False
+    update: bool = False
 
 class Command:
     def __init__(self, args: CommandArgs):
@@ -75,7 +77,8 @@ class Command:
             CommandType.MIGRATE: self._handle_migrate,
             CommandType.LOG: self._handle_log,
             CommandType.INIT: self._handle_init,
-            CommandType.HELP: self._handle_help
+            CommandType.HELP: self._handle_help,
+            CommandType.UPDATE: self._handle_update,
         }
         handler = command_handlers.get(command_type)
         if handler:
@@ -95,6 +98,7 @@ class Command:
         if self.args.migrate: return CommandType.MIGRATE
         if self.args.log: return CommandType.LOG
         if self.args.init: return CommandType.INIT
+        if self.args.update: return CommandType.UPDATE
         return CommandType.HELP
 
     def _handle_default(self) -> None:
@@ -127,6 +131,9 @@ class Command:
 
     def _handle_status(self) -> None:
         print(json.dumps(_Director.status_production(), indent=4))
+
+    def _handle_update(self) -> None:
+        _Director.update_production()
 
     def _handle_test(self) -> None:
         test_name = None if self.args.test == 'not_set' else self.args.test
@@ -164,6 +171,7 @@ class Command:
         create_parser().print_help()
         try:
             print(f"\nDefault production: {_Director.get_default_production()}")
+            print(f"\nNamespace: {os.getenv('IRISNAMESPACE','not set')}")
         except Exception:
             logging.warning("Could not retrieve default production.")
 
@@ -186,6 +194,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument('-L', '--log', help='display log', nargs='?', const='not_set')
     parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
     parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
+    parser.add_argument('-u', '--update', help='update a production', action='store_true')
 
     # Command groups
     start = main_parser.add_argument_group('start arguments')

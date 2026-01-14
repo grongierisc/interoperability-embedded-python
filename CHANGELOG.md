@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add `iop --update` command to update a production from the command line
+- New info displayed in `iop --help` command showing current namespace
+- `iop --status` command now shows if production needs update, if so a message is displayed
+
 ### Fixed
 - Fix issue with boolean `response_required` parameter in `send_request_async` method of BusinessProcess
   - Now converts boolean to integer (1 or 0) to ensure compatibility with IRIS API

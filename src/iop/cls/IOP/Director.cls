@@ -56,6 +56,14 @@ ClassMethod StatusProduction() As %String
 												$$$eProductionStateSuspended:"suspended",
 												$$$eProductionStateTroubled:"toubled",
 												:"unknown"))
+	// Get if production needs update
+	set tNeedsUpdate = ##class(Ens.Director).ProductionNeedsUpdate(.tMsgUpdate)
+	do tInfo."__setitem__"("NeedsUpdate",tNeedsUpdate)
+	// If needs update get message
+	if tNeedsUpdate {
+		do tInfo."__setitem__"("UpdateMessage",tMsgUpdate)
+	}
+	// Get last start time
 	Return tInfo
 }
 

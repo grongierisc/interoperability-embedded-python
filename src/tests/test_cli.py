@@ -17,9 +17,11 @@ class TestIOPCli(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
 
         # Test without arguments
-        with self.assertRaises(SystemExit) as cm:
-            main([])
-        self.assertEqual(cm.exception.code, 0)
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            with self.assertRaises(SystemExit) as cm:
+                main([])
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn('Namespace:', fake_out.getvalue())
 
     def test_default_settings(self):
         """Test default production settings."""
@@ -94,6 +96,25 @@ class TestIOPCli(unittest.TestCase):
                 main(['-m', '/tmp/settings.json', '--force-local'])
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with('/tmp/settings.json', force_local=True)
+
+    def test_status_and_update(self):
+        """Test status and update commands."""
+        # Test status
+        with patch('iop._director._Director.status_production') as mock_status:
+            mock_status.return_value = {"Production": "TestProd", "Status": "running"}
+            with patch('sys.stdout', new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(['--status'])
+                self.assertEqual(cm.exception.code, 0)
+                mock_status.assert_called_once()
+                self.assertIn('"Production": "TestProd"', fake_out.getvalue())
+
+        # Test update
+        with patch('iop._director._Director.update_production') as mock_update:
+            with self.assertRaises(SystemExit) as cm:
+                main(['--update'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_update.assert_called_once()
 
     def test_initialization(self):
         """Test initialization command."""
