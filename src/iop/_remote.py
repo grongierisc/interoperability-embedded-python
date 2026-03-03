@@ -1,91 +1,290 @@
-# This module provides a REST API for remote I/O operations
-# It uses Flask to handle incoming requests and route them to the appropriate I/O functions
-# It should be able to help the migrate command of IoP Cli to work remotely:
-# this means copy all the .py files from the current directory of (settings.py) to the remote server
-# and run the api migrate from the remote server
-# the default folder is based on the NAMESPACE variable in settings.py
-from flask import Flask, request, jsonify
+"""Remote director: mirrors _Director's interface over the IOP REST API.
 
-@app.route('/remote_io', methods=['POST'])
-def remote_io():
-    data = request.json
-    if not data or 'operation' not in data:
-        return jsonify({'error': 'Invalid request'}), 400
-    
-    operation = data['operation']
-    # Here you would implement the logic to handle the operation
-    # For example, you could call a function that performs the I/O operation
-    # and return the result as JSON.
-    
-    # Placeholder response for demonstration purposes
-    response = {'status': 'success', 'operation': operation}
-    return jsonify(response), 200
+Configure via environment variables:
+    IOP_URL          Required. e.g. http://localhost:8080
+    IOP_USERNAME     Optional. Default: ""
+    IOP_PASSWORD     Optional. Default: ""
+    IOP_NAMESPACE    Optional. Default: "USER"
+    IOP_VERIFY_SSL   Optional. "0"/"false" to disable TLS verification.
 
-# ClassMethod UploadPackage(
-# 	namespace As %String,
-# 	body As %DynamicArray) As %DynamicObject
-# {
-#     // check for namespace existence and user permissions against namespace
-# 	If '..NamespaceCheck(namespace) {
-# 		Return ""
-# 	}
-# 	New $NAMESPACE
-# 	Set $NAMESPACE = namespace
-	
-# 	//Create directory for custom packages
-# 	Do ##class(%ZHSLIB.HealthShareMgr).GetDBNSInfo(namespace,.out)
-# 	Set customPackagesPath = ##class(%Library.File).NormalizeDirectory("fhir_packages", out.globalsDatabase.directory)
-# 	If '##class(%Library.File).DirectoryExists(customPackagesPath) {
-# 		If '##class(%Library.File).CreateDirectory(customPackagesPath) {
-# 			$$$ThrowStatus($$$ERROR($$$DirectoryCannotCreate, customPackagesPath))
-# 		}
-# 	}
-	
-# 	//Find package name
-# 	Set iterator =  body.%GetIterator()
-# 	Set packageName = ""
-# 	While iterator.%GetNext(, .fileObject ) {
-# 		If fileObject.name = "package.json" {
-# 			Set packageName = fileObject.data.name_"@"_fileObject.data.version
-# 		}	
-# 	}
-# 	If packageName = "" {
-# 		Do ..%ReportRESTError($$$HTTP400,$$$ERROR($$$HSFHIRErrPackageNotFound))
-# 		Return ""
-# 	}
-	
-# 	Set packagePath = ##class(%Library.File).NormalizeDirectory(packageName, customPackagesPath)
-# 	// If the package already exists then we must be meaning to re-load it. Delete files/directory/metadata and recreate fresh.
-# 	If ##class(%Library.File).DirectoryExists(packagePath) {
-# 		If '##class(%Library.File).RemoveDirectoryTree(packagePath) {
-# 			$$$ThrowStatus($$$ERROR($$$DirectoryPermission , packagePath))
-# 		}
-# 	}
-# 	If '##class(%Library.File).CreateDirectory(packagePath) {
-# 		$$$ThrowStatus($$$ERROR($$$DirectoryCannotCreate, customPackagesPath))
-# 	}
-# 	Set pkg = ##class(HS.FHIRMeta.Storage.Package).FindById(packageName)
-# 	If $ISOBJECT(pkg) {
-# 		// Will fail and throw if the package is in-use or has dependencies preventing it from being deleted.
-# 		Do ##class(HS.FHIRServer.ServiceAdmin).DeleteMetadataPackage(packageName)
-# 	}
-# 	Kill pkg
+Or pass a RemoteSettings dict directly (same shape as REMOTE_SETTINGS in settings.py).
+"""
 
-# 	//Unpack JSON objects		
-# 	Set iterator = body.%GetIterator()
-# 	While iterator.%GetNext(.key , .fileObject ) {
-# 		Set fileName = ##class(%Library.File).NormalizeFilename(fileObject.name,packagePath)
-# 		Set fileStream = ##class(%Stream.FileCharacter).%New()
-# 		Set fileStream.TranslateTable = "UTF8"
-# 		$$$ThrowOnError(fileStream.LinkToFile(fileName))
-# 		Do fileObject.data.%ToJSON(.fileStream)
-# 		$$$ThrowOnError(fileStream.%Save())
-# 	}
-	
-# 	//Import package
-# 	Do ##class(HS.FHIRMeta.Load.NpmLoader).importPackages(packagePath)
-# 	Set pkg = ..GetOnePackage(packageName, namespace)
-# 	Do ..%SetStatusCode($$$HTTP201)
-# 	Do ..%SetHeader("location", %request.Application _ "packages/" _ packageName _ "?namespace=" _ namespace)
-# 	Return pkg
-# }
+from __future__ import annotations
+
+import json
+import os
+import signal
+import time
+from typing import Any, Dict, List, Optional
+
+import requests
+import urllib3
+
+
+class _RemoteDirector:
+    """Implements the same interface as _Director but dispatches over HTTP."""
+
+    def __init__(self, remote_settings: Dict[str, Any]) -> None:
+        self._base = remote_settings["url"].rstrip("/") + "/api/iop"
+        self._auth = (
+            remote_settings.get("username", ""),
+            remote_settings.get("password", ""),
+        )
+        self._namespace: str = remote_settings.get("namespace", "USER")
+        self._verify: bool = remote_settings.get("verify_ssl", True)
+        if not self._verify:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _get(self, path: str, params: Optional[dict] = None) -> Any:
+        p = {"namespace": self._namespace, **(params or {})}
+        resp = requests.get(
+            f"{self._base}{path}", params=p, auth=self._auth,
+            verify=self._verify, timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def _post(self, path: str, body: Optional[dict] = None) -> Any:
+        b = {"namespace": self._namespace, **(body or {})}
+        resp = requests.post(
+            f"{self._base}{path}", json=b, auth=self._auth,
+            verify=self._verify, timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def _put(self, path: str, body: Optional[dict] = None) -> Any:
+        b = {"namespace": self._namespace, **(body or {})}
+        resp = requests.put(
+            f"{self._base}{path}", json=b, auth=self._auth,
+            verify=self._verify, timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    def _check_error(self, data: Any) -> Any:
+        if isinstance(data, dict) and "error" in data:
+            raise RuntimeError(data["error"])
+        return data
+
+    # ------------------------------------------------------------------
+    # Production lifecycle
+    # ------------------------------------------------------------------
+
+    def get_default_production(self) -> str:
+        data = self._check_error(self._get("/default"))
+        return data.get("production") or "Not defined"
+
+    def set_default_production(self, production_name: str = "") -> None:
+        self._check_error(self._put("/default", {"production": production_name}))
+
+    def list_productions(self) -> dict:
+        return self._check_error(self._get("/list"))
+
+    def status_production(self) -> dict:
+        data = self._check_error(self._get("/status"))
+        if not data.get("production"):
+            data["production"] = self.get_default_production()
+        return data
+
+    def start_production(self, production_name: Optional[str] = None) -> None:
+        body: dict = {}
+        if production_name:
+            body["production"] = production_name
+        self._check_error(self._post("/start", body))
+
+    def start_production_with_log(self, production_name: Optional[str] = None) -> None:
+        """Start remotely then stream the log until Ctrl-C (which also stops)."""
+        self.start_production(production_name)
+        prod = production_name or self.get_default_production()
+        print(f"Production '{prod}' started. Streaming log — Ctrl-C to stop.")
+        running = True
+
+        def _sigint(sig, frame):  # pragma: no cover
+            nonlocal running
+            running = False
+
+        signal.signal(signal.SIGINT, _sigint)
+
+        last_id = 0
+        for entry in self._get_log_entries(top=10):
+            _print_log_entry(entry)
+            last_id = max(last_id, entry.get("id", 0))
+
+        while running:
+            time.sleep(1)
+            entries = self._get_log_entries(since_id=last_id)
+            for entry in entries:
+                _print_log_entry(entry)
+                last_id = max(last_id, entry.get("id", 0))
+
+        self.stop_production()
+
+    def stop_production(self) -> None:
+        self._check_error(self._post("/stop"))
+
+    def shutdown_production(self) -> None:
+        self._check_error(self._post("/kill"))
+
+    def restart_production(self) -> None:
+        self._check_error(self._post("/restart"))
+
+    def update_production(self) -> None:
+        self._check_error(self._post("/update"))
+
+    # ------------------------------------------------------------------
+    # Logging
+    # ------------------------------------------------------------------
+
+    def _get_log_entries(
+        self,
+        top: int = 10,
+        since_id: Optional[int] = None,
+    ) -> List[dict]:
+        params: dict = {}
+        if since_id is not None:
+            params["since_id"] = since_id
+        else:
+            params["top"] = top
+        data = self._check_error(self._get("/log", params))
+        return data if isinstance(data, list) else []
+
+    def log_production_top(self, top: int = 10) -> None:
+        entries = self._get_log_entries(top=top)
+        for entry in reversed(entries):
+            _print_log_entry(entry)
+
+    def log_production(self) -> None:
+        """Stream log continuously until Ctrl-C."""
+        running = True
+
+        def _sigint(sig, frame):  # pragma: no cover
+            nonlocal running
+            running = False
+
+        signal.signal(signal.SIGINT, _sigint)
+
+        last_id = 0
+        for entry in self._get_log_entries(top=10):
+            _print_log_entry(entry)
+            last_id = max(last_id, entry.get("id", 0))
+
+        while running:
+            time.sleep(1)
+            entries = self._get_log_entries(since_id=last_id)
+            for entry in entries:
+                _print_log_entry(entry)
+                last_id = max(last_id, entry.get("id", 0))
+
+    # ------------------------------------------------------------------
+    # Test
+    # ------------------------------------------------------------------
+
+    def test_component(
+        self,
+        target: Optional[str],
+        message=None,           # ignored remotely — not serialisable over HTTP
+        classname: Optional[str] = None,
+        body: Optional[str] = None,
+    ) -> dict:
+        """Returns a dict: {"classname": "...", "body": "...", "truncated": false}"""
+        payload: dict = {"target": target or ""}
+        if classname:
+            payload["classname"] = classname
+        if body:
+            payload["body"] = body
+        return self._check_error(self._post("/test", payload))
+
+    # ------------------------------------------------------------------
+    # Export
+    # ------------------------------------------------------------------
+
+    def export_production(self, production_name: str) -> dict:
+        import xmltodict  # already required by _utils
+
+        data = self._check_error(
+            self._get("/export", {"production": production_name})
+        )
+        xml = data.get("xml", "")
+        if not xml:
+            return {}
+
+        def _postprocessor(path, key, value):
+            return key, "" if value is None else value
+
+        return xmltodict.parse(xml, postprocessor=_postprocessor)
+
+
+# ------------------------------------------------------------------
+# Shared helpers
+# ------------------------------------------------------------------
+
+def _print_log_entry(entry: dict) -> None:
+    print(
+        entry.get("time_logged", ""),
+        entry.get("type", ""),
+        entry.get("config_name", ""),
+        entry.get("job", ""),
+        entry.get("message_id", ""),
+        entry.get("session_id", ""),
+        entry.get("source_class", ""),
+        entry.get("source_method", ""),
+        entry.get("text", ""),
+    )
+
+
+def _load_remote_settings_from_file(settings_path: str) -> Optional[Dict[str, Any]]:
+    """Load a ``REMOTE_SETTINGS`` dict from an arbitrary settings.py file."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_iop_settings_remote", settings_path)
+        mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        remote = getattr(mod, "REMOTE_SETTINGS", None)
+        if isinstance(remote, dict) and "url" in remote:
+            return remote
+    except Exception:
+        pass
+    return None
+
+
+def get_remote_settings(
+    explicit_settings_path: Optional[str] = None,
+    fallback_settings_path: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Detect remote settings from the environment or an explicit file.
+
+    Priority:
+    1. ``IOP_URL`` env var (direct inline configuration).
+    2. ``explicit_settings_path`` — the file supplied via ``--remote-settings``.
+    3. ``IOP_SETTINGS`` env var pointing to a settings.py with ``REMOTE_SETTINGS``.
+    4. ``fallback_settings_path`` — e.g. the file passed via ``-m settings.py``;
+       its ``REMOTE_SETTINGS`` dict is used when present.
+    """
+    url = os.environ.get("IOP_URL")
+    if url:
+        verify_raw = os.environ.get("IOP_VERIFY_SSL", "1")
+        return {
+            "url": url,
+            "username": os.environ.get("IOP_USERNAME", ""),
+            "password": os.environ.get("IOP_PASSWORD", ""),
+            "namespace": os.environ.get("IOP_NAMESPACE", "USER"),
+            "verify_ssl": verify_raw.lower() not in ("0", "false"),
+        }
+
+    for path in filter(None, [
+        explicit_settings_path,
+        os.environ.get("IOP_SETTINGS"),
+        fallback_settings_path,
+    ]):
+        result = _load_remote_settings_from_file(path)
+        if result:
+            return result
+
+    return None
+

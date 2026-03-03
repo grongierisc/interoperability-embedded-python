@@ -1,29 +1,306 @@
+Include (%occInclude, Ensemble)
+
 Class IOP.Service.Remote.Rest.v1 Extends %CSP.REST
 {
 
 XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 {
 <Routes>
-<Route Url="/migrate"                        Method="PUT" Call="PutMigrate"/>
-<Route Url="/version"                        Method="GET" Call="GetVersion"/>
+<Route Url="/migrate"  Method="PUT"  Call="PutMigrate"/>
+<Route Url="/version"  Method="GET"  Call="GetVersion"/>
+<Route Url="/status"   Method="GET"  Call="GetStatus"/>
+<Route Url="/start"    Method="POST" Call="PostStart"/>
+<Route Url="/stop"     Method="POST" Call="PostStop"/>
+<Route Url="/kill"     Method="POST" Call="PostKill"/>
+<Route Url="/restart"  Method="POST" Call="PostRestart"/>
+<Route Url="/update"   Method="POST" Call="PostUpdate"/>
+<Route Url="/list"     Method="GET"  Call="GetList"/>
+<Route Url="/default"  Method="GET"  Call="GetDefault"/>
+<Route Url="/default"  Method="PUT"  Call="PutDefault"/>
+<Route Url="/log"      Method="GET"  Call="GetLog"/>
+<Route Url="/export"   Method="GET"  Call="GetExport"/>
+<Route Url="/test"     Method="POST" Call="PostTest"/>
 </Routes>
 }
 
 ClassMethod GetVersion() As %String
 {
-    // Return the version of the IOP service
-    Return {
-		"version": "1.0.0",
-		"description": "Interoperability Embedded Python Service API"
-	}.%ToJSON()
+    Return {"version": "1.0.0", "description": "Interoperability Embedded Python Service API"}.%ToJSON()
 }
 
+/// Validate that a namespace exists. Throws on failure.
 ClassMethod NamespaceCheck(pNamespace As %String) As %Boolean [ Internal, Private ]
 {
 	If '##class(%SYS.Namespace).Exists(pNamespace) {
 		throw $$$ERROR("NamespaceDoesNotExist")
 	}
 	Return 1
+}
+
+/// Return the namespace from a query parameter, defaulting to USER.
+ClassMethod GetNsParam() As %String [ Internal, Private ]
+{
+	Set ns = %request.Get("namespace")
+	Quit $select(ns="":"USER", 1:ns)
+}
+
+ClassMethod GetStatus() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).GetProductionStatus(.tProdName, .tStatus))
+		Set result = {}
+		Set result.production = $select(tProdName="":"", 1:tProdName)
+		Set result.status = $CASE(tStatus,
+			$$$eProductionStateRunning:"running",
+			$$$eProductionStateStopped:"stopped",
+			$$$eProductionStateSuspended:"suspended",
+			$$$eProductionStateTroubled:"troubled",
+			:"unknown")
+		Return ..%WriteResponse(result.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostStart() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Set production = dyna.%Get("production")
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction")) }
+		$$$ThrowOnError(##class(Ens.Director).StartProduction(production))
+		Return ..%WriteResponse({"status": "started", "production": (production)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostStop() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).StopProduction())
+		Return ..%WriteResponse({"status": "stopped"}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostKill() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).StopProduction(10, 1))
+		Return ..%WriteResponse({"status": "killed"}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostRestart() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).RestartProduction())
+		Return ..%WriteResponse({"status": "restarted"}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostUpdate() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).UpdateProduction())
+		Return ..%WriteResponse({"status": "updated"}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod GetList() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set tRS = ##class(%ResultSet).%New("Ens.Config.Production:ProductionStatus")
+		$$$ThrowOnError(tRS.Execute())
+		Set result = {}
+		While tRS.Next() {
+			Set info = {}
+			Set info.Status = tRS.Data("Status")
+			Set info.LastStartTime = tRS.Data("LastStartTime")
+			Set info.LastStopTime = tRS.Data("LastStopTime")
+			Set info.AutoStart = ($Get(^Ens.AutoStart) = tRS.Data("Production"))
+			Do result.%Set(tRS.Data("Production"), info)
+		}
+		Return ..%WriteResponse(result.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod GetDefault() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set prod = $Get(^Ens.Configuration("csp","LastProduction"), "")
+		Return ..%WriteResponse({"production": (prod)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PutDefault() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Set production = dyna.%Get("production")
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set ^Ens.Configuration("csp","LastProduction") = production
+		Return ..%WriteResponse({"production": (production)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+/// GET /log?namespace=USER&top=10&since_id=0
+/// Returns log entries as a JSON array, newest last.
+/// Use since_id for polling: pass the last seen ID to get only new entries.
+ClassMethod GetLog() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set top = %request.Get("top")  If top = "" { Set top = 10 }
+		Set sinceId = %request.Get("since_id")
+
+		Set stmt = ##class(%SQL.Statement).%New()
+		If sinceId '= "" {
+			$$$ThrowOnError(stmt.%Prepare("SELECT ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Text, TimeLogged, Type FROM Ens_Util.Log WHERE ID > ? ORDER BY ID ASC"))
+			Set rs = stmt.%Execute(sinceId)
+		} Else {
+			$$$ThrowOnError(stmt.%Prepare("SELECT TOP ? ID, ConfigName, Job, MessageId, SessionId, SourceClass, SourceMethod, Text, TimeLogged, Type FROM Ens_Util.Log ORDER BY ID DESC"))
+			Set rs = stmt.%Execute(top)
+		}
+
+		Set result = []
+		While rs.%Next() {
+			Set entry = {}
+			Set entry.id = rs.%Get("ID")
+			Set entry."config_name" = rs.%Get("ConfigName")
+			Set entry.job = rs.%Get("Job")
+			Set entry."message_id" = rs.%Get("MessageId")
+			Set entry."session_id" = rs.%Get("SessionId")
+			Set entry."source_class" = rs.%Get("SourceClass")
+			Set entry."source_method" = rs.%Get("SourceMethod")
+			Set entry.text = rs.%Get("Text")
+			Set entry."time_logged" = rs.%Get("TimeLogged")
+			Set tType = rs.%Get("Type")
+			Set entry.type = $CASE(tType, 1:"Assert", 2:"Error", 3:"Warning", 4:"Info", 5:"Trace", 6:"Alert", :"Unknown")
+			Do result.%Push(entry)
+		}
+		Return ..%WriteResponse(result.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+/// GET /export?production=MyApp.Production&namespace=USER
+/// Returns production XML wrapped in JSON: {"xml": "..."}
+ClassMethod GetExport() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set production = %request.Get("production")
+		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction"), "") }
+		Set xdata = ##class(IOP.Utils).ExportProduction(production)
+		Do xdata.Rewind()
+		Set xml = ""
+		While 'xdata.AtEnd { Set xml = xml _ xdata.Read(32000) }
+		Return ..%WriteResponse({"xml": (xml)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+/// POST /test
+/// Body: {"target":"Python.MyOp", "classname":"Python.MyMsg", "body":"{}", "namespace":"USER"}
+/// Returns: {"classname":"...", "body":"...", "session_id":"..."}
+ClassMethod PostTest() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set target    = dyna.%Get("target")
+		Set classname = dyna.%Get("classname")
+		Set body      = dyna.%Get("body")
+		Set ns        = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+
+		// Build the request message
+		If classname '= "" {
+			Set message = ##class(IOP.Message).%New()
+			Set message.classname = classname
+			Set message.json = $select(body="":"{}", 1:body)
+		} Else {
+			Set message = ##class(Ens.Request).%New()
+		}
+
+		// Dispatch to the target component
+		Set response = ##class(IOP.Utils).dispatchTestComponent(target, message)
+
+		// Build result
+		Set result = {}
+		If $isobject(response) {
+			Set result.classname = response.%ClassName(1)
+			If response.%IsA("IOP.Message") {
+				Set result.body = response.GetObjectJson(.atEnd)
+				Set result.truncated = 'atEnd
+			}
+		} Else {
+			Set result.classname = ""
+			Set result.body = ""
+		}
+		Return ..%WriteResponse(result.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+/// Write a successful JSON response.
+ClassMethod %WriteResponse(pJson As %String) As %Status [ Internal, Private ]
+{
+	Set %response.ContentType = "application/json"
+	Set %response.Status = "200 OK"
+	Write pJson
+	Quit $$$OK
+}
+
+/// Write an error JSON response.
+ClassMethod %WriteErrorResponse(
+	pMessage As %String,
+	pStatus As %Integer = 500) As %Status [ Internal, Private ]
+{
+	Set %response.ContentType = "application/json"
+	Set %response.Status = pStatus_" Error"
+	Write {"error": (pMessage)}.%ToJSON()
+	Quit $$$OK
 }
 
 ClassMethod PutMigrate() As %DynamicObject

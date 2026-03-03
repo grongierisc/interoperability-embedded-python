@@ -155,17 +155,40 @@ iop -r
 
 ## migrate
 
-The migrate command migrate a production and classes with settings file.
+The migrate command migrates a production and its classes using a settings file.
 
-Migrate command must take the absolute path of the settings file.
-
-Settings file must be in the same folder as the python code.
+The settings file path can be relative or absolute.
 
 ```bash
 iop -M /tmp/settings.py
 ```
 
 More details about the settings file can be found [here](getting-started/register-component.md).
+
+### Remote migrate
+
+If the settings file contains a `REMOTE_SETTINGS` dict, the migration is performed against the remote IRIS instance automatically — no environment variables needed:
+
+```python
+# settings.py
+REMOTE_SETTINGS = {
+    "url": "http://localhost:52773",
+    "username": "SuperUser",
+    "password": "SYS",
+    "namespace": "USER",
+}
+
+CLASSES = { ... }
+PRODUCTIONS = [ ... ]
+```
+
+To disable remote mode and run the migration locally even when `REMOTE_SETTINGS` is present or `IOP_URL` is set, pass `--force-local`:
+
+```bash
+iop -M /tmp/settings.py --force-local
+```
+
+`--force-local` disables remote mode for **all** commands, not only migrate.
 
 ## init
 
@@ -306,4 +329,134 @@ output :
 2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.FileOperation
 2021-08-30 15:13:51.000 [IoP.Production] INFO: Starting item Python.EmailOperation
 ...
+```
+
+## Remote mode
+
+Since version 3.6.0, the `iop` CLI can operate against a **remote IRIS instance** (e.g. a Docker container or a server) without requiring a local IRIS installation.  All commands work remotely except `init` which is a local-only setup step.
+
+### Activation
+
+Remote mode is activated automatically through any of these mechanisms (evaluated in priority order):
+
+1. **`IOP_URL` environment variable** — highest priority.
+2. **`-R` / `--remote-settings` CLI flag** — path to a settings.py with `REMOTE_SETTINGS`.
+3. **`IOP_SETTINGS` environment variable** — path to a Python file containing a `REMOTE_SETTINGS` dict.
+4. **`-m settings.py` file** — when the file passed to the migrate command contains a `REMOTE_SETTINGS` dict, remote mode is enabled automatically for the entire command.
+
+| Variable / flag | Description | Default |
+|---|---|---|
+| `IOP_URL` | Base URL of the IRIS web server (e.g. `http://localhost:52773`) | — |
+| `-R FILE` / `--remote-settings FILE` | Path to a settings.py containing `REMOTE_SETTINGS` | — |
+| `IOP_USERNAME` | IRIS username | `SuperUser` |
+| `IOP_PASSWORD` | IRIS password | `SYS` |
+| `IOP_NAMESPACE` | IRIS namespace to operate in | `USER` |
+| `IOP_VERIFY_SSL` | Set to `false` to disable TLS certificate verification | `true` |
+| `IOP_SETTINGS` | Path to a Python settings file containing a `REMOTE_SETTINGS` dict | — |
+
+When none of the above resolve, the CLI operates in local mode (requires an active IRIS session).
+
+### Quick start with Docker
+
+```bash
+# Point the CLI at the IRIS container
+export IOP_URL=http://localhost:52773
+export IOP_USERNAME=SuperUser
+export IOP_PASSWORD=SYS
+export IOP_NAMESPACE=USER
+
+iop -x            # production status
+iop -l            # list all productions
+iop -s MyApp.Production   # start a production
+iop -r            # restart
+iop -S            # stop
+iop -k            # kill
+iop -u            # update (hot-reload changed items)
+iop -L            # tail the production log
+```
+
+### Settings file
+
+You can store remote connection details in a Python `REMOTE_SETTINGS` dict and reference the file via the `-R` flag or the `IOP_SETTINGS` environment variable.
+
+**Using the `-R` flag (recommended — takes priority over `IOP_SETTINGS`):**
+
+```bash
+iop -x -R /path/to/settings.py
+iop -l -R /path/to/settings.py
+iop -M /path/to/settings.py -R /path/to/settings.py   # explicit > migrate fallback
+```
+
+**Using the `IOP_SETTINGS` environment variable:**
+
+```bash
+export IOP_SETTINGS=/path/to/settings.py
+```
+
+The settings file format is the same either way:
+
+```python
+# settings.py — used by both migration and remote CLI
+REMOTE_SETTINGS = {
+    "url":        "http://iris-server:52773",
+    "username":   "SuperUser",
+    "password":   "SYS",
+    "namespace":  "USER",
+    "verify_ssl": True,
+}
+
+# Optionally also define CLASSES / PRODUCTIONS for migration
+CLASSES = { ... }
+PRODUCTIONS = [ ... ]
+```
+
+This is the same file format used by `iop -m` for migrations, so a single `settings.py` can serve both purposes — describe which classes to register **and** how to reach the remote IRIS instance.
+
+### Namespace override
+
+You can override the namespace for a single command with the `-n` / `--namespace` flag:
+
+```bash
+iop -x -n MYNS
+```
+
+### Improved test command
+
+In remote mode (and local mode) the `-t` command accepts a message body either inline or from a file:
+
+```bash
+# Inline JSON body
+iop -t Python.MyOperation -C Python.MyRequest -B '{"key": "value"}'
+
+# Body from a JSON file
+iop -t Python.MyOperation -C Python.MyRequest -B @path/to/body.json
+```
+
+The response is pretty-printed:
+
+```
+classname: Python.MyResponse
+body:
+{
+    "answer": 42
+}
+```
+
+### Disabling remote mode
+
+Pass `--force-local` to any command to bypass remote mode entirely, even when `IOP_URL`, `-R`, `IOP_SETTINGS`, or `REMOTE_SETTINGS` in a settings file would otherwise activate it:
+
+```bash
+iop -x --force-local               # status using local IRIS session
+iop -M settings.py --force-local   # local migration, ignore REMOTE_SETTINGS
+iop -L --force-local               # tail local log
+iop -x -R settings.py --force-local  # -R is ignored when --force-local is set
+```
+
+### Current mode indicator
+
+Running `iop -h` shows whether the CLI is in local or remote mode:
+
+```
+Mode: REMOTE (http://localhost:52773)
 ```
