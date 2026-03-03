@@ -5,8 +5,8 @@ They are skipped automatically when IOP_URL is not set.
 
 Required environment variables:
     IOP_URL        e.g. http://localhost:52773
-    IOP_USERNAME   default: SuperUser
-    IOP_PASSWORD   default: SYS
+    IOP_USERNAME   e.g. admin
+    IOP_PASSWORD   your IRIS password
     IOP_NAMESPACE  default: USER
 
 Or set IOP_SETTINGS pointing to a settings.py with REMOTE_SETTINGS.

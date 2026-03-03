@@ -173,8 +173,8 @@ If the settings file contains a `REMOTE_SETTINGS` dict, the migration is perform
 # settings.py
 REMOTE_SETTINGS = {
     "url": "http://localhost:52773",
-    "username": "SuperUser",
-    "password": "SYS",
+    "username": "admin",
+    "password": "password",
     "namespace": "USER",
 }
 
@@ -348,8 +348,8 @@ Remote mode is activated automatically through any of these mechanisms (evaluate
 |---|---|---|
 | `IOP_URL` | Base URL of the IRIS web server (e.g. `http://localhost:52773`) | — |
 | `-R FILE` / `--remote-settings FILE` | Path to a settings.py containing `REMOTE_SETTINGS` | — |
-| `IOP_USERNAME` | IRIS username | `SuperUser` |
-| `IOP_PASSWORD` | IRIS password | `SYS` |
+| `IOP_USERNAME` | IRIS username | — |
+| `IOP_PASSWORD` | IRIS password | — |
 | `IOP_NAMESPACE` | IRIS namespace to operate in | `USER` |
 | `IOP_VERIFY_SSL` | Set to `false` to disable TLS certificate verification | `true` |
 | `IOP_SETTINGS` | Path to a Python settings file containing a `REMOTE_SETTINGS` dict | — |
@@ -361,8 +361,8 @@ When none of the above resolve, the CLI operates in local mode (requires an acti
 ```bash
 # Point the CLI at the IRIS container
 export IOP_URL=http://localhost:52773
-export IOP_USERNAME=SuperUser
-export IOP_PASSWORD=SYS
+export IOP_USERNAME=admin
+export IOP_PASSWORD=password
 export IOP_NAMESPACE=USER
 
 iop -x            # production status
@@ -399,8 +399,8 @@ The settings file format is the same either way:
 # settings.py — used by both migration and remote CLI
 REMOTE_SETTINGS = {
     "url":        "http://iris-server:52773",
-    "username":   "SuperUser",
-    "password":   "SYS",
+    "username":   "admin",
+    "password":   "password",
     "namespace":  "USER",
     "verify_ssl": True,
 }

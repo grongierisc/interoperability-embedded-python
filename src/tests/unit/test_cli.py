@@ -250,8 +250,8 @@ class TestCLIRemoteMode(unittest.TestCase):
 
     _BASE_ENV = {
         "IOP_URL": "http://localhost:8080",
-        "IOP_USERNAME": "SuperUser",
-        "IOP_PASSWORD": "SYS",
+        "IOP_USERNAME": "admin",
+        "IOP_PASSWORD": "password",
         "IOP_NAMESPACE": "USER",
     }
 

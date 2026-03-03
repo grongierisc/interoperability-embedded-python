@@ -346,8 +346,8 @@ from bo import FileOperation
 
 REMOTE_SETTINGS = {
     "url": "http://localhost:8080",
-    "username": "SuperUser",
-    "password": "SYS",
+    "username": "admin",
+    "password": "password",
     "namespace": "IRISAPP",
 }
 
@@ -365,8 +365,8 @@ If your remote IRIS instance uses HTTPS with a self-signed certificate, you need
 ```python
 REMOTE_SETTINGS = {
     "url": "https://localhost:8443",
-    "username": "SuperUser",
-    "password": "SYS",
+    "username": "admin",
+    "password": "password",
     "namespace": "IRISAPP",
     "verify_ssl": False  # Disable SSL verification for self-signed certificates
 }

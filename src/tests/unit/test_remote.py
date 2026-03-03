@@ -17,8 +17,8 @@ from iop._remote import _RemoteDirector, get_remote_settings, _print_log_entry, 
 
 BASE_SETTINGS = {
     "url": "http://localhost:8080",
-    "username": "SuperUser",
-    "password": "SYS",
+    "username": "admin",
+    "password": "password",
     "namespace": "USER",
     "verify_ssl": True,
 }

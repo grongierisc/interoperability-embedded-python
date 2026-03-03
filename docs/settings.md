@@ -136,8 +136,8 @@ Configure connections to remote IRIS instances for component migration.
 ```python
 REMOTE_SETTINGS = {
     "url": "http://localhost:8080",           # Required
-    "username": "SuperUser",                  # Optional
-    "password": "SYS",                        # Optional  
+    "username": "admin",                      # Optional
+    "password": "password",                    # Optional  
     "namespace": "IRISAPP",                   # Optional (default: "USER")
     "remote_folder": "",                      # Optional (default: folder of the routine database)
     "package": "python",                      # Optional (default: "python")
@@ -166,8 +166,8 @@ from msg import RedditPost
 # Remote connection settings
 REMOTE_SETTINGS = {
     "url": "http://iris-server:8080",
-    "username": "SuperUser", 
-    "password": "SYS",
+    "username": "admin",
+    "password": "password",
     "namespace": "IRISAPP"
 }
 
