@@ -11,8 +11,10 @@ RUN ln -s /irisdev/app/src/iop /usr/irissys/mgr/python/iop
 RUN ln -s /irisdev/app/src/grongier /usr/irissys/mgr/python/grongier
 
 ## Python stuff
-ENV IRISUSERNAME="SuperUser"
-ENV IRISPASSWORD="SYS"
+ARG IRISUSERNAME
+ARG IRISPASSWORD
+ENV IRISUSERNAME=${IRISUSERNAME}
+ENV IRISPASSWORD=${IRISPASSWORD}
 ENV IRISNAMESPACE="IRISAPP"
 ENV PYTHON_PATH=/usr/irissys/bin/
 ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin

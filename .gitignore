@@ -15,6 +15,7 @@ dist
 build
 waitISC.log
 .env
+.env.remote
 
 prof
 src/tests/bench/result.txt

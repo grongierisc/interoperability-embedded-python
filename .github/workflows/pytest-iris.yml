@@ -5,6 +5,7 @@ on:
     paths-ignore:
       - 'README.md'
       - '.github/**'
+  workflow_dispatch:
 
 
 jobs:
@@ -23,8 +24,82 @@ jobs:
     - run: docker pull $IMAGE
     - name: Run Tests
       run: | 
-        docker build --build-arg BASE=$IMAGE -t pytest-iris -f dockerfile-ci .
+        docker build --build-arg BASE=$IMAGE \
+          --build-arg IRISUSERNAME=${{ secrets.IRIS_USERNAME || 'SuperUser' }} \
+          --build-arg IRISPASSWORD=${{ secrets.IRIS_PASSWORD || 'SYS' }} \
+          -t pytest-iris -f dockerfile-ci .
         docker run -i --rm pytest-iris
+
+  test-e2e-remote:
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - intersystemsdc/iris-community:latest
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ${{ matrix.image }}
+      IOP_URL: http://localhost:52773
+      IOP_USERNAME: ${{ secrets.IRIS_USERNAME || 'SuperUser' }}
+      IOP_PASSWORD: ${{ secrets.IRIS_PASSWORD || 'SYS' }}
+      IOP_NAMESPACE: IRISAPP
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: docker pull $IMAGE
+
+    - name: Build test image
+      run: |
+        docker build --build-arg BASE=$IMAGE \
+          --build-arg IRISUSERNAME=${{ secrets.IRIS_USERNAME || 'SuperUser' }} \
+          --build-arg IRISPASSWORD=${{ secrets.IRIS_PASSWORD || 'SYS' }} \
+          -t pytest-iris -f dockerfile-ci .
+
+    - name: Start IRIS container
+      run: |
+        docker run -d --name iris-server \
+          --entrypoint /irisdev/app/iris-start-and-wait.sh \
+          pytest-iris
+
+    - name: Wait for IRIS REST API to be ready
+      run: |
+        echo "Waiting for IRIS REST API..."
+        for i in $(seq 1 60); do
+          if docker exec iris-server \
+              curl -sf -u "$IOP_USERNAME:$IOP_PASSWORD" \
+              "http://localhost:52773/api/iop/version?namespace=$IOP_NAMESPACE" \
+              > /dev/null 2>&1; then
+            echo "IRIS REST API is ready after $i attempts"
+            break
+          fi
+          if [ "$i" = "60" ]; then
+            echo "Timed out waiting for IRIS REST API"
+            docker logs iris-server
+            exit 1
+          fi
+          echo "Attempt $i/60 — retrying in 5s..."
+          sleep 5
+        done
+
+    - name: Run remote e2e tests
+      run: |
+        docker exec \
+          -e IOP_URL="$IOP_URL" \
+          -e IOP_USERNAME="$IOP_USERNAME" \
+          -e IOP_PASSWORD="$IOP_PASSWORD" \
+          -e IOP_NAMESPACE="$IOP_NAMESPACE" \
+          -e PYTHONPATH=/irisdev/app/src \
+          -w /irisdev/app \
+          iris-server \
+          python3 -m pytest src/tests/e2e/remote/ -v
+
+    - name: Dump container logs on failure
+      if: failure()
+      run: docker logs iris-server
+
+    - name: Stop IRIS container
+      if: always()
+      run: docker stop iris-server || true
 
 
 

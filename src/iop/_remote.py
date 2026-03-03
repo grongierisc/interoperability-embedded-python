@@ -131,11 +131,11 @@ class _RemoteDirector:
     def shutdown_production(self) -> None:
         self._check_error(self._post("/kill"))
 
-    def restart_production(self) -> None:
-        self._check_error(self._post("/restart"))
+    def restart_production(self) -> dict:
+        return self._check_error(self._post("/restart"))
 
-    def update_production(self) -> None:
-        self._check_error(self._post("/update"))
+    def update_production(self) -> dict:
+        return self._check_error(self._post("/update"))
 
     # ------------------------------------------------------------------
     # Logging
@@ -198,7 +198,10 @@ class _RemoteDirector:
             payload["classname"] = classname
         if body:
             payload["body"] = body
-        return self._check_error(self._post("/test", payload))
+        try:
+            return self._check_error(self._post("/test", payload))
+        except requests.exceptions.HTTPError as exc:
+            raise RuntimeError(str(exc)) from exc
 
     # ------------------------------------------------------------------
     # Export
