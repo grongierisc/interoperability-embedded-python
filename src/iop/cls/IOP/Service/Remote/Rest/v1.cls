@@ -23,9 +23,9 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 </Routes>
 }
 
-ClassMethod GetVersion() As %String
+ClassMethod GetVersion() As %Status
 {
-    Return {"version": "1.0.0", "description": "Interoperability Embedded Python Service API"}.%ToJSON()
+    Return ..%WriteResponse({"version": "1.0.0", "description": "Interoperability Embedded Python Service API"}.%ToJSON())
 }
 
 /// Validate that a namespace exists. Throws on failure.
