@@ -58,6 +58,7 @@ jobs:
     - name: Start IRIS container
       run: |
         docker run -d --name iris-server \
+          -p 52773:52773 \
           --entrypoint /irisdev/app/iris-start-and-wait.sh \
           pytest-iris
 
@@ -65,8 +66,7 @@ jobs:
       run: |
         echo "Waiting for IRIS REST API..."
         for i in $(seq 1 60); do
-          if docker exec iris-server \
-              curl -sf -u "$IOP_USERNAME:$IOP_PASSWORD" \
+          if curl -sf -u "$IOP_USERNAME:$IOP_PASSWORD" \
               "http://localhost:52773/api/iop/version?namespace=$IOP_NAMESPACE" \
               > /dev/null 2>&1; then
             echo "IRIS REST API is ready after $i attempts"
