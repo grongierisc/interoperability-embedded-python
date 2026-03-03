@@ -147,17 +147,12 @@ ClassMethod SetPythonPath(pClasspaths)
 
     // Add the classpaths to the Python sys.path only if they are not already present
     // Check if the path is already in sys.path
-    set found = 0
-    for j=1:1:sys.path."__len__"() {
-        if sys.path."__getitem__"(j-1) = pClasspaths {
-            set found = 1
-            quit
-        }
+    if (sys.path."__len__"() > 0) && (sys.path."__getitem__"(0) = pClasspaths) { Quit }
+
+    while (sys.path."__contains__"(pClasspaths)) {
+        do sys.path.remove(pClasspaths)
     }
-    if found = 0 {
-        // If not found, add to sys.path
-        do sys.path."append"(pClasspaths)
-    }
+    do sys.path.insert(0, pClasspaths)
 }
 
 Method Connect() As %Status
