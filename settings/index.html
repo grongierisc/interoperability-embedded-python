@@ -280,8 +280,8 @@ SCHEMAS = [RedditPost, UserProfile]
 <p>Configure connections to remote IRIS instances for component migration.</p>
 <pre><code class="language-python">REMOTE_SETTINGS = {
     &quot;url&quot;: &quot;http://localhost:8080&quot;,           # Required
-    &quot;username&quot;: &quot;SuperUser&quot;,                  # Optional
-    &quot;password&quot;: &quot;SYS&quot;,                        # Optional  
+    &quot;username&quot;: &quot;admin&quot;,                      # Optional
+    &quot;password&quot;: &quot;password&quot;,                    # Optional  
     &quot;namespace&quot;: &quot;IRISAPP&quot;,                   # Optional (default: &quot;USER&quot;)
     &quot;remote_folder&quot;: &quot;&quot;,                      # Optional (default: folder of the routine database)
     &quot;package&quot;: &quot;python&quot;,                      # Optional (default: &quot;python&quot;)
@@ -306,8 +306,8 @@ from msg import RedditPost
 # Remote connection settings
 REMOTE_SETTINGS = {
     &quot;url&quot;: &quot;http://iris-server:8080&quot;,
-    &quot;username&quot;: &quot;SuperUser&quot;, 
-    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;username&quot;: &quot;admin&quot;,
+    &quot;password&quot;: &quot;password&quot;,
     &quot;namespace&quot;: &quot;IRISAPP&quot;
 }
 

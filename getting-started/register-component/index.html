@@ -460,8 +460,8 @@ SCHEMAS = [RedditPost]
 
 REMOTE_SETTINGS = {
     &quot;url&quot;: &quot;http://localhost:8080&quot;,
-    &quot;username&quot;: &quot;SuperUser&quot;,
-    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;username&quot;: &quot;admin&quot;,
+    &quot;password&quot;: &quot;password&quot;,
     &quot;namespace&quot;: &quot;IRISAPP&quot;,
 }
 
@@ -474,8 +474,8 @@ CLASSES = {
 <p>If your remote IRIS instance uses HTTPS with a self-signed certificate, you need to disable SSL verification:</p>
 <pre><code class="language-python">REMOTE_SETTINGS = {
     &quot;url&quot;: &quot;https://localhost:8443&quot;,
-    &quot;username&quot;: &quot;SuperUser&quot;,
-    &quot;password&quot;: &quot;SYS&quot;,
+    &quot;username&quot;: &quot;admin&quot;,
+    &quot;password&quot;: &quot;password&quot;,
     &quot;namespace&quot;: &quot;IRISAPP&quot;,
     &quot;verify_ssl&quot;: False  # Disable SSL verification for self-signed certificates
 }
