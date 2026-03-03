@@ -55,3 +55,9 @@ exclude = ["tests*"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "class"
+testpaths = ["src/tests"]
+markers = [
+    "unit: pure unit test - no IRIS instance required (all IRIS calls mocked)",
+    "e2e_local: end-to-end test requiring a local IRIS instance",
+    "e2e_remote: end-to-end test requiring a remote IRIS instance via REST API",
+]

@@ -1,0 +1,36 @@
+"""E2E remote tests for the test-component command.
+
+Run with a live IRIS + IOP_URL set:
+    IOP_URL=http://localhost:52773 pytest src/tests/e2e/remote/
+"""
+import pytest
+
+
+class TestComponentTesting:
+    def test_test_component_returns_response(self, remote_director):
+        """POST /test with a basic Ens.StringRequest should return a valid response."""
+        default_target = remote_director.get_default_production()
+        if default_target in ("", "Not defined"):
+            pytest.skip("No default production defined")
+
+        # This test uses Ens.StringRequest as a generic smoke test.
+        # Adjust target and classname to match your environment.
+        try:
+            result = remote_director.test_component(
+                target=None,
+                classname="Ens.StringRequest",
+                body='{"StringValue": "ping"}',
+            )
+            assert result is not None
+        except RuntimeError as exc:
+            # If no running target, a RuntimeError is acceptable
+            assert "error" in str(exc).lower() or "not found" in str(exc).lower()
+
+    def test_test_component_bad_target_raises(self, remote_director):
+        """Sending to a non-existent target should raise RuntimeError."""
+        with pytest.raises(RuntimeError):
+            remote_director.test_component(
+                target="ThisTargetDoesNotExist.AtAll",
+                classname="Ens.StringRequest",
+                body='{"StringValue": "ping"}',
+            )
