@@ -10,11 +10,32 @@ Required environment variables:
     IOP_NAMESPACE  default: USER
 
 Or set IOP_SETTINGS pointing to a settings.py with REMOTE_SETTINGS.
+
+Environment variables can also be provided via a .env.remote file at the
+project root, which is loaded automatically before the tests run.
 """
 import os
+import sys
+from pathlib import Path
+
 import pytest
+from dotenv import load_dotenv
+
+from os.path import dirname as d, abspath
+
+# src/tests/ root
+_tests_dir = d(d(d(abspath(__file__))))
+sys.path.append(d(_tests_dir))           # src/
 
 from iop._remote import get_remote_settings
+
+_ENV_FILE = Path(__file__).parents[4] / ".env.remote"
+
+
+def pytest_configure(config):
+    """Load .env.remote from the project root if it exists."""
+    if _ENV_FILE.exists():
+        load_dotenv(_ENV_FILE, override=False)
 
 
 def pytest_collection_modifyitems(config, items):

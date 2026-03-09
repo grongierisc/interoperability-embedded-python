@@ -61,12 +61,6 @@ ClassMethod TestBO() As %Status
 	Return sc
 }
 
-/// List
-ClassMethod PythonList() [ Language = python ]
-{
-return [ 1, 3 ]
-}
-
 Storage Default
 {
 <Data name="TestDefaultData">
