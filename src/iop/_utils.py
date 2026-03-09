@@ -47,7 +47,7 @@ class _Utils():
                 path = None
 
         if path:
-            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'uk',"*.cls",1))
 
         # for retrocompatibility load grongier.pex
         try:
@@ -56,7 +56,11 @@ class _Utils():
             path = None
 
         if path:
-            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'cubk',"*.cls",1))
+            _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').LoadDir(path,'uk',"*.cls",1))
+
+        # compile loaded classes by package (avoids parallel worker crashes in IRIS 2026.1+)
+        _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').Compile("IOP.*", 'cb'))
+        _Utils.raise_on_error(_iris.get_iris().cls('%SYSTEM.OBJ').Compile("Grongier.*", 'cb'))
 
     @staticmethod
     def register_message_schema(msg_cls: type):

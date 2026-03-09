@@ -11,7 +11,8 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), 'cls')
 # Fixtures
 @pytest.fixture
 def load_cls_files():
-    _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(TEST_DATA_DIR, 'cubk', "*.cls", 1))
+    _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').LoadDir(TEST_DATA_DIR, 'uk', "*.cls", 1))
+    _Utils.raise_on_error(iris.cls('%SYSTEM.OBJ').Compile("UnitTest.*", 'cb'))
 
 @pytest.fixture
 def iop_message():

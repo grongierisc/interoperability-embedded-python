@@ -15,9 +15,10 @@ src_dir = os.path.abspath(os.path.join(working_dir, os.pardir))
 # create a strings with current_dir and src_dir with a | separator
 classpaths = f"{current_dir}|{src_dir}"
 
-# load Cos Classes
+# load Cos Classes (load source first, then compile in a single pass)
 iris.cls('%SYSTEM.OBJ').LoadDir(os.path.join(
-    current_dir, 'cls'), 'cubk', "*.cls", 1)
+    current_dir, 'cls'), 'uk', "*.cls", 1)
+iris.cls('%SYSTEM.OBJ').Compile("Bench.*", 'cb')
 
 CLASSES = {
     "Python.BenchIoPOperation": BenchIoPOperation,
