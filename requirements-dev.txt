@@ -1,5 +1,6 @@
 pytest
 pytest-asyncio
+python-dotenv
 xmltodict
 requests
 dataclasses-json
