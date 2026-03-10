@@ -467,7 +467,8 @@ while True:
 <pre><code class="language-json">{
   &quot;target&quot;:    &quot;Python.MyOperation&quot;,
   &quot;classname&quot;: &quot;Python.MyMsg&quot;,
-  &quot;body&quot;:      {&quot;key&quot;: &quot;value&quot;}
+  &quot;body&quot;:      {&quot;key&quot;: &quot;value&quot;},
+  &quot;restart&quot;:   true
 }
 </code></pre>
 <table>
@@ -493,6 +494,11 @@ while True:
 <td><code>body</code></td>
 <td>No</td>
 <td>Message body — either a <strong>JSON object</strong> or a <strong>JSON string</strong>. Defaults to <code>{}</code>.</td>
+</tr>
+<tr>
+<td><code>restart</code></td>
+<td>No</td>
+<td>If <code>true</code>, the target component is stopped and restarted before the message is dispatched. Useful to pick up code changes without restarting the whole production.</td>
 </tr>
 </tbody>
 </table>

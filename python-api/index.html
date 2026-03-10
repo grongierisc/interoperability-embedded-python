@@ -504,14 +504,15 @@ class MyProcess(BusinessProcess):
 </ul>
 </li>
 <li>
-<p><code>test_component(target: str, message=None, classname: str=None, body=None) -&gt; object</code></p>
+<p><code>test_component(target: str, message=None, classname: str=None, body=None, restart: bool=False) -&gt; object</code></p>
 <ul>
 <li>Test a production component</li>
 <li>Parameters:<ul>
 <li><code>target</code>: Component name</li>
-<li><code>message</code>: Optional message instance</li>
+<li><code>message</code>: Optional message instance (local mode only)</li>
 <li><code>classname</code>: Optional message class name</li>
-<li><code>body</code>: Optional message body</li>
+<li><code>body</code>: Optional message body (JSON string or dict)</li>
+<li><code>restart</code>: If <code>True</code>, the target component is stopped and restarted before the test message is dispatched (remote mode only)</li>
 </ul>
 </li>
 <li>Returns: Component response</li>
