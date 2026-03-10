@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/rest-api/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>REST API (/api/iop) - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "REST API (/api/iop)";
+        var mkdocs_page_input_path = "rest-api.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/rest-api/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">REST API (/api/iop)</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopversion">GET /api/iop/version</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopstatus">GET /api/iop/status</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopstart">POST /api/iop/start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopstop">POST /api/iop/stop</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopkill">POST /api/iop/kill</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiioprestart">POST /api/iop/restart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopupdate">POST /api/iop/update</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiioplist">GET /api/iop/list</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopdefault">GET /api/iop/default</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#put-apiiopdefault">PUT /api/iop/default</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiioplog">GET /api/iop/log</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopexport">GET /api/iop/export</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiioptest">POST /api/iop/test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#put-apiiopmigrate">PUT /api/iop/migrate</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#authentication">Authentication</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#error-responses">Error responses</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../settings/">Settings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API documentation</li>
+      <li class="breadcrumb-item active">REST API (/api/iop)</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="rest-api">REST API</h1>
+<p>Since version 3.5.x+, IoP exposes a REST API that lets you manage productions, inspect logs, and test components remotely.</p>
+<p>The API is served by the <code>IOP.Service.Remote.Rest.v1</code> CSP class and is mounted at <code>/api/iop</code> by default.</p>
+<p>All endpoints return <code>application/json</code>. Errors are returned as:</p>
+<pre><code class="language-json">{&quot;error&quot;: &quot;&lt;description&gt;&quot;}
+</code></pre>
+<hr />
+<h2 id="get-apiiopversion">GET /api/iop/version</h2>
+<p>Returns the API version and description.</p>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;description&quot;: &quot;Interoperability Embedded Python Service API&quot;
+}
+</code></pre>
+<hr />
+<h2 id="get-apiiopstatus">GET /api/iop/status</h2>
+<p>Returns the currently running production name and its state.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;production&quot;: &quot;MyApp.Production&quot;,
+  &quot;status&quot;: &quot;running&quot;
+}
+</code></pre>
+<p>Possible <code>status</code> values: <code>running</code>, <code>stopped</code>, <code>suspended</code>, <code>troubled</code>, <code>unknown</code>.</p>
+<hr />
+<h2 id="post-apiiopstart">POST /api/iop/start</h2>
+<p>Starts a production.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;production&quot;: &quot;MyApp.Production&quot;,
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>production</code></td>
+<td>No</td>
+<td>Production class name. Defaults to the last-used production.</td>
+</tr>
+<tr>
+<td><code>namespace</code></td>
+<td>No</td>
+<td>Target IRIS namespace. Defaults to <code>USER</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;status&quot;: &quot;started&quot;,
+  &quot;production&quot;: &quot;MyApp.Production&quot;
+}
+</code></pre>
+<hr />
+<h2 id="post-apiiopstop">POST /api/iop/stop</h2>
+<p>Stops the currently running production.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;stopped&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiiopkill">POST /api/iop/kill</h2>
+<p>Forcefully stops the production (equivalent to <code>iop --kill</code>).</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;killed&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiioprestart">POST /api/iop/restart</h2>
+<p>Restarts the currently running production.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;restarted&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiiopupdate">POST /api/iop/update</h2>
+<p>Updates (hot-reloads) the currently running production.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;updated&quot;}
+</code></pre>
+<hr />
+<h2 id="get-apiioplist">GET /api/iop/list</h2>
+<p>Lists all productions in the namespace with their status metadata.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;MyApp.Production&quot;: {
+    &quot;Status&quot;: &quot;Running&quot;,
+    &quot;LastStartTime&quot;: &quot;2024-01-15 10:30:00&quot;,
+    &quot;LastStopTime&quot;: &quot;2024-01-14 18:00:00&quot;,
+    &quot;AutoStart&quot;: true
+  }
+}
+</code></pre>
+<hr />
+<h2 id="get-apiiopdefault">GET /api/iop/default</h2>
+<p>Returns the default (last-used) production for the namespace.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;production&quot;: &quot;MyApp.Production&quot;}
+</code></pre>
+<hr />
+<h2 id="put-apiiopdefault">PUT /api/iop/default</h2>
+<p>Sets the default production for the namespace.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;production&quot;: &quot;MyApp.Production&quot;,
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;production&quot;: &quot;MyApp.Production&quot;}
+</code></pre>
+<hr />
+<h2 id="get-apiioplog">GET /api/iop/log</h2>
+<p>Returns production log entries from <code>Ens_Util.Log</code>.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>top</code></td>
+<td>integer</td>
+<td><code>10</code></td>
+<td>Number of most-recent entries to return (ignored when <code>since_id</code> is set)</td>
+</tr>
+<tr>
+<td><code>since_id</code></td>
+<td>integer</td>
+<td>—</td>
+<td>Return only entries with <code>ID &gt; since_id</code>, ordered ascending (useful for polling)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">[
+  {
+    &quot;id&quot;: 42,
+    &quot;config_name&quot;: &quot;MyService&quot;,
+    &quot;job&quot;: &quot;12345&quot;,
+    &quot;message_id&quot;: &quot;1&quot;,
+    &quot;session_id&quot;: &quot;7&quot;,
+    &quot;source_class&quot;: &quot;MyApp.Service&quot;,
+    &quot;source_method&quot;: &quot;OnProcessInput&quot;,
+    &quot;text&quot;: &quot;Processing request&quot;,
+    &quot;time_logged&quot;: &quot;2024-01-15 10:30:01&quot;,
+    &quot;type&quot;: &quot;Info&quot;
+  }
+]
+</code></pre>
+<p>Possible <code>type</code> values: <code>Assert</code>, <code>Error</code>, <code>Warning</code>, <code>Info</code>, <code>Trace</code>, <code>Alert</code>, <code>Unknown</code>.</p>
+<p><strong>Polling example</strong></p>
+<pre><code class="language-python">import requests
+
+last_id = 0
+while True:
+    resp = requests.get(
+        &quot;http://localhost:52773/api/iop/log&quot;,
+        params={&quot;since_id&quot;: last_id, &quot;namespace&quot;: &quot;USER&quot;},
+        auth=(&quot;_SYSTEM&quot;, &quot;SYS&quot;)
+    )
+    entries = resp.json()
+    for entry in entries:
+        print(f&quot;[{entry['type']}] {entry['config_name']}: {entry['text']}&quot;)
+        last_id = entry[&quot;id&quot;]
+</code></pre>
+<hr />
+<h2 id="get-apiiopexport">GET /api/iop/export</h2>
+<p>Exports a production definition as XML.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>string</td>
+<td>last-used production</td>
+<td>Production class name to export</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;xml&quot;: &quot;&lt;Production Name=\&quot;MyApp.Production\&quot;&gt;...&lt;/Production&gt;&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiioptest">POST /api/iop/test</h2>
+<p>Sends a test message to a target component and returns the response synchronously.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;target&quot;:    &quot;Python.MyOperation&quot;,
+  &quot;classname&quot;: &quot;Python.MyMsg&quot;,
+  &quot;body&quot;:      &quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;,
+  &quot;namespace&quot;: &quot;USER&quot;
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>target</code></td>
+<td>Yes</td>
+<td>Config name of the component to invoke</td>
+</tr>
+<tr>
+<td><code>classname</code></td>
+<td>No</td>
+<td>Python message class name. If omitted an empty <code>Ens.Request</code> is used.</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>No</td>
+<td>JSON string passed as the message body. Defaults to <code>{}</code>.</td>
+</tr>
+<tr>
+<td><code>namespace</code></td>
+<td>No</td>
+<td>Target IRIS namespace. Defaults to <code>USER</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;classname&quot;: &quot;Python.MyMsg&quot;,
+  &quot;body&quot;:      &quot;{\&quot;result\&quot;: \&quot;ok\&quot;}&quot;,
+  &quot;truncated&quot;: false
+}
+</code></pre>
+<p><code>truncated</code> is <code>true</code> when the response body was too large to return in full.</p>
+<hr />
+<h2 id="put-apiiopmigrate">PUT /api/iop/migrate</h2>
+<p>Uploads a Python package to the server and runs its <code>settings.py</code> migration.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{
+  &quot;namespace&quot;:     &quot;USER&quot;,
+  &quot;remote_folder&quot;: &quot;/opt/iris/packages&quot;,
+  &quot;package&quot;:       &quot;my_package&quot;,
+  &quot;body&quot;: [
+    {&quot;name&quot;: &quot;__init__.py&quot;,  &quot;data&quot;: &quot;&quot;},
+    {&quot;name&quot;: &quot;settings.py&quot;,  &quot;data&quot;: &quot;...&quot;}
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>Yes</td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>remote_folder</code></td>
+<td>No</td>
+<td>Absolute server path to place the package. Defaults to the namespace's routine DB directory.</td>
+</tr>
+<tr>
+<td><code>package</code></td>
+<td>Yes</td>
+<td>Package directory name</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>Yes</td>
+<td>Array of <code>{name, data}</code> objects representing the files to write</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p><code>200 OK</code> with an empty body on success.</p>
+<hr />
+<h2 id="authentication">Authentication</h2>
+<p>The API uses standard IRIS CSP authentication. Pass credentials via HTTP Basic Auth:</p>
+<pre><code class="language-bash">curl -u &lt;__USERNAME__&gt;:&lt;__PASSWORD__&gt; http://localhost:52773/api/iop/status?namespace=USER
+</code></pre>
+<hr />
+<h2 id="error-responses">Error responses</h2>
+<p>All endpoints return HTTP <code>500 Error</code> with a JSON body on failure:</p>
+<pre><code class="language-json">{&quot;error&quot;: &quot;&lt;IRIS error string&gt;&quot;}
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../component-interaction/" class="btn btn-neutral float-right" title="Component Interaction">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../component-interaction/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
