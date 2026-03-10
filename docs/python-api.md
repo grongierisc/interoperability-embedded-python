@@ -277,13 +277,14 @@ Manages InterSystems IRIS productions and business services, particularly for no
         - `target`: Name of the business service in production
     - Returns: Business service instance
 
-- `test_component(target: str, message=None, classname: str=None, body=None) -> object`
+- `test_component(target: str, message=None, classname: str=None, body=None, restart: bool=False) -> object`
     - Test a production component
     - Parameters:
         - `target`: Component name
-        - `message`: Optional message instance
+        - `message`: Optional message instance (local mode only)
         - `classname`: Optional message class name
-        - `body`: Optional message body
+        - `body`: Optional message body (JSON string or dict)
+        - `restart`: If `True`, the target component is stopped and restarted before the test message is dispatched (remote mode only)
     - Returns: Component response
 
 **Production Logging:**

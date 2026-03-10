@@ -307,7 +307,8 @@ Sends a test message to a target component and returns the response synchronousl
 {
   "target":    "Python.MyOperation",
   "classname": "Python.MyMsg",
-  "body":      {"key": "value"}
+  "body":      {"key": "value"},
+  "restart":   true
 }
 ```
 
@@ -316,6 +317,7 @@ Sends a test message to a target component and returns the response synchronousl
 | `target`    | Yes      | Config name of the component to invoke                                           |
 | `classname` | No       | Python message class name. If omitted an empty `Ens.Request` is used.           |
 | `body`      | No       | Message body — either a **JSON object** or a **JSON string**. Defaults to `{}`. |
+| `restart`   | No       | If `true`, the target component is stopped and restarted before the message is dispatched. Useful to pick up code changes without restarting the whole production. |
 
 **Response**
 

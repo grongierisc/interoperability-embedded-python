@@ -250,7 +250,8 @@ ClassMethod GetExport() As %Status
 }
 
 /// POST /test
-/// Body: {"target":"Python.MyOp", "classname":"Python.MyMsg", "body":"{}", "namespace":"USER"}
+/// Body: {"target":"Python.MyOp", "classname":"Python.MyMsg", "body":"{}", "namespace":"USER", "restart":true}
+/// If "restart" is true the target component is stopped and restarted before the test message is dispatched. (Default true)
 /// Returns: {"classname":"...", "body":"...", "session_id":"..."}
 ClassMethod PostTest() As %Status
 {
@@ -262,8 +263,16 @@ ClassMethod PostTest() As %Status
 		Set target    = dyna.%Get("target")
 		Set classname = dyna.%Get("classname")
 		Set body      = dyna.%Get("body")
+		Set restart   = dyna.%Get("restart")
+		If restart = "" { Set restart = 1 }
 		Set ns        = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+
+		// Optionally restart the target component before testing
+		If restart {
+			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 0, 1))
+			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 1, 1))
+		}
 
 		// Normalize body: if it arrived as a JSON object, serialize it to a string
 		If $isobject(body) { Set body = body.%ToJSON() }

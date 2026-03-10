@@ -191,13 +191,20 @@ class _RemoteDirector:
         message=None,           # ignored remotely — not serialisable over HTTP
         classname: Optional[str] = None,
         body: Optional[Union[str, dict]] = None,
+        restart: bool = True,
     ) -> dict:
-        """Returns a dict: {"classname": "...", "body": "...", "truncated": false}"""
+        """Returns a dict: {"classname": "...", "body": "...", "truncated": false}.
+
+        If *restart* is True the target component is stopped and restarted on
+        the server before the test message is dispatched.
+        """
         payload: dict = {"target": target or ""}
         if classname:
             payload["classname"] = classname
         if body is not None:
             payload["body"] = body
+        if restart:
+            payload["restart"] = True
         try:
             return self._check_error(self._post("/test", payload))
         except requests.exceptions.HTTPError as exc:
