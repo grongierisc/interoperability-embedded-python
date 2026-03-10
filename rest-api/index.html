@@ -60,6 +60,8 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">REST API (/api/iop)</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#namespace-resolution">Namespace resolution</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#get-apiiopversion">GET /api/iop/version</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#get-apiiopstatus">GET /api/iop/status</a>
@@ -165,6 +167,32 @@
 <pre><code class="language-json">{&quot;error&quot;: &quot;&lt;description&gt;&quot;}
 </code></pre>
 <hr />
+<h2 id="namespace-resolution">Namespace resolution</h2>
+<p>Every endpoint accepts an optional <code>namespace</code> parameter that selects the IRIS namespace to operate in (defaults to <code>USER</code>).</p>
+<p>It can be supplied in two ways, which work on <strong>all</strong> routes:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Where to pass it</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Query string</td>
+<td><code>?namespace=IRISAPP</code></td>
+<td><code>GET /api/iop/status?namespace=IRISAPP</code></td>
+</tr>
+<tr>
+<td>JSON body</td>
+<td><code>{"namespace": "IRISAPP", ...}</code></td>
+<td><code>POST /api/iop/start</code> with body</td>
+</tr>
+</tbody>
+</table>
+<p>When both are present (POST/PUT routes), the <strong>JSON body value takes priority</strong> over the query string.</p>
+<hr />
 <h2 id="get-apiiopversion">GET /api/iop/version</h2>
 <p>Returns the API version and description.</p>
 <p><strong>Response</strong></p>
@@ -205,10 +233,10 @@
 <hr />
 <h2 id="post-apiiopstart">POST /api/iop/start</h2>
 <p>Starts a production.</p>
-<p><strong>Request body</strong></p>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
+<p><strong>Request body</strong> <em>(all fields optional)</em></p>
 <pre><code class="language-json">{
-  &quot;production&quot;: &quot;MyApp.Production&quot;,
-  &quot;namespace&quot;: &quot;USER&quot;
+  &quot;production&quot;: &quot;MyApp.Production&quot;
 }
 </code></pre>
 <table>
@@ -225,11 +253,6 @@
 <td>No</td>
 <td>Production class name. Defaults to the last-used production.</td>
 </tr>
-<tr>
-<td><code>namespace</code></td>
-<td>No</td>
-<td>Target IRIS namespace. Defaults to <code>USER</code>.</td>
-</tr>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
@@ -241,44 +264,32 @@
 <hr />
 <h2 id="post-apiiopstop">POST /api/iop/stop</h2>
 <p>Stops the currently running production.</p>
-<p><strong>Request body</strong></p>
-<pre><code class="language-json">{
-  &quot;namespace&quot;: &quot;USER&quot;
-}
-</code></pre>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or optional JSON body field (body wins).</p>
+<p>The request body may be omitted entirely.</p>
 <p><strong>Response</strong></p>
 <pre><code class="language-json">{&quot;status&quot;: &quot;stopped&quot;}
 </code></pre>
 <hr />
 <h2 id="post-apiiopkill">POST /api/iop/kill</h2>
 <p>Forcefully stops the production (equivalent to <code>iop --kill</code>).</p>
-<p><strong>Request body</strong></p>
-<pre><code class="language-json">{
-  &quot;namespace&quot;: &quot;USER&quot;
-}
-</code></pre>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or optional JSON body field (body wins).</p>
+<p>The request body may be omitted entirely.</p>
 <p><strong>Response</strong></p>
 <pre><code class="language-json">{&quot;status&quot;: &quot;killed&quot;}
 </code></pre>
 <hr />
 <h2 id="post-apiioprestart">POST /api/iop/restart</h2>
 <p>Restarts the currently running production.</p>
-<p><strong>Request body</strong></p>
-<pre><code class="language-json">{
-  &quot;namespace&quot;: &quot;USER&quot;
-}
-</code></pre>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or optional JSON body field (body wins).</p>
+<p>The request body may be omitted entirely.</p>
 <p><strong>Response</strong></p>
 <pre><code class="language-json">{&quot;status&quot;: &quot;restarted&quot;}
 </code></pre>
 <hr />
 <h2 id="post-apiiopupdate">POST /api/iop/update</h2>
 <p>Updates (hot-reloads) the currently running production.</p>
-<p><strong>Request body</strong></p>
-<pre><code class="language-json">{
-  &quot;namespace&quot;: &quot;USER&quot;
-}
-</code></pre>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or optional JSON body field (body wins).</p>
+<p>The request body may be omitted entirely.</p>
 <p><strong>Response</strong></p>
 <pre><code class="language-json">{&quot;status&quot;: &quot;updated&quot;}
 </code></pre>
@@ -342,10 +353,10 @@
 <hr />
 <h2 id="put-apiiopdefault">PUT /api/iop/default</h2>
 <p>Sets the default production for the namespace.</p>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
 <p><strong>Request body</strong></p>
 <pre><code class="language-json">{
-  &quot;production&quot;: &quot;MyApp.Production&quot;,
-  &quot;namespace&quot;: &quot;USER&quot;
+  &quot;production&quot;: &quot;MyApp.Production&quot;
 }
 </code></pre>
 <p><strong>Response</strong></p>
@@ -451,12 +462,12 @@ while True:
 <hr />
 <h2 id="post-apiioptest">POST /api/iop/test</h2>
 <p>Sends a test message to a target component and returns the response synchronously.</p>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
 <p><strong>Request body</strong></p>
 <pre><code class="language-json">{
   &quot;target&quot;:    &quot;Python.MyOperation&quot;,
   &quot;classname&quot;: &quot;Python.MyMsg&quot;,
-  &quot;body&quot;:      &quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;,
-  &quot;namespace&quot;: &quot;USER&quot;
+  &quot;body&quot;:      {&quot;key&quot;: &quot;value&quot;}
 }
 </code></pre>
 <table>
@@ -481,12 +492,7 @@ while True:
 <tr>
 <td><code>body</code></td>
 <td>No</td>
-<td>JSON string passed as the message body. Defaults to <code>{}</code>.</td>
-</tr>
-<tr>
-<td><code>namespace</code></td>
-<td>No</td>
-<td>Target IRIS namespace. Defaults to <code>USER</code>.</td>
+<td>Message body — either a <strong>JSON object</strong> or a <strong>JSON string</strong>. Defaults to <code>{}</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -501,6 +507,7 @@ while True:
 <hr />
 <h2 id="put-apiiopmigrate">PUT /api/iop/migrate</h2>
 <p>Uploads a Python package to the server and runs its <code>settings.py</code> migration.</p>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
 <p><strong>Request body</strong></p>
 <pre><code class="language-json">{
   &quot;namespace&quot;:     &quot;USER&quot;,
@@ -521,11 +528,6 @@ while True:
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>namespace</code></td>
-<td>Yes</td>
-<td>Target IRIS namespace</td>
-</tr>
 <tr>
 <td><code>remote_folder</code></td>
 <td>No</td>
