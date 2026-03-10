@@ -391,7 +391,8 @@ class TestHttpHelpers(unittest.TestCase):
         mock_post.return_value = _mock_response({"status": "ok"})
         self.d._post("/stop")
         _, kwargs = mock_post.call_args
-        self.assertEqual(kwargs["json"]["namespace"], "USER")
+        self.assertEqual(kwargs["params"]["namespace"], "USER")
+        self.assertNotIn("namespace", kwargs["json"])
 
     @patch("requests.post")
     def test_post_merges_extra_body(self, mock_post):
@@ -405,7 +406,8 @@ class TestHttpHelpers(unittest.TestCase):
         mock_put.return_value = _mock_response({"production": "P"})
         self.d._put("/default", {"production": "P"})
         _, kwargs = mock_put.call_args
-        self.assertEqual(kwargs["json"]["namespace"], "USER")
+        self.assertEqual(kwargs["params"]["namespace"], "USER")
+        self.assertNotIn("namespace", kwargs["json"])
 
     @patch("requests.get")
     def test_get_calls_raise_for_status(self, mock_get):

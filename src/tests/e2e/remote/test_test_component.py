@@ -34,3 +34,16 @@ class TestComponentTesting:
                 classname="Ens.StringRequest",
                 body='{"StringValue": "ping"}',
             )
+
+    def test_test_component_bad_classname_raises(self, remote_director):
+        """Sending with a non-existent classname should raise RuntimeError."""
+        default_target = remote_director.get_default_production()
+        if default_target in ("", "Not defined"):
+            pytest.skip("No default production defined")
+
+        with pytest.raises(RuntimeError):
+            remote_director.test_component(
+                target=None,
+                classname="This.Class.DoesNotExist",
+                body='{"StringValue": "ping"}',
+            )

@@ -16,7 +16,7 @@ import json
 import os
 import signal
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 import urllib3
@@ -50,19 +50,19 @@ class _RemoteDirector:
         return resp.json()
 
     def _post(self, path: str, body: Optional[dict] = None) -> Any:
-        b = {"namespace": self._namespace, **(body or {})}
         resp = requests.post(
-            f"{self._base}{path}", json=b, auth=self._auth,
-            verify=self._verify, timeout=30,
+            f"{self._base}{path}", json=(body or {}),
+            params={"namespace": self._namespace},
+            auth=self._auth, verify=self._verify, timeout=30,
         )
         resp.raise_for_status()
         return resp.json()
 
     def _put(self, path: str, body: Optional[dict] = None) -> Any:
-        b = {"namespace": self._namespace, **(body or {})}
         resp = requests.put(
-            f"{self._base}{path}", json=b, auth=self._auth,
-            verify=self._verify, timeout=30,
+            f"{self._base}{path}", json=(body or {}),
+            params={"namespace": self._namespace},
+            auth=self._auth, verify=self._verify, timeout=30,
         )
         resp.raise_for_status()
         return resp.json()
@@ -190,18 +190,22 @@ class _RemoteDirector:
         target: Optional[str],
         message=None,           # ignored remotely — not serialisable over HTTP
         classname: Optional[str] = None,
-        body: Optional[str] = None,
+        body: Optional[Union[str, dict]] = None,
     ) -> dict:
         """Returns a dict: {"classname": "...", "body": "...", "truncated": false}"""
         payload: dict = {"target": target or ""}
         if classname:
             payload["classname"] = classname
-        if body:
+        if body is not None:
             payload["body"] = body
         try:
             return self._check_error(self._post("/test", payload))
         except requests.exceptions.HTTPError as exc:
-            raise RuntimeError(str(exc)) from exc
+            try:
+                err_msg = exc.response.json().get("error", str(exc))
+            except Exception:
+                err_msg = str(exc)
+            raise RuntimeError(err_msg) from exc
 
     # ------------------------------------------------------------------
     # Export

@@ -12,6 +12,21 @@ All endpoints return `application/json`. Errors are returned as:
 
 ---
 
+## Namespace resolution
+
+Every endpoint accepts an optional `namespace` parameter that selects the IRIS namespace to operate in (defaults to `USER`).
+
+It can be supplied in two ways, which work on **all** routes:
+
+| Method | Where to pass it | Example |
+|--------|------------------|---------|
+| Query string | `?namespace=IRISAPP` | `GET /api/iop/status?namespace=IRISAPP` |
+| JSON body | `{"namespace": "IRISAPP", ...}` | `POST /api/iop/start` with body |
+
+When both are present (POST/PUT routes), the **JSON body value takes priority** over the query string.
+
+---
+
 ## GET /api/iop/version
 
 Returns the API version and description.
@@ -54,19 +69,19 @@ Possible `status` values: `running`, `stopped`, `suspended`, `troubled`, `unknow
 
 Starts a production.
 
-**Request body**
+**Namespace** — query string (`?namespace=`) or JSON body field (body wins).
+
+**Request body** *(all fields optional)*
 
 ```json
 {
-  "production": "MyApp.Production",
-  "namespace": "USER"
+  "production": "MyApp.Production"
 }
 ```
 
 | Field        | Required | Description                                              |
 |--------------|----------|----------------------------------------------------------|
 | `production` | No       | Production class name. Defaults to the last-used production. |
-| `namespace`  | No       | Target IRIS namespace. Defaults to `USER`.              |
 
 **Response**
 
@@ -83,13 +98,9 @@ Starts a production.
 
 Stops the currently running production.
 
-**Request body**
+**Namespace** — query string (`?namespace=`) or optional JSON body field (body wins).
 
-```json
-{
-  "namespace": "USER"
-}
-```
+The request body may be omitted entirely.
 
 **Response**
 
@@ -103,13 +114,9 @@ Stops the currently running production.
 
 Forcefully stops the production (equivalent to `iop --kill`).
 
-**Request body**
+**Namespace** — query string (`?namespace=`) or optional JSON body field (body wins).
 
-```json
-{
-  "namespace": "USER"
-}
-```
+The request body may be omitted entirely.
 
 **Response**
 
@@ -123,13 +130,9 @@ Forcefully stops the production (equivalent to `iop --kill`).
 
 Restarts the currently running production.
 
-**Request body**
+**Namespace** — query string (`?namespace=`) or optional JSON body field (body wins).
 
-```json
-{
-  "namespace": "USER"
-}
-```
+The request body may be omitted entirely.
 
 **Response**
 
@@ -143,13 +146,9 @@ Restarts the currently running production.
 
 Updates (hot-reloads) the currently running production.
 
-**Request body**
+**Namespace** — query string (`?namespace=`) or optional JSON body field (body wins).
 
-```json
-{
-  "namespace": "USER"
-}
-```
+The request body may be omitted entirely.
 
 **Response**
 
@@ -206,12 +205,13 @@ Returns the default (last-used) production for the namespace.
 
 Sets the default production for the namespace.
 
+**Namespace** — query string (`?namespace=`) or JSON body field (body wins).
+
 **Request body**
 
 ```json
 {
-  "production": "MyApp.Production",
-  "namespace": "USER"
+  "production": "MyApp.Production"
 }
 ```
 
@@ -299,14 +299,15 @@ Exports a production definition as XML.
 
 Sends a test message to a target component and returns the response synchronously.
 
+**Namespace** — query string (`?namespace=`) or JSON body field (body wins).
+
 **Request body**
 
 ```json
 {
   "target":    "Python.MyOperation",
   "classname": "Python.MyMsg",
-  "body":      "{\"key\": \"value\"}",
-  "namespace": "USER"
+  "body":      {"key": "value"}
 }
 ```
 
@@ -314,8 +315,7 @@ Sends a test message to a target component and returns the response synchronousl
 |-------------|----------|----------------------------------------------------------------------------------|
 | `target`    | Yes      | Config name of the component to invoke                                           |
 | `classname` | No       | Python message class name. If omitted an empty `Ens.Request` is used.           |
-| `body`      | No       | JSON string passed as the message body. Defaults to `{}`.                        |
-| `namespace` | No       | Target IRIS namespace. Defaults to `USER`.                                      |
+| `body`      | No       | Message body — either a **JSON object** or a **JSON string**. Defaults to `{}`. |
 
 **Response**
 
@@ -335,6 +335,8 @@ Sends a test message to a target component and returns the response synchronousl
 
 Uploads a Python package to the server and runs its `settings.py` migration.
 
+**Namespace** — query string (`?namespace=`) or JSON body field (body wins).
+
 **Request body**
 
 ```json
@@ -351,7 +353,6 @@ Uploads a Python package to the server and runs its `settings.py` migration.
 
 | Field           | Required | Description                                                                    |
 |-----------------|----------|--------------------------------------------------------------------------------|
-| `namespace`     | Yes      | Target IRIS namespace                                                          |
 | `remote_folder` | No       | Absolute server path to place the package. Defaults to the namespace's routine DB directory. |
 | `package`       | Yes      | Package directory name                                                         |
 | `body`          | Yes      | Array of `{name, data}` objects representing the files to write               |

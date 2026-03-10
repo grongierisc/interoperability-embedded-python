@@ -44,6 +44,15 @@ ClassMethod GetNsParam() As %String [ Internal, Private ]
 	Quit $select(ns="":"USER", 1:ns)
 }
 
+/// Return the namespace, preferring a body field over the query parameter.
+ClassMethod ResolveNs(dyna As %DynamicObject = "") As %String [ Internal, Private ]
+{
+	Set ns = ""
+	If $isobject(dyna) { Set ns = dyna.%Get("namespace") }
+	If ns = "" { Set ns = ..GetNsParam() }
+	Quit ns
+}
+
 ClassMethod GetStatus() As %Status
 {
 	Try {
@@ -68,7 +77,7 @@ ClassMethod PostStart() As %Status
 {
 	Try {
 		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Set ns = ..ResolveNs(dyna)
 		Set production = dyna.%Get("production")
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction")) }
@@ -82,8 +91,8 @@ ClassMethod PostStart() As %Status
 ClassMethod PostStop() As %Status
 {
 	Try {
-		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Try { Set dyna = {}.%FromJSON(%request.Content) } Catch { Set dyna = {} }
+		Set ns = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		$$$ThrowOnError(##class(Ens.Director).StopProduction())
 		Return ..%WriteResponse({"status": "stopped"}.%ToJSON())
@@ -95,8 +104,8 @@ ClassMethod PostStop() As %Status
 ClassMethod PostKill() As %Status
 {
 	Try {
-		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Try { Set dyna = {}.%FromJSON(%request.Content) } Catch { Set dyna = {} }
+		Set ns = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		$$$ThrowOnError(##class(Ens.Director).StopProduction(10, 1))
 		Return ..%WriteResponse({"status": "killed"}.%ToJSON())
@@ -108,8 +117,8 @@ ClassMethod PostKill() As %Status
 ClassMethod PostRestart() As %Status
 {
 	Try {
-		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Try { Set dyna = {}.%FromJSON(%request.Content) } Catch { Set dyna = {} }
+		Set ns = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		$$$ThrowOnError(##class(Ens.Director).RestartProduction())
 		Return ..%WriteResponse({"status": "restarted"}.%ToJSON())
@@ -121,8 +130,8 @@ ClassMethod PostRestart() As %Status
 ClassMethod PostUpdate() As %Status
 {
 	Try {
-		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Try { Set dyna = {}.%FromJSON(%request.Content) } Catch { Set dyna = {} }
+		Set ns = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		$$$ThrowOnError(##class(Ens.Director).UpdateProduction())
 		Return ..%WriteResponse({"status": "updated"}.%ToJSON())
@@ -169,7 +178,7 @@ ClassMethod PutDefault() As %Status
 {
 	Try {
 		Set dyna = {}.%FromJSON(%request.Content)
-		Set ns = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Set ns = ..ResolveNs(dyna)
 		Set production = dyna.%Get("production")
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		Set ^Ens.Configuration("csp","LastProduction") = production
@@ -246,12 +255,18 @@ ClassMethod GetExport() As %Status
 ClassMethod PostTest() As %Status
 {
 	Try {
+		// Capture output to avoid writing directly to the response stream, which would break the JSON format. We'll include captured output in the response.
+		set sc = $$BeginCapture^%SYS.Capture(.msg)
+
 		Set dyna = {}.%FromJSON(%request.Content)
 		Set target    = dyna.%Get("target")
 		Set classname = dyna.%Get("classname")
 		Set body      = dyna.%Get("body")
-		Set ns        = dyna.%Get("namespace")  If ns = "" { Set ns = "USER" }
+		Set ns        = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+
+		// Normalize body: if it arrived as a JSON object, serialize it to a string
+		If $isobject(body) { Set body = body.%ToJSON() }
 
 		// Build the request message
 		If classname '= "" {
@@ -277,8 +292,10 @@ ClassMethod PostTest() As %Status
 			Set result.classname = ""
 			Set result.body = ""
 		}
+		set sc = $$EndCapture^%SYS.Capture(msg,.msgArray)
 		Return ..%WriteResponse(result.%ToJSON())
 	} Catch ex {
+		set sc = $$EndCapture^%SYS.Capture(msg,.msgArray)
 		Return ..%WriteErrorResponse(ex.DisplayString())
 	}
 }
@@ -309,7 +326,7 @@ ClassMethod PutMigrate() As %DynamicObject
 		// Get the request body
 		set dyna = {}.%FromJSON(%request.Content)
 		set body = dyna.%Get("body")
-		set namespace = dyna.%Get("namespace")
+		set namespace = ..ResolveNs(dyna)
 		set targetDirectory = dyna.%Get("remote_folder")
 		set packageName = dyna.%Get("package")
 		// check for namespace existence and user permissions against namespace
