@@ -47,3 +47,30 @@ class TestComponentTesting:
                 classname="This.Class.DoesNotExist",
                 body='{"StringValue": "ping"}',
             )
+
+    def test_test_component_restart(self, remote_director):
+        """Test that the restart option in test_component works without error."""
+        default_target = remote_director.get_default_production()
+        if default_target in ("", "Not defined"):
+            pytest.skip("No default production defined")
+
+        # export the default production's components and pick one to target for this test
+        components = remote_director.export_components()
+        active_components = [c for c in components if c["active"]]
+        
+
+        if not active_components:
+            pytest.skip("No active components found in the default production")
+
+        target_component = active_components[0]["name"]
+        
+        result = remote_director.test_component(
+            target=target_component,
+            classname="Ens.StringRequest",
+            body='{"StringValue": "ping"}',
+            restart=True,
+        )
+        assert result is not None
+
+
+

@@ -105,8 +105,33 @@ class TestSchemaOperations:
             mock_cls.return_value.Import.assert_called_once()
 
 
-class TestRemoteMigration:
-    @patch('requests.put')
+class TestXmlToJson:
+    def test_production_key_replaced_with_name(self):
+        xml = '<Production Name="MyApp.Production"><Item Name="A"/></Production>'
+        result = _Utils.xml_to_json(xml)
+        import json
+        data = json.loads(result)
+        assert "MyApp.Production" in data
+        assert "Production" not in data
+
+    def test_none_values_become_empty_string(self):
+        xml = '<Production Name="P"><Item/></Production>'
+        result = _Utils.xml_to_json(xml)
+        import json
+        data = json.loads(result)
+        # should not raise and values should not be None
+        assert data["P"]["Item"] is not None
+
+    def test_fallback_key_when_no_name_attr(self):
+        xml = '<Production><Item Name="A"/></Production>'
+        result = _Utils.xml_to_json(xml)
+        import json
+        data = json.loads(result)
+        # falls back to 'Production' when @Name is absent
+        assert "Production" in data
+
+
+class TestRemoteMigration:    @patch('requests.put')
     @patch('iop._utils._Utils._load_settings')
     @patch('os.walk')
     def test_migrate_remote_verify_ssl_true(self, mock_walk, mock_load_settings, mock_put):

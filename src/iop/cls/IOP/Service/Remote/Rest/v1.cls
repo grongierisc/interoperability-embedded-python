@@ -231,7 +231,7 @@ ClassMethod GetLog() As %Status
 }
 
 /// GET /export?production=MyApp.Production&namespace=USER
-/// Returns production XML wrapped in JSON: {"xml": "..."}
+/// Returns production definition as JSON (converted from XData XML via xmltodict).
 ClassMethod GetExport() As %Status
 {
 	Try {
@@ -239,11 +239,17 @@ ClassMethod GetExport() As %Status
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		Set production = %request.Get("production")
 		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction"), "") }
+
+		// Read the production XData XML
 		Set xdata = ##class(IOP.Utils).ExportProduction(production)
 		Do xdata.Rewind()
 		Set xml = ""
 		While 'xdata.AtEnd { Set xml = xml _ xdata.Read(32000) }
-		Return ..%WriteResponse({"xml": (xml)}.%ToJSON())
+
+		// Convert to JSON via Python xmltodict
+		Set iopUtils = ##class(IOP.Wrapper).Import("iop._utils")
+		Set jsonStr = iopUtils."_Utils"."xml_to_json"(xml)
+		Return ..%WriteResponse(jsonStr)
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
 	}
@@ -270,6 +276,7 @@ ClassMethod PostTest() As %Status
 
 		// Optionally restart the target component before testing
 		If restart {
+			zw "Restarting target component: "_target
 			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 0, 1))
 			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 1, 1))
 		}
@@ -292,13 +299,15 @@ ClassMethod PostTest() As %Status
 		// Build result
 		Set result = {}
 		If $isobject(response) {
-			Set result.classname = response.%ClassName(1)
+			
 			If response.%IsA("IOP.Message") {
 				Set result.body = response.GetObjectJson(.atEnd)
+				set result.classname = response.classname
 				Set result.truncated = 'atEnd
 			}
 		} Else {
-			Set result.classname = ""
+			Set result.classname = response.%ClassName(1)
+			// TODO, try to use the ObjectScript XML Serializer to capture the response body as XML, which can handle arbitrary objects including collections. For now we'll just return an empty body for non-IOP.Message responses.
 			Set result.body = ""
 		}
 		set sc = $$EndCapture^%SYS.Capture(msg,.msgArray)

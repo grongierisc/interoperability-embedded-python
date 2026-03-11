@@ -219,19 +219,9 @@ class _RemoteDirector:
     # ------------------------------------------------------------------
 
     def export_production(self, production_name: str) -> dict:
-        import xmltodict  # already required by _utils
-
-        data = self._check_error(
+        return self._check_error(
             self._get("/export", {"production": production_name})
         )
-        xml = data.get("xml", "")
-        if not xml:
-            return {}
-
-        def _postprocessor(path, key, value):
-            return key, "" if value is None else value
-
-        return xmltodict.parse(xml, postprocessor=_postprocessor)
 
 
 # ------------------------------------------------------------------

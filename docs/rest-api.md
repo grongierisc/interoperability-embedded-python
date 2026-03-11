@@ -278,7 +278,7 @@ while True:
 
 ## GET /api/iop/export
 
-Exports a production definition as XML.
+Exports a production definition as JSON.
 
 **Query parameters**
 
@@ -290,7 +290,28 @@ Exports a production definition as XML.
 **Response**
 
 ```json
-{"xml": "<Production Name=\"MyApp.Production\">...</Production>"}
+{
+  "name": "MyApp.Production",
+  "description": "",
+  "test_enabled": true,
+  "log_trace_events": false,
+  "actor_pool_size": 2,
+  "items": [
+    {
+      "name": "Python.MyOperation",
+      "classname": "Python.MyOperation",
+      "pool_size": 1,
+      "enabled": true,
+      "foreground": false,
+      "comment": "",
+      "log_trace_events": false,
+      "schedule": "",
+      "settings": [
+        {"target": "Host", "name": "PythonClass", "value": "mymodule.MyOperation"}
+      ]
+    }
+  ]
+}
 ```
 
 ---

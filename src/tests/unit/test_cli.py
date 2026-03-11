@@ -38,7 +38,7 @@ class TestIOPCli(unittest.TestCase):
         """Test namespace assignment prints help when no other command is provided."""
         with patch.dict(os.environ, {}, clear=True):
             with patch('iop._director._Director.get_default_production') as mock_default:
-                mock_default.return_value = 'UnitTest.Production'
+                mock_default.return_value = 'Bench.Production'
                 with patch('sys.stdout', new=StringIO()) as fake_out:
                     with self.assertRaises(SystemExit) as cm:
                         main(['-n', 'MyNS'])
@@ -51,9 +51,9 @@ class TestIOPCli(unittest.TestCase):
         """Test default production settings."""
         # Test with name
         with self.assertRaises(SystemExit) as cm:
-            main(['-d', 'UnitTest.Production'])
+            main(['-d', 'Bench.Production'])
         self.assertEqual(cm.exception.code, 0)
-        self.assertEqual(_Director.get_default_production(), 'UnitTest.Production')
+        self.assertEqual(_Director.get_default_production(), 'Bench.Production')
 
         # Test without name
         with self.assertRaises(SystemExit) as cm:
@@ -82,7 +82,7 @@ class TestIOPCli(unittest.TestCase):
                     main(['-S'])
                 self.assertEqual(cm.exception.code, 0)
                 mock_stop.assert_called_once()
-                self.assertEqual(fake_out.getvalue().strip(), 'Production UnitTest.Production stopped')
+                self.assertEqual(fake_out.getvalue().strip(), 'Production Bench.Production stopped')
 
         # Test restart
         with patch('iop._director._Director.restart_production') as mock_restart:

@@ -122,11 +122,11 @@ class TestLocalDirectorDelegation(unittest.TestCase):
     # Export
     # ------------------------------------------------------------------
 
-    @patch("iop._utils._Utils.export_production", return_value={"Production": {}})
+    @patch("iop._utils._Utils.export_production", return_value={"MyApp.Production": {}})
     def test_export_production(self, mock):
         result = self.d.export_production("MyApp.Production")
         mock.assert_called_once_with("MyApp.Production")
-        self.assertEqual(result, {"Production": {}})
+        self.assertEqual(result, {"MyApp.Production": {}})
 
 
 if __name__ == "__main__":

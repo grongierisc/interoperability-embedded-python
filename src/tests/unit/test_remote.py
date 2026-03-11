@@ -619,6 +619,27 @@ class TestTestComponent(unittest.TestCase):
         self.assertEqual(kwargs["json"]["target"], "")
 
     @patch("requests.post")
+    def test_restart_flag_sent_in_payload(self, mock_post):
+        mock_post.return_value = _mock_response({"classname": "Ens.Response", "body": ""})
+        self.d.test_component("Python.MyOp", restart=True)
+        _, kwargs = mock_post.call_args
+        self.assertTrue(kwargs["json"].get("restart"))
+
+    @patch("requests.post")
+    def test_restart_true_by_default(self, mock_post):
+        mock_post.return_value = _mock_response({"classname": "Ens.Response", "body": ""})
+        self.d.test_component("Python.MyOp")
+        _, kwargs = mock_post.call_args
+        self.assertTrue(kwargs["json"].get("restart"))
+
+    @patch("requests.post")
+    def test_restart_false_not_in_payload(self, mock_post):
+        mock_post.return_value = _mock_response({"classname": "Ens.Response", "body": ""})
+        self.d.test_component("Python.MyOp", restart=False)
+        _, kwargs = mock_post.call_args
+        self.assertNotIn("restart", kwargs["json"])
+
+    @patch("requests.post")
     def test_error_response_raises(self, mock_post):
         mock_post.return_value = _mock_response({"error": "Component not found"})
         with self.assertRaises(RuntimeError) as ctx:
@@ -637,16 +658,16 @@ class TestExportProduction(unittest.TestCase):
 
     @patch("requests.get")
     def test_export_returns_parsed_dict(self, mock_get):
-        xml = "<Production><Item Name='A'/></Production>"
-        mock_get.return_value = _mock_response({"xml": xml})
+        mock_get.return_value = _mock_response({"MyApp.Production": {"@Name": "MyApp.Production", "Item": []}})
         result = self.d.export_production("MyApp.Production")
         self.assertIsInstance(result, dict)
+        self.assertIn("MyApp.Production", result)
         _, kwargs = mock_get.call_args
         self.assertEqual(kwargs["params"]["production"], "MyApp.Production")
 
     @patch("requests.get")
-    def test_export_empty_xml_returns_empty_dict(self, mock_get):
-        mock_get.return_value = _mock_response({"xml": ""})
+    def test_export_empty_returns_empty_dict(self, mock_get):
+        mock_get.return_value = _mock_response({})
         result = self.d.export_production("MyApp.Production")
         self.assertEqual(result, {})
 

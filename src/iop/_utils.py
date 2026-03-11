@@ -614,18 +614,35 @@ class _Utils():
         :param production_name: the name of the production
         :type production_name: str
         """
-        def postprocessor(path, key, value):
-            if value is None:
-                return key, ''
-            return key, value
         # export the production
         xdata = _iris.get_iris().cls('IOP.Utils').ExportProduction(production_name)
         # for each chunk of 1024 characters
         string = _Utils.stream_to_string(xdata)
         # convert the xml to a dictionary
-        data = xmltodict.parse(string,postprocessor=postprocessor)
-        # return the dictionary
-        return data
+        return _Utils.xml_to_json(string)
+
+    @staticmethod
+    def xml_to_json(xml_string: str) -> str:
+        """Convert an XML string to a JSON string using xmltodict.
+
+        The top-level key is replaced with the production's ``Name`` attribute
+        so callers get ``{"MyApp.Production": {...}}`` instead of
+        ``{"Production": {...}}``.
+
+        :param xml_string: Raw XML to convert
+        :type xml_string: str
+        :return: JSON string
+        :rtype: str
+        """
+        def postprocessor(path, key, value):
+            return key, '' if value is None else value
+
+        data = xmltodict.parse(xml_string, postprocessor=postprocessor)
+        if 'Production' in data:
+            production_obj = data['Production']
+            production_name = production_obj.get('@Name', 'Production')
+            data = {production_name: production_obj}
+        return json.dumps(data)
 
     @staticmethod
     def stream_to_string(stream,buffer=1000000)-> str:
