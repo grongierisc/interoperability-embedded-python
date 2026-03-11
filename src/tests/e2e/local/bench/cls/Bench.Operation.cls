@@ -23,11 +23,30 @@ Method Method(
     Quit tStatus
 }
 
+/// Description
+Method MethodRandom(
+	pRequest As Ens.StringRequest,
+	Output pResponse As Ens.StringResponse) As %Status
+{
+    set tStatus = $$$OK
+    set pResponse = ##class(Ens.StringResponse).%New()
+
+    try{
+        set pResponse.StringValue = $R(1000000) // Return a random number as string
+
+    }
+    catch exp
+    {
+        set tStatus = exp.AsStatus()
+    }
+    Quit tStatus
+}
+
 XData MessageMap
 {
 <MapItems>
     <MapItem MessageType="Ens.Request">
-        <Method>Method</Method>
+        <Method>MethodRandom</Method>
     </MapItem>
     <MapItem MessageType="IOP.Message">
         <Method>Method</Method>

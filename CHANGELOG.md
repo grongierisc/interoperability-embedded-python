@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Refactor whole unittest and e2e test suite for better maintainability and reliability
+- Export production now returns Production name as key in the returned dict for better clarity
 
 ## [3.5.5] - 2026-01-23
 ### Added

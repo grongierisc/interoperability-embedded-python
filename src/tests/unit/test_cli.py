@@ -11,6 +11,15 @@ from iop._director import _Director
 class TestIOPCli(unittest.TestCase):
     """Test cases for IOP CLI functionality."""
 
+    def setUp(self):
+        # Force local mode regardless of any IOP_URL / IOP_SETTINGS env vars
+        # that may be set by a parallel e2e test session.
+        self._remote_patcher = patch('iop._cli.get_remote_settings', return_value=None)
+        self._remote_patcher.start()
+
+    def tearDown(self):
+        self._remote_patcher.stop()
+
     def test_help_and_basic_commands(self):
         """Test basic CLI commands like help and namespace."""
         # Test help
@@ -50,15 +59,18 @@ class TestIOPCli(unittest.TestCase):
     def test_default_settings(self):
         """Test default production settings."""
         # Test with name
-        with self.assertRaises(SystemExit) as cm:
-            main(['-d', 'Bench.Production'])
-        self.assertEqual(cm.exception.code, 0)
-        self.assertEqual(_Director.get_default_production(), 'Bench.Production')
+        with patch('iop._director._Director.set_default_production') as mock_set, \
+             patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+            with self.assertRaises(SystemExit) as cm:
+                main(['-d', 'Bench.Production'])
+            self.assertEqual(cm.exception.code, 0)
+            mock_set.assert_called_once_with('Bench.Production')
 
-        # Test without name
-        with self.assertRaises(SystemExit) as cm:
-            main(['-d'])
-        self.assertEqual(cm.exception.code, 0)
+        # Test without name — just prints the current default
+        with patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+            with self.assertRaises(SystemExit) as cm:
+                main(['-d'])
+            self.assertEqual(cm.exception.code, 0)
 
     def test_production_controls(self):
         """Test production control commands (start, stop, restart, kill)."""
@@ -77,12 +89,13 @@ class TestIOPCli(unittest.TestCase):
 
         # Test stop
         with patch('iop._director._Director.stop_production') as mock_stop:
-            with patch('sys.stdout', new=StringIO()) as fake_out:
-                with self.assertRaises(SystemExit) as cm:
-                    main(['-S'])
-                self.assertEqual(cm.exception.code, 0)
-                mock_stop.assert_called_once()
-                self.assertEqual(fake_out.getvalue().strip(), 'Production Bench.Production stopped')
+            with patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+                with patch('sys.stdout', new=StringIO()) as fake_out:
+                    with self.assertRaises(SystemExit) as cm:
+                        main(['-S'])
+                    self.assertEqual(cm.exception.code, 0)
+                    mock_stop.assert_called_once()
+                    self.assertEqual(fake_out.getvalue().strip(), 'Production Bench.Production stopped')
 
         # Test restart
         with patch('iop._director._Director.restart_production') as mock_restart:

@@ -131,7 +131,8 @@ class TestXmlToJson:
         assert "Production" in data
 
 
-class TestRemoteMigration:    @patch('requests.put')
+class TestRemoteMigration:    
+    @patch('requests.put')
     @patch('iop._utils._Utils._load_settings')
     @patch('os.walk')
     def test_migrate_remote_verify_ssl_true(self, mock_walk, mock_load_settings, mock_put):

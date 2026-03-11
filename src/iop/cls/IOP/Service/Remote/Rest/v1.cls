@@ -276,7 +276,6 @@ ClassMethod PostTest() As %Status
 
 		// Optionally restart the target component before testing
 		If restart {
-			zw "Restarting target component: "_target
 			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 0, 1))
 			$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(target, 1, 1))
 		}
@@ -304,11 +303,23 @@ ClassMethod PostTest() As %Status
 				Set result.body = response.GetObjectJson(.atEnd)
 				set result.classname = response.classname
 				Set result.truncated = 'atEnd
+			} 
+			Else {
+				Set result.classname = response.%ClassName(1)
+				// Use the ObjectScript XML Serializer so arbitrary objects and collections are captured.
+				Try {
+					Set xmlWriter = ##class(%XML.Writer).%New()
+					Set xmlStream = ##class(%Stream.TmpCharacter).%New()
+					$$$ThrowOnError(xmlWriter.OutputToStream(xmlStream))
+					$$$ThrowOnError(xmlWriter.RootObject(response))
+					Do xmlStream.Rewind()
+					Set body = ""
+					While 'xmlStream.AtEnd { Set body = body _ xmlStream.Read(32000) }
+					Set result.body = body
+				} Catch {
+					Set result.body = ""
+				}
 			}
-		} Else {
-			Set result.classname = response.%ClassName(1)
-			// TODO, try to use the ObjectScript XML Serializer to capture the response body as XML, which can handle arbitrary objects including collections. For now we'll just return an empty body for non-IOP.Message responses.
-			Set result.body = ""
 		}
 		set sc = $$EndCapture^%SYS.Capture(msg,.msgArray)
 		Return ..%WriteResponse(result.%ToJSON())

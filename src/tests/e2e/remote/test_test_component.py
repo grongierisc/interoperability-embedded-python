@@ -4,16 +4,48 @@ Run with a live IRIS + IOP_URL set:
     IOP_URL=http://localhost:52773 pytest src/tests/e2e/remote/
 """
 import pytest
+import requests
+
+
+@pytest.fixture(scope="module")
+def default_production(remote_director):
+    """Default production name for the configured namespace.
+
+    Falls back to the first production found in the list; skips only when
+    no production exists at all.
+    """
+    prod = remote_director.get_default_production()
+    if prod in ("", "Not defined"):
+        prods = remote_director.list_productions()
+        if not prods:
+            pytest.skip("No productions available")
+        prod = next(iter(prods))
+    return prod
+
+
+@pytest.fixture(scope="module")
+def first_active_component(remote_director, default_production):
+    """Name of the first enabled component in the default production, or skip."""
+    try:
+        remote_director.start_production(default_production)
+    except (RuntimeError, requests.exceptions.HTTPError):
+        pass  # already running
+
+    components = remote_director.export_production(default_production)
+    production_data = list(components.values())[0]
+    items = production_data.get("Item", [])
+    if isinstance(items, dict):
+        items = [items]
+    active = [item for item in items if item.get("@Enabled", "1") == "1"]
+    if not active:
+        pytest.skip("No active components found in the default production")
+    return active[0]["@Name"]
 
 
 class TestComponentTesting:
-    def test_test_component_returns_response(self, remote_director):
+    def test_test_component_returns_response(self, remote_director, default_production):
         """POST /test with a basic Ens.StringRequest should return a valid response."""
-        default_target = remote_director.get_default_production()
-        if default_target in ("", "Not defined"):
-            pytest.skip("No default production defined")
-
-        # This test uses Ens.StringRequest as a generic smoke test.
+        # Uses Ens.StringRequest as a generic smoke test.
         # Adjust target and classname to match your environment.
         try:
             result = remote_director.test_component(
@@ -35,12 +67,8 @@ class TestComponentTesting:
                 body='{"StringValue": "ping"}',
             )
 
-    def test_test_component_bad_classname_raises(self, remote_director):
+    def test_test_component_bad_classname_raises(self, remote_director, default_production):
         """Sending with a non-existent classname should raise RuntimeError."""
-        default_target = remote_director.get_default_production()
-        if default_target in ("", "Not defined"):
-            pytest.skip("No default production defined")
-
         with pytest.raises(RuntimeError):
             remote_director.test_component(
                 target=None,
@@ -48,25 +76,11 @@ class TestComponentTesting:
                 body='{"StringValue": "ping"}',
             )
 
-    def test_test_component_restart(self, remote_director):
+    def test_test_component_restart(self, remote_director, first_active_component):
         """Test that the restart option in test_component works without error."""
-        default_target = remote_director.get_default_production()
-        if default_target in ("", "Not defined"):
-            pytest.skip("No default production defined")
-
-        # export the default production's components and pick one to target for this test
-        components = remote_director.export_components()
-        active_components = [c for c in components if c["active"]]
-        
-
-        if not active_components:
-            pytest.skip("No active components found in the default production")
-
-        target_component = active_components[0]["name"]
-        
         result = remote_director.test_component(
-            target=target_component,
-            classname="Ens.StringRequest",
+            target=first_active_component,
+            classname=None,
             body='{"StringValue": "ping"}',
             restart=True,
         )

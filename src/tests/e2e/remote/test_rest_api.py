@@ -131,7 +131,12 @@ class TestExport:
     def _need_production(self, remote_director):
         prod = remote_director.get_default_production()
         if prod in ("", "Not defined"):
-            pytest.skip("No default production defined")
+            # List productions and pick the first one if no default is set
+            prods = remote_director.list_productions()
+            if not prods:
+                pytest.skip("No productions available to test export")
+            # Prods is an object with production names as keys, so take the first key
+            prod = next(iter(prods.keys()))
         self.production = prod
 
     def test_export_returns_200(self, remote_director):
@@ -140,18 +145,17 @@ class TestExport:
                         namespace=remote_director._namespace)
         assert resp.status_code == 200
 
-    def test_export_body_has_xml_key(self, remote_director):
+    def test_export_body_has_data(self, remote_director):
         data = remote_director._check_error(
             remote_director._get("/export", {"production": self.production})
         )
-        assert "xml" in data
+        assert data is not None
 
-    def test_export_xml_is_non_empty_string(self, remote_director):
+    def test_export_json_is_non_empty_string(self, remote_director):
         data = remote_director._check_error(
             remote_director._get("/export", {"production": self.production})
         )
-        assert isinstance(data["xml"], str)
-        assert len(data["xml"]) > 0
+        assert len(data) > 0
 
 
 # ---------------------------------------------------------------------------
