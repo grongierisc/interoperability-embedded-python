@@ -430,7 +430,7 @@ while True:
 </code></pre>
 <hr />
 <h2 id="get-apiiopexport">GET /api/iop/export</h2>
-<p>Exports a production definition as XML.</p>
+<p>Exports a production definition as JSON.</p>
 <p><strong>Query parameters</strong></p>
 <table>
 <thead>
@@ -457,7 +457,28 @@ while True:
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<pre><code class="language-json">{&quot;xml&quot;: &quot;&lt;Production Name=\&quot;MyApp.Production\&quot;&gt;...&lt;/Production&gt;&quot;}
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;MyApp.Production&quot;,
+  &quot;description&quot;: &quot;&quot;,
+  &quot;test_enabled&quot;: true,
+  &quot;log_trace_events&quot;: false,
+  &quot;actor_pool_size&quot;: 2,
+  &quot;items&quot;: [
+    {
+      &quot;name&quot;: &quot;Python.MyOperation&quot;,
+      &quot;classname&quot;: &quot;Python.MyOperation&quot;,
+      &quot;pool_size&quot;: 1,
+      &quot;enabled&quot;: true,
+      &quot;foreground&quot;: false,
+      &quot;comment&quot;: &quot;&quot;,
+      &quot;log_trace_events&quot;: false,
+      &quot;schedule&quot;: &quot;&quot;,
+      &quot;settings&quot;: [
+        {&quot;target&quot;: &quot;Host&quot;, &quot;name&quot;: &quot;PythonClass&quot;, &quot;value&quot;: &quot;mymodule.MyOperation&quot;}
+      ]
+    }
+  ]
+}
 </code></pre>
 <hr />
 <h2 id="post-apiioptest">POST /api/iop/test</h2>
