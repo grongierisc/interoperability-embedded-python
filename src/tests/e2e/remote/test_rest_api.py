@@ -10,7 +10,7 @@ Run with a live IRIS instance and IOP_URL set:
     IOP_URL=http://localhost:52773 pytest src/tests/e2e/remote/
 """
 import pytest
-import requests as _requests
+import requests
 
 
 # ---------------------------------------------------------------------------
@@ -19,7 +19,7 @@ import requests as _requests
 
 def _raw_get(director, path, **params):
     """Issue a GET without the director helper so we control every detail."""
-    resp = _requests.get(
+    resp = requests.get(
         f"{director._base}{path}",
         params=params,
         auth=director._auth,
@@ -35,7 +35,7 @@ def _raw_post(director, path, body, *, include_ns_in_params=False, include_ns_in
         params["namespace"] = director._namespace
     if include_ns_in_body:
         body = {**body, "namespace": director._namespace}
-    resp = _requests.post(
+    resp = requests.post(
         f"{director._base}{path}",
         json=body,
         params=params,
@@ -52,7 +52,7 @@ def _raw_put(director, path, body, *, include_ns_in_params=False, include_ns_in_
         params["namespace"] = director._namespace
     if include_ns_in_body:
         body = {**body, "namespace": director._namespace}
-    resp = _requests.put(
+    resp = requests.put(
         f"{director._base}{path}",
         json=body,
         params=params,
@@ -243,7 +243,7 @@ class TestNamespaceViaBody:
         """Body namespace wins when both body and query-string supply different values."""
         original = remote_director.get_default_production()
         ns = remote_director._namespace
-        resp = _requests.put(
+        resp = requests.put(
             f"{remote_director._base}/default",
             json={"production": original, "namespace": ns},
             params={"namespace": ns},   # same value — just ensure no conflict

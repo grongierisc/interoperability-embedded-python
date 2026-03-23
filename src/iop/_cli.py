@@ -2,6 +2,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import requests
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -352,7 +353,6 @@ def create_parser() -> argparse.ArgumentParser:
     return main_parser
 
 def main(argv=None) -> None:
-    import requests as _requests
     parser = create_parser()
     args = parser.parse_args(argv)
     cmd_args = CommandArgs(**vars(args))
@@ -360,12 +360,12 @@ def main(argv=None) -> None:
     try:
         command = Command(cmd_args)
         command.execute()
-    except _requests.exceptions.ConnectionError as exc:
+    except requests.exceptions.ConnectionError as exc:
         url = os.environ.get("IOP_URL", "")
         msg = f"Connection error: could not reach {url!r}" if url else f"Connection error: {exc}"
         print(f"Error: {msg}", file=sys.stderr)
         sys.exit(1)
-    except _requests.exceptions.HTTPError as exc:
+    except requests.exceptions.HTTPError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
     except RuntimeError as exc:

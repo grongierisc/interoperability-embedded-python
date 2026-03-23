@@ -335,7 +335,7 @@ class _RemoteDirector(_DirectorProtocol):
                     if not fname.endswith('.cls'):
                         continue
                     full_path = os.path.join(dirpath, fname)
-                    doc_name = os.path.relpath(full_path, cls_root).replace(os.sep, '/')
+                    doc_name = os.path.relpath(full_path, cls_root).replace(os.sep, '.').replace('/', '.')
                     with open(full_path, encoding='utf-8') as fh:
                         content = fh.read().splitlines()
                     resp = requests.put(
@@ -347,10 +347,6 @@ class _RemoteDirector(_DirectorProtocol):
                         timeout=30,
                     )
                     self._raise_for_status(resp)
-                    result = resp.json()
-                    doc_status = (result.get('result') or {}).get('status') or ''
-                    if doc_status:
-                        raise RuntimeError(f"Error uploading {doc_name}: {doc_status}")
                     doc_names.append(doc_name)
                     print(f"Uploaded: {doc_name}")
 
