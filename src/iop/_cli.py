@@ -166,7 +166,13 @@ class Command:
         print(json.dumps(dikt, indent=4))
 
     def _handle_start(self) -> None:
-        production_name = self.args.start if self.args.start != 'not_set' else self.director.get_default_production()
+        if self.args.start != 'not_set':
+            production_name = self.args.start
+        else:
+            production_name = self.director.get_default_production()
+            if not production_name or production_name == "Not defined":
+                print("Error: no production name provided and no default production is defined.", file=sys.stderr)
+                sys.exit(1)
         if self.args.detach:
             self.director.start_production(production_name)
             print(f"Production {production_name} started")
@@ -350,12 +356,25 @@ def create_parser() -> argparse.ArgumentParser:
     return main_parser
 
 def main(argv=None) -> None:
+    import requests as _requests
     parser = create_parser()
     args = parser.parse_args(argv)
     cmd_args = CommandArgs(**vars(args))
-    
-    command = Command(cmd_args)
-    command.execute()
+
+    try:
+        command = Command(cmd_args)
+        command.execute()
+    except _requests.exceptions.ConnectionError as exc:
+        url = os.environ.get("IOP_URL", "")
+        msg = f"Connection error: could not reach {url!r}" if url else f"Connection error: {exc}"
+        print(f"Error: {msg}", file=sys.stderr)
+        sys.exit(1)
+    except _requests.exceptions.HTTPError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 
 if __name__ == '__main__':

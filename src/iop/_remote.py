@@ -40,13 +40,27 @@ class _RemoteDirector:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _raise_for_status(resp: requests.Response) -> None:
+        """Like resp.raise_for_status() but includes the response body error message."""
+        if not resp.ok:
+            try:
+                body = resp.json()
+                error = body.get("error") or body.get("message") or resp.text
+            except Exception:
+                error = resp.text or resp.reason
+            raise requests.exceptions.HTTPError(
+                f"{resp.status_code} {resp.reason}: {error}",
+                response=resp,
+            )
+
     def _get(self, path: str, params: Optional[dict] = None) -> Any:
         p = {"namespace": self._namespace, **(params or {})}
         resp = requests.get(
             f"{self._base}{path}", params=p, auth=self._auth,
             verify=self._verify, timeout=30,
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def _post(self, path: str, body: Optional[dict] = None) -> Any:
@@ -55,7 +69,7 @@ class _RemoteDirector:
             params={"namespace": self._namespace},
             auth=self._auth, verify=self._verify, timeout=30,
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def _put(self, path: str, body: Optional[dict] = None) -> Any:
@@ -64,7 +78,7 @@ class _RemoteDirector:
             params={"namespace": self._namespace},
             auth=self._auth, verify=self._verify, timeout=30,
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def _check_error(self, data: Any) -> Any:
@@ -205,14 +219,7 @@ class _RemoteDirector:
             payload["body"] = body
         if restart:
             payload["restart"] = True
-        try:
-            return self._check_error(self._post("/test", payload))
-        except requests.exceptions.HTTPError as exc:
-            try:
-                err_msg = exc.response.json().get("error", str(exc))
-            except Exception:
-                err_msg = str(exc)
-            raise RuntimeError(err_msg) from exc
+        return self._check_error(self._post("/test", payload))
 
     # ------------------------------------------------------------------
     # Export

@@ -81,6 +81,7 @@ ClassMethod PostStart() As %Status
 		Set production = dyna.%Get("production")
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction")) }
+		If production = "" { Throw $$$ERROR("NoProductionSpecified") }
 		$$$ThrowOnError(##class(Ens.Director).StartProduction(production))
 		Return ..%WriteResponse({"status": "started", "production": (production)}.%ToJSON())
 	} Catch ex {
