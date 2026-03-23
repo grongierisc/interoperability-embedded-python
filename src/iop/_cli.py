@@ -235,10 +235,8 @@ class Command:
             self.director.log_production_top(int(self.args.log))
 
     def _handle_init(self) -> None:
-        if self._is_remote:
-            logging.warning("'init' is a local-only command and cannot be run remotely.")
-            return
-        _Utils.setup(None)
+        path = None if self.args.init == 'not_set' else self.args.init
+        self.director.setup(path)
 
     def _handle_help(self) -> None:
         create_parser().print_help()

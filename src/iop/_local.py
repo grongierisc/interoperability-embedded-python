@@ -84,6 +84,13 @@ class _LocalDirector(_DirectorProtocol):
         return json.loads(_Utils.export_production(production_name))
 
     # ------------------------------------------------------------------
+    # Init / setup
+    # ------------------------------------------------------------------
+
+    def setup(self, path: Optional[str] = None) -> None:
+        _Utils.setup(path)
+
+    # ------------------------------------------------------------------
     # Metadata
     # ------------------------------------------------------------------
 

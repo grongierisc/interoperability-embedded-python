@@ -362,14 +362,14 @@ class TestCLIRemoteMode(unittest.TestCase):
         _, kwargs = mock_get.call_args
         self.assertEqual(kwargs["params"]["namespace"], "MYNS")
 
-    def test_init_warns_in_remote_mode(self):
+    def test_init_uses_remote_setup(self):
+        """-i in remote mode calls director.setup() via the Atelier API, not a local-only warning."""
         env = {**self._BASE_ENV}
         with patch.dict(os.environ, env, clear=True):
-            with patch('logging.warning') as mock_warn:
+            with patch('iop._remote._RemoteDirector.setup') as mock_setup:
                 with self.assertRaises(SystemExit):
                     main(['-i'])
-            mock_warn.assert_called_once()
-            self.assertIn("local-only", mock_warn.call_args[0][0])
+        mock_setup.assert_called_once_with(None)
 
     # ------------------------------------------------------------------
     # --force-local

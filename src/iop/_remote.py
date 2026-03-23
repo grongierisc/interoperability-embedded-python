@@ -27,7 +27,8 @@ class _RemoteDirector(_DirectorProtocol):
     """Implements DirectorProtocol over the IOP REST API."""
 
     def __init__(self, remote_settings: Dict[str, Any]) -> None:
-        self._base = remote_settings["url"].rstrip("/") + "/api/iop"
+        self._url = remote_settings["url"].rstrip("/")
+        self._base = self._url + "/api/iop"
         self._auth = (
             remote_settings.get("username", ""),
             remote_settings.get("password", ""),
@@ -237,6 +238,85 @@ class _RemoteDirector(_DirectorProtocol):
         return self._check_error(
             self._get("/export", {"production": production_name})
         )
+
+    # ------------------------------------------------------------------
+    # Init / setup — uploads .cls files via the Atelier API
+    # ------------------------------------------------------------------
+
+    def setup(self, path: Optional[str] = None) -> None:
+        """Upload and compile IOP .cls files to remote IRIS via the Atelier REST API.
+
+        When *path* is ``None`` the bundled ``iop/cls/`` directory (and the
+        optional ``grongier/cls/`` directory for retrocompatibility) is used.
+        Any explicit *path* must point to a directory containing ``.cls`` files.
+        """
+        import importlib.resources
+
+        paths_to_upload: List[str] = []
+        if path is None:
+            try:
+                paths_to_upload.append(
+                    str(importlib.resources.files('iop').joinpath('cls'))
+                )
+            except ModuleNotFoundError:
+                pass
+            try:  # retrocompatibility with the grongier.pex package
+                paths_to_upload.append(
+                    str(importlib.resources.files('grongier').joinpath('cls'))
+                )
+            except ModuleNotFoundError:
+                pass
+        else:
+            paths_to_upload.append(path)
+
+        atelier_base = f"{self._url}/api/atelier/v1"
+        doc_names: List[str] = []
+
+        for cls_root in paths_to_upload:
+            for dirpath, _, filenames in os.walk(cls_root):
+                for fname in sorted(filenames):
+                    if not fname.endswith('.cls'):
+                        continue
+                    full_path = os.path.join(dirpath, fname)
+                    doc_name = os.path.relpath(full_path, cls_root).replace(os.sep, '/')
+                    with open(full_path, encoding='utf-8') as fh:
+                        content = fh.read().splitlines()
+                    resp = requests.put(
+                        f"{atelier_base}/{self._namespace}/doc/{doc_name}",
+                        json={"enc": False, "content": content},
+                        params={"ignoreConflict": "1"},
+                        auth=self._auth,
+                        verify=self._verify,
+                        timeout=30,
+                    )
+                    self._raise_for_status(resp)
+                    result = resp.json()
+                    doc_status = (result.get('result') or {}).get('status') or ''
+                    if doc_status:
+                        raise RuntimeError(f"Error uploading {doc_name}: {doc_status}")
+                    doc_names.append(doc_name)
+                    print(f"Uploaded: {doc_name}")
+
+        if not doc_names:
+            raise RuntimeError("No .cls files found to upload.")
+
+        # Compile all uploaded documents in one request
+        resp = requests.post(
+            f"{atelier_base}/{self._namespace}/action/compile",
+            json=doc_names,
+            params={"flags": "cuk"},
+            auth=self._auth,
+            verify=self._verify,
+            timeout=120,
+        )
+        self._raise_for_status(resp)
+        result = resp.json()
+        for line in result.get('console', []):
+            if line:
+                print(line)
+        errors = result.get('status', {}).get('errors', [])
+        if errors:
+            raise RuntimeError(f"Compilation errors: {errors}")
 
     # ------------------------------------------------------------------
     # Metadata
