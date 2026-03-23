@@ -192,10 +192,20 @@ iop -M /tmp/settings.py --force-local
 
 ## init
 
-The init command initializes the IoP module in IRIS.
+The init command initializes the IoP module in IRIS by loading and compiling the bundled `.cls` files.
 
 ```bash
 iop -i
+```
+
+In **local mode** this calls `%SYSTEM.OBJ.LoadDir` + `%SYSTEM.OBJ.Compile` directly via the embedded Python binding.
+
+In **remote mode** the same `.cls` files are uploaded file-by-file via the [Atelier REST API](https://docs.intersystems.com/iris20253/csp/documatic/%25CSP.Documatic.cls?LIBRARY=%25SYS&CLASSNAME=%25Api.Atelier.v1) (`PUT /api/atelier/v1/{namespace}/doc/{name}`) and then compiled in a single batch request (`POST /api/atelier/v1/{namespace}/action/compile`).
+
+You can also point to a custom directory of `.cls` files:
+
+```bash
+iop -i /path/to/my/cls
 ```
 
 ## test
@@ -333,7 +343,7 @@ output :
 
 ## Remote mode
 
-Since version 3.6.0, the `iop` CLI can operate against a **remote IRIS instance** (e.g. a Docker container or a server) without requiring a local IRIS installation.  All commands work remotely except `init` which is a local-only setup step.
+Since version 3.6.0, the `iop` CLI can operate against a **remote IRIS instance** (e.g. a Docker container or a server) without requiring a local IRIS installation.  All commands work in both local and remote mode.
 
 ### Activation
 

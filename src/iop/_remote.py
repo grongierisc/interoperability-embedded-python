@@ -285,11 +285,16 @@ class _RemoteDirector(_DirectorProtocol):
             'remote_folder': remote_folder,
             'body': body,
         }
-        result = self._check_error(self._put('/migrate', payload))
-        if isinstance(result, str):
-            print(result)
-        elif isinstance(result, dict):
-            print(json.dumps(result, indent=2))
+        resp = requests.put(
+            f"{self._base}/migrate",
+            json=payload,
+            params={"namespace": self._namespace},
+            auth=self._auth,
+            verify=self._verify,
+            timeout=30,
+        )
+        self._raise_for_status(resp)
+        # Server returns $$$OK (the integer 1) on success — not meaningful to print
 
     # ------------------------------------------------------------------
     # Init / setup — uploads .cls files via the Atelier API
