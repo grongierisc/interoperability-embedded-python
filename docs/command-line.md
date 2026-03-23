@@ -208,6 +208,29 @@ You can also point to a custom directory of `.cls` files:
 iop -i /path/to/my/cls
 ```
 
+### Remote init: Python package prerequisite
+
+`iop -i` only handles the **ObjectScript side** (`.cls` files). The `iop` Python package itself must also be installed in the **remote IRIS Python environment** — the CLI cannot do this automatically because there is no REST endpoint to run `pip install` on the IRIS server.
+
+Install it once on the server using the IRIS-bundled Python interpreter:
+
+```bash
+# On the machine running IRIS (or via docker exec / SSH)
+python3 -m pip install iris-pex-embedded-python
+```
+
+> **Recommended init sequence for a fresh remote IRIS instance:**
+> ```bash
+> # 1. Upload and compile the .cls files via Atelier API
+> iop -i
+> 
+> # 2. Install the iop Python package on the IRIS server (server-side, once)
+> #    python3 -m pip install iris-pex-embedded-python
+> 
+> # 3. Now migrate your project
+> iop -M /path/to/settings.py
+> ```
+
 ## test
 
 The test command allows testing IoP components. You can optionally specify a test name, classname, and body.

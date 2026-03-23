@@ -374,6 +374,12 @@ class _RemoteDirector(_DirectorProtocol):
         errors = result.get('status', {}).get('errors', [])
         if errors:
             raise RuntimeError(f"Compilation errors: {errors}")
+        print(
+            "\n.cls files uploaded and compiled successfully."
+            "\nNext step: ensure the 'iop' Python package is installed on the IRIS server:"
+            "\n  python3 -m pip install iris-pex-embedded-python"
+            "\nThis is required for full IOP Support; without it, only the migrate() and export_production() methods will work remotely."
+        )
 
     # ------------------------------------------------------------------
     # Metadata
