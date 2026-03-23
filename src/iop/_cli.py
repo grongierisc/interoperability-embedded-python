@@ -246,9 +246,7 @@ class Command:
             print(f"\nMode: REMOTE ({os.environ.get('IOP_URL', 'via IOP_SETTINGS')})")
         try:
             print(f"\nDefault production: {self.director.get_default_production()}")
-            ns = (self.director._namespace  # type: ignore[union-attr]
-                  if self._is_remote else os.getenv('IRISNAMESPACE', 'not set'))
-            print(f"\nNamespace: {ns}")
+            print(f"\nNamespace: {self.director.namespace}")
         except Exception:
             logging.warning("Could not retrieve default production.")
 

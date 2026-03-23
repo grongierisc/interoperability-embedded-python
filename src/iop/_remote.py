@@ -238,6 +238,14 @@ class _RemoteDirector(_DirectorProtocol):
             self._get("/export", {"production": production_name})
         )
 
+    # ------------------------------------------------------------------
+    # Metadata
+    # ------------------------------------------------------------------
+
+    @property
+    def namespace(self) -> str:
+        return self._namespace
+
 
 # ------------------------------------------------------------------
 # Shared helpers

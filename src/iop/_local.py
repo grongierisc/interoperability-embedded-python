@@ -7,6 +7,7 @@ _LocalDirector and _RemoteDirector without any branching.
 from __future__ import annotations
 
 import json
+import os
 from typing import Optional
 
 from ._director import _Director
@@ -70,7 +71,7 @@ class _LocalDirector(_DirectorProtocol):
         target: Optional[str],
         message=None,
         classname: Optional[str] = None,
-        body: Optional[str] = None,
+        body: "str | dict | None" = None,
         restart: bool = True,  # ignored locally — included to satisfy DirectorProtocol
     ):
         return _Director.test_component(target, message, classname, body)
@@ -81,3 +82,11 @@ class _LocalDirector(_DirectorProtocol):
 
     def export_production(self, production_name: str) -> dict:
         return json.loads(_Utils.export_production(production_name))
+
+    # ------------------------------------------------------------------
+    # Metadata
+    # ------------------------------------------------------------------
+
+    @property
+    def namespace(self) -> str:
+        return os.getenv('IRISNAMESPACE', 'not set')

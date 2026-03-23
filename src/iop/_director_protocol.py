@@ -54,3 +54,10 @@ class DirectorProtocol(Protocol):
     # ------------------------------------------------------------------
 
     def export_production(self, production_name: str) -> dict: ...
+
+    # ------------------------------------------------------------------
+    # Metadata
+    # ------------------------------------------------------------------
+
+    @property
+    def namespace(self) -> str: ...
