@@ -77,32 +77,8 @@
         </ul>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#init">init</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#test">test</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#export">export</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#status">status</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#version">version</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#log">log</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#remote-mode">Remote mode</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#activation">Activation</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#quick-start-with-docker">Quick start with Docker</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#settings-file">Settings file</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#namespace-override">Namespace override</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#improved-test-command">Improved test command</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#disabling-remote-mode">Disabling remote mode</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#current-mode-indicator">Current mode indicator</a>
+    <li class="toctree-l3"><a class="reference internal" href="#remote-init-python-package-prerequisite">Remote init: Python package prerequisite</a>
     </li>
         </ul>
     </li>
@@ -302,9 +278,31 @@ PRODUCTIONS = [ ... ]
 </code></pre>
 <p><code>--force-local</code> disables remote mode for <strong>all</strong> commands, not only migrate.</p>
 <h2 id="init">init</h2>
-<p>The init command initializes the IoP module in IRIS.</p>
+<p>The init command initializes the IoP module in IRIS by loading and compiling the bundled <code>.cls</code> files.</p>
 <pre><code class="language-bash">iop -i
 </code></pre>
+<p>In <strong>local mode</strong> this calls <code>%SYSTEM.OBJ.LoadDir</code> + <code>%SYSTEM.OBJ.Compile</code> directly via the embedded Python binding.</p>
+<p>In <strong>remote mode</strong> the same <code>.cls</code> files are uploaded file-by-file via the <a href="https://docs.intersystems.com/iris20253/csp/documatic/%25CSP.Documatic.cls?LIBRARY=%25SYS&amp;CLASSNAME=%25Api.Atelier.v1">Atelier REST API</a> (<code>PUT /api/atelier/v1/{namespace}/doc/{name}</code>) and then compiled in a single batch request (<code>POST /api/atelier/v1/{namespace}/action/compile</code>).</p>
+<p>You can also point to a custom directory of <code>.cls</code> files:</p>
+<pre><code class="language-bash">iop -i /path/to/my/cls
+</code></pre>
+<h3 id="remote-init-python-package-prerequisite">Remote init: Python package prerequisite</h3>
+<p><code>iop -i</code> only handles the <strong>ObjectScript side</strong> (<code>.cls</code> files). The <code>iop</code> Python package itself must also be installed in the <strong>remote IRIS Python environment</strong> — the CLI cannot do this automatically because there is no REST endpoint to run <code>pip install</code> on the IRIS server.</p>
+<p>Install it once on the server using the IRIS-bundled Python interpreter:</p>
+<pre><code class="language-bash"># On the machine running IRIS (or via docker exec / SSH)
+python3 -m pip install iris-pex-embedded-python
+</code></pre>
+<blockquote>
+<p><strong>Recommended init sequence for a fresh remote IRIS instance:</strong>
+```bash</p>
+<h1 id="1-upload-and-compile-the-cls-files-via-atelier-api">1. Upload and compile the .cls files via Atelier API</h1>
+<p>iop -i</p>
+<h1 id="2-install-the-iop-python-package-on-the-iris-server-server-side-once">2. Install the iop Python package on the IRIS server (server-side, once)</h1>
+<h1 id="python3-m-pip-install-iris-pex-embedded-python">python3 -m pip install iris-pex-embedded-python</h1>
+<h1 id="3-now-migrate-your-project">3. Now migrate your project</h1>
+<p>iop -M /path/to/settings.py
+```</p>
+</blockquote>
 <h2 id="test">test</h2>
 <p>The test command allows testing IoP components. You can optionally specify a test name, classname, and body.</p>
 <p>Basic test:</p>
@@ -400,7 +398,7 @@ PRODUCTIONS = [ ... ]
 ...
 </code></pre>
 <h2 id="remote-mode">Remote mode</h2>
-<p>Since version 3.6.0, the <code>iop</code> CLI can operate against a <strong>remote IRIS instance</strong> (e.g. a Docker container or a server) without requiring a local IRIS installation.  All commands work remotely except <code>init</code> which is a local-only setup step.</p>
+<p>Since version 3.6.0, the <code>iop</code> CLI can operate against a <strong>remote IRIS instance</strong> (e.g. a Docker container or a server) without requiring a local IRIS installation.  All commands work in both local and remote mode.</p>
 <h3 id="activation">Activation</h3>
 <p>Remote mode is activated automatically through any of these mechanisms (evaluated in priority order):</p>
 <ol>
