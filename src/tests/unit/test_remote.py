@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch, call
 
+import requests
+
 from iop._remote import _RemoteDirector, get_remote_settings, _print_log_entry, _load_remote_settings_from_file
 
 
@@ -411,13 +413,12 @@ class TestHttpHelpers(unittest.TestCase):
 
     @patch("requests.get")
     def test_get_raises_on_error_status(self, mock_get):
-        import requests as _requests
         resp = _mock_response({}, status_code=500)
         resp.ok = False
         resp.reason = "Internal Server Error"
         resp.text = "something went wrong"
         mock_get.return_value = resp
-        with self.assertRaises(_requests.exceptions.HTTPError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             self.d._get("/status")
 
 
