@@ -114,25 +114,25 @@ class TestIOPCli(unittest.TestCase):
     def test_migration(self):
         """Test migration functionality."""
         # Test relative path
-        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
+        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', 'settings.json'])
             self.assertEqual(cm.exception.code, 0)
-            mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'), force_local=False)
+            mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
 
         # Test absolute path
-        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
+        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json'])
             self.assertEqual(cm.exception.code, 0)
-            mock_migrate.assert_called_once_with('/tmp/settings.json', force_local=False)
+            mock_migrate.assert_called_once_with('/tmp/settings.json')
 
-        # Test with force_local flag
-        with patch('iop._utils._Utils.migrate_remote') as mock_migrate:
+        # Test with force_local flag (--force-local selects _LocalDirector)
+        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json', '--force-local'])
             self.assertEqual(cm.exception.code, 0)
-            mock_migrate.assert_called_once_with('/tmp/settings.json', force_local=True)
+            mock_migrate.assert_called_once_with('/tmp/settings.json')
 
     def test_status_and_update(self):
         """Test status and update commands."""
@@ -402,12 +402,12 @@ class TestCLIRemoteMode(unittest.TestCase):
         try:
             env = {**self._BASE_ENV}
             with patch.dict(os.environ, env, clear=True):
-                with patch("requests.post") as mock_post:
-                    with patch("iop._utils._Utils.migrate_remote") as mock_migrate:
+                with patch("requests.put") as mock_put:
+                    with patch('iop._local._LocalDirector.migrate') as mock_migrate:
                         with self.assertRaises(SystemExit):
                             main(['-M', path, '--force-local'])
-                        mock_migrate.assert_called_once_with(path, force_local=True)
-                    mock_post.assert_not_called()
+                        mock_migrate.assert_called_once_with(path)
+                    mock_put.assert_not_called()
         finally:
             os.unlink(path)
 
@@ -430,10 +430,10 @@ class TestCLIRemoteMode(unittest.TestCase):
         try:
             # No env vars set — remote mode comes only from the settings file
             with patch.dict(os.environ, {}, clear=True):
-                with patch("iop._utils._Utils.migrate_remote") as mock_migrate:
+                with patch("iop._remote._RemoteDirector.migrate") as mock_migrate:
                     with self.assertRaises(SystemExit):
                         main(['-M', path])
-                    mock_migrate.assert_called_once()
+                    mock_migrate.assert_called_once_with(path)
         finally:
             os.unlink(path)
 

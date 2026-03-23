@@ -240,6 +240,58 @@ class _RemoteDirector(_DirectorProtocol):
         )
 
     # ------------------------------------------------------------------
+    # Migrate
+    # ------------------------------------------------------------------
+
+    def migrate(self, path: str) -> None:
+        """Upload .py and .cls files from *path*'s folder to remote IRIS via the IOP migrate API.
+
+        *path* must be an absolute path to a ``settings.py`` file whose directory
+        (and sub-directories) will be walked for ``.py`` / ``.cls`` files.
+        ``REMOTE_SETTINGS`` fields (package, namespace, remote_folder) are read
+        from that same settings file when present; otherwise the director's own
+        namespace / defaults are used.
+        """
+        import importlib.util
+
+        folder = os.path.dirname(path)
+
+        # Try to read optional keys from the settings file
+        package = 'python'
+        remote_folder = ''
+        try:
+            spec = importlib.util.spec_from_file_location('_iop_migrate_settings', path)
+            mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+            spec.loader.exec_module(mod)  # type: ignore[union-attr]
+            rs = getattr(mod, 'REMOTE_SETTINGS', {})
+            package = rs.get('package', package)
+            remote_folder = rs.get('remote_folder', remote_folder)
+        except Exception:
+            pass
+
+        body: List[dict] = []
+        for dirpath, _, filenames in os.walk(folder):
+            for fname in sorted(filenames):
+                if not (fname.endswith('.py') or fname.endswith('.cls')):
+                    continue
+                full = os.path.join(dirpath, fname)
+                rel = os.path.relpath(full, folder).replace(os.sep, '/')
+                with open(full, encoding='utf-8') as fh:
+                    body.append({'name': rel, 'data': fh.read()})
+
+        payload = {
+            'namespace': self._namespace,
+            'package': package,
+            'remote_folder': remote_folder,
+            'body': body,
+        }
+        result = self._check_error(self._put('/migrate', payload))
+        if isinstance(result, str):
+            print(result)
+        elif isinstance(result, dict):
+            print(json.dumps(result, indent=2))
+
+    # ------------------------------------------------------------------
     # Init / setup — uploads .cls files via the Atelier API
     # ------------------------------------------------------------------
 
