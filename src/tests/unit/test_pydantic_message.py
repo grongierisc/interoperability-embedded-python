@@ -1,13 +1,15 @@
 import datetime
 import decimal
 import uuid
+from dataclasses import dataclass
 from typing import List, Optional
 
 import pytest
 from pydantic import BaseModel
 
-from iop._message import _PydanticMessage as PydanticMessage
+from iop._message import _Message as Message, _PydanticMessage as PydanticMessage
 from iop._serialization import (
+    SerializationError,
     serialize_message,
     deserialize_message,
     serialize_pickle_message,
@@ -133,3 +135,46 @@ def test_optional_fields():
             result = deserialize_fn(serial)
             assert isinstance(result, FullPydanticMessage)
             assert result.model_dump() == msg.model_dump()
+
+
+# --- Tests for @dataclass + PydanticMessage incompatibility ---
+
+@dataclass
+class DataclassPydanticMessage(PydanticMessage):
+    text: str
+
+
+def test_serialize_dataclass_pydantic_message_raises():
+    """@dataclass combined with PydanticMessage must raise a clear SerializationError on serialize."""
+    msg = object.__new__(DataclassPydanticMessage)
+    object.__setattr__(msg, 'text', 'hello')
+    with pytest.raises(SerializationError, match="combines @dataclass with PydanticMessage"):
+        serialize_message(msg)
+
+
+def test_deserialize_dataclass_pydantic_message_raises(monkeypatch):
+    """@dataclass combined with PydanticMessage must raise a clear SerializationError on deserialize."""
+    import importlib
+    import sys
+    import types
+
+    # Build a minimal fake serial object whose classname points to DataclassPydanticMessage
+    module_name = DataclassPydanticMessage.__module__
+    class_name = DataclassPydanticMessage.__name__
+    classname = f"{module_name}.{class_name}"
+
+    class FakeSerial:
+        pass
+
+    serial = FakeSerial()
+    serial.classname = classname
+    serial.type = "String"
+    serial.json = '{"text": "hello"}'
+
+    def fake_id():
+        return None
+
+    serial._Id = fake_id
+
+    with pytest.raises(SerializationError, match="combines @dataclass with PydanticMessage"):
+        deserialize_message(serial)

@@ -90,6 +90,13 @@ class MessageSerializer:
         except Exception as e:
             raise SerializationError(f"Failed to load class {serial.classname}: {str(e)}")
 
+        if is_dataclass(msg_class) and issubclass(msg_class, BaseModel):
+            raise SerializationError(
+                f"Class '{msg_class.__name__}' combines @dataclass with PydanticMessage, which are incompatible. "
+                "Use either 'class HelloMessage(PydanticMessage): ...' (no @dataclass) "
+                "or '@dataclass\nclass HelloMessage(Message): ...' (dataclass with Message)."
+            )
+
         json_string = (_Utils.stream_to_string(serial.json) 
                       if serial.type == 'Stream' else serial.json)
         
@@ -118,6 +125,12 @@ class MessageSerializer:
     @staticmethod
     def _convert_to_json_safe(obj: Any) -> Any:
         """Convert objects to JSON-safe format."""
+        if is_dataclass(obj) and isinstance(obj, BaseModel):
+            raise SerializationError(
+                f"Class '{obj.__class__.__name__}' combines @dataclass with PydanticMessage, which are incompatible. "
+                "Use either 'class HelloMessage(PydanticMessage): ...' (no @dataclass) "
+                "or '@dataclass\nclass HelloMessage(Message): ...' (dataclass with Message)."
+            )
         if isinstance(obj, BaseModel):
             return obj.model_dump_json()
         elif is_dataclass(obj) and isinstance(obj, _Message):
