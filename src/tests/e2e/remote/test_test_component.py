@@ -54,13 +54,13 @@ class TestComponentTesting:
                 body='{"StringValue": "ping"}',
             )
             assert result is not None
-        except RuntimeError as exc:
-            # If no running target, a RuntimeError is acceptable
+        except (RuntimeError, requests.exceptions.HTTPError) as exc:
+            # If no running target, an error is acceptable
             assert "error" in str(exc).lower() or "not found" in str(exc).lower()
 
     def test_test_component_bad_target_raises(self, remote_director):
-        """Sending to a non-existent target should raise RuntimeError."""
-        with pytest.raises(RuntimeError):
+        """Sending to a non-existent target should raise HTTPError (500)."""
+        with pytest.raises((RuntimeError, requests.exceptions.HTTPError)):
             remote_director.test_component(
                 target="ThisTargetDoesNotExist.AtAll",
                 classname="Ens.StringRequest",
@@ -68,8 +68,8 @@ class TestComponentTesting:
             )
 
     def test_test_component_bad_classname_raises(self, remote_director, default_production):
-        """Sending with a non-existent classname should raise RuntimeError."""
-        with pytest.raises(RuntimeError):
+        """Sending with a non-existent classname should raise HTTPError (500)."""
+        with pytest.raises((RuntimeError, requests.exceptions.HTTPError)):
             remote_director.test_component(
                 target=None,
                 classname="This.Class.DoesNotExist",

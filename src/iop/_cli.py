@@ -11,6 +11,7 @@ from importlib.metadata import version
 
 from ._local import _LocalDirector
 from ._remote import _RemoteDirector, get_remote_settings
+from ._director_protocol import DirectorProtocol
 from ._utils import _Utils
 
 
@@ -67,7 +68,7 @@ class Command:
         # or when the -m settings.py file contains REMOTE_SETTINGS.
         # --force-local overrides everything and always uses the local director.
         if self.args.force_local:
-            self.director: _LocalDirector | _RemoteDirector = _LocalDirector()
+            self.director: DirectorProtocol = _LocalDirector()
             self._is_remote = False
         else:
             # Resolve absolute paths for --remote-settings and -m so

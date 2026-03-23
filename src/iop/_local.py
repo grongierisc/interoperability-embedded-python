@@ -6,13 +6,16 @@ _LocalDirector and _RemoteDirector without any branching.
 
 from __future__ import annotations
 
+import json
 from typing import Optional
 
 from ._director import _Director
 from ._utils import _Utils
+from ._director_protocol import DirectorProtocol as _DirectorProtocol  # noqa: F401 --- IGNORE ---
 
 
-class _LocalDirector:
+class _LocalDirector(_DirectorProtocol):
+    """Local director: thin instance-method wrapper around static _Director calls."""
 
     # ------------------------------------------------------------------
     # Production lifecycle
@@ -68,6 +71,7 @@ class _LocalDirector:
         message=None,
         classname: Optional[str] = None,
         body: Optional[str] = None,
+        restart: bool = True,  # ignored locally — included to satisfy DirectorProtocol
     ):
         return _Director.test_component(target, message, classname, body)
 
@@ -76,4 +80,4 @@ class _LocalDirector:
     # ------------------------------------------------------------------
 
     def export_production(self, production_name: str) -> dict:
-        return _Utils.export_production(production_name)
+        return json.loads(_Utils.export_production(production_name))

@@ -16,14 +16,15 @@ import json
 import os
 import signal
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import requests
 import urllib3
 
+from ._director_protocol import DirectorProtocol as _DirectorProtocol  # noqa: F401 --- IGNORE ---
 
-class _RemoteDirector:
-    """Implements the same interface as _Director but dispatches over HTTP."""
+class _RemoteDirector(_DirectorProtocol):
+    """Implements DirectorProtocol over the IOP REST API."""
 
     def __init__(self, remote_settings: Dict[str, Any]) -> None:
         self._base = remote_settings["url"].rstrip("/") + "/api/iop"
@@ -145,11 +146,11 @@ class _RemoteDirector:
     def shutdown_production(self) -> None:
         self._check_error(self._post("/kill"))
 
-    def restart_production(self) -> dict:
-        return self._check_error(self._post("/restart"))
+    def restart_production(self) -> None:
+        self._check_error(self._post("/restart"))
 
-    def update_production(self) -> dict:
-        return self._check_error(self._post("/update"))
+    def update_production(self) -> None:
+        self._check_error(self._post("/update"))
 
     # ------------------------------------------------------------------
     # Logging
@@ -204,7 +205,7 @@ class _RemoteDirector:
         target: Optional[str],
         message=None,           # ignored remotely — not serialisable over HTTP
         classname: Optional[str] = None,
-        body: Optional[Union[str, dict]] = None,
+        body: "str | dict | None" = None,
         restart: bool = True,
     ) -> dict:
         """Returns a dict: {"classname": "...", "body": "...", "truncated": false}.
@@ -219,7 +220,14 @@ class _RemoteDirector:
             payload["body"] = body
         if restart:
             payload["restart"] = True
-        return self._check_error(self._post("/test", payload))
+        try:
+            return self._check_error(self._post("/test", payload))
+        except requests.exceptions.HTTPError as exc:
+            try:
+                err_msg = exc.response.json().get("error", str(exc))
+            except Exception:
+                err_msg = str(exc)
+            raise RuntimeError(err_msg) from exc
 
     # ------------------------------------------------------------------
     # Export

@@ -410,11 +410,15 @@ class TestHttpHelpers(unittest.TestCase):
         self.assertNotIn("namespace", kwargs["json"])
 
     @patch("requests.get")
-    def test_get_calls_raise_for_status(self, mock_get):
+    def test_get_raises_on_error_status(self, mock_get):
+        import requests as _requests
         resp = _mock_response({}, status_code=500)
+        resp.ok = False
+        resp.reason = "Internal Server Error"
+        resp.text = "something went wrong"
         mock_get.return_value = resp
-        self.d._get("/status")
-        resp.raise_for_status.assert_called_once()
+        with self.assertRaises(_requests.exceptions.HTTPError):
+            self.d._get("/status")
 
 
 # ---------------------------------------------------------------------------

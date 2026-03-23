@@ -39,14 +39,12 @@ class TestProductionLifecycle:
             pytest.skip("No default production defined on the remote IRIS instance")
 
     def test_restart(self, remote_director):
-        """POST /restart should return a status response."""
-        result = remote_director.restart_production()
-        assert isinstance(result, dict)
+        """POST /restart should complete without error."""
+        remote_director.restart_production()  # return value is None
 
     def test_update(self, remote_director):
         """POST /update should complete without error."""
-        result = remote_director.update_production()
-        assert isinstance(result, dict)
+        remote_director.update_production()  # return value is None
 
 
 class TestDefaultProduction:
