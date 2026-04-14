@@ -12,5 +12,4 @@ pydantic>=2.0.0
 mkdocs
 pymdown-extensions
 debugpy
-https://github.com/intersystems-community/intersystems-irispython/releases/download/3.9.3/intersystems_iris-3.9.3-py3-none-any.whl
-
+intersystems-irispython
