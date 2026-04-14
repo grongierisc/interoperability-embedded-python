@@ -1,11 +1,34 @@
 from typing import List, Dict
 from iop import Message, PickleMessage, PydanticMessage
+from enum import Enum
+from pydantic import BaseModel
 
 from dataclasses import dataclass
 
 from obj import PostClass
 
 from datetime import datetime, date, time
+
+# Enum types for testing
+class Status(str, Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    PENDING = "PENDING"
+
+class Priority(str, Enum):
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+
+# Pydantic model with enums
+class TaskModel(BaseModel):
+    name: str
+    status: Status
+    priority: Priority
+
+# Pydantic message with enums
+class TaskMessage(PydanticMessage):
+    task: TaskModel
 
 class PydanticPostClass(PydanticMessage):
     Title: str

@@ -419,10 +419,20 @@ ClassMethod SchemaToContents(
 	schema As %DynamicObject,
 	Output pContents) As %Status
 {
+    // Call internal method with root schema tracking
+    Return ##class(IOP.Message).SchemaToContentsInternal(schema, schema, .pContents)
+}
+
+/// Internal method - same as SchemaToContents but tracks root schema for $defs resolution
+ClassMethod SchemaToContentsInternal(
+	schema As %DynamicObject,
+	rootSchema As %DynamicObject,
+	Output pContents) As %Status
+{
     Set tSC = $$$OK
     Try {
         Set idx = 0
-        Do ..ProcessProperties(schema.properties, .idx, .pContents, schema)
+        Do ..ProcessPropertiesInternal(schema.properties, .idx, .pContents, rootSchema)
     }
     Catch ex {
         Set tSC = ex.AsStatus()
@@ -442,6 +452,63 @@ ClassMethod ProcessProperties(
         Do ..HandleProperty(value, .key, idx, .pContents, schema)
     }
     Return $$$OK
+}
+
+ClassMethod ProcessPropertiesInternal(
+	properties As %DynamicObject,
+	ByRef idx As %Integer,
+	Output pContents,
+	rootSchema As %DynamicObject) As %Status
+{
+    Set iterator = properties.%GetIterator()
+    While iterator.%GetNext(.key, .value) {
+        Set idx = idx + 1
+        Do ..HandlePropertyInternal(value, .key, idx, .pContents, rootSchema)
+    }
+    Return $$$OK
+}
+
+ClassMethod HandlePropertyInternal(
+	value As %DynamicObject,
+	ByRef key As %String,
+	idx As %Integer,
+	Output pContents,
+	rootSchema As %DynamicObject)
+{
+    Set type = value.type
+    
+    If (type = "string") || (type = "number") || (type = "boolean") {
+        Do ..HandlePrimitiveType(type, idx, .pContents)
+    }
+    ElseIf type = "array" {
+        Do ..HandleArrayTypeInternal(value, .key, idx, .pContents, rootSchema)
+    }
+    ElseIf type = "object" {
+        Do ..HandleObjectType(value, idx, .pContents)
+    }
+    ElseIf $IsObject(value.allOf) {
+        Do ..HandleAllOfTypeInternal(value, key, idx, .pContents, rootSchema)
+    }
+    ElseIf value.%Get("$ref")'="" {
+        Set tDef = rootSchema."$defs".%Get($Piece(value."$ref", "/", *))
+        // Check if it's an enum or an object
+        If $IsObject(tDef.enum) {
+            // Handle enum - treat as string with enum values
+            Do ..HandleEnumType(tDef, idx, .pContents)
+        }
+        Else {
+            // Handle object type
+            Do ..HandleObjectTypeInternal(tDef, idx, .pContents, rootSchema)
+        }
+    }
+    Else {
+        Set pContents(idx,"type") = type
+    }
+    
+    If type = "array" Set key = key_"()"
+    Set pContents = idx
+    Set pContents(idx,"name") = key
+    Set pContents(idx,"alias") = key
 }
 
 ClassMethod HandleProperty(
@@ -467,7 +534,15 @@ ClassMethod HandleProperty(
     }
     ElseIf value.%Get("$ref")'="" {
         Set tDef = schema."$defs".%Get($Piece(value."$ref", "/", *))
-        Do ..HandleObjectType(tDef, idx, .pContents)
+        // Check if it's an enum or an object
+        If $IsObject(tDef.enum) {
+            // Handle enum - treat as string with enum values
+            Do ..HandleEnumType(tDef, idx, .pContents)
+        }
+        Else {
+            // Handle object type
+            Do ..HandleObjectType(tDef, idx, .pContents)
+        }
     }
     Else {
         Set pContents(idx,"type") = type
@@ -502,6 +577,18 @@ ClassMethod HandleArrayType(
     Do ..HandleProperty(value.items, key, idx, .pContents, schema)
 }
 
+ClassMethod HandleArrayTypeInternal(
+	value As %DynamicObject,
+	ByRef key As %String,
+	idx As %Integer,
+	Output pContents,
+	rootSchema As %DynamicObject)
+{
+    Set pContents(idx,"type") = "()"
+    // Handle array as a Handle Property
+    Do ..HandlePropertyInternal(value.items, key, idx, .pContents, rootSchema)
+}
+
 ClassMethod HandleObjectType(
 	value As %DynamicObject,
 	idx As %Integer,
@@ -511,6 +598,37 @@ ClassMethod HandleObjectType(
     If $IsObject(value.properties) {
         Do ..SchemaToContents(value, .subContents)
         Merge pContents(idx) = subContents
+    }
+}
+
+ClassMethod HandleObjectTypeInternal(
+	value As %DynamicObject,
+	idx As %Integer,
+	Output pContents,
+	rootSchema As %DynamicObject)
+{
+    Set pContents(idx,"type") = "object"
+    If $IsObject(value.properties) {
+        Do ..SchemaToContentsInternal(value, rootSchema, .subContents)
+        Merge pContents(idx) = subContents
+    }
+}
+
+ClassMethod HandleEnumType(
+	value As %DynamicObject,
+	idx As %Integer,
+	Output pContents)
+{
+    Set pContents(idx,"type") = "%String"
+    // Store enum values for reference
+    If $IsObject(value.enum) {
+        Set enumString = ""
+        Set enumIterator = value.enum.%GetIterator()
+        While enumIterator.%GetNext(.enumIdx, .enumValue) {
+            If enumString '= "" Set enumString = enumString_","
+            Set enumString = enumString_enumValue
+        }
+        Set pContents(idx,"enum") = enumString
     }
 }
 
@@ -534,6 +652,31 @@ ClassMethod HandleAllOfType(
         Else {
             Set tDef = schema."$defs".%Get($Piece(allOfValue."$ref","/",*))
             Do ..SchemaToContents(tDef, .subContents)
+        }
+        Merge pContents(idx) = subContents
+    }
+}
+
+ClassMethod HandleAllOfTypeInternal(
+	value As %DynamicObject,
+	key As %String,
+	idx As %Integer,
+	Output pContents,
+	rootSchema As %DynamicObject)
+{
+    Set pContents(idx) = 1 //TODO size of subContents
+    Set pContents(idx,"type") = "object"
+    Set pContents(idx,"name") = key
+    Set pContents(idx,"alias") = key
+    
+    Set allOfIterator = value.allOf.%GetIterator()
+    While allOfIterator.%GetNext(.allOfKey, .allOfValue) {
+        If $IsObject(allOfValue."$ref") {
+            Do ..SchemaToContentsInternal(allOfValue."$ref", rootSchema, .subContents)
+        }
+        Else {
+            Set tDef = rootSchema."$defs".%Get($Piece(allOfValue."$ref","/",*))
+            Do ..SchemaToContentsInternal(tDef, rootSchema, .subContents)
         }
         Merge pContents(idx) = subContents
     }
