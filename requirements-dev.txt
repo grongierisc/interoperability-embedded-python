@@ -6,10 +6,10 @@ requests
 dataclasses-json
 wheel
 twine
+intersystems-irispython
 iris-embedded-python-wrapper
 jsonpath-ng
 pydantic>=2.0.0
 mkdocs
 pymdown-extensions
 debugpy
-intersystems-irispython
