@@ -7,7 +7,7 @@ from iop._inbound_adapter import _InboundAdapter
 from iop._outbound_adapter import _OutboundAdapter
 from iop._message import _Message
 from iop._message import _PickleMessage
-from iop._persistent_message import Field, _PersistentMessage
+from iop._persistent_message import Field, Model, _PersistentMessage
 from iop._director import _Director
 from iop._utils import _Utils
 

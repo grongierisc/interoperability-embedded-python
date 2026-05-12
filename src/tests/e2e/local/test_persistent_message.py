@@ -2,6 +2,7 @@
 from unittest.mock import MagicMock
 
 from iop import Field, PersistentMessage
+from iop import _persistent_message as persistent_message_module
 from iop._business_operation import _BusinessOperation
 from iop._dispatch import dispatch_deserializer, dispatch_serializer
 from iop._persistent_message import register_persistent_message_class
@@ -11,6 +12,14 @@ from iop._utils import _Utils
 class NativeOrderMessage(PersistentMessage):
     OrderId: str = Field(required=True, max_length=64)
     Amount: float = 0.0
+
+
+def _clear_persistent_message_runtime_caches():
+    persistent_message_module._PYTHON_TO_IRIS_CACHE.clear()
+    persistent_message_module._IRIS_TO_PYTHON_CACHE.clear()
+    persistent_message_module._IRIS_TO_PYTHON_CLASSPATH_CACHE.clear()
+    persistent_message_module._IRIS_TO_PYTHON_STRICT_CACHE.clear()
+    persistent_message_module._IRIS_PARAMETER_CACHE.clear()
 
 
 def test_persistent_message_native_round_trip():
@@ -26,6 +35,7 @@ def test_persistent_message_native_round_trip():
     assert native.OrderId == "E2E-1"
     assert native.Amount == 10.0
 
+    _clear_persistent_message_runtime_caches()
     restored = dispatch_deserializer(native)
 
     assert isinstance(restored, NativeOrderMessage)

@@ -33,20 +33,35 @@ class MyRequest(PydanticMessage):
 
 ### PersistentMessage 📦
 
-Base class for native IRIS message body classes backed by `iris-persistence`. Fields are declared directly on the Python class and registered through the `CLASSES` section of `settings.py`.
+Base class for native IRIS message body classes backed by `iris-persistence`. Fields are declared directly on the Python class.
 
 By default, a `PersistentMessage` generates an IRIS class that extends `Ens.MessageBody`, uses schema mode `extend`, and enables runtime auto-sync in extend mode.
 
 **Example:**
 ```python
-from iop import Field, PersistentMessage
+from iop import Field, Model, PersistentMessage
+
+class Address(Model, serial=True):
+    City: str
 
 class OrderMessage(PersistentMessage):
     OrderId: str = Field(required=True, max_length=64)
     Amount: float = 0.0
+    ShipTo: Address = None
 ```
 
-Register it with the IRIS classname as the `CLASSES` key:
+You can give the IRIS class name explicitly with `Meta.classname`:
+```python
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True, max_length=64)
+
+    class Meta:
+        classname = "Demo.Msg.OrderMessage"
+```
+
+If no `Meta.classname` is declared, IOP derives a reversible IRIS-safe class name from the Python fully-qualified class name. Underscores are escaped as `zU`, literal `z` as `zz`, and unsupported characters as hexadecimal markers, then decoded again for incoming messages.
+
+For migrations, you can also register the message with the IRIS classname as the `CLASSES` key:
 ```python
 import msg
 
@@ -54,6 +69,8 @@ CLASSES = {
     "Demo.Msg.OrderMessage": msg.OrderMessage,
 }
 ```
+
+When `CLASSES` is used, migration writes message metadata parameters (`IOP_MESSAGE_KIND`, `IOP_PYTHON_CLASS`, and `IOP_PYTHON_CLASSPATH`) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If `Meta.classname` conflicts with the `CLASSES` key, migration fails.
 
 ### BusinessService 🔄
 Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.

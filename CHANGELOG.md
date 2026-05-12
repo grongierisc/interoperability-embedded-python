@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add native `PersistentMessage` support backed by `iris-persistence`, including `CLASSES` registration, native IRIS message body materialization, registry-based deserialization, and default `Ens.MessageBody` schema generation in extend mode.
+- Add native `PersistentMessage` support backed by `iris-persistence`, including `CLASSES` registration, native IRIS message body materialization, class-parameter based deserialization, and default `Ens.MessageBody` schema generation in extend mode.
+- Export `Model` from `iop` for nested native persistent or serial objects inside `PersistentMessage`.
 
 ### Fixed
 - Fix json schema handling enums.
+- Fix `PersistentMessage` deserialization for IRIS-originated messages whose Python module is not already importable by storing and using `IOP_PYTHON_CLASSPATH`.
 
 ## [3.6.0] - 2026-03-30
 ### Added
