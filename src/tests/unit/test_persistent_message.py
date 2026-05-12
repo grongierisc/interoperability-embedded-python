@@ -70,10 +70,12 @@ def test_classes_registration_uses_key_as_iris_classname():
 
     assert NativeOrderMessage._classname == "Demo.Msg.NativeOrderMessage"
     assert NativeOrderMessage._parameters["IOP_MESSAGE_KIND"] == "PersistentMessage"
-    assert NativeOrderMessage._parameters["IOP_PYTHON_CLASS"].endswith(".NativeOrderMessage")
-    assert NativeOrderMessage._parameters["IOP_PYTHON_CLASSPATH"] == get_python_classpath(
-        NativeOrderMessage
+    assert NativeOrderMessage._parameters["IOP_PYTHON_CLASS"].endswith(
+        ".NativeOrderMessage"
     )
+    assert NativeOrderMessage._parameters[
+        "IOP_PYTHON_CLASSPATH"
+    ] == get_python_classpath(NativeOrderMessage)
 
 
 def test_explicit_meta_classname_conflict_raises():
@@ -182,7 +184,9 @@ def test_deserializes_native_object_with_default_convention_without_parameters()
 
 def test_load_python_class_uses_classpath_on_cold_import(tmp_path):
     app_dir = tmp_path / "app"
+    conflict_dir = tmp_path / "conflict"
     app_dir.mkdir()
+    conflict_dir.mkdir()
     module_path = app_dir / "msg.py"
     module_path.write_text(
         "from iop import Field, PersistentMessage\n"
@@ -190,10 +194,17 @@ def test_load_python_class_uses_classpath_on_cold_import(tmp_path):
         "    Value: str = Field(required=True)\n",
         encoding="utf-8",
     )
+    (conflict_dir / "msg.py").write_text(
+        "class PickleMessage:\n    pass\n",
+        encoding="utf-8",
+    )
 
     sys.modules.pop("msg", None)
     while str(app_dir) in sys.path:
         sys.path.remove(str(app_dir))
+    while str(conflict_dir) in sys.path:
+        sys.path.remove(str(conflict_dir))
+    sys.path.insert(0, str(conflict_dir))
 
     try:
         msg_cls = load_python_class("msg.ColdMessage", str(app_dir))
@@ -205,6 +216,8 @@ def test_load_python_class_uses_classpath_on_cold_import(tmp_path):
         sys.modules.pop("msg", None)
         while str(app_dir) in sys.path:
             sys.path.remove(str(app_dir))
+        while str(conflict_dir) in sys.path:
+            sys.path.remove(str(conflict_dir))
 
 
 def test_deserializes_iris_originated_message_with_class_parameters(tmp_path):

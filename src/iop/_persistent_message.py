@@ -299,8 +299,10 @@ def load_python_class(
     except ModuleNotFoundError as exc:
         if not python_classpath or not _is_missing_target_module(exc, module_name):
             raise
-        _prepend_sys_path(python_classpath)
-        module = importlib.import_module(module_name)
+        module = _import_module_from_classpath(module_name, python_classpath)
+    else:
+        if python_classpath and not hasattr(module, class_name):
+            module = _import_module_from_classpath(module_name, python_classpath)
     return getattr(module, class_name)
 
 
@@ -529,3 +531,10 @@ def _prepend_sys_path(path: str) -> None:
     while normalized_path in sys.path:
         sys.path.remove(normalized_path)
     sys.path.insert(0, normalized_path)
+    importlib.invalidate_caches()
+
+
+def _import_module_from_classpath(module_name: str, python_classpath: str):
+    _prepend_sys_path(python_classpath)
+    sys.modules.pop(module_name, None)
+    return importlib.import_module(module_name)

@@ -1,4 +1,5 @@
 """E2E (local IRIS) tests for PersistentMessage native message bodies."""
+
 from unittest.mock import MagicMock
 
 from iop import Field, PersistentMessage
