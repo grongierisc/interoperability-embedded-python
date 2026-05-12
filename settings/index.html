@@ -178,7 +178,7 @@ CLASSES = {
 <tbody>
 <tr>
 <td><code>CLASSES</code></td>
-<td>Define interoperability components</td>
+<td>Define interoperability components and native <code>PersistentMessage</code> classes</td>
 <td>✅</td>
 </tr>
 <tr>
@@ -207,6 +207,13 @@ from bs import RedditService
 CLASSES = {
     'Python.RedditService': RedditService,
     'Python.FileOperation': bo.FileOperation,
+}
+</code></pre>
+<p><code>CLASSES</code> also registers native <code>PersistentMessage</code> schemas. In this case, the key is the generated IRIS message body classname:</p>
+<pre><code class="language-python">from msg import OrderMessage
+
+CLASSES = {
+    &quot;Demo.Msg.OrderMessage&quot;: OrderMessage,
 }
 </code></pre>
 <h2 id="productions-section">PRODUCTIONS Section</h2>

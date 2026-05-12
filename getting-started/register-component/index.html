@@ -183,9 +183,11 @@
 <p>Create a <code>settings.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
 <h3 id="example-of-settingspy">Example of <code>settings.py</code></h3>
 <pre><code class="language-python">import bo
+import msg
 
 CLASSES = {
-    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
+    &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation,
+    &quot;Demo.Msg.OrderMessage&quot;: msg.OrderMessage,
 }
 </code></pre>
 <h3 id="registering-the-component">Registering the Component</h3>
@@ -233,6 +235,13 @@ Utils.migrate()
 <li><code>SCHEMAS</code>: Stores the schemas of the interoperability components.</li>
 <li><code>REMOTE_SETTINGS</code>: Stores the remote settings for migration.</li>
 </ul>
+<p><code>CLASSES</code> can also register native <code>PersistentMessage</code> classes. For these entries, the dictionary key is the generated IRIS message body classname. The Python class fields define the schema, and migration syncs it with IRIS using <code>iris-persistence</code>.</p>
+<pre><code class="language-python">from msg import OrderMessage
+
+CLASSES = {
+    &quot;Demo.Msg.OrderMessage&quot;: OrderMessage,
+}
+</code></pre>
 <p>Example:</p>
 <pre><code class="language-python">import bp
 from bo import *

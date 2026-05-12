@@ -64,6 +64,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#pydanticmessage">PydanticMessage 📦</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#persistentmessage">PersistentMessage 📦</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessservice">BusinessService 🔄</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessoperation">BusinessOperation 🔧</a>
@@ -174,6 +176,36 @@ class MyRequest(Message):
 class MyRequest(PydanticMessage):
     model : str = None
 </code></pre>
+<h3 id="persistentmessage">PersistentMessage 📦</h3>
+<p>Base class for native IRIS message body classes backed by <code>iris-persistence</code>. Fields are declared directly on the Python class.</p>
+<p>By default, a <code>PersistentMessage</code> generates an IRIS class that extends <code>Ens.MessageBody</code>, uses schema mode <code>extend</code>, and enables runtime auto-sync in extend mode.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-python">from iop import Field, Model, PersistentMessage
+
+class Address(Model, serial=True):
+    City: str
+
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True, max_length=64)
+    Amount: float = 0.0
+    ShipTo: Address = None
+</code></pre>
+<p>You can give the IRIS class name explicitly with <code>Meta.classname</code>:</p>
+<pre><code class="language-python">class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True, max_length=64)
+
+    class Meta:
+        classname = &quot;Demo.Msg.OrderMessage&quot;
+</code></pre>
+<p>If no <code>Meta.classname</code> is declared, IOP derives a reversible IRIS-safe class name from the Python fully-qualified class name. Underscores are escaped as <code>zU</code>, literal <code>z</code> as <code>zz</code>, and unsupported characters as hexadecimal markers, then decoded again for incoming messages.</p>
+<p>For migrations, you can also register the message with the IRIS classname as the <code>CLASSES</code> key:</p>
+<pre><code class="language-python">import msg
+
+CLASSES = {
+    &quot;Demo.Msg.OrderMessage&quot;: msg.OrderMessage,
+}
+</code></pre>
+<p>When <code>CLASSES</code> is used, migration writes message metadata parameters (<code>IOP_MESSAGE_KIND</code>, <code>IOP_PYTHON_CLASS</code>, and <code>IOP_PYTHON_CLASSPATH</code>) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If <code>Meta.classname</code> conflicts with the <code>CLASSES</code> key, migration fails.</p>
 <h3 id="businessservice">BusinessService 🔄</h3>
 <p>Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.</p>
 <p><strong>Key Methods:</strong></p>

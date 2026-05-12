@@ -292,6 +292,9 @@ PRODUCTIONS = [ ... ]
 <pre><code class="language-bash"># On the machine running IRIS (or via docker exec / SSH)
 python3 -m pip install iris-pex-embedded-python
 </code></pre>
+<p>Native <code>PersistentMessage</code> support also requires <code>iris-persistence</code> in that same server-side Python environment. It is installed automatically with current <code>iris-pex-embedded-python</code> package metadata; for older deployments, install it explicitly:</p>
+<pre><code class="language-bash">python3 -m pip install &quot;iris-persistence&gt;=0.1.0&quot;
+</code></pre>
 <blockquote>
 <p><strong>Recommended init sequence for a fresh remote IRIS instance:</strong>
 ```bash</p>
