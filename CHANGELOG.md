@@ -11,8 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export `Model` from `iop` for nested native persistent or serial objects inside `PersistentMessage`.
 
 ### Fixed
-- Fix json schema handling enums.
 - Fix `PersistentMessage` deserialization for IRIS-originated messages whose Python module is not already importable by storing and using `IOP_PYTHON_CLASSPATH`.
+- using ruff to fix various linting issues and improve code quality
+
+## [3.6.1] - 2026-05-12
+### Fixed
+- Fix json schema handling enums.
 
 ## [3.6.0] - 2026-03-30
 ### Added

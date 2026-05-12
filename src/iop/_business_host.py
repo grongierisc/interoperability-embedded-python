@@ -1,17 +1,23 @@
 from inspect import getsource
-from typing import Any,List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from . import _iris
 from ._common import _Common
 from ._message import _Message as Message
-from ._decorators import input_serializer_param, output_deserializer, input_deserializer, output_serializer
+from ._decorators import (
+    input_serializer_param,
+    output_deserializer,
+    input_deserializer,
+    output_serializer,
+)
 from ._dispatch import dispatch_serializer, dispatch_deserializer, dispach_message
 from ._async_request import AsyncRequest
 from ._generator_request import _GeneratorRequest
 
+
 class _BusinessHost(_Common):
     """Base class for business components that defines common methods.
-    
+
     This is a superclass for BusinessService, BusinessProcess, and BusinessOperation that
     defines common functionality like message serialization/deserialization and request handling.
     """
@@ -19,58 +25,79 @@ class _BusinessHost(_Common):
     buffer: int = 64000
     DISPATCH: List[Tuple[str, str]] = []
 
-    @input_serializer_param(1, 'request')
+    @input_serializer_param(1, "request")
     @output_deserializer
-    def send_request_sync(self, target: str, request: Union[Message, Any], 
-                         timeout: int = -1, description: Optional[str] = None) -> Any:
+    def send_request_sync(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        timeout: int = -1,
+        description: Optional[str] = None,
+    ) -> Any:
         """Send message synchronously to target component.
-        
+
         Args:
             target: Name of target component
             request: Message to send
-            timeout: Timeout in seconds, -1 means wait forever 
+            timeout: Timeout in seconds, -1 means wait forever
             description: Optional description for logging
-            
+
         Returns:
             Response from target component
-            
+
         Raises:
             TypeError: If request is invalid type
         """
-        return self.iris_handle.dispatchSendRequestSync(target, request, timeout, description)
+        return self.iris_handle.dispatchSendRequestSync(
+            target, request, timeout, description
+        )
 
-    @input_serializer_param(1, 'request')
-    def send_request_async(self, target: str, request: Union[Message, Any], 
-                          description: Optional[str] = None) -> None:
+    @input_serializer_param(1, "request")
+    def send_request_async(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        description: Optional[str] = None,
+    ) -> None:
         """Send message asynchronously to target component.
-        
+
         Args:
             target: Name of target component
             request: Message to send
             description: Optional description for logging
-            
+
         Raises:
             TypeError: If request is invalid type
         """
         return self.iris_handle.dispatchSendRequestAsync(target, request, description)
-    
-    async def send_request_async_ng(self, target: str, request: Union[Message, Any], 
-                                   timeout: int = -1, description: Optional[str] = None) -> Any:
+
+    async def send_request_async_ng(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        timeout: int = -1,
+        description: Optional[str] = None,
+    ) -> Any:
         """Send message asynchronously to target component with asyncio.
-        
+
         Args:
             target: Name of target component
             request: Message to send
-            timeout: Timeout in seconds, -1 means wait forever 
+            timeout: Timeout in seconds, -1 means wait forever
             description: Optional description for logging
-            
+
         Returns:
             Response from target component
         """
         return await AsyncRequest(target, request, timeout, description, self)
 
-    def send_generator_request(self, target: str, request: Union[Message, Any], 
-                              timeout: int = -1, description: Optional[str] = None) -> _GeneratorRequest:
+    def send_generator_request(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        timeout: int = -1,
+        description: Optional[str] = None,
+    ) -> _GeneratorRequest:
         """Send message as a generator request to target component.
         Args:
             target: Name of target component
@@ -84,42 +111,58 @@ class _BusinessHost(_Common):
         """
         return _GeneratorRequest(self, target, request, timeout, description)
 
-    def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
-                               timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:
+    def send_multi_request_sync(
+        self,
+        target_request: List[Tuple[str, Union[Message, Any]]],
+        timeout: int = -1,
+        description: Optional[str] = None,
+    ) -> List[Tuple[str, Union[Message, Any], Any, int]]:
         """Send multiple messages synchronously to target components.
-        
+
         Args:
             target_request: List of tuples (target, request) to send
-            timeout: Timeout in seconds, -1 means wait forever 
+            timeout: Timeout in seconds, -1 means wait forever
             description: Optional description for logging
-            
+
         Returns:
             List of tuples (target, request, response, status)
-            
+
         Raises:
             TypeError: If target_request is not a list of tuples
             ValueError: If target_request is empty
         """
         self._validate_target_request(target_request)
-        
-        call_list = [self._create_call_structure(target, request) 
-                    for target, request in target_request]
-        
-        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(call_list, timeout)
-        
-        return [(target_request[i][0],
-                target_request[i][1], 
-                dispatch_deserializer(response_list[i].Response),
-                response_list[i].ResponseCode) 
-                for i in range(len(target_request))]
 
-    def _validate_target_request(self, target_request: List[Tuple[str, Union[Message, Any]]]) -> None:
+        call_list = [
+            self._create_call_structure(target, request)
+            for target, request in target_request
+        ]
+
+        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(
+            call_list, timeout
+        )
+
+        return [
+            (
+                target_request[i][0],
+                target_request[i][1],
+                dispatch_deserializer(response_list[i].Response),
+                response_list[i].ResponseCode,
+            )
+            for i in range(len(target_request))
+        ]
+
+    def _validate_target_request(
+        self, target_request: List[Tuple[str, Union[Message, Any]]]
+    ) -> None:
         """Validate the target_request parameter structure."""
         if not isinstance(target_request, list):
             raise TypeError("target_request must be a list")
         if not target_request:
             raise ValueError("target_request must not be empty")
-        if not all(isinstance(item, tuple) and len(item) == 2 for item in target_request):
+        if not all(
+            isinstance(item, tuple) and len(item) == 2 for item in target_request
+        ):
             raise TypeError("target_request must contain tuples of (target, request)")
 
     def _create_call_structure(self, target: str, request: Union[Message, Any]) -> Any:
@@ -133,7 +176,7 @@ class _BusinessHost(_Common):
     @staticmethod
     def OnGetConnections() -> Optional[List[str]]:
         """The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
-        calls for the class. Implement this method to allow connections between components to show up in 
+        calls for the class. Implement this method to allow connections between components to show up in
         the interoperability UI.
 
         Returns:
@@ -141,25 +184,34 @@ class _BusinessHost(_Common):
         """
         return None
 
-    def SendRequestSync(self, target: str, request: Union[Message, Any], 
-                       timeout: int = -1, description: Optional[str] = None) -> Any:
+    def SendRequestSync(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        timeout: int = -1,
+        description: Optional[str] = None,
+    ) -> Any:
         """DEPRECATED: use send_request_sync.
-        
+
         Args:
             target: The target of the request
             request: The request to send
-            timeout: The timeout in seconds, -1 means wait forever 
+            timeout: The timeout in seconds, -1 means wait forever
             description: A string that describes the request
-            
+
         Returns:
             The response from the target component
         """
         return self.send_request_sync(target, request, timeout, description)
-        
-    def SendRequestAsync(self, target: str, request: Union[Message, Any], 
-                        description: Optional[str] = None) -> None:
+
+    def SendRequestAsync(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        description: Optional[str] = None,
+    ) -> None:
         """DEPRECATED: use send_request_async.
-        
+
         Args:
             target: The target of the request
             request: The request to send
@@ -170,24 +222,24 @@ class _BusinessHost(_Common):
     @staticmethod
     def getAdapterType() -> Optional[str]:
         """DEPRECATED: use get_adapter_type.
-        
+
         Returns:
             Name of the registered Adapter
         """
         return
-        
+
     @staticmethod
     def get_adapter_type() -> Optional[str]:
         """Returns the name of the registered Adapter.
-        
+
         Returns:
             Name of the registered Adapter
         """
-        return 
-    
+        return
+
     def on_get_connections(self) -> List[str]:
         """The OnGetConnections() method returns all of the targets of any SendRequestSync or SendRequestAsync
-        calls for the class. Implement this method to allow connections between components to show up in 
+        calls for the class. Implement this method to allow connections between components to show up in
         the interoperability UI.
 
         Returns:
@@ -199,20 +251,25 @@ class _BusinessHost(_Common):
         # get the source code of the class
         source = getsource(self.__class__)
         # find all invocations of send_request_sync and send_request_async
-        for method in ['send_request_sync', 'send_request_async', 'SendRequestSync', 'SendRequestAsync']:
+        for method in [
+            "send_request_sync",
+            "send_request_async",
+            "SendRequestSync",
+            "SendRequestAsync",
+        ]:
             i = source.find(method)
             while i != -1:
                 j = source.find("(", i)
                 if j != -1:
                     k = source.find(",", j)
                     if k != -1:
-                        target = source[j+1:k]
+                        target = source[j + 1 : k]
                         if target.find("=") != -1:
                             # it's a keyword argument, remove the keyword
-                            target = target[target.find("=")+1:].strip()
+                            target = target[target.find("=") + 1 :].strip()
                         if target not in target_list:
                             target_list.append(target)
-                i = source.find(method, i+1)
+                i = source.find(method, i + 1)
 
         for target in target_list:
             # if target is a string, remove the quotes
@@ -226,13 +283,18 @@ class _BusinessHost(_Common):
                 try:
                     if target.find("self.") != -1:
                         # it's a class variable
-                        target_list[target_list.index(target)] = getattr(self, target[target.find(".")+1:])
+                        target_list[target_list.index(target)] = getattr(
+                            self, target[target.find(".") + 1 :]
+                        )
                     elif target.find(".") != -1:
                         # it's a class variable
-                        target_list[target_list.index(target)] = getattr(getattr(self, target[:target.find(".")]), target[target.find(".")+1:])
+                        target_list[target_list.index(target)] = getattr(
+                            getattr(self, target[: target.find(".")]),
+                            target[target.find(".") + 1 :],
+                        )
                     else:
                         target_list[target_list.index(target)] = getattr(self, target)
-                except Exception as e:
+                except Exception:
                     pass
 
         return target_list
@@ -242,11 +304,15 @@ class _BusinessHost(_Common):
         """For internal use only."""
         self._gen = dispach_message(self, request)
         # check if self._gen is a generator
-        if not hasattr(self._gen, '__iter__'):
-            raise TypeError("Expected a generator or iterable object, got: {}".format(type(self._gen).__name__))
-        
+        if not hasattr(self._gen, "__iter__"):
+            raise TypeError(
+                "Expected a generator or iterable object, got: {}".format(
+                    type(self._gen).__name__
+                )
+            )
+
         return _iris.get_iris().IOP.Generator.Message.Ack._New()
-    
+
     @output_serializer
     def _dispatch_generator_poll(self) -> Any:
         """For internal use only."""

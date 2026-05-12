@@ -103,4 +103,4 @@ class _LocalDirector(_DirectorProtocol):
 
     @property
     def namespace(self) -> str:
-        return os.getenv('IRISNAMESPACE', 'not set')
+        return os.getenv("IRISNAMESPACE", "not set")

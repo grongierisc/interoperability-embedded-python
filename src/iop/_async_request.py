@@ -5,6 +5,7 @@ from . import _iris
 from ._dispatch import dispatch_deserializer, dispatch_serializer
 from ._message import _Message as Message
 
+
 class AsyncRequest(asyncio.Future):
     _message_header_id: int = 0
     _queue_name: str = ""
@@ -12,8 +13,14 @@ class AsyncRequest(asyncio.Future):
     _response: Any = None
     _done: bool = False
 
-    def __init__(self, target: str, request: Union[Message, Any], 
-                 timeout: int = -1, description: Optional[str] = None, host: Optional[Any] = None) -> None:
+    def __init__(
+        self,
+        target: str,
+        request: Union[Message, Any],
+        timeout: int = -1,
+        description: Optional[str] = None,
+        host: Optional[Any] = None,
+    ) -> None:
         super().__init__()
         self.target = target
         self.request = request
@@ -35,9 +42,15 @@ class AsyncRequest(asyncio.Future):
 
         # send request
         self._iris_handle.dispatchSendRequestAsyncNG(
-            self.target, request, self.timeout, self.description,
-            message_header_id, queue_name, end_time)
-        
+            self.target,
+            request,
+            self.timeout,
+            self.description,
+            message_header_id,
+            queue_name,
+            end_time,
+        )
+
         # get byref values
         self._message_header_id = message_header_id.value
         self._queue_name = queue_name.value
@@ -52,16 +65,22 @@ class AsyncRequest(asyncio.Future):
     def is_done(self) -> None:
         iris = _iris.get_iris()
         response = iris.ref()
-        status = self._iris_handle.dispatchIsRequestDone(self.timeout, self._end_time,
-                                                       self._queue_name, self._message_header_id,
-                                                       response)
-        
+        status = self._iris_handle.dispatchIsRequestDone(
+            self.timeout,
+            self._end_time,
+            self._queue_name,
+            self._message_header_id,
+            response,
+        )
+
         self._response = dispatch_deserializer(response.value)
 
-        if status == 2: # message found
+        if status == 2:  # message found
             self._done = True
-        elif status == 1: # message not found
+        elif status == 1:  # message not found
             pass
         else:
             self._done = True
-            self.set_exception(RuntimeError(iris.system.Status.GetOneStatusText(status)))
+            self.set_exception(
+                RuntimeError(iris.system.Status.GetOneStatusText(status))
+            )

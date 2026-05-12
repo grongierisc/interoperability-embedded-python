@@ -12,7 +12,6 @@ Or pass a RemoteSettings dict directly (same shape as REMOTE_SETTINGS in setting
 
 from __future__ import annotations
 
-import json
 import os
 import signal
 import time
@@ -22,6 +21,7 @@ import requests
 import urllib3
 
 from ._director_protocol import DirectorProtocol as _DirectorProtocol  # noqa: F401 --- IGNORE ---
+
 
 class _RemoteDirector(_DirectorProtocol):
     """Implements DirectorProtocol over the IOP REST API."""
@@ -59,26 +59,35 @@ class _RemoteDirector(_DirectorProtocol):
     def _get(self, path: str, params: Optional[dict] = None) -> Any:
         p = {"namespace": self._namespace, **(params or {})}
         resp = requests.get(
-            f"{self._base}{path}", params=p, auth=self._auth,
-            verify=self._verify, timeout=30,
+            f"{self._base}{path}",
+            params=p,
+            auth=self._auth,
+            verify=self._verify,
+            timeout=30,
         )
         self._raise_for_status(resp)
         return resp.json()
 
     def _post(self, path: str, body: Optional[dict] = None) -> Any:
         resp = requests.post(
-            f"{self._base}{path}", json=(body or {}),
+            f"{self._base}{path}",
+            json=(body or {}),
             params={"namespace": self._namespace},
-            auth=self._auth, verify=self._verify, timeout=30,
+            auth=self._auth,
+            verify=self._verify,
+            timeout=30,
         )
         self._raise_for_status(resp)
         return resp.json()
 
     def _put(self, path: str, body: Optional[dict] = None) -> Any:
         resp = requests.put(
-            f"{self._base}{path}", json=(body or {}),
+            f"{self._base}{path}",
+            json=(body or {}),
             params={"namespace": self._namespace},
-            auth=self._auth, verify=self._verify, timeout=30,
+            auth=self._auth,
+            verify=self._verify,
+            timeout=30,
         )
         self._raise_for_status(resp)
         return resp.json()
@@ -204,7 +213,7 @@ class _RemoteDirector(_DirectorProtocol):
     def test_component(
         self,
         target: Optional[str],
-        message=None,           # ignored remotely — not serialisable over HTTP
+        message=None,  # ignored remotely — not serialisable over HTTP
         classname: Optional[str] = None,
         body: "str | dict | None" = None,
         restart: bool = True,
@@ -235,9 +244,7 @@ class _RemoteDirector(_DirectorProtocol):
     # ------------------------------------------------------------------
 
     def export_production(self, production_name: str) -> dict:
-        return self._check_error(
-            self._get("/export", {"production": production_name})
-        )
+        return self._check_error(self._get("/export", {"production": production_name}))
 
     # ------------------------------------------------------------------
     # Migrate
@@ -257,33 +264,33 @@ class _RemoteDirector(_DirectorProtocol):
         folder = os.path.dirname(path)
 
         # Try to read optional keys from the settings file
-        package = 'python'
-        remote_folder = ''
+        package = "python"
+        remote_folder = ""
         try:
-            spec = importlib.util.spec_from_file_location('_iop_migrate_settings', path)
+            spec = importlib.util.spec_from_file_location("_iop_migrate_settings", path)
             mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
             spec.loader.exec_module(mod)  # type: ignore[union-attr]
-            rs = getattr(mod, 'REMOTE_SETTINGS', {})
-            package = rs.get('package', package)
-            remote_folder = rs.get('remote_folder', remote_folder)
+            rs = getattr(mod, "REMOTE_SETTINGS", {})
+            package = rs.get("package", package)
+            remote_folder = rs.get("remote_folder", remote_folder)
         except Exception:
             pass
 
         body: List[dict] = []
         for dirpath, _, filenames in os.walk(folder):
             for fname in sorted(filenames):
-                if not (fname.endswith('.py') or fname.endswith('.cls')):
+                if not (fname.endswith(".py") or fname.endswith(".cls")):
                     continue
                 full = os.path.join(dirpath, fname)
-                rel = os.path.relpath(full, folder).replace(os.sep, '/')
-                with open(full, encoding='utf-8') as fh:
-                    body.append({'name': rel, 'data': fh.read()})
+                rel = os.path.relpath(full, folder).replace(os.sep, "/")
+                with open(full, encoding="utf-8") as fh:
+                    body.append({"name": rel, "data": fh.read()})
 
         payload = {
-            'namespace': self._namespace,
-            'package': package,
-            'remote_folder': remote_folder,
-            'body': body,
+            "namespace": self._namespace,
+            "package": package,
+            "remote_folder": remote_folder,
+            "body": body,
         }
         resp = requests.put(
             f"{self._base}/migrate",
@@ -313,13 +320,13 @@ class _RemoteDirector(_DirectorProtocol):
         if path is None:
             try:
                 paths_to_upload.append(
-                    str(importlib.resources.files('iop').joinpath('cls'))
+                    str(importlib.resources.files("iop").joinpath("cls"))
                 )
             except ModuleNotFoundError:
                 pass
             try:  # retrocompatibility with the grongier.pex package
                 paths_to_upload.append(
-                    str(importlib.resources.files('grongier').joinpath('cls'))
+                    str(importlib.resources.files("grongier").joinpath("cls"))
                 )
             except ModuleNotFoundError:
                 pass
@@ -332,11 +339,15 @@ class _RemoteDirector(_DirectorProtocol):
         for cls_root in paths_to_upload:
             for dirpath, _, filenames in os.walk(cls_root):
                 for fname in sorted(filenames):
-                    if not fname.endswith('.cls'):
+                    if not fname.endswith(".cls"):
                         continue
                     full_path = os.path.join(dirpath, fname)
-                    doc_name = os.path.relpath(full_path, cls_root).replace(os.sep, '.').replace('/', '.')
-                    with open(full_path, encoding='utf-8') as fh:
+                    doc_name = (
+                        os.path.relpath(full_path, cls_root)
+                        .replace(os.sep, ".")
+                        .replace("/", ".")
+                    )
+                    with open(full_path, encoding="utf-8") as fh:
                         content = fh.read().splitlines()
                     resp = requests.put(
                         f"{atelier_base}/{self._namespace}/doc/{doc_name}",
@@ -364,10 +375,10 @@ class _RemoteDirector(_DirectorProtocol):
         )
         self._raise_for_status(resp)
         result = resp.json()
-        for line in result.get('console', []):
+        for line in result.get("console", []):
             if line:
                 print(line)
-        errors = result.get('status', {}).get('errors', [])
+        errors = result.get("status", {}).get("errors", [])
         if errors:
             raise RuntimeError(f"Compilation errors: {errors}")
         print(
@@ -390,6 +401,7 @@ class _RemoteDirector(_DirectorProtocol):
 # Shared helpers
 # ------------------------------------------------------------------
 
+
 def _print_log_entry(entry: dict) -> None:
     print(
         entry.get("time_logged", ""),
@@ -408,7 +420,10 @@ def _load_remote_settings_from_file(settings_path: str) -> Optional[Dict[str, An
     """Load a ``REMOTE_SETTINGS`` dict from an arbitrary settings.py file."""
     try:
         import importlib.util
-        spec = importlib.util.spec_from_file_location("_iop_settings_remote", settings_path)
+
+        spec = importlib.util.spec_from_file_location(
+            "_iop_settings_remote", settings_path
+        )
         mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
         spec.loader.exec_module(mod)  # type: ignore[union-attr]
         remote = getattr(mod, "REMOTE_SETTINGS", None)
@@ -443,14 +458,16 @@ def get_remote_settings(
             "verify_ssl": verify_raw.lower() not in ("0", "false"),
         }
 
-    for path in filter(None, [
-        explicit_settings_path,
-        os.environ.get("IOP_SETTINGS"),
-        fallback_settings_path,
-    ]):
+    for path in filter(
+        None,
+        [
+            explicit_settings_path,
+            os.environ.get("IOP_SETTINGS"),
+            fallback_settings_path,
+        ],
+    ):
         result = _load_remote_settings_from_file(path)
         if result:
             return result
 
     return None
-

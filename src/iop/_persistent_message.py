@@ -6,9 +6,13 @@ import os
 import sys
 from typing import Any, Optional
 
-from iris_persistence import Field, Model
+from iris_persistence import Field as Field
+from iris_persistence import Model
 from iris_persistence.models import ModelMeta
-from iris_persistence.query import _build_model_from_iris_obj, _materialize_related_value
+from iris_persistence.query import (
+    _build_model_from_iris_obj,
+    _materialize_related_value,
+)
 from iris_persistence.runtime import get_runtime
 
 
@@ -40,7 +44,9 @@ class _PersistentMessageMeta(ModelMeta):
             cls._iop_persistent_message_abstract = True
             return
 
-        if not any(getattr(base, "_iop_persistent_message_base", False) for base in bases):
+        if not any(
+            getattr(base, "_iop_persistent_message_base", False) for base in bases
+        ):
             cls._iop_persistent_message_base = True
             cls._iop_persistent_message_abstract = True
             return
@@ -137,7 +143,9 @@ def python_classname_to_iris_classname(python_classname: str) -> str:
     """Encode a Python FQCN as an IRIS-safe classname."""
     if not python_classname:
         raise ValueError("Python classname cannot be empty")
-    return ".".join(_encode_iris_identifier(part) for part in python_classname.split("."))
+    return ".".join(
+        _encode_iris_identifier(part) for part in python_classname.split(".")
+    )
 
 
 def iris_classname_to_python_classname(iris_classname: str) -> str:
@@ -171,9 +179,13 @@ def register_persistent_message_class(
         msg_cls.sync_schema()
 
 
-def serialize_persistent_message(message: _PersistentMessage, is_generator: bool = False) -> Any:
+def serialize_persistent_message(
+    message: _PersistentMessage, is_generator: bool = False
+) -> Any:
     if is_generator:
-        raise TypeError("PersistentMessage cannot be used as a generator start message.")
+        raise TypeError(
+            "PersistentMessage cannot be used as a generator start message."
+        )
 
     msg_cls = type(message)
     iris_classname = resolve_iris_classname(msg_cls)
@@ -188,7 +200,9 @@ def serialize_persistent_message(message: _PersistentMessage, is_generator: bool
         if field_name not in message.__dict__:
             continue
         value = getattr(message, field_name)
-        materialized = _materialize_related_value(runtime, model_field.declared_type, value)
+        materialized = _materialize_related_value(
+            runtime, model_field.declared_type, value
+        )
         runtime.inject_iris_value(
             iris_obj,
             field_name,
@@ -272,7 +286,9 @@ def resolve_python_classname(iris_classname: str) -> Optional[str]:
     return python_classname
 
 
-def load_python_class(python_classname: str, python_classpath: Optional[str] = None) -> type:
+def load_python_class(
+    python_classname: str, python_classpath: Optional[str] = None
+) -> type:
     module_name, _, class_name = python_classname.rpartition(".")
     if not module_name:
         raise PersistentMessageError(
@@ -396,7 +412,9 @@ def _resolve_python_message_metadata(
 
     kind = get_iris_class_parameter(iris_classname, MESSAGE_KIND_PARAMETER)
     python_classname = get_iris_class_parameter(iris_classname, PYTHON_CLASS_PARAMETER)
-    python_classpath = get_iris_class_parameter(iris_classname, PYTHON_CLASSPATH_PARAMETER)
+    python_classpath = get_iris_class_parameter(
+        iris_classname, PYTHON_CLASSPATH_PARAMETER
+    )
     strict = kind == MESSAGE_KIND_VALUE or bool(python_classname)
 
     if not python_classname:

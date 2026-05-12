@@ -1,8 +1,10 @@
 import os
-from typing import Optional
+from typing import Any, Optional
 
-def get_iris(namespace: Optional[str]=None)->'iris': # type: ignore
+
+def get_iris(namespace: Optional[str] = None) -> Any:
     if namespace:
-        os.environ['IRISNAMESPACE'] = namespace
+        os.environ["IRISNAMESPACE"] = namespace
     import iris
+
     return iris

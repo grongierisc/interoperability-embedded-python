@@ -1,14 +1,15 @@
 import importlib
-from typing import Any, List, Optional, Union, Tuple
+from typing import Any, List, Tuple
 
 from ._business_host import _BusinessHost
-from ._decorators import input_deserializer, output_serializer, input_serializer, output_deserializer
+from ._decorators import input_deserializer, output_serializer
 from ._dispatch import create_dispatch, dispach_message
+
 
 class _BusinessOperation(_BusinessHost):
     """Business operation component that handles outbound communication.
-    
-    Responsible for sending messages to external systems. Can optionally use an 
+
+    Responsible for sending messages to external systems. Can optionally use an
     adapter to handle the outbound messaging protocol.
     """
 
@@ -18,13 +19,13 @@ class _BusinessOperation(_BusinessHost):
 
     def on_message(self, request: Any) -> Any:
         """Handle incoming messages.
-        
+
         Process messages received from other production components and either
         send to external system or forward to another component.
 
         Args:
             request: The incoming message
-            
+
         Returns:
             Response message
         """
@@ -39,8 +40,10 @@ class _BusinessOperation(_BusinessHost):
     def _set_iris_handles(self, handle_current: Any, handle_partner: Any) -> None:
         """For internal use only."""
         self.iris_handle = handle_current
-        if type(handle_partner).__module__.find('iris') == 0:
-            if handle_partner._IsA("Grongier.PEX.OutboundAdapter") or handle_partner._IsA("IOP.OutboundAdapter"):
+        if type(handle_partner).__module__.find("iris") == 0:
+            if handle_partner._IsA(
+                "Grongier.PEX.OutboundAdapter"
+            ) or handle_partner._IsA("IOP.OutboundAdapter"):
                 module = importlib.import_module(handle_partner.GetModule())
                 handle_partner = getattr(module, handle_partner.GetClassname())()
             self.Adapter = self.adapter = handle_partner
@@ -56,7 +59,7 @@ class _BusinessOperation(_BusinessHost):
     @output_serializer
     def _dispatch_on_message(self, request: Any) -> Any:
         """For internal use only."""
-        return dispach_message(self,request)
+        return dispach_message(self, request)
 
     def OnMessage(self, request: Any) -> Any:
         """DEPRECATED : use on_message
@@ -72,4 +75,3 @@ class _BusinessOperation(_BusinessHost):
         The response object
         """
         return
-    

@@ -32,9 +32,11 @@ class CommandType(Enum):
     HELP = auto()
     UPDATE = auto()
 
+
 @dataclass
 class CommandArgs:
     """Container for parsed command arguments"""
+
     default: Optional[str] = None
     list: bool = False
     start: Optional[str] = None
@@ -56,13 +58,14 @@ class CommandArgs:
     remote_settings: Optional[str] = None
     update: bool = False
 
+
 class Command:
     def __init__(self, args: CommandArgs):
         self.args = args
 
-        if self.args.namespace and self.args.namespace != 'not_set':
+        if self.args.namespace and self.args.namespace != "not_set":
             # set environment variable IRISNAMESPACE
-            os.environ['IRISNAMESPACE'] = self.args.namespace
+            os.environ["IRISNAMESPACE"] = self.args.namespace
 
         # Resolve director: remote when IOP_URL / IOP_SETTINGS env vars are set
         # or when the -m settings.py file contains REMOTE_SETTINGS.
@@ -86,8 +89,8 @@ class Command:
                 fallback_settings_path=migrate_path,
             )
             if remote_settings:
-                if self.args.namespace and self.args.namespace != 'not_set':
-                    remote_settings['namespace'] = self.args.namespace
+                if self.args.namespace and self.args.namespace != "not_set":
+                    remote_settings["namespace"] = self.args.namespace
                 self.director = _RemoteDirector(remote_settings)
                 self._is_remote = True
             else:
@@ -95,26 +98,28 @@ class Command:
                 self._is_remote = False
 
     def _has_primary_command(self) -> bool:
-        return any([
-            self.args.default,
-            self.args.list,
-            self.args.start,
-            self.args.stop,
-            self.args.kill,
-            self.args.restart,
-            self.args.status,
-            self.args.test,
-            self.args.version,
-            self.args.export,
-            self.args.migrate,
-            self.args.log,
-            self.args.init,
-            self.args.update,
-        ])
+        return any(
+            [
+                self.args.default,
+                self.args.list,
+                self.args.start,
+                self.args.stop,
+                self.args.kill,
+                self.args.restart,
+                self.args.status,
+                self.args.test,
+                self.args.version,
+                self.args.export,
+                self.args.migrate,
+                self.args.log,
+                self.args.init,
+                self.args.update,
+            ]
+        )
 
     def execute(self) -> None:
-        if self.args.namespace == 'not_set' and not self._has_primary_command():
-            print(os.getenv('IRISNAMESPACE', 'not set'))
+        if self.args.namespace == "not_set" and not self._has_primary_command():
+            print(os.getenv("IRISNAMESPACE", "not set"))
             return
 
         command_type = self._determine_command_type()
@@ -140,24 +145,38 @@ class Command:
             handler()
 
     def _determine_command_type(self) -> CommandType:
-        if self.args.default: return CommandType.DEFAULT
-        if self.args.list: return CommandType.LIST
-        if self.args.start: return CommandType.START
-        if self.args.stop: return CommandType.STOP
-        if self.args.kill: return CommandType.KILL
-        if self.args.restart: return CommandType.RESTART
-        if self.args.status: return CommandType.STATUS
-        if self.args.test: return CommandType.TEST
-        if self.args.version: return CommandType.VERSION
-        if self.args.export: return CommandType.EXPORT
-        if self.args.migrate: return CommandType.MIGRATE
-        if self.args.log: return CommandType.LOG
-        if self.args.init: return CommandType.INIT
-        if self.args.update: return CommandType.UPDATE
+        if self.args.default:
+            return CommandType.DEFAULT
+        if self.args.list:
+            return CommandType.LIST
+        if self.args.start:
+            return CommandType.START
+        if self.args.stop:
+            return CommandType.STOP
+        if self.args.kill:
+            return CommandType.KILL
+        if self.args.restart:
+            return CommandType.RESTART
+        if self.args.status:
+            return CommandType.STATUS
+        if self.args.test:
+            return CommandType.TEST
+        if self.args.version:
+            return CommandType.VERSION
+        if self.args.export:
+            return CommandType.EXPORT
+        if self.args.migrate:
+            return CommandType.MIGRATE
+        if self.args.log:
+            return CommandType.LOG
+        if self.args.init:
+            return CommandType.INIT
+        if self.args.update:
+            return CommandType.UPDATE
         return CommandType.HELP
 
     def _handle_default(self) -> None:
-        if self.args.default == 'not_set':
+        if self.args.default == "not_set":
             print(self.director.get_default_production())
         elif self.args.default is not None:
             self.director.set_default_production(self.args.default)
@@ -167,12 +186,15 @@ class Command:
         print(json.dumps(dikt, indent=4))
 
     def _handle_start(self) -> None:
-        if self.args.start != 'not_set':
+        if self.args.start != "not_set":
             production_name = self.args.start
         else:
             production_name = self.director.get_default_production()
             if not production_name or production_name == "Not defined":
-                print("Error: no production name provided and no default production is defined.", file=sys.stderr)
+                print(
+                    "Error: no production name provided and no default production is defined.",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
         if self.args.detach:
             self.director.start_production(production_name)
@@ -197,16 +219,16 @@ class Command:
         self.director.update_production()
 
     def _handle_test(self) -> None:
-        test_name = None if self.args.test == 'not_set' else self.args.test
-        classname = self.args.classname if self.args.classname != 'not_set' else None
-        body = self.args.body if self.args.body != 'not_set' else None
+        test_name = None if self.args.test == "not_set" else self.args.test
+        classname = self.args.classname if self.args.classname != "not_set" else None
+        body = self.args.body if self.args.body != "not_set" else None
 
         # Support @filename.json body expansion
-        if body and body.startswith('@'):
+        if body and body.startswith("@"):
             filepath = body[1:]
             if not os.path.isabs(filepath):
                 filepath = os.path.join(os.getcwd(), filepath)
-            with open(filepath, 'r', encoding='utf-8') as fh:
+            with open(filepath, "r", encoding="utf-8") as fh:
                 body = fh.read()
 
         response = self.director.test_component(
@@ -215,10 +237,14 @@ class Command:
         print(_format_test_response(response))
 
     def _handle_version(self) -> None:
-        print(version('iris-pex-embedded-python'))
+        print(version("iris-pex-embedded-python"))
 
     def _handle_export(self) -> None:
-        export_name = self.director.get_default_production() if self.args.export == 'not_set' else self.args.export
+        export_name = (
+            self.director.get_default_production()
+            if self.args.export == "not_set"
+            else self.args.export
+        )
         print(json.dumps(self.director.export_production(export_name), indent=4))
 
     def _handle_migrate(self) -> None:
@@ -229,13 +255,13 @@ class Command:
             self.director.migrate(migrate_path)
 
     def _handle_log(self) -> None:
-        if self.args.log == 'not_set':
+        if self.args.log == "not_set":
             self.director.log_production()
         elif self.args.log is not None:
             self.director.log_production_top(int(self.args.log))
 
     def _handle_init(self) -> None:
-        path = None if self.args.init == 'not_set' else self.args.init
+        path = None if self.args.init == "not_set" else self.args.init
         self.director.setup(path)
 
     def _handle_help(self) -> None:
@@ -247,6 +273,7 @@ class Command:
             print(f"\nNamespace: {self.director.namespace}")
         except Exception:
             logging.warning("Could not retrieve default production.")
+
 
 def _format_test_response(response) -> str:
     """Pretty-print any test_component() return value.
@@ -294,6 +321,7 @@ def _format_test_response(response) -> str:
     # Python dataclass / arbitrary object
     try:
         import dataclasses
+
         if dataclasses.is_dataclass(response):
             return json.dumps(dataclasses.asdict(response), indent=4)
     except Exception:
@@ -316,41 +344,84 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser = main_parser.add_mutually_exclusive_group()
-    
+
     # Main commands
-    parser.add_argument('-d', '--default', help='set the default production', nargs='?', const='not_set')
-    parser.add_argument('-l', '--list', help='list productions', action='store_true')
-    parser.add_argument('-s', '--start', help='start a production', nargs='?', const='not_set')
-    parser.add_argument('-S', '--stop', help='stop a production', action='store_true')
-    parser.add_argument('-k', '--kill', help='kill a production', action='store_true')
-    parser.add_argument('-r', '--restart', help='restart a production', action='store_true')
-    parser.add_argument('-x', '--status', help='status a production', action='store_true')
-    parser.add_argument('-m', '-M', '--migrate', help='migrate production and classes with settings file')
-    parser.add_argument('-e', '--export', help='export a production', nargs='?', const='not_set')
-    parser.add_argument('-v', '--version', help='display version', action='store_true')
-    parser.add_argument('-L', '--log', help='display log', nargs='?', const='not_set')
-    parser.add_argument('-i', '--init', help='init the pex module in iris', nargs='?', const='not_set')
-    parser.add_argument('-t', '--test', help='test the pex module in iris', nargs='?', const='not_set')
-    parser.add_argument('-u', '--update', help='update a production', action='store_true')
+    parser.add_argument(
+        "-d", "--default", help="set the default production", nargs="?", const="not_set"
+    )
+    parser.add_argument("-l", "--list", help="list productions", action="store_true")
+    parser.add_argument(
+        "-s", "--start", help="start a production", nargs="?", const="not_set"
+    )
+    parser.add_argument("-S", "--stop", help="stop a production", action="store_true")
+    parser.add_argument("-k", "--kill", help="kill a production", action="store_true")
+    parser.add_argument(
+        "-r", "--restart", help="restart a production", action="store_true"
+    )
+    parser.add_argument(
+        "-x", "--status", help="status a production", action="store_true"
+    )
+    parser.add_argument(
+        "-m",
+        "-M",
+        "--migrate",
+        help="migrate production and classes with settings file",
+    )
+    parser.add_argument(
+        "-e", "--export", help="export a production", nargs="?", const="not_set"
+    )
+    parser.add_argument("-v", "--version", help="display version", action="store_true")
+    parser.add_argument("-L", "--log", help="display log", nargs="?", const="not_set")
+    parser.add_argument(
+        "-i", "--init", help="init the pex module in iris", nargs="?", const="not_set"
+    )
+    parser.add_argument(
+        "-t", "--test", help="test the pex module in iris", nargs="?", const="not_set"
+    )
+    parser.add_argument(
+        "-u", "--update", help="update a production", action="store_true"
+    )
 
     # Command groups
-    start = main_parser.add_argument_group('start arguments')
-    start.add_argument('-D', '--detach', help='start a production in detach mode', action='store_true')
-    
-    test = main_parser.add_argument_group('test arguments')
-    test.add_argument('-C', '--classname', help='test classname', nargs='?', const='not_set')
-    test.add_argument('-B', '--body', help='test body (JSON string or @path/to/file.json)', nargs='?', const='not_set')
+    start = main_parser.add_argument_group("start arguments")
+    start.add_argument(
+        "-D", "--detach", help="start a production in detach mode", action="store_true"
+    )
 
-    migrate = main_parser.add_argument_group('migrate arguments')
-    migrate.add_argument('--force-local', help='force local mode, skip remote even if REMOTE_SETTINGS or IOP_URL is present', action='store_true')
+    test = main_parser.add_argument_group("test arguments")
+    test.add_argument(
+        "-C", "--classname", help="test classname", nargs="?", const="not_set"
+    )
+    test.add_argument(
+        "-B",
+        "--body",
+        help="test body (JSON string or @path/to/file.json)",
+        nargs="?",
+        const="not_set",
+    )
 
-    remote = main_parser.add_argument_group('remote arguments')
-    remote.add_argument('-R', '--remote-settings', help='path to a settings.py containing REMOTE_SETTINGS (overrides IOP_SETTINGS env var)', metavar='FILE')
+    migrate = main_parser.add_argument_group("migrate arguments")
+    migrate.add_argument(
+        "--force-local",
+        help="force local mode, skip remote even if REMOTE_SETTINGS or IOP_URL is present",
+        action="store_true",
+    )
 
-    namespace = main_parser.add_argument_group('namespace arguments')
-    namespace.add_argument('-n', '--namespace', help='set namespace', nargs='?', const='not_set')
-    
+    remote = main_parser.add_argument_group("remote arguments")
+    remote.add_argument(
+        "-R",
+        "--remote-settings",
+        help="path to a settings.py containing REMOTE_SETTINGS (overrides IOP_SETTINGS env var)",
+        metavar="FILE",
+    )
+
+    namespace = main_parser.add_argument_group("namespace arguments")
+    namespace.add_argument(
+        "-n", "--namespace", help="set namespace", nargs="?", const="not_set"
+    )
+
     return main_parser
+
 
 def main(argv=None) -> None:
     parser = create_parser()
@@ -362,7 +433,11 @@ def main(argv=None) -> None:
         command.execute()
     except requests.exceptions.ConnectionError as exc:
         url = os.environ.get("IOP_URL", "")
-        msg = f"Connection error: could not reach {url!r}" if url else f"Connection error: {exc}"
+        msg = (
+            f"Connection error: could not reach {url!r}"
+            if url
+            else f"Connection error: {exc}"
+        )
         print(f"Error: {msg}", file=sys.stderr)
         sys.exit(1)
     except requests.exceptions.HTTPError as exc:
@@ -373,5 +448,6 @@ def main(argv=None) -> None:
         sys.exit(1)
     sys.exit(0)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
