@@ -116,13 +116,25 @@ def create_dispatch(host: Any) -> None:
     The dispatch table consists of tuples of (fully_qualified_class_name, method_name).
     Only methods that take a single typed parameter are considered as handlers.
     """
-    if len(host.DISPATCH) > 0:
-        return
+    dispatch = _declared_dispatch(host)
 
     for method_name in get_callable_methods(host):
         handler_info = get_handler_info(host, method_name)
-        if handler_info:
-            host.DISPATCH.append(handler_info)
+        if handler_info and handler_info not in dispatch:
+            dispatch.append(handler_info)
+
+    host.DISPATCH = dispatch
+
+
+def _declared_dispatch(host: Any) -> List[Tuple[str, str]]:
+    if "DISPATCH" in getattr(host, "__dict__", {}):
+        return list(host.__dict__["DISPATCH"])
+
+    class_dispatch = host.__class__.__dict__.get("DISPATCH")
+    if class_dispatch is not None:
+        return list(class_dispatch)
+
+    return []
 
 
 def get_callable_methods(host: Any) -> List[str]:

@@ -1,4 +1,5 @@
 """Unit tests for _BusinessOperation — no live IRIS instance required."""
+
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -15,7 +16,7 @@ def operation():
 
 
 def test_message_handling(operation):
-    request = SimpleMessage(integer=1, string='test')
+    request = SimpleMessage(integer=1, string="test")
     assert operation.on_message(request) is None
     assert operation.OnMessage(request) is None
 
@@ -33,7 +34,7 @@ def test_adapter_handling():
     mock_partner.GetModule.return_value = "some.module"
     mock_partner.GetClassname.return_value = "SomeAdapter"
 
-    with patch('importlib.import_module') as mock_import:
+    with patch("importlib.import_module") as mock_import:
         mock_module = MagicMock()
         mock_import.return_value = mock_module
         op._set_iris_handles(mock_current, mock_partner)
@@ -49,7 +50,7 @@ def test_dispatch_methods(operation):
 
     operation._dispatch_on_init(mock_host)
 
-    request = SimpleMessage(integer=1, string='test')
+    request = SimpleMessage(integer=1, string="test")
     operation._dispatch_on_message(request)
 
     operation.iris_handle.dispatchOnMessage.assert_not_called()
@@ -67,9 +68,34 @@ def test_dispatch_with_custom_handlers():
     op._dispatch_on_init(mock_host)
     op.iris_handle = MagicMock()
 
-    request = SimpleMessage(integer=1, string='test')
+    request = SimpleMessage(integer=1, string="test")
     response = dispach_message(op, request)
 
     assert isinstance(response, SimpleMessage)
     assert response.integer == 2
     assert response.string == "handled"
+
+
+def test_dispatch_generation_ignores_inherited_stale_dispatch():
+    original_dispatch = _BusinessOperation.DISPATCH
+    _BusinessOperation.DISPATCH = [("some.OtherMessage", "handle_other")]
+
+    try:
+
+        class CustomOperation(_BusinessOperation):
+            def handle_simple(self, request: SimpleMessage):
+                return SimpleMessage(integer=request.integer + 1, string="handled")
+
+        op = CustomOperation()
+        mock_host = MagicMock()
+        mock_host.port = 0
+        mock_host.enable = False
+        op._dispatch_on_init(mock_host)
+
+        assert (
+            f"{SimpleMessage.__module__}.{SimpleMessage.__name__}",
+            "handle_simple",
+        ) in op.DISPATCH
+        assert op.DISPATCH is not _BusinessOperation.DISPATCH
+    finally:
+        _BusinessOperation.DISPATCH = original_dispatch
