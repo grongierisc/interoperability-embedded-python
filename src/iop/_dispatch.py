@@ -3,6 +3,11 @@ from typing import Any, List, Tuple, Callable
 
 from ._serialization import serialize_message, serialize_pickle_message, deserialize_message, deserialize_pickle_message, serialize_message_generator, serialize_pickle_message_generator
 from ._message_validator import is_message_instance, is_pickle_message_instance, is_iris_object_instance
+from ._persistent_message import (
+    deserialize_persistent_message,
+    is_persistent_message_instance,
+    serialize_persistent_message,
+)
 
 def dispatch_serializer(message: Any, is_generator: bool = False) -> Any:
     """Serializes the message based on its type.
@@ -17,7 +22,9 @@ def dispatch_serializer(message: Any, is_generator: bool = False) -> Any:
         TypeError: If message is invalid type
     """
     if message is not None:
-        if is_message_instance(message):
+        if is_persistent_message_instance(message):
+            return serialize_persistent_message(message, is_generator=is_generator)
+        elif is_message_instance(message):
             if is_generator:
                 return serialize_message_generator(message)
             return serialize_message(message)
@@ -63,6 +70,8 @@ def dispatch_deserializer(serial: Any) -> Any:
         )
     ):
         return deserialize_pickle_message(serial)
+    elif is_iris_object_instance(serial):
+        return deserialize_persistent_message(serial)
     else:
         return serial
 

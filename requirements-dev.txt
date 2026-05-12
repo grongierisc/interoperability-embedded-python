@@ -8,6 +8,7 @@ wheel
 twine
 intersystems-irispython
 iris-embedded-python-wrapper
+iris-persistence>=0.1.0
 jsonpath-ng
 pydantic>=2.0.0
 mkdocs

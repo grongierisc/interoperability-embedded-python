@@ -31,6 +31,30 @@ class MyRequest(PydanticMessage):
     model : str = None
 ```
 
+### PersistentMessage 📦
+
+Base class for native IRIS message body classes backed by `iris-persistence`. Fields are declared directly on the Python class and registered through the `CLASSES` section of `settings.py`.
+
+By default, a `PersistentMessage` generates an IRIS class that extends `Ens.MessageBody`, uses schema mode `extend`, and enables runtime auto-sync in extend mode.
+
+**Example:**
+```python
+from iop import Field, PersistentMessage
+
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True, max_length=64)
+    Amount: float = 0.0
+```
+
+Register it with the IRIS classname as the `CLASSES` key:
+```python
+import msg
+
+CLASSES = {
+    "Demo.Msg.OrderMessage": msg.OrderMessage,
+}
+```
+
 ### BusinessService 🔄
 Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.
 

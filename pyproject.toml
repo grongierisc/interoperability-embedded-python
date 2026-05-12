@@ -6,6 +6,7 @@ name = "iris_pex_embedded_python"
 version = "3.6.1"
 description = "Iris Interoperability based on Embedded Python"
 readme = "README.md"
+requires-python = ">=3.10"
 authors = [
     { name = "grongier", email = "guillaume.rongier@intersystems.com" },
 ]
@@ -16,10 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -30,6 +27,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "xmltodict>=0.12.0",
     "iris-embedded-python-wrapper>=0.0.6",
+    "iris-persistence>=0.1.0",
     "jsonpath-ng>=1.7.0",
     "debugpy>=1.8.0",
     "requests>=2.24.0"
@@ -51,7 +49,7 @@ where = ["src"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.cls"]
+"*" = ["*.cls", "cls/**/*.cls"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "class"

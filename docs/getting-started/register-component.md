@@ -17,9 +17,11 @@ Create a `settings.py` file in the root of your project. This file will be used 
 
 ```python
 import bo
+import msg
 
 CLASSES = {
-    "Python.MyBusinessOperation": bo.MyBusinessOperation
+    "Python.MyBusinessOperation": bo.MyBusinessOperation,
+    "Demo.Msg.OrderMessage": msg.OrderMessage,
 }
 ```
 
@@ -95,6 +97,16 @@ This file is used to store the settings of the interoperability components. It h
 - `PRODUCTIONS`: Stores the productions of the interoperability components.
 - `SCHEMAS`: Stores the schemas of the interoperability components.
 - `REMOTE_SETTINGS`: Stores the remote settings for migration.
+
+`CLASSES` can also register native `PersistentMessage` classes. For these entries, the dictionary key is the generated IRIS message body classname. The Python class fields define the schema, and migration syncs it with IRIS using `iris-persistence`.
+
+```python
+from msg import OrderMessage
+
+CLASSES = {
+    "Demo.Msg.OrderMessage": OrderMessage,
+}
+```
 
 Example:
 ```python

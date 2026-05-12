@@ -13,6 +13,10 @@ from pydantic import TypeAdapter
 
 from . import _iris
 from ._message import _Message, _PydanticMessage
+from ._persistent_message import (
+    is_persistent_message_class,
+    register_persistent_message_class,
+)
 
 class _Utils():
     @staticmethod
@@ -83,6 +87,17 @@ class _Utils():
         :type categories: str
         """
         _Utils.raise_on_error(_iris.get_iris().cls('IOP.Message.JSONSchema').Import(schema_str,categories,schema_name))
+
+    @staticmethod
+    def register_persistent_message(msg_cls: type, iris_classname: str, sync_schema: bool = True):
+        """
+        Register a PersistentMessage as a native IRIS message body class.
+
+        :param msg_cls: PersistentMessage subclass to register
+        :param iris_classname: IRIS class name to generate, usually the CLASSES key
+        :param sync_schema: when True, sync the IRIS schema immediately
+        """
+        register_persistent_message_class(msg_cls, iris_classname, sync_schema=sync_schema)
 
     @staticmethod
     def get_python_settings() -> Tuple[str,str,str]:
@@ -384,6 +399,9 @@ class _Utils():
         """
         for key, value in class_items.items():
             if inspect.isclass(value):
+                if is_persistent_message_class(value):
+                    _Utils.register_persistent_message(value, key)
+                    continue
                 path = None
                 if root_path:
                     path = root_path
@@ -401,6 +419,10 @@ class _Utils():
             elif isinstance(value,dict):
                 # if the dict has a key 'path' and a key 'module' and a key 'class'
                 if 'path' in value and 'module' in value and 'class' in value:
+                    msg_cls = _Utils._try_import_class(value['module'], value['class'], value['path'])
+                    if msg_cls is not None and is_persistent_message_class(msg_cls):
+                        _Utils.register_persistent_message(msg_cls, key)
+                        continue
                     # register the component
                     _Utils.register_component(value['module'],value['class'],value['path'],1,key)
                 # if the dict has a key 'path' and a key 'package'
@@ -417,6 +439,31 @@ class _Utils():
                     _Utils.register_folder(value['path'],1,key)
                 else:
                     raise ValueError(f"Invalid value for {key}.")
+
+    @staticmethod
+    def _try_import_class(module_name: str, class_name: str, path: str):
+        remove_path = False
+        try:
+            path = os.path.abspath(os.path.normpath(path))
+            fullpath = _Utils.guess_path(module_name, path)
+            if path not in sys.path:
+                sys.path.insert(0, path)
+                remove_path = True
+            else:
+                remove_path = False
+            try:
+                module = _Utils.import_module_from_path(module_name, fullpath)
+            except Exception:
+                module = importlib.import_module(module_name)
+            return getattr(module, class_name)
+        except Exception:
+            return None
+        finally:
+            try:
+                if remove_path:
+                    sys.path.remove(path)
+            except Exception:
+                pass
 
     @staticmethod
     def set_productions_settings(production_list,root_path=None):

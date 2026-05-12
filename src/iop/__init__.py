@@ -5,6 +5,7 @@ from iop._director import _Director
 from iop._inbound_adapter import _InboundAdapter
 from iop._message import _Message, _PickleMessage, _PydanticMessage, _PydanticPickleMessage
 from iop._outbound_adapter import _OutboundAdapter
+from iop._persistent_message import Field, _PersistentMessage
 from iop._private_session_duplex import _PrivateSessionDuplex
 from iop._private_session_process import _PrivateSessionProcess
 from iop._utils import _Utils
@@ -22,4 +23,6 @@ class Message(_Message): pass
 class PickleMessage(_PickleMessage): pass
 class PydanticMessage(_PydanticMessage): pass
 class PydanticPickleMessage(_PydanticPickleMessage): pass
+class PersistentMessage(_PersistentMessage):
+    _iop_persistent_message_abstract = True
 class Director(_Director): pass
