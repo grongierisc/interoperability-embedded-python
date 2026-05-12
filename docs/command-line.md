@@ -219,6 +219,12 @@ Install it once on the server using the IRIS-bundled Python interpreter:
 python3 -m pip install iris-pex-embedded-python
 ```
 
+Native `PersistentMessage` support also requires `iris-persistence` in that same server-side Python environment. It is installed automatically with current `iris-pex-embedded-python` package metadata; for older deployments, install it explicitly:
+
+```bash
+python3 -m pip install "iris-persistence>=0.1.0"
+```
+
 > **Recommended init sequence for a fresh remote IRIS instance:**
 > ```bash
 > # 1. Upload and compile the .cls files via Atelier API

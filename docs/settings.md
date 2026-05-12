@@ -25,7 +25,7 @@ The `settings.py` file supports four main sections:
 
 | Section | Purpose | Required |
 |---------|---------|----------|
-| `CLASSES` | Define interoperability components | ✅ |
+| `CLASSES` | Define interoperability components and native `PersistentMessage` classes | ✅ |
 | `PRODUCTIONS` | Configure production workflows | ❌ |
 | `SCHEMAS` | Register message schemas for DTL | ❌ |
 | `REMOTE_SETTINGS` | Configure remote IRIS connections | ❌ |
@@ -43,6 +43,16 @@ from bs import RedditService
 CLASSES = {
     'Python.RedditService': RedditService,
     'Python.FileOperation': bo.FileOperation,
+}
+```
+
+`CLASSES` also registers native `PersistentMessage` schemas. In this case, the key is the generated IRIS message body classname:
+
+```python
+from msg import OrderMessage
+
+CLASSES = {
+    "Demo.Msg.OrderMessage": OrderMessage,
 }
 ```
 
