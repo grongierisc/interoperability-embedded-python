@@ -16,9 +16,22 @@ from ._message_validator import (
 )
 from ._persistent_message import (
     deserialize_persistent_message,
+    get_iris_object_classname,
     is_persistent_message_instance,
     serialize_persistent_message,
 )
+
+
+_MESSAGE_CLASSES = {
+    "IOP.Message",
+    "Grongier.PEX.Message",
+    "IOP.Generator.Message.Start",
+}
+_PICKLE_MESSAGE_CLASSES = {
+    "IOP.PickleMessage",
+    "Grongier.PEX.PickleMessage",
+    "IOP.Generator.Message.StartPickle",
+}
 
 
 def dispatch_serializer(message: Any, is_generator: bool = False) -> Any:
@@ -69,25 +82,28 @@ def dispatch_deserializer(serial: Any) -> Any:
     Returns:
         The deserialized message
     """
-    if (
-        serial is not None
-        and type(serial).__module__.startswith("iris")
-        and (serial._IsA("IOP.Message") or serial._IsA("Grongier.PEX.Message"))
-    ):
-        return deserialize_message(serial)
-    elif (
-        serial is not None
-        and type(serial).__module__.startswith("iris")
-        and (
-            serial._IsA("IOP.PickleMessage")
-            or serial._IsA("Grongier.PEX.PickleMessage")
-        )
-    ):
-        return deserialize_pickle_message(serial)
-    elif is_iris_object_instance(serial):
-        return deserialize_persistent_message(serial)
-    else:
+    if serial is None or not type(serial).__module__.startswith("iris"):
         return serial
+
+    iris_classname = get_iris_object_classname(serial)
+
+    if iris_classname in _MESSAGE_CLASSES:
+        return deserialize_message(serial)
+
+    if iris_classname in _PICKLE_MESSAGE_CLASSES:
+        return deserialize_pickle_message(serial)
+
+    deserialized = deserialize_persistent_message(serial, iris_classname=iris_classname)
+    if deserialized is not serial:
+        return deserialized
+
+    if serial._IsA("IOP.Message") or serial._IsA("Grongier.PEX.Message"):
+        return deserialize_message(serial)
+
+    if serial._IsA("IOP.PickleMessage") or serial._IsA("Grongier.PEX.PickleMessage"):
+        return deserialize_pickle_message(serial)
+
+    return serial
 
 
 def dispach_message(host: Any, request: Any) -> Any:

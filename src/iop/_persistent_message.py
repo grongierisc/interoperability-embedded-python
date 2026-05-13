@@ -6,13 +6,10 @@ import os
 import sys
 from typing import Any, Optional
 
+import iris_persistence
 from iris_persistence import Field as Field
 from iris_persistence import Model
 from iris_persistence.models import ModelMeta
-from iris_persistence.query import (
-    _build_model_from_iris_obj,
-    _materialize_related_value,
-)
 from iris_persistence.runtime import get_runtime
 
 
@@ -27,6 +24,7 @@ _PYTHON_TO_IRIS_CACHE: dict[str, str] = {}
 _IRIS_TO_PYTHON_CACHE: dict[str, str] = {}
 _IRIS_TO_PYTHON_CLASSPATH_CACHE: dict[str, str] = {}
 _IRIS_TO_PYTHON_STRICT_CACHE: dict[str, bool] = {}
+_IRIS_TO_MESSAGE_CLASS_CACHE: dict[str, type] = {}
 _IRIS_PARAMETER_CACHE: dict[tuple[str, str], Optional[str]] = {}
 _AUTO_SYNCED: set[tuple[type, str]] = set()
 
@@ -177,6 +175,7 @@ def register_persistent_message_class(
 
     if sync_schema:
         msg_cls.sync_schema()
+        _AUTO_SYNCED.add((msg_cls, iris_classname))
 
 
 def serialize_persistent_message(
@@ -191,70 +190,55 @@ def serialize_persistent_message(
     iris_classname = resolve_iris_classname(msg_cls)
     _ensure_schema(msg_cls, iris_classname)
 
-    runtime = get_runtime()
-    iris_obj = message.__dict__.get("_iris_obj")
-    if iris_obj is None:
-        iris_obj = runtime.create_object(iris_classname)
-
-    for field_name, model_field in msg_cls.__model_fields__.items():
-        if field_name not in message.__dict__:
-            continue
-        value = getattr(message, field_name)
-        materialized = _materialize_related_value(
-            runtime, model_field.declared_type, value
-        )
-        runtime.inject_iris_value(
-            iris_obj,
-            field_name,
-            materialized,
-            field_meta=model_field.field_info,
-        )
-
-    message._iris_obj = iris_obj
-    try:
-        obj_id = runtime.get_object_id(iris_obj)
-        if obj_id:
-            message._pk = str(obj_id)
-    except Exception:
-        pass
+    iris_obj = iris_persistence.materialize(
+        message,
+        auto_sync=False,
+        validate=False,
+    )
     return iris_obj
 
 
-def deserialize_persistent_message(serial: Any) -> Any:
-    iris_classname = get_iris_object_classname(serial)
+def deserialize_persistent_message(
+    serial: Any,
+    iris_classname: Optional[str] = None,
+) -> Any:
+    iris_classname = iris_classname or get_iris_object_classname(serial)
     if not iris_classname:
         return serial
 
-    python_classname, python_classpath, strict = _resolve_python_message_metadata(
-        iris_classname
-    )
-    if not python_classname:
-        return serial
+    msg_cls = _IRIS_TO_MESSAGE_CLASS_CACHE.get(iris_classname)
+    if msg_cls is None:
+        python_classname, python_classpath, strict = _resolve_python_message_metadata(
+            iris_classname
+        )
+        if not python_classname:
+            return serial
 
-    try:
-        msg_cls = load_python_class(python_classname, python_classpath)
-    except (AttributeError, ModuleNotFoundError, PersistentMessageError) as exc:
-        if strict:
-            raise PersistentMessageError(
-                f"IRIS class {iris_classname!r} is marked as a PersistentMessage for "
-                f"Python class {python_classname!r}, but that Python class could not "
-                "be imported. Ensure the message class is importable, or register it "
-                "through CLASSES so migration writes IOP_PYTHON_CLASSPATH."
-            ) from exc
-        return serial
+        try:
+            msg_cls = load_python_class(python_classname, python_classpath)
+        except (AttributeError, ModuleNotFoundError, PersistentMessageError) as exc:
+            if strict:
+                raise PersistentMessageError(
+                    f"IRIS class {iris_classname!r} is marked as a PersistentMessage for "
+                    f"Python class {python_classname!r}, but that Python class could not "
+                    "be imported. Ensure the message class is importable, or register it "
+                    "through CLASSES so migration writes IOP_PYTHON_CLASSPATH."
+                ) from exc
+            return serial
 
-    if not is_persistent_message_class(msg_cls):
-        if strict:
-            raise PersistentMessageError(
-                f"IRIS class {iris_classname!r} maps to {python_classname!r}, "
-                "but that class is not a PersistentMessage subclass."
-            )
-        return serial
+        if not is_persistent_message_class(msg_cls):
+            if strict:
+                raise PersistentMessageError(
+                    f"IRIS class {iris_classname!r} maps to {python_classname!r}, "
+                    "but that class is not a PersistentMessage subclass."
+                )
+            return serial
 
-    _prepare_message_class(msg_cls, iris_classname, registered=False)
+        _prepare_message_class(msg_cls, iris_classname, registered=False)
+        _IRIS_TO_MESSAGE_CLASS_CACHE[iris_classname] = msg_cls
 
     known_pk = _safe_get_object_id(serial)
-    return _build_model_from_iris_obj(msg_cls, serial, known_pk=known_pk or "")
+    return msg_cls.from_iris(serial, known_pk=known_pk or "")
 
 
 def resolve_iris_classname(msg_cls: type) -> str:
@@ -351,6 +335,9 @@ def _safe_get_object_id(obj: Any) -> Optional[str]:
 
 
 def _ensure_schema(msg_cls: type, iris_classname: str) -> None:
+    key = (msg_cls, iris_classname)
+    if key in _AUTO_SYNCED:
+        return
     if not getattr(msg_cls, "_auto_sync", False):
         return
     if getattr(msg_cls, "_sync_mode", DEFAULT_SYNC_MODE) != DEFAULT_SYNC_MODE:
@@ -359,10 +346,6 @@ def _ensure_schema(msg_cls: type, iris_classname: str) -> None:
             f"{getattr(msg_cls, '_sync_mode', None)!r}. Runtime auto-sync is only allowed "
             "with mode='extend'."
         )
-
-    key = (msg_cls, iris_classname)
-    if key in _AUTO_SYNCED:
-        return
 
     _prepare_message_class(msg_cls, iris_classname, registered=False)
     msg_cls.sync_schema()
@@ -381,6 +364,7 @@ def _prepare_message_class(
         msg_cls._iop_registered_classname = iris_classname
     _set_message_parameters(msg_cls)
     _cache_mapping(get_python_classname(msg_cls), iris_classname)
+    _IRIS_TO_MESSAGE_CLASS_CACHE[iris_classname] = msg_cls
 
 
 def _set_message_parameters(msg_cls: type) -> None:

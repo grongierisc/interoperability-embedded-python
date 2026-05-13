@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `PersistentMessage` deserialization for IRIS-originated messages whose Python module is not already importable by storing and using `IOP_PYTHON_CLASSPATH`.
 - using ruff to fix various linting issues and improve code quality
 
+### Changed
+- Optimize `PersistentMessage` dispatch by caching IRIS classname to Python class resolution and avoiding repeated IRIS wrapper checks on the native message hot path.
+
 ## [3.6.1] - 2026-05-12
 ### Fixed
 - Fix json schema handling enums.

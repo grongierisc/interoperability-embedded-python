@@ -20,7 +20,9 @@ def _clear_persistent_message_runtime_caches():
     persistent_message_module._IRIS_TO_PYTHON_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_CLASSPATH_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_STRICT_CACHE.clear()
+    persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE.clear()
     persistent_message_module._IRIS_PARAMETER_CACHE.clear()
+    persistent_message_module._AUTO_SYNCED.clear()
 
 
 def test_persistent_message_native_round_trip():

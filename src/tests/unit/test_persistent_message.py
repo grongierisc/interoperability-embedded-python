@@ -27,6 +27,7 @@ def fake_runtime():
     persistent_message_module._IRIS_TO_PYTHON_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_CLASSPATH_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_STRICT_CACHE.clear()
+    persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE.clear()
     persistent_message_module._IRIS_PARAMETER_CACHE.clear()
     persistent_message_module._AUTO_SYNCED.clear()
     yield
@@ -130,6 +131,31 @@ def test_deserializes_registered_native_iris_object():
     assert message.OrderId == "A-2"
     assert message.Amount == 21.0
     assert message.get_iris_id() == "123"
+
+
+def test_deserializes_registered_native_object_from_class_cache():
+    register_persistent_message_class(
+        NativeOrderMessage,
+        "Demo.Msg.NativeOrderMessage",
+        sync_schema=False,
+    )
+
+    class FakeNative:
+        OrderId = "A-2"
+        Amount = 21.0
+
+        def _Id(self):
+            return "123"
+
+    native = FakeNative()
+    setattr(native, "%ClassName", lambda full=1: "Demo.Msg.NativeOrderMessage")
+
+    with patch("iop._persistent_message.get_iris_class_parameter") as get_parameter:
+        message = deserialize_persistent_message(native)
+
+    assert isinstance(message, NativeOrderMessage)
+    assert message.OrderId == "A-2"
+    get_parameter.assert_not_called()
 
 
 def test_unregistered_message_uses_default_encoded_classname():
