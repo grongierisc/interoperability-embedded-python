@@ -127,53 +127,24 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="benchmarks">Benchmarks</h1>
-<p>8 scenarios with these parameters:
+<p>24 scenarios with these parameters:
 - 100 messages
-- body : simple string <code>test</code></p>
-<table>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Time (s)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Python BP to Python BO with Iris Message</td>
-<td>0.239</td>
-</tr>
-<tr>
-<td>Python BP to Python BO with Python Message</td>
-<td>0.232</td>
-</tr>
-<tr>
-<td>ObjectScript BP to Python BO with Iris Message</td>
-<td>0.294</td>
-</tr>
-<tr>
-<td>ObjectScript BP to Python BO with Python Message</td>
-<td>0.242</td>
-</tr>
-<tr>
-<td>Python BP to ObjectScript BO with Iris Message</td>
-<td>0.242</td>
-</tr>
-<tr>
-<td>Python BP to ObjectScript BO with Python Message</td>
-<td>0.275</td>
-</tr>
-<tr>
-<td>ObjectScript BP to ObjectScript BO with Iris Message</td>
-<td>0.159</td>
-</tr>
-<tr>
-<td>ObjectScript BP to ObjectScript BO with Python Message</td>
-<td>0.182</td>
-</tr>
-</tbody>
-</table>
+- body: simple string <code>test</code></p>
+<p>The benchmark matrix covers these routes:
+- Python BP to Python BO
+- Python BP to ObjectScript BO
+- ObjectScript BP to Python BO
+- ObjectScript BP to ObjectScript BO</p>
+<p>Each route is tested with these message types:
+- IRIS <code>Ens.StringRequest</code>
+- <code>Message</code>
+- <code>PydanticMessage</code>
+- <code>PersistentMessage</code>
+- <code>PickleMessage</code>
+- <code>PydanticPickleMessage</code></p>
+<p>The test writes current timing results to <code>src/tests/e2e/local/bench/result.txt</code>.</p>
 <p>Benchmarks can be run in the unit test with the following command :</p>
-<pre><code class="language-bash">pytest src/tests/test_bench.py
+<pre><code class="language-bash">PYTHONPATH=src pytest src/tests/e2e/local/test_bench.py
 </code></pre>
               
             </div>
