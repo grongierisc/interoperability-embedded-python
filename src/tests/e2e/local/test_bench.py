@@ -1,157 +1,193 @@
 from iop._director import _Director
 from iop._utils import _Utils
-import timeit
+import sys
 import os
+import timeit
+
 
 class TestBenchIoP:
     TEST_CASES = [
         {
-            'name': 'Python BP to Python BO with Iris Message',
-            'component': 'Python.BenchIoPProcess',
-            'message_type': 'iris.Ens.StringRequest',
-            'use_json': False
+            "name": "Python BP to Python BO with Iris Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "iris.Ens.StringRequest",
+            "use_json": False,
         },
         {
-            'name': 'Python BP to ObjetScript BO with Iris Message',
-            'component': 'Python.BenchIoPProcess.To.Cls',
-            'message_type': 'iris.Ens.StringRequest',
-            'use_json': False
+            "name": "Python BP to ObjetScript BO with Iris Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "iris.Ens.StringRequest",
+            "use_json": False,
         },
         {
-            'name': 'Python BP to Python BO with Python Message',
-            'component': 'Python.BenchIoPProcess',
-            'message_type': 'msg.MyMessage',
-            'use_json': True
+            "name": "Python BP to Python BO with Python Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "msg.MyMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to ObjetScript BO with Python Message',
-            'component': 'Python.BenchIoPProcess.To.Cls',
-            'message_type': 'msg.MyMessage',
-            'use_json': True
+            "name": "Python BP to ObjetScript BO with Python Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "msg.MyMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to Python BO with Python Pydantic Message',
-            'component': 'Python.BenchIoPProcess',
-            'message_type': 'msg.MyPydanticMessage',
-            'use_json': True
+            "name": "Python BP to Python BO with Python Pydantic Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "msg.MyPydanticMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to ObjetScript BO with Python Pydantic Message',
-            'component': 'Python.BenchIoPProcess.To.Cls',
-            'message_type': 'msg.MyPydanticMessage',
-            'use_json': True
+            "name": "Python BP to ObjetScript BO with Python Pydantic Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "msg.MyPydanticMessage",
+            "use_json": True,
         },
         {
-            'name': 'ObjetScript BP to Python BO with Iris Message',
-            'component': 'Bench.Process',
-            'message_type': 'iris.Ens.StringRequest',
-            'use_json': False
+            "name": "Python BP to Python BO with Persistent Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "msg.MyPersistentMessage",
+            "persistent": True,
         },
         {
-            'name': 'ObjetScript BP to ObjetScript BO with Iris Message',
-            'component': 'Bench.Process.To.Cls',
-            'message_type': 'iris.Ens.StringRequest',
-            'use_json': False
+            "name": "Python BP to ObjetScript BO with Persistent Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "msg.MyPersistentMessage",
+            "persistent": True,
         },
         {
-            'name': 'ObjetScript BP to Python BO with Python Message',
-            'component': 'Bench.Process',
-            'message_type': 'msg.MyMessage',
-            'use_json': True
+            "name": "ObjetScript BP to Python BO with Iris Message",
+            "component": "Bench.Process",
+            "message_type": "iris.Ens.StringRequest",
+            "use_json": False,
         },
         {
-            'name': 'ObjetScript BP to ObjetScript BO with Python Message',
-            'component': 'Bench.Process.To.Cls',
-            'message_type': 'msg.MyMessage',
-            'use_json': True
+            "name": "ObjetScript BP to ObjetScript BO with Iris Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "iris.Ens.StringRequest",
+            "use_json": False,
         },
         {
-            'name': 'ObjetScript BP to Python BO with Python Pydantic Message',
-            'component': 'Bench.Process',
-            'message_type': 'msg.MyPydanticMessage',
-            'use_json': True
+            "name": "ObjetScript BP to Python BO with Python Message",
+            "component": "Bench.Process",
+            "message_type": "msg.MyMessage",
+            "use_json": True,
         },
         {
-            'name': 'ObjetScript BP to ObjetScript BO with Python Pydantic Message',
-            'component': 'Bench.Process.To.Cls',
-            'message_type': 'msg.MyPydanticMessage',
-            'use_json': True
+            "name": "ObjetScript BP to ObjetScript BO with Python Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "msg.MyMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to Python BO with Pickle Message',
-            'component': 'Python.BenchIoPProcess',
-            'message_type': 'msg.MyPickleMessage',
-            'use_json': True
+            "name": "ObjetScript BP to Python BO with Python Pydantic Message",
+            "component": "Bench.Process",
+            "message_type": "msg.MyPydanticMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to ObjetScript BO with Pickle Message',
-            'component': 'Python.BenchIoPProcess.To.Cls',
-            'message_type': 'msg.MyPickleMessage',
-            'use_json': True
+            "name": "ObjetScript BP to ObjetScript BO with Python Pydantic Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "msg.MyPydanticMessage",
+            "use_json": True,
         },
         {
-            'name': 'ObjetScript BP to Python BO with Pickle Message',
-            'component': 'Bench.Process',
-            'message_type': 'msg.MyPickleMessage',
-            'use_json': True
+            "name": "ObjetScript BP to Python BO with Persistent Message",
+            "component": "Bench.Process",
+            "message_type": "msg.MyPersistentMessage",
+            "persistent": True,
         },
         {
-            'name': 'ObjetScript BP to ObjetScript BO with Pickle Message',
-            'component': 'Bench.Process.To.Cls',
-            'message_type': 'msg.MyPickleMessage',
-            'use_json': True
+            "name": "ObjetScript BP to ObjetScript BO with Persistent Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "msg.MyPersistentMessage",
+            "persistent": True,
         },
         {
-            'name': 'Python BP to Python BO with Pydantic Pickle Message',
-            'component': 'Python.BenchIoPProcess',
-            'message_type': 'msg.MyPydanticPickleMessage',
-            'use_json': True
+            "name": "Python BP to Python BO with Pickle Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "msg.MyPickleMessage",
+            "use_json": True,
         },
         {
-            'name': 'Python BP to ObjetScript BO with Pydantic Pickle Message',
-            'component': 'Python.BenchIoPProcess.To.Cls',
-            'message_type': 'msg.MyPydanticPickleMessage',
-            'use_json': True
+            "name": "Python BP to ObjetScript BO with Pickle Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "msg.MyPickleMessage",
+            "use_json": True,
         },
         {
-            'name': 'ObjetScript BP to Python BO with Pydantic Pickle Message',
-            'component': 'Bench.Process',
-            'message_type': 'msg.MyPydanticPickleMessage',
-            'use_json': True
+            "name": "ObjetScript BP to Python BO with Pickle Message",
+            "component": "Bench.Process",
+            "message_type": "msg.MyPickleMessage",
+            "use_json": True,
         },
         {
-            'name': 'ObjetScript BP to ObjetScript BO with Pydantic Pickle Message',
-            'component': 'Bench.Process.To.Cls',
-            'message_type': 'msg.MyPydanticPickleMessage',
-            'use_json': True
-        }
+            "name": "ObjetScript BP to ObjetScript BO with Pickle Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "msg.MyPickleMessage",
+            "use_json": True,
+        },
+        {
+            "name": "Python BP to Python BO with Pydantic Pickle Message",
+            "component": "Python.BenchIoPProcess",
+            "message_type": "msg.MyPydanticPickleMessage",
+            "use_json": True,
+        },
+        {
+            "name": "Python BP to ObjetScript BO with Pydantic Pickle Message",
+            "component": "Python.BenchIoPProcess.To.Cls",
+            "message_type": "msg.MyPydanticPickleMessage",
+            "use_json": True,
+        },
+        {
+            "name": "ObjetScript BP to Python BO with Pydantic Pickle Message",
+            "component": "Bench.Process",
+            "message_type": "msg.MyPydanticPickleMessage",
+            "use_json": True,
+        },
+        {
+            "name": "ObjetScript BP to ObjetScript BO with Pydantic Pickle Message",
+            "component": "Bench.Process.To.Cls",
+            "message_type": "msg.MyPydanticPickleMessage",
+            "use_json": True,
+        },
     ]
 
     @classmethod
     def setup_class(cls):
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bench', 'settings.py')
+        path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "bench", "settings.py"
+        )
         _Utils.migrate(path)
         _Director.stop_production()
-        _Director.set_default_production('Bench.Production')
+        _Director.set_default_production("Bench.Production")
         _Director.start_production()
+        cls.persistent_message_cls = sys.modules["settings"].MyPersistentMessage
         cls.results = []
 
     def test_bench_iris(self):
-        _Director.test_component('Python.BenchIoPProcess', '', 'msg.MyMessage', '{"message":"test"}')
+        _Director.test_component(
+            "Python.BenchIoPProcess", "", "msg.MyMessage", '{"message":"test"}'
+        )
 
     def run_benchmark(self, test_case):
         body = "test"
-        message = f'{{"message":"{body}"}}' if test_case['use_json'] else body
+        if test_case.get("persistent"):
+            message = self.persistent_message_cls(message=body)
+            classname = None
+            payload = None
+        else:
+            message = None
+            classname = test_case["message_type"]
+            payload = f'{{"message":"{body}"}}' if test_case["use_json"] else body
+
         result = timeit.timeit(
             lambda: _Director.test_component(
-                test_case['component'],
-                '',
-                test_case['message_type'],
-                message
+                test_case["component"], message, classname, payload
             ),
-            number=1
+            number=1,
         )
-        self.results.append((test_case['name'], result))
+        self.results.append((test_case["name"], result))
         assert result > 0
 
     def test_all_benchmarks(self):
@@ -161,8 +197,8 @@ class TestBenchIoP:
     @classmethod
     def teardown_class(cls):
         _Director.stop_production()
-        _Director.set_default_production('test')
+        _Director.set_default_production("test")
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(current_dir, 'bench', 'result.txt'), 'w') as f:
+        with open(os.path.join(current_dir, "bench", "result.txt"), "w") as f:
             for name, result in cls.results:
-                f.write(f'{name}: {result}\n')
+                f.write(f"{name}: {result}\n")

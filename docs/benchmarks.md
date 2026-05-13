@@ -1,22 +1,27 @@
 # Benchmarks
 
-8 scenarios with these parameters:
+24 scenarios with these parameters:
 - 100 messages
-- body : simple string `test`
+- body: simple string `test`
 
-| Scenario | Time (s) |
-| --- | --- |
-| Python BP to Python BO with Iris Message | 0.239 |
-| Python BP to Python BO with Python Message | 0.232 |
-| ObjectScript BP to Python BO with Iris Message | 0.294 |
-| ObjectScript BP to Python BO with Python Message | 0.242 |
-| Python BP to ObjectScript BO with Iris Message | 0.242 |
-| Python BP to ObjectScript BO with Python Message | 0.275 |
-| ObjectScript BP to ObjectScript BO with Iris Message | 0.159 |
-| ObjectScript BP to ObjectScript BO with Python Message | 0.182 |
+The benchmark matrix covers these routes:
+- Python BP to Python BO
+- Python BP to ObjectScript BO
+- ObjectScript BP to Python BO
+- ObjectScript BP to ObjectScript BO
+
+Each route is tested with these message types:
+- IRIS `Ens.StringRequest`
+- `Message`
+- `PydanticMessage`
+- `PersistentMessage`
+- `PickleMessage`
+- `PydanticPickleMessage`
+
+The test writes current timing results to `src/tests/e2e/local/bench/result.txt`.
 
 Benchmarks can be run in the unit test with the following command :
 
 ```bash
-pytest src/tests/test_bench.py
+PYTHONPATH=src pytest src/tests/e2e/local/test_bench.py
 ```

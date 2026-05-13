@@ -54,6 +54,9 @@ XData MessageMap
     <MapItem MessageType="IOP.PickleMessage">
         <Method>Method</Method>
     </MapItem>
+    <MapItem MessageType="Bench.Msg.MyPersistentMessage">
+        <Method>Method</Method>
+    </MapItem>
 </MapItems>
 }
 

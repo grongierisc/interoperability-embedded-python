@@ -1,5 +1,6 @@
 from bench_bo import BenchIoPOperation
 from bench_bp import BenchIoPProcess
+from msg import MyPersistentMessage
 
 import os
 
@@ -16,113 +17,117 @@ src_dir = os.path.abspath(os.path.join(working_dir, os.pardir))
 classpaths = f"{current_dir}|{src_dir}"
 
 # load Cos Classes (load source first, then compile in a single pass)
-iris.cls('%SYSTEM.OBJ').LoadDir(os.path.join(
-    current_dir, 'cls'), 'uk', "*.cls", 1)
-iris.cls('%SYSTEM.OBJ').Compile("Bench.*", 'cb')
+iris.cls("%SYSTEM.OBJ").LoadDir(os.path.join(current_dir, "cls"), "uk", "*.cls", 1)
+iris.cls("%SYSTEM.OBJ").Compile("Bench.*", "cb")
 
 CLASSES = {
+    "Bench.Msg.MyPersistentMessage": MyPersistentMessage,
     "Python.BenchIoPOperation": BenchIoPOperation,
     "Python.BenchIoPProcess": BenchIoPProcess,
 }
 
-PRODUCTIONS = [{
-    "Bench.Production": {
-        "@Name": "Bench.Production",
-        "@TestingEnabled": "true",
-        "@LogGeneralTraceEvents": "false",
-        "Description": "",
-        "ActorPoolSize": "1",
-        "Item": [
-            {
-                "@Name": "Bench.Operation",
-                "@Category": "",
-                "@ClassName": "Bench.Operation",
-            },
-            {
-                "@Name": "Python.BenchIoPOperation",
-                "@Category": "",
-                "@ClassName": "Python.BenchIoPOperation",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "%classpaths",
-                    "#text": classpaths
-                }
-            },
-            {
-                "@Name": "Python.BenchIoPProcess",
-                "@Category": "",
-                "@ClassName": "Python.BenchIoPProcess",
-                "@PoolSize": "0",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "%classpaths",
-                    "#text": classpaths
-                }
-            },
-            {
-                "@Name": "Python.BenchIoPProcess.To.Cls",
-                "@Category": "",
-                "@ClassName": "Python.BenchIoPProcess",
-                "@PoolSize": "0",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": [{
-                    "@Target": "Host",
-                    "@Name": "%classpaths",
-                    "#text": classpaths
-                },                    {
-                    "@Target": "Host",
-                    "@Name": "%settings",
-                    "#text": "target=Bench.Operation"
-                }]
-            },
-            {
-                "@Name": "Bench.Process",
-                "@Category": "",
-                "@ClassName": "Bench.Process",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "TargetConfigName",
-                    "#text": "Python.BenchIoPOperation"
-                }
-            },
-            {
-                "@Name": "Bench.Process.To.Cls",
-                "@Category": "",
-                "@ClassName": "Bench.Process",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "TargetConfigName",
-                    "#text": "Bench.Operation"
-                }
-            }
-        ]
+PRODUCTIONS = [
+    {
+        "Bench.Production": {
+            "@Name": "Bench.Production",
+            "@TestingEnabled": "true",
+            "@LogGeneralTraceEvents": "false",
+            "Description": "",
+            "ActorPoolSize": "1",
+            "Item": [
+                {
+                    "@Name": "Bench.Operation",
+                    "@Category": "",
+                    "@ClassName": "Bench.Operation",
+                },
+                {
+                    "@Name": "Python.BenchIoPOperation",
+                    "@Category": "",
+                    "@ClassName": "Python.BenchIoPOperation",
+                    "@PoolSize": "1",
+                    "@Enabled": "true",
+                    "@Foreground": "false",
+                    "@Comment": "",
+                    "@LogTraceEvents": "false",
+                    "@Schedule": "",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "%classpaths",
+                        "#text": classpaths,
+                    },
+                },
+                {
+                    "@Name": "Python.BenchIoPProcess",
+                    "@Category": "",
+                    "@ClassName": "Python.BenchIoPProcess",
+                    "@PoolSize": "0",
+                    "@Enabled": "true",
+                    "@Foreground": "false",
+                    "@Comment": "",
+                    "@LogTraceEvents": "false",
+                    "@Schedule": "",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "%classpaths",
+                        "#text": classpaths,
+                    },
+                },
+                {
+                    "@Name": "Python.BenchIoPProcess.To.Cls",
+                    "@Category": "",
+                    "@ClassName": "Python.BenchIoPProcess",
+                    "@PoolSize": "0",
+                    "@Enabled": "true",
+                    "@Foreground": "false",
+                    "@Comment": "",
+                    "@LogTraceEvents": "false",
+                    "@Schedule": "",
+                    "Setting": [
+                        {
+                            "@Target": "Host",
+                            "@Name": "%classpaths",
+                            "#text": classpaths,
+                        },
+                        {
+                            "@Target": "Host",
+                            "@Name": "%settings",
+                            "#text": "target=Bench.Operation",
+                        },
+                    ],
+                },
+                {
+                    "@Name": "Bench.Process",
+                    "@Category": "",
+                    "@ClassName": "Bench.Process",
+                    "@PoolSize": "1",
+                    "@Enabled": "true",
+                    "@Foreground": "false",
+                    "@Comment": "",
+                    "@LogTraceEvents": "false",
+                    "@Schedule": "",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "TargetConfigName",
+                        "#text": "Python.BenchIoPOperation",
+                    },
+                },
+                {
+                    "@Name": "Bench.Process.To.Cls",
+                    "@Category": "",
+                    "@ClassName": "Bench.Process",
+                    "@PoolSize": "1",
+                    "@Enabled": "true",
+                    "@Foreground": "false",
+                    "@Comment": "",
+                    "@LogTraceEvents": "false",
+                    "@Schedule": "",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "TargetConfigName",
+                        "#text": "Bench.Operation",
+                    },
+                },
+            ],
+        }
     }
-}
 ]
