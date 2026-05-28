@@ -70,7 +70,7 @@ iop --migrate /path/to/your/project/settings.py
 Two kinds of business services can be created in Python:
 
 - Business Service
-- Pulling Business Service
+- Polling Business Service
 
 ### Business Service
 
@@ -88,22 +88,17 @@ class MyBusinessService(BusinessService):
         return response
 ```
 
-### Pulling Business Service
+### Polling Business Service
 
-To create a business service that runs every 5 seconds, use the following code:
+To create a polling business service, use the following code:
 
 ```python
-from iop import BusinessService
+from iop import PollingBusinessService
 
-class MyBusinessService(BusinessService):
-    
-    def get_adapter_type():
-        # This is mandatory to schedule the service
-        # By default, the service will be scheduled every 5 seconds
-        return "Ens.InboundAdapter"
+class MyBusinessService(PollingBusinessService):
 
     def on_process_input(self):
-        # This method is called every 5 seconds
+        # This method is called by the scheduler
         self.log_info("[Python] MyBusinessService:on_process_input() is called")
 ```
 

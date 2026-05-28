@@ -6,6 +6,7 @@ from iop._inbound_adapter import _InboundAdapter
 from iop._message import _Message
 from iop._message import _PickleMessage
 from iop._outbound_adapter import _OutboundAdapter
+from iop._polling_business_service import _PollingBusinessServiceMixin
 from iop._persistent_message import Field as Field
 from iop._persistent_message import Model as Model
 from iop._persistent_message import _PersistentMessage
@@ -27,6 +28,10 @@ class OutboundAdapter(_OutboundAdapter):
 
 
 class BusinessService(_BusinessService):
+    pass
+
+
+class PollingBusinessService(_PollingBusinessServiceMixin, BusinessService):
     pass
 
 

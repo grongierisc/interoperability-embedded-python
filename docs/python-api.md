@@ -107,9 +107,9 @@ class MyService(BusinessService):
         self.log_info(f"Received: {message_input}")
 ```
 
-**Advanced Example with Adapter:**
+**Polling Example:**
 ```python
-from iop import BusinessService, Message
+from iop import PollingBusinessService, Message
 from dataclasses import dataclass
 
 @dataclass
@@ -117,11 +117,7 @@ class MyRequest(Message):
     file_path: str = None
     data: str = None
 
-class MyService(BusinessService):
-    def get_adapter_type():
-        """Enable pull mode for the BusinessService"""
-        return "Ens.InboundAdapter"
-
+class MyService(PollingBusinessService):
     def on_process_input(self, message_input):
         self.log_info(f"Received: {message_input}")
         with open(message_input.file_path, 'r') as file:
@@ -129,6 +125,8 @@ class MyService(BusinessService):
         request = MyRequest(data=data)
         self.send_request_async("MyBusinessOperation", request)
 ```
+
+`PollingBusinessService` uses the default IRIS inbound adapter.
 
 ### BusinessOperation 🔧
 Base class for business operations that process requests and perform specific business logic.

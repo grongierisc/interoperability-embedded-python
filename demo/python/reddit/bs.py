@@ -1,4 +1,4 @@
-from iop import BusinessService
+from iop import PollingBusinessService, BusinessService
 
 import iris
 
@@ -8,17 +8,12 @@ import requests
 from message import PostMessage
 from obj import PostClass
 
-class RedditService(BusinessService):
+class RedditService(PollingBusinessService):
     """
     This service use an Ens.InboundAdapter to, on_process_input every 5
     seconds, use requests to fetch self.limit posts as data from the reddit
     API before calling the FilterPostRoutingRule process.
     """
-    def get_adapter_type():
-        """
-        Name of the registred Adapter
-        """
-        return "Ens.InboundAdapter"
 
     def on_init(self):
         
@@ -32,10 +27,9 @@ class RedditService(BusinessService):
             self.target = "Python.FilterPostRoutingRule"
         
         self.last_post_name = ""
-        
-        return 1
 
-    def on_process_input(self,request):
+
+    def on_process_input(self,message_input):
 
         post = self.on_task()
         if post is not None:

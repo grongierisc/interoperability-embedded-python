@@ -268,6 +268,7 @@ class _Utils:
                     "BusinessOperation",
                     "BusinessProcess",
                     "BusinessService",
+                    "PollingBusinessService",
                     "DuplexService",
                     "DuplexProcess",
                     "DuplexOperation",

@@ -32,6 +32,21 @@ class TestComponentRegistration:
                     'bo', 'EmailOperation', register_path, 1, 'UnitTest.EmailOperation'
                 )
 
+    def test_register_file_detects_polling_business_service(self, tmp_path):
+        module_file = tmp_path / "bs.py"
+        module_file.write_text(
+            "from iop import PollingBusinessService\n\n"
+            "class MyService(PollingBusinessService):\n"
+            "    pass\n"
+        )
+
+        with patch.object(_Utils, "register_component") as mock_register:
+            _Utils._register_file("bs.py", str(tmp_path), 1, "Python")
+
+        mock_register.assert_called_once_with(
+            "bs", "MyService", str(tmp_path), 1, "Python.bs.MyService"
+        )
+
 
 class TestPathOperations:
     @pytest.mark.parametrize("module,path,expected", [
@@ -129,5 +144,4 @@ class TestXmlToJson:
         data = json.loads(result)
         # falls back to 'Production' when @Name is absent
         assert "Production" in data
-
 

@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
+from iop import PollingBusinessService
 from iop._business_service import _BusinessService
 from fixtures.message import SimpleMessage
 
@@ -61,3 +62,15 @@ def test_custom_service():
 
 def test_wait_for_next_call_interval(service):
     assert service._wait_for_next_call_interval is False
+
+
+def test_polling_business_service_info():
+    class PollingService(PollingBusinessService):
+        pass
+
+    info = PollingService._get_info()
+    properties = PollingService._get_properties()
+
+    assert info[0] == "iop.BusinessService"
+    assert info[4] == "Ens.InboundAdapter"
+    assert all(prop[0] != "CallInterval" for prop in properties)
