@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.7.1] - 2026-05-28
 ### Added
 - Add native `PersistentMessage` support backed by `iris-persistence`, including `CLASSES` registration, native IRIS message body materialization, class-parameter based deserialization, and default `Ens.MessageBody` schema generation in extend mode.
 - Export `Model` from `iop` for nested native persistent or serial objects inside `PersistentMessage`.
