@@ -91,7 +91,7 @@ Utils.migrate()
 
 ## The `settings.py` File
 
-This file is used to store the settings of the interoperability components. It has three sections:
+This file is used to store the settings of the interoperability components. It has these sections:
 
 - `CLASSES`: Stores the classes of the interoperability components.
 - `PRODUCTIONS`: Stores the productions of the interoperability components.
@@ -107,6 +107,9 @@ CLASSES = {
     "Demo.Msg.OrderMessage": OrderMessage,
 }
 ```
+
+Regular `Message` and `PydanticMessage` classes only need migration when you
+want DTL schema support. In that case, place them in `SCHEMAS`.
 
 Example:
 ```python

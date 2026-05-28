@@ -56,6 +56,10 @@ CLASSES = {
 }
 ```
 
+Regular `Message` and `PydanticMessage` classes do not go in `CLASSES` or
+native message registration. Add them to `SCHEMAS` only when you need DTL schema
+support.
+
 ## PRODUCTIONS Section
 
 Define complete production configurations with multiple components.

@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.7.2] - Unreleased
 ### Added
 - Add `PollingBusinessService` for `iop` and `grongier.pex` to create scheduled polling business services without manually returning `Ens.InboundAdapter`.
+- Add `iop --migrate --dry-run` / `--explain` to print and validate the migration plan without writing to IRIS.
 
 ### Changed
 - Register `PollingBusinessService` classes through package/file migration.
+- Improve migration output and validation for common message registration mistakes.
+- Include mode, namespace, and a final success line in migration output.
 
 ## [3.7.1] - 2026-05-28
 ### Added

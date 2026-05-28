@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 from iop._utils import _Utils
 from iop._message import _Message as Message
 from iop._message import _PydanticMessage as PydanticMessage
+from iop import BusinessOperation, Field, PersistentMessage
 
 
 @pytest.fixture
@@ -120,6 +121,87 @@ class TestSchemaOperations:
             mock_cls.return_value.Import.assert_called_once()
 
 
+class TestMigrationPlan:
+    def test_explain_migration_with_messages(self, tmp_path):
+        settings_file = tmp_path / "settings.py"
+        settings_file.write_text(
+            "from dataclasses import dataclass\n"
+            "from iop import BusinessOperation, Field, Message, PersistentMessage\n\n"
+            "class MyOperation(BusinessOperation):\n"
+            "    pass\n\n"
+            "class NativeOrder(PersistentMessage):\n"
+            "    OrderId: str = Field(required=True)\n\n"
+            "@dataclass\n"
+            "class DtlMessage(Message):\n"
+            "    value: str = ''\n\n"
+            "CLASSES = {\n"
+            "    'Python.MyOperation': MyOperation,\n"
+            "    'Demo.Msg.NativeOrder': NativeOrder,\n"
+            "}\n"
+            "SCHEMAS = [DtlMessage]\n"
+            "PRODUCTIONS = [{'Demo.Production': {'Item': []}}]\n"
+        )
+
+        plan = _Utils.explain_migration(
+            str(settings_file), mode="LOCAL", namespace="USER"
+        )
+
+        assert "Mode: LOCAL" in plan
+        assert "Namespace: USER" in plan
+        assert "CLASSES:" in plan
+        assert "Python.MyOperation -> settings.MyOperation (component)" in plan
+        assert (
+            "Demo.Msg.NativeOrder -> settings.NativeOrder (PersistentMessage)"
+            in plan
+        )
+        assert "SCHEMAS:\n  settings.DtlMessage" in plan
+        assert "PRODUCTIONS:\n  Demo.Production" in plan
+
+    def test_message_in_classes_gets_actionable_error(self):
+        @dataclass
+        class TestMessage(Message):
+            value: str = ""
+
+        class Settings:
+            CLASSES = {"Python.TestMessage": TestMessage}
+
+        with pytest.raises(ValueError, match="cannot be registered in CLASSES"):
+            _Utils._build_migration_plan(Settings, os.getcwd())
+
+    def test_register_settings_components_and_schemas(self, tmp_path):
+        class MyOperation(BusinessOperation):
+            pass
+
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        @dataclass
+        class DtlMessage(Message):
+            value: str = ""
+
+        class Settings:
+            CLASSES = {
+                "Python.MyOperation": MyOperation,
+                "Demo.Msg.NativeOrder": NativeOrder,
+            }
+            SCHEMAS = [DtlMessage]
+
+        with patch.object(_Utils, "register_component") as mock_component:
+            with patch.object(_Utils, "register_persistent_message") as mock_native:
+                with patch.object(_Utils, "register_message_schema") as mock_schema:
+                    _Utils._register_settings_components(Settings, str(tmp_path))
+
+        mock_component.assert_called_once_with(
+            MyOperation.__module__,
+            "MyOperation",
+            str(tmp_path),
+            1,
+            "Python.MyOperation",
+        )
+        mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
+        mock_schema.assert_called_once_with(DtlMessage)
+
+
 class TestXmlToJson:
     def test_production_key_replaced_with_name(self):
         xml = '<Production Name="MyApp.Production"><Item Name="A"/></Production>'
@@ -144,4 +226,3 @@ class TestXmlToJson:
         data = json.loads(result)
         # falls back to 'Production' when @Name is absent
         assert "Production" in data
-

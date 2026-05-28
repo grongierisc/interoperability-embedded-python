@@ -163,6 +163,18 @@ The settings file path can be relative or absolute.
 iop -M /tmp/settings.py
 ```
 
+Use `--dry-run` or `--explain` to validate the settings file and show the
+migration plan without writing to IRIS:
+
+```bash
+iop -M /tmp/settings.py --dry-run
+```
+
+The plan uses the same sections as `settings.py`: `CLASSES`, `SCHEMAS`, and
+`PRODUCTIONS`. Entries in `CLASSES` are annotated as components or
+`PersistentMessage` classes. Migration output includes the mode, namespace, and
+a final `Migration succeeded` line when the migration completes.
+
 More details about the settings file can be found [here](getting-started/register-component.md).
 
 ### Remote migrate

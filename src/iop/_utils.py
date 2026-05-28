@@ -6,7 +6,7 @@ import importlib.resources
 import json
 import inspect
 import ast
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import xmltodict
 from pydantic import TypeAdapter
@@ -71,6 +71,13 @@ class _Utils:
 
         :param cls: The class to register
         """
+        if is_persistent_message_class(msg_cls):
+            raise ValueError(
+                f"{_Utils._python_classname(msg_cls)} is a PersistentMessage. "
+                "Register it in CLASSES, not SCHEMAS."
+            )
+        if not inspect.isclass(msg_cls):
+            raise ValueError("SCHEMAS entries must be message classes.")
         if issubclass(msg_cls, _PydanticMessage):
             schema = msg_cls.model_json_schema()
         elif issubclass(msg_cls, _Message):
@@ -78,7 +85,8 @@ class _Utils:
             schema = type_adapter.json_schema()
         else:
             raise ValueError(
-                "The class must be a subclass of _Message or _PydanticMessage"
+                f"{_Utils._python_classname(msg_cls)} cannot be registered as a "
+                "DTL schema. Use a Message or PydanticMessage subclass."
             )
         schema_name = msg_cls.__module__ + "." + msg_cls.__name__
         schema_str = json.dumps(schema)
@@ -117,6 +125,23 @@ class _Utils:
         register_persistent_message_class(
             msg_cls, iris_classname, sync_schema=sync_schema
         )
+
+    @staticmethod
+    def _python_classname(value: Any) -> str:
+        module = getattr(value, "__module__", "")
+        name = getattr(value, "__name__", repr(value))
+        return f"{module}.{name}" if module else str(name)
+
+    @staticmethod
+    def _is_message_schema_class(value: Any) -> bool:
+        try:
+            return (
+                inspect.isclass(value)
+                and (issubclass(value, _Message) or issubclass(value, _PydanticMessage))
+                and not is_persistent_message_class(value)
+            )
+        except TypeError:
+            return False
 
     @staticmethod
     def get_python_settings() -> Tuple[str, str, str]:
@@ -330,7 +355,9 @@ class _Utils:
         return module
 
     @staticmethod
-    def migrate(filename=None):
+    def migrate(
+        filename=None, mode: Optional[str] = None, namespace: Optional[str] = None
+    ):
         """
         Read the settings.py file and register all the components
         settings.py file has two dictionaries:
@@ -346,9 +373,120 @@ class _Utils:
         """
         settings, path = _Utils._load_settings(filename)
 
-        _Utils._register_settings_components(settings, path)
+        try:
+            plan = _Utils._build_migration_plan(
+                settings, path, filename, mode=mode, namespace=namespace
+            )
+            print(_Utils.format_migration_plan(plan))
+            _Utils._register_settings_components(settings, path)
+            print(
+                _Utils.format_migration_success(
+                    filename or inspect.getfile(settings), namespace=namespace
+                )
+            )
+        finally:
+            _Utils._cleanup_sys_path(path)
 
-        _Utils._cleanup_sys_path(path)
+    @staticmethod
+    def explain_migration(
+        filename=None, mode: Optional[str] = None, namespace: Optional[str] = None
+    ):
+        """Return a human-readable migration plan without writing to IRIS."""
+        settings, path = _Utils._load_settings(filename)
+        try:
+            plan = _Utils._build_migration_plan(
+                settings, path, filename, mode=mode, namespace=namespace
+            )
+            return _Utils.format_migration_plan(plan)
+        finally:
+            _Utils._cleanup_sys_path(path)
+
+    @staticmethod
+    def format_migration_success(filename, namespace: Optional[str] = None):
+        suffix = f" in namespace {namespace}" if namespace else ""
+        return f"Migration succeeded{suffix}: {filename}"
+
+    @staticmethod
+    def format_migration_plan(plan):
+        """Format a migration plan for CLI and migration output."""
+        lines = [f"Migration plan: {plan['settings']}"]
+        if plan.get("mode"):
+            lines.append(f"Mode: {plan['mode']}")
+        if plan.get("namespace"):
+            lines.append(f"Namespace: {plan['namespace']}")
+        lines.append("")
+        lines.extend(_Utils._format_plan_section("CLASSES", plan["classes"]))
+        lines.extend(_Utils._format_plan_section("SCHEMAS", plan["schemas"]))
+        lines.extend(_Utils._format_plan_section("PRODUCTIONS", plan["productions"]))
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_plan_section(title, entries):
+        lines = [f"{title}:"]
+        if entries:
+            lines.extend(f"  {entry}" for entry in entries)
+        else:
+            lines.append("  none")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _build_migration_plan(
+        settings,
+        path,
+        filename=None,
+        mode: Optional[str] = None,
+        namespace: Optional[str] = None,
+    ):
+        """Build and validate a migration plan from a settings module."""
+        if not path:
+            path = os.path.dirname(inspect.getfile(settings))
+
+        plan = {
+            "settings": filename or inspect.getfile(settings),
+            "mode": mode,
+            "namespace": namespace,
+            "classes": [],
+            "schemas": [],
+            "productions": [],
+        }
+
+        classes = getattr(settings, "CLASSES", {})
+        if not isinstance(classes, dict):
+            raise ValueError("CLASSES must be a dictionary.")
+        for key, value in classes.items():
+            kind, target = _Utils._classify_class_setting(value, path)
+            if kind == "message_schema":
+                schema_hint = value.__name__ if inspect.isclass(value) else target
+                raise ValueError(
+                    f"{target} is a Message/PydanticMessage and cannot be registered "
+                    f"in CLASSES. Use SCHEMAS = [{schema_hint}] if you "
+                    "need DTL support. Otherwise, no migration is required for this "
+                    "message."
+            )
+            if kind == "persistent_message":
+                plan["classes"].append(f"{key} -> {target} (PersistentMessage)")
+            else:
+                plan["classes"].append(f"{key} -> {target} (component)")
+
+        schemas = getattr(settings, "SCHEMAS", None)
+        if schemas is not None:
+            if not isinstance(schemas, list):
+                raise ValueError("SCHEMAS must be a list of message classes.")
+            for cls in schemas:
+                _Utils._validate_dtl_schema_class(cls, "SCHEMAS")
+                plan["schemas"].append(_Utils._python_classname(cls))
+
+        productions = getattr(settings, "PRODUCTIONS", None)
+        if productions is not None:
+            if not isinstance(productions, list):
+                raise ValueError("PRODUCTIONS must be a list.")
+            for production in productions:
+                if not isinstance(production, dict) or not production:
+                    raise ValueError("Each PRODUCTION entry must be a non-empty dict.")
+                plan["productions"].append(next(iter(production.keys())))
+
+        return plan
 
     @staticmethod
     def _load_settings(filename):
@@ -392,6 +530,52 @@ class _Utils:
             return os.getcwd()
 
     @staticmethod
+    def _classify_class_setting(value, root_path=None):
+        if inspect.isclass(value):
+            if is_persistent_message_class(value):
+                return "persistent_message", _Utils._python_classname(value)
+            if _Utils._is_message_schema_class(value):
+                return "message_schema", _Utils._python_classname(value)
+            return "component", _Utils._python_classname(value)
+
+        if inspect.ismodule(value):
+            return "component", f"{value.__name__}.*"
+
+        if isinstance(value, dict):
+            if "path" in value and "module" in value and "class" in value:
+                cls = _Utils._try_import_class(
+                    value["module"], value["class"], value["path"]
+                )
+                target = f"{value['module']}.{value['class']}"
+                if cls is not None:
+                    if is_persistent_message_class(cls):
+                        return "persistent_message", target
+                    if _Utils._is_message_schema_class(cls):
+                        return "message_schema", target
+                return "component", target
+            if "path" in value and "package" in value:
+                return "component", f"{value['package']} package"
+            if "path" in value and "file" in value:
+                return "component", value["file"]
+            if "path" in value:
+                return "component", value["path"]
+
+        raise ValueError(f"Invalid migration class entry: {value!r}.")
+
+    @staticmethod
+    def _validate_dtl_schema_class(cls, setting_name):
+        if is_persistent_message_class(cls):
+            raise ValueError(
+                f"{_Utils._python_classname(cls)} is a PersistentMessage. Register it "
+                "in CLASSES, not SCHEMAS."
+            )
+        if not _Utils._is_message_schema_class(cls):
+            raise ValueError(
+                f"{_Utils._python_classname(cls)} cannot be registered in "
+                f"{setting_name}. Use a Message or PydanticMessage subclass."
+            )
+
+    @staticmethod
     def _register_settings_components(settings, path):
         """Register all components from settings (classes, productions, schemas).
 
@@ -403,24 +587,23 @@ class _Utils:
         if not path:
             path = os.path.dirname(inspect.getfile(settings))
 
-        try:
-            # set the classes settings
-            _Utils.set_classes_settings(settings.CLASSES, path)
-        except AttributeError:
-            print("No classes to register")
+        class_items = getattr(settings, "CLASSES", None)
+        if class_items is not None:
+            _Utils.set_classes_settings(class_items, path)
 
         try:
             # set the productions settings
             _Utils.set_productions_settings(settings.PRODUCTIONS, path)
         except AttributeError:
-            print("No productions to register")
+            pass
 
-        try:
-            # set the schemas
-            for cls in settings.SCHEMAS:
+        schemas = getattr(settings, "SCHEMAS", None)
+        if schemas is not None:
+            if not isinstance(schemas, list):
+                raise ValueError("SCHEMAS must be a list of message classes.")
+            for cls in schemas:
+                _Utils._validate_dtl_schema_class(cls, "SCHEMAS")
                 _Utils.register_message_schema(cls)
-        except AttributeError:
-            print("No schemas to register")
 
     @staticmethod
     def _cleanup_sys_path(path):
@@ -457,11 +640,21 @@ class _Utils:
         :param class_items: a dictionary of classes
         :return: a dictionary of settings for each class
         """
+        if not isinstance(class_items, dict):
+            raise ValueError("CLASSES must be a dictionary.")
         for key, value in class_items.items():
             if inspect.isclass(value):
                 if is_persistent_message_class(value):
                     _Utils.register_persistent_message(value, key)
                     continue
+                if _Utils._is_message_schema_class(value):
+                    raise ValueError(
+                        f"{_Utils._python_classname(value)} is a Message/"
+                        "PydanticMessage and cannot be registered in CLASSES. "
+                        f"Use SCHEMAS = [{value.__name__}] if you need DTL "
+                        "support. Otherwise, no migration is required for this "
+                        "message."
+                    )
                 path = None
                 if root_path:
                     path = root_path
@@ -487,6 +680,14 @@ class _Utils:
                     if msg_cls is not None and is_persistent_message_class(msg_cls):
                         _Utils.register_persistent_message(msg_cls, key)
                         continue
+                    if msg_cls is not None and _Utils._is_message_schema_class(msg_cls):
+                        raise ValueError(
+                            f"{value['module']}.{value['class']} is a Message/"
+                            "PydanticMessage and cannot be registered in CLASSES. "
+                            "Use SCHEMAS if you need DTL "
+                            "support. Otherwise, no migration is required for this "
+                            "message."
+                        )
                     # register the component
                     _Utils.register_component(
                         value["module"], value["class"], value["path"], 1, key

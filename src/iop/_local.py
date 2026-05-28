@@ -95,7 +95,7 @@ class _LocalDirector(_DirectorProtocol):
     # ------------------------------------------------------------------
 
     def migrate(self, path: str) -> None:
-        _Utils.migrate(path)
+        _Utils.migrate(path, mode="LOCAL", namespace=self.namespace)
 
     # ------------------------------------------------------------------
     # Metadata

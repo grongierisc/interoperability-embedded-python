@@ -13,6 +13,7 @@ from importlib.metadata import version
 from ._local import _LocalDirector
 from ._remote import _RemoteDirector, get_remote_settings
 from ._director_protocol import DirectorProtocol
+from ._utils import _Utils
 
 
 class CommandType(Enum):
@@ -57,6 +58,7 @@ class CommandArgs:
     force_local: bool = False
     remote_settings: Optional[str] = None
     update: bool = False
+    migration_plan: bool = False
 
 
 class Command:
@@ -252,7 +254,27 @@ class Command:
         if migrate_path is not None:
             if not os.path.isabs(migrate_path):
                 migrate_path = os.path.join(os.getcwd(), migrate_path)
+            mode = "REMOTE" if self._is_remote else "LOCAL"
+            if self.args.migration_plan:
+                print(
+                    _Utils.explain_migration(
+                        migrate_path, mode=mode, namespace=self.director.namespace
+                    )
+                )
+                return
+            if self._is_remote:
+                print(
+                    _Utils.explain_migration(
+                        migrate_path, mode=mode, namespace=self.director.namespace
+                    )
+                )
             self.director.migrate(migrate_path)
+            if self._is_remote:
+                print(
+                    _Utils.format_migration_success(
+                        migrate_path, namespace=self.director.namespace
+                    )
+                )
 
     def _handle_log(self) -> None:
         if self.args.log == "not_set":
@@ -404,6 +426,13 @@ def create_parser() -> argparse.ArgumentParser:
     migrate.add_argument(
         "--force-local",
         help="force local mode, skip remote even if REMOTE_SETTINGS or IOP_URL is present",
+        action="store_true",
+    )
+    migrate.add_argument(
+        "--dry-run",
+        "--explain",
+        dest="migration_plan",
+        help="show the migration plan and validation messages without writing to IRIS",
         action="store_true",
     )
 

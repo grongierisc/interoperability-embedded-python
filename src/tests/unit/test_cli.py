@@ -134,6 +134,29 @@ class TestIOPCli(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with('/tmp/settings.json')
 
+    def test_migration_dry_run_prints_plan_without_migrating(self):
+        """--dry-run prints the migration plan and does not call migrate."""
+        content = "CLASSES = {}\nSCHEMAS = []\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            path = f.name
+        try:
+            with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+                with patch('sys.stdout', new=StringIO()) as fake_out:
+                    with self.assertRaises(SystemExit) as cm:
+                        main(['-m', path, '--dry-run'])
+                    self.assertEqual(cm.exception.code, 0)
+            mock_migrate.assert_not_called()
+            output = fake_out.getvalue()
+            self.assertIn("Migration plan:", output)
+            self.assertIn("Mode: LOCAL", output)
+            self.assertIn("Namespace:", output)
+            self.assertIn("CLASSES:", output)
+            self.assertIn("SCHEMAS:", output)
+            self.assertIn("PRODUCTIONS:", output)
+        finally:
+            os.unlink(path)
+
     def test_status_and_update(self):
         """Test status and update commands."""
         # Test status
@@ -431,9 +454,14 @@ class TestCLIRemoteMode(unittest.TestCase):
             # No env vars set — remote mode comes only from the settings file
             with patch.dict(os.environ, {}, clear=True):
                 with patch("iop._remote._RemoteDirector.migrate") as mock_migrate:
-                    with self.assertRaises(SystemExit):
-                        main(['-M', path])
+                    with patch('sys.stdout', new=StringIO()) as fake_out:
+                        with self.assertRaises(SystemExit):
+                            main(['-M', path])
                     mock_migrate.assert_called_once_with(path)
+            output = fake_out.getvalue()
+            self.assertIn("Mode: REMOTE", output)
+            self.assertIn("Namespace: NS", output)
+            self.assertIn("Migration succeeded in namespace NS", output)
         finally:
             os.unlink(path)
 
@@ -519,4 +547,3 @@ class TestCLIRemoteMode(unittest.TestCase):
                     mock_get.assert_not_called()
         finally:
             os.unlink(path)
-
