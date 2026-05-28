@@ -1,5 +1,5 @@
-from iop import PollingBusinessService, BusinessService
-
+from iop import PollingBusinessService, BusinessService, Category, Setting, controls
+from typing import Annotated
 import iris
 
 import json
@@ -15,18 +15,13 @@ class RedditService(PollingBusinessService):
     API before calling the FilterPostRoutingRule process.
     """
 
-    def on_init(self):
-        
-        if not hasattr(self,'feed'):
-            self.feed = "/new/"
-        
-        if not hasattr(self,'limit'):
-            raise TypeError('no limit field')
+    feed: Annotated[str, Setting(default="/new/", category=Category.DEV)]
 
-        if not hasattr(self,'target'):
-            self.target = "Python.FilterPostRoutingRule"
-        
-        self.last_post_name = ""
+    limit: Annotated[str, Setting(default="10", category=Category.DEV)]
+
+    target: Annotated[str, Setting(default="Python.FilterPostRoutingRule", category=Category.DEV, control=controls.production_item())]
+
+    last_post_name: str = ""
 
 
     def on_process_input(self,message_input):

@@ -12,6 +12,10 @@ from iop._persistent_message import Model as Model
 from iop._persistent_message import _PersistentMessage
 from iop._private_session_duplex import _PrivateSessionDuplex
 from iop._private_session_process import _PrivateSessionProcess
+from iop._settings import Category as Category
+from iop._settings import Setting as Setting
+from iop._settings import controls as controls
+from iop._settings import setting as setting
 from iop._utils import _Utils
 
 

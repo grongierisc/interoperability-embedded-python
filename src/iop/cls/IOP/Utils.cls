@@ -352,12 +352,32 @@ ClassMethod GenerateProxyClass(
 				}
 			}
 			Set tCustomProp.Required = tPropInfo."__getitem__"(3)
+			Set tDesc = ""
+			If (builtins.len(tPropInfo)>5) {
+				Set tDesc = tPropInfo."__getitem__"(5)
+			}
+			If ""'=tDesc {
+				Set tCustomProp.Description = tDesc
+			}
 			
 			Set tSC = tCOSClass.Properties.Insert(tCustomProp)
 			Quit:$$$ISERR(tSC)
 
-			Set tPropCat = "Python Attributes $type"
+			Set tPropCat = ""
+			If (builtins.len(tPropInfo)>4) {
+				Set tPropCat = tPropInfo."__getitem__"(4)
+			}
+			If ""=tPropCat {
+				Set tPropCat = "Python Attributes $type"
+			}
+			Set tContext = ""
+			If (builtins.len(tPropInfo)>6) {
+				Set tContext = tPropInfo."__getitem__"(6)
+			}
 			Set tSETTINGSParamValue = tSETTINGSParamValue_","_tPropName_":"_tPropCat
+			If ""'=tContext {
+				Set tSETTINGSParamValue = tSETTINGSParamValue_":"_tContext
+			}
 		}
 		Quit:$$$ISERR(tSC)
 

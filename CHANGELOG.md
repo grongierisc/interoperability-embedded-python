@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `PollingBusinessService` for `iop` and `grongier.pex` to create scheduled polling business services without manually returning `Ens.InboundAdapter`.
 - Add `iop --migrate --dry-run` / `--explain` to print and validate the migration plan without writing to IRIS.
+- Add Pythonic component setting metadata with `setting(...)`, `Setting`, `Category`, and `controls` helpers for IRIS production categories, descriptions, required flags, and editor controls.
 
 ### Changed
 - Register `PollingBusinessService` classes through package/file migration.

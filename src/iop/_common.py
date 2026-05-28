@@ -1,11 +1,143 @@
 import abc
 import inspect
 import traceback
-from typing import Any, ClassVar, List, Optional, Tuple
+from enum import Enum
+from types import UnionType
+from typing import (
+    Annotated,
+    Any,
+    ClassVar,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from . import _iris
-from ._log_manager import LogManager, logging
 from ._debugpy import debugpython
+from ._log_manager import LogManager, logging
+from ._settings import Setting
+
+
+_NO_VALUE = object()
+
+_EXCLUDED_SETTING_NAMES = {
+    "INFO_URL",
+    "ICON_URL",
+    "PERSISTENT_PROPERTY_LIST",
+    "log_to_console",
+    "logger",
+    "iris_handle",
+    "DISPATCH",
+    "adapter",
+    "Adapter",
+    "buffer",
+    "BusinessHost",
+    "business_host",
+    "business_host_python",
+}
+
+_PYTHON_TYPE_TO_IRIS = {
+    int: "Integer",
+    float: "Numeric",
+    complex: "Numeric",
+    bool: "Boolean",
+    str: "String",
+}
+
+_SIMPLE_TYPE_NAMES = {
+    "int": "Integer",
+    "integer": "Integer",
+    "float": "Numeric",
+    "complex": "Numeric",
+    "number": "Numeric",
+    "numeric": "Numeric",
+    "bool": "Boolean",
+    "boolean": "Boolean",
+    "str": "String",
+    "string": "String",
+}
+
+
+def _string_metadata(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, Enum):
+        return str(value.value)
+    return str(value)
+
+
+def _type_hints_with_extras(cls) -> dict[str, Any]:
+    try:
+        return get_type_hints(cls, include_extras=True)
+    except Exception:
+        hints: dict[str, Any] = {}
+        for base in reversed(inspect.getmro(cls)):
+            hints.update(getattr(base, "__annotations__", {}))
+        return hints
+
+
+def _unwrap_annotated(data_type: Any) -> tuple[Any, tuple[Any, ...]]:
+    if get_origin(data_type) is Annotated:
+        args = get_args(data_type)
+        if args:
+            return args[0], args[1:]
+    return data_type, ()
+
+
+def _setting_from_annotation(data_type: Any) -> tuple[Any, Optional[Setting]]:
+    data_type, metadata = _unwrap_annotated(data_type)
+    setting = None
+    for item in metadata:
+        if isinstance(item, Setting):
+            setting = item
+    return data_type, setting
+
+
+def _unwrap_optional(data_type: Any) -> Any:
+    origin = get_origin(data_type)
+    if origin in (Union, UnionType):
+        args = [arg for arg in get_args(data_type) if arg is not type(None)]
+        if len(args) == 1:
+            return args[0]
+    return data_type
+
+
+def _iris_data_type(data_type: Any) -> Optional[str]:
+    if data_type is None or data_type == "":
+        return None
+
+    data_type, _ = _unwrap_annotated(data_type)
+    data_type = _unwrap_optional(data_type)
+
+    if data_type is Any or data_type is object:
+        return "String"
+
+    if isinstance(data_type, str):
+        data_type = data_type.strip()
+        return _SIMPLE_TYPE_NAMES.get(data_type.lower(), data_type)
+
+    if data_type in _PYTHON_TYPE_TO_IRIS:
+        return _PYTHON_TYPE_TO_IRIS[data_type]
+
+    origin = get_origin(data_type)
+    if origin in _PYTHON_TYPE_TO_IRIS:
+        return _PYTHON_TYPE_TO_IRIS[origin]
+    if origin is not None:
+        return "String"
+
+    return None
+
+
+def _is_setting_member(name: str, value: Any) -> bool:
+    if name.startswith("_") or name in _EXCLUDED_SETTING_NAMES:
+        return False
+    return not (
+        inspect.ismethod(value) or inspect.isfunction(value) or inspect.isclass(value)
+    )
 
 
 class _Common(metaclass=abc.ABCMeta):
@@ -168,87 +300,117 @@ class _Common(metaclass=abc.ABCMeta):
         - Required flag
         - Category
         - Description
+        - Control/editor context
 
         Only includes non-private class attributes and properties.
         """
         ret = []
         try:
-            # getmembers() returns all the members of an obj
-            for member in inspect.getmembers(cls):
-                # remove private and protected functions
-                if not member[0].startswith("_"):
-                    # remove other methods and functions
-                    if (
-                        not inspect.ismethod(member[1])
-                        and not inspect.isfunction(member[1])
-                        and not inspect.isclass(member[1])
-                    ):
-                        if member[0] not in (
-                            "INFO_URL",
-                            "ICON_URL",
-                            "PERSISTENT_PROPERTY_LIST",
-                            "log_to_console",
-                            "logger",
-                            "iris_handle",
-                            "DISPATCH",
-                            "adapter",
-                            "Adapter",
-                            "buffer",
-                            "BusinessHost",
-                            "business_host",
-                            "business_host_python",
-                        ):
-                            name = member[0]
-                            req = 0
-                            cat = "Additional"
-                            desc = ""
-                            # get value, set to "" if None or a @property
-                            val = member[1]
-                            if isinstance(val, property) or (val is None):
-                                val = ""
-                            dt = str(type(val))[8:-2]
-                            # get datatype from attribute definition, default to String
-                            data_type = {
-                                "int": "Integer",
-                                "float": "Numeric",
-                                "complex": "Numeric",
-                                "bool": "Boolean",
-                            }.get(dt, "String")
-                            # if the user has created a attr_info function, then check the annotation on the return from that for more information about this attribute
-                            if hasattr(cls, name + "_info"):
-                                func = getattr(cls, name + "_info")
-                                if callable(func):
-                                    annotations = func.__annotations__["return"]
-                                    if annotations is not None:
-                                        if bool(annotations.get("ExcludeFromSettings")):
-                                            # don't add this attribute to the settings list
-                                            continue
-                                        req = bool(annotations.get("IsRequired"))
-                                        cat = annotations.get("Category", "Additional")
-                                        desc = annotations.get("Description")
-                                        dt = annotations.get("DataType")
-                                        # only override DataType found
-                                        if (dt is not None) and ("" != dt):
-                                            data_type = {
-                                                int: "Integer",
-                                                float: "Number",
-                                                complex: "Number",
-                                                bool: "Boolean",
-                                                str: "String",
-                                            }.get(dt, str(dt))
-                                    default = func()
-                                    if default is not None:
-                                        val = default
-                            # create list of information for this specific property
-                            info = []
-                            info.append(name)  # Name
-                            info.append(data_type)  # DataType
-                            info.append(val)  # Default Value
-                            info.append(req)  # Required
-                            info.append(cat)  # Category
-                            info.append(desc)  # Description
-                            # add this property to the list
-                            ret.append(info)
+            annotations = _type_hints_with_extras(cls)
+            members = dict(inspect.getmembers(cls))
+
+            names = [
+                name
+                for name, value in members.items()
+                if _is_setting_member(name, value)
+            ]
+            for name in annotations:
+                if (
+                    name in names
+                    or name.startswith("_")
+                    or name in _EXCLUDED_SETTING_NAMES
+                ):
+                    continue
+                value = members.get(name, _NO_VALUE)
+                if value is not _NO_VALUE and not _is_setting_member(name, value):
+                    continue
+                names.append(name)
+
+            for name in names:
+                member_exists = name in members
+                val = members.get(name, "")
+                annotated_type, annotated_setting = _setting_from_annotation(
+                    annotations.get(name)
+                )
+                value_setting = val if isinstance(val, Setting) else None
+                setting_info = value_setting or annotated_setting
+
+                if setting_info is not None and setting_info.exclude:
+                    continue
+
+                req = bool(setting_info.required) if setting_info is not None else False
+                cat = setting_info.category if setting_info is not None else ""
+                desc = setting_info.description if setting_info is not None else ""
+                control = setting_info.control if setting_info is not None else ""
+
+                if value_setting is not None:
+                    val = value_setting.default if value_setting.has_default else ""
+                elif (
+                    not member_exists
+                    and annotated_setting is not None
+                    and annotated_setting.has_default
+                ):
+                    val = annotated_setting.default
+                elif not member_exists:
+                    val = ""
+
+                if isinstance(val, property) or (val is None):
+                    val = ""
+
+                if setting_info is not None and setting_info.iris_type:
+                    data_type = setting_info.iris_type
+                else:
+                    data_type_source = (
+                        setting_info.data_type
+                        if setting_info is not None and setting_info.data_type
+                        else annotated_type
+                    )
+                    data_type = _iris_data_type(data_type_source)
+                    if data_type is None:
+                        data_type = _iris_data_type(type(val)) or "String"
+
+                # Legacy attr_info() support. Values supplied here keep working
+                # and can also provide the new control/editor context field.
+                if hasattr(cls, name + "_info"):
+                    func = getattr(cls, name + "_info")
+                    if callable(func):
+                        info_annotations = getattr(func, "__annotations__", {}).get(
+                            "return"
+                        )
+                        if info_annotations is not None:
+                            if bool(info_annotations.get("ExcludeFromSettings")):
+                                continue
+                            req = bool(info_annotations.get("IsRequired", req))
+                            cat = _string_metadata(
+                                info_annotations.get("Category", cat)
+                            )
+                            desc = _string_metadata(
+                                info_annotations.get("Description", desc)
+                            )
+                            control = _string_metadata(
+                                info_annotations.get(
+                                    "Control",
+                                    info_annotations.get("EditorContext", control),
+                                )
+                            )
+                            dt = info_annotations.get("DataType")
+                            if (dt is not None) and ("" != dt):
+                                data_type = _iris_data_type(dt) or str(dt)
+                        default = func()
+                        if default is not None:
+                            val = default
+
+                ret.append(
+                    [
+                        name,  # Name
+                        data_type,  # DataType
+                        val,  # Default Value
+                        req,  # Required
+                        _string_metadata(cat),  # Category
+                        _string_metadata(desc),  # Description
+                        _string_metadata(control),  # Control/editor context
+                    ]
+                )
         except Exception:
             pass
         return ret
