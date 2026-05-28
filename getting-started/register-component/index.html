@@ -228,7 +228,7 @@ Utils.register_folder(&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX&quot
 Utils.migrate()
 </code></pre>
 <h2 id="the-settingspy-file">The <code>settings.py</code> File</h2>
-<p>This file is used to store the settings of the interoperability components. It has three sections:</p>
+<p>This file is used to store the settings of the interoperability components. It has these sections:</p>
 <ul>
 <li><code>CLASSES</code>: Stores the classes of the interoperability components.</li>
 <li><code>PRODUCTIONS</code>: Stores the productions of the interoperability components.</li>
@@ -242,6 +242,8 @@ CLASSES = {
     &quot;Demo.Msg.OrderMessage&quot;: OrderMessage,
 }
 </code></pre>
+<p>Regular <code>Message</code> and <code>PydanticMessage</code> classes only need migration when you
+want DTL schema support. In that case, place them in <code>SCHEMAS</code>.</p>
 <p>Example:</p>
 <pre><code class="language-python">import bp
 from bo import *

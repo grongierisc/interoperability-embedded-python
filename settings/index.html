@@ -216,6 +216,9 @@ CLASSES = {
     &quot;Demo.Msg.OrderMessage&quot;: OrderMessage,
 }
 </code></pre>
+<p>Regular <code>Message</code> and <code>PydanticMessage</code> classes do not go in <code>CLASSES</code> or
+native message registration. Add them to <code>SCHEMAS</code> only when you need DTL schema
+support.</p>
 <h2 id="productions-section">PRODUCTIONS Section</h2>
 <p>Define complete production configurations with multiple components.</p>
 <h3 id="minimal-production">Minimal Production</h3>

@@ -106,7 +106,7 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#business-service_1">Business Service</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#pulling-business-service">Pulling Business Service</a>
+    <li class="toctree-l3"><a class="reference internal" href="#polling-business-service">Polling Business Service</a>
     </li>
         </ul>
     </li>
@@ -220,7 +220,7 @@ CLASSES = {
 <p>Two kinds of business services can be created in Python:</p>
 <ul>
 <li>Business Service</li>
-<li>Pulling Business Service</li>
+<li>Polling Business Service</li>
 </ul>
 <h3 id="business-service_1">Business Service</h3>
 <p>To create a business service, use the following code:</p>
@@ -234,19 +234,14 @@ class MyBusinessService(BusinessService):
         response = MyResponse(&quot;MyBusinessService:on_process_input() echos&quot;)
         return response
 </code></pre>
-<h3 id="pulling-business-service">Pulling Business Service</h3>
-<p>To create a business service that runs every 5 seconds, use the following code:</p>
-<pre><code class="language-python">from iop import BusinessService
+<h3 id="polling-business-service">Polling Business Service</h3>
+<p>To create a polling business service, use the following code:</p>
+<pre><code class="language-python">from iop import PollingBusinessService
 
-class MyBusinessService(BusinessService):
-
-    def get_adapter_type():
-        # This is mandatory to schedule the service
-        # By default, the service will be scheduled every 5 seconds
-        return &quot;Ens.InboundAdapter&quot;
+class MyBusinessService(PollingBusinessService):
 
     def on_process_input(self):
-        # This method is called every 5 seconds
+        # This method is called by the scheduler
         self.log_info(&quot;[Python] MyBusinessService:on_process_input() is called&quot;)
 </code></pre>
 <h2 id="flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</h2>

@@ -259,6 +259,14 @@ default production: IoP.Production
 <p>The settings file path can be relative or absolute.</p>
 <pre><code class="language-bash">iop -M /tmp/settings.py
 </code></pre>
+<p>Use <code>--dry-run</code> or <code>--explain</code> to validate the settings file and show the
+migration plan without writing to IRIS:</p>
+<pre><code class="language-bash">iop -M /tmp/settings.py --dry-run
+</code></pre>
+<p>The plan uses the same sections as <code>settings.py</code>: <code>CLASSES</code>, <code>SCHEMAS</code>, and
+<code>PRODUCTIONS</code>. Entries in <code>CLASSES</code> are annotated as components or
+<code>PersistentMessage</code> classes. Migration output includes the mode, namespace, and
+a final <code>Migration succeeded</code> line when the migration completes.</p>
 <p>More details about the settings file can be found <a href="../getting-started/register-component/">here</a>.</p>
 <h3 id="remote-migrate">Remote migrate</h3>
 <p>If the settings file contains a <code>REMOTE_SETTINGS</code> dict, the migration is performed against the remote IRIS instance automatically — no environment variables needed:</p>

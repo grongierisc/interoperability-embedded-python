@@ -68,6 +68,14 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessservice">BusinessService 🔄</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#component-settings">Component Settings</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#categories">Categories</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#control-helpers">Control Helpers</a>
+    </li>
+        </ul>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessoperation">BusinessOperation 🔧</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessprocess">BusinessProcess ‍💼</a>
@@ -254,8 +262,8 @@ class MyService(BusinessService):
     def on_process_input(self, message_input):
         self.log_info(f&quot;Received: {message_input}&quot;)
 </code></pre>
-<p><strong>Advanced Example with Adapter:</strong></p>
-<pre><code class="language-python">from iop import BusinessService, Message
+<p><strong>Polling Example:</strong></p>
+<pre><code class="language-python">from iop import PollingBusinessService, Message
 from dataclasses import dataclass
 
 @dataclass
@@ -263,17 +271,215 @@ class MyRequest(Message):
     file_path: str = None
     data: str = None
 
-class MyService(BusinessService):
-    def get_adapter_type():
-        &quot;&quot;&quot;Enable pull mode for the BusinessService&quot;&quot;&quot;
-        return &quot;Ens.InboundAdapter&quot;
-
+class MyService(PollingBusinessService):
     def on_process_input(self, message_input):
         self.log_info(f&quot;Received: {message_input}&quot;)
         with open(message_input.file_path, 'r') as file:
             data = file.read()
         request = MyRequest(data=data)
         self.send_request_async(&quot;MyBusinessOperation&quot;, request)
+</code></pre>
+<p><code>PollingBusinessService</code> uses the default IRIS inbound adapter.</p>
+<h3 id="component-settings">Component Settings</h3>
+<p>Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use <code>setting(...)</code> when you want to control how a setting appears in the IRIS production UI.</p>
+<pre><code class="language-python">from iop import BusinessService, Category, controls, setting
+
+class FileService(BusinessService):
+    InputDirectory = setting(
+        &quot;/data/in&quot;,
+        category=Category.CONNECTION,
+        required=True,
+        description=&quot;Directory to scan&quot;,
+        control=controls.directory(),
+    )
+
+    Target = setting(
+        &quot;&quot;,
+        category=Category.BASIC,
+        required=True,
+        control=controls.production_item(),
+    )
+</code></pre>
+<p>You can also keep normal Python defaults and attach metadata with <code>typing.Annotated</code>:</p>
+<pre><code class="language-python">from typing import Annotated
+from iop import BusinessService, Category, Setting, controls
+
+class FramedService(BusinessService):
+    Framing: Annotated[
+        str,
+        Setting(
+            &quot;None&quot;,
+            category=Category.CONNECTION,
+            control=controls.framing(),
+        ),
+    ]
+</code></pre>
+<h4 id="categories">Categories</h4>
+<p>Categories control where the setting appears in the IRIS production settings UI. They are written to the generated <code>SETTINGS</code> parameter as the setting section name. Categories do not change the Python attribute name, default value, IRIS data type, required flag, or editor control.</p>
+<p>If <code>category</code> is omitted, the setting stays in the generated Python Attributes group. Use <code>Category</code> for common IRIS sections, or pass a string when a component needs its own section name.</p>
+<pre><code class="language-python">from iop import Category, setting
+
+Timeout = setting(30, category=Category.BASIC)
+ArchiveDirectory = setting(&quot;/archive&quot;, category=&quot;Archiving&quot;)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Generated section</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Category.INFO</code></td>
+<td><code>Info</code></td>
+<td>Groups informational settings. Use for values that identify or describe the component rather than tune runtime behavior.</td>
+</tr>
+<tr>
+<td><code>Category.BASIC</code></td>
+<td><code>Basic</code></td>
+<td>Groups the most common operational settings. Use for values a production operator is expected to review or change frequently.</td>
+</tr>
+<tr>
+<td><code>Category.CONNECTION</code></td>
+<td><code>Connection</code></td>
+<td>Groups endpoint, path, credential, protocol, adapter, and network-related settings.</td>
+</tr>
+<tr>
+<td><code>Category.ADDITIONAL</code></td>
+<td><code>Additional</code></td>
+<td>Groups optional or less frequently changed settings that should remain visible but not compete with the basic settings.</td>
+</tr>
+<tr>
+<td><code>Category.ALERTING</code></td>
+<td><code>Alerting</code></td>
+<td>Groups alert, notification, and error-reporting settings.</td>
+</tr>
+<tr>
+<td><code>Category.DEV</code></td>
+<td><code>Dev</code></td>
+<td>Groups development, debug, diagnostic, or troubleshooting settings.</td>
+</tr>
+<tr>
+<td><code>"Custom Name"</code></td>
+<td><code>Custom Name</code></td>
+<td>Creates or uses a custom section with that exact name. Use sparingly so production settings stay predictable.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="control-helpers">Control Helpers</h4>
+<p>Control helpers return the IRIS production setting editor context string used in the generated <code>SETTINGS</code> parameter. They do not validate the selected value in Python; they tell the IRIS Management Portal which picker or selector to show for the setting.</p>
+<table>
+<thead>
+<tr>
+<th>Helper</th>
+<th>Returns</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>controls.directory()</code></td>
+<td><code>directorySelector</code></td>
+<td>Shows the IRIS directory picker. Use for settings that should contain a directory path.</td>
+</tr>
+<tr>
+<td><code>controls.file()</code></td>
+<td><code>fileSelector</code></td>
+<td>Shows the IRIS file picker. Use for settings that should contain a file path.</td>
+</tr>
+<tr>
+<td><code>controls.production_item()</code></td>
+<td><code>selector?context={Ens.ContextSearch/ProductionItems?targets=1&amp;productionName=@productionId}</code></td>
+<td>Shows production items from the current production and stores the selected item name. Use for target component settings such as <code>TargetConfigName</code>.</td>
+</tr>
+<tr>
+<td><code>controls.credentials()</code></td>
+<td><code>credentialsSelector</code></td>
+<td>Shows the credentials selector. Use for settings that reference an IRIS credentials entry.</td>
+</tr>
+<tr>
+<td><code>controls.rule()</code></td>
+<td><code>ruleSelector</code></td>
+<td>Shows the rule selector. Use for settings that reference an IRIS rule definition.</td>
+</tr>
+<tr>
+<td><code>controls.dtl()</code></td>
+<td><code>dtlSelector</code></td>
+<td>Shows the DTL selector. Use for settings that reference a data transformation.</td>
+</tr>
+<tr>
+<td><code>controls.schedule()</code></td>
+<td><code>scheduleSelector</code></td>
+<td>Shows the schedule selector. Use for settings that reference an IRIS schedule.</td>
+</tr>
+<tr>
+<td><code>controls.ssl_config()</code></td>
+<td><code>sslConfigSelector</code></td>
+<td>Shows the SSL/TLS configuration selector. Use for settings that reference an IRIS SSL configuration.</td>
+</tr>
+<tr>
+<td><code>controls.framing()</code></td>
+<td><code>selector?context={Ens.ContextSearch/getDisplayList?host=@currHostId&amp;prop=Framing}</code></td>
+<td>Shows the display list for the <code>Framing</code> property of the current host. Use for adapter framing settings.</td>
+</tr>
+<tr>
+<td><code>controls.character_set()</code></td>
+<td><code>selector?context={Ens.ContextSearch/CharacterSets}</code></td>
+<td>Shows the IRIS character set selector. Use for charset or encoding settings.</td>
+</tr>
+<tr>
+<td><code>controls.local_interface()</code></td>
+<td><code>selector?context={Ens.ContextSearch/TCPLocalInterfaces}</code></td>
+<td>Shows configured TCP local interfaces. Use for settings that bind to a local network interface.</td>
+</tr>
+<tr>
+<td><code>controls.schema_category(host)</code></td>
+<td><code>selector?context={Ens.ContextSearch/SchemaCategories?host=&lt;host&gt;}</code></td>
+<td>Shows schema categories for the specified host. Pass a host expression such as <code>@currHostId</code> or a host setting value.</td>
+</tr>
+<tr>
+<td><code>controls.search_table(host)</code></td>
+<td><code>selector?context={Ens.ContextSearch/SearchTableClasses?host=&lt;host&gt;}</code></td>
+<td>Shows search table classes for the specified host. Pass a host expression such as <code>@currHostId</code> or a host setting value.</td>
+</tr>
+</tbody>
+</table>
+<p><code>controls.production_item()</code> accepts optional arguments:</p>
+<pre><code class="language-python">Target = setting(
+    &quot;&quot;,
+    control=controls.production_item(
+        targets=True,
+        production_name=&quot;@productionId&quot;,
+        multi_select=False,
+    ),
+)
+</code></pre>
+<ul>
+<li><code>targets</code>: passed to the IRIS <code>ProductionItems</code> context as <code>targets=1</code> or <code>targets=0</code>.</li>
+<li><code>production_name</code>: passed to the IRIS <code>ProductionItems</code> context as <code>productionName=...</code>.</li>
+<li><code>multi_select</code>: when <code>True</code>, adds <code>multiSelect=1</code> to the selector.</li>
+</ul>
+<p><code>controls.framing()</code> accepts optional arguments:</p>
+<pre><code class="language-python">Framing = setting(
+    &quot;None&quot;,
+    control=controls.framing(host=&quot;@currHostId&quot;, prop=&quot;Framing&quot;),
+)
+</code></pre>
+<ul>
+<li><code>host</code>: host expression passed to <code>Ens.ContextSearch/getDisplayList</code>.</li>
+<li><code>prop</code>: property name whose display list should be used.</li>
+</ul>
+<p>For advanced IRIS controls, pass the raw editor context string:</p>
+<pre><code class="language-python">from iop import controls, setting
+
+Framing = setting(
+    &quot;None&quot;,
+    control=controls.raw(
+        &quot;selector?context={Ens.ContextSearch/getDisplayList?host=@currHostId&amp;prop=Framing}&quot;
+    ),
+)
 </code></pre>
 <h3 id="businessoperation">BusinessOperation 🔧</h3>
 <p>Base class for business operations that process requests and perform specific business logic.</p>
