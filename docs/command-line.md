@@ -9,8 +9,10 @@ iop
 
 output :
 ```bash
-usage: python3 -m iop [-h] [-d DEFAULT] [-l] [-s START] [-S] [-k] [-r] [-x] [-m MIGRATE]
-                      [-e EXPORT] [-v] [-L] [-i INIT] [-t TEST] [-D] [-C CLASSNAME] [-B BODY]
+usage: python3 -m iop [-h] [-d [DEFAULT]] [-l] [-s [START]] [-S] [-k] [-r] [-x]
+                      [-m MIGRATE] [-e [EXPORT]] [-v] [-L [LOG]] [-q [QUEUE]]
+                      [-i [INIT]] [-t [TEST]] [-u] [-D] [-C [CLASSNAME]]
+                      [-B [BODY]]
 
 optional arguments:
   -h, --help            display help and default production name
@@ -29,6 +31,8 @@ optional arguments:
                         export a production
   -v, --version        display version
   -L, --log           display log
+  -q [QUEUE], --queue [QUEUE]
+                        display runtime queue information
   -i INIT, --init INIT
                         init the pex module in iris
   -t TEST, --test TEST
@@ -155,13 +159,21 @@ iop -r
 
 ## migrate
 
-The migrate command migrates a production and its classes using a settings file.
+The migrate command migrates a production and its classes using a Python
+migration file. The file can be named `settings.py`, but it can also be a
+single-file production such as `demo.py`.
 
-The settings file path can be relative or absolute.
+The migration file path can be relative or absolute.
 
 ```bash
 iop -M /tmp/settings.py
+iop -M /tmp/demo.py
 ```
+
+The migration file is imported by Python. Put executable code such as
+`prod.test(...)`, `prod.start()`, or ad hoc scripts behind an
+`if __name__ == "__main__":` guard so migration can inspect `PRODUCTIONS`
+without running the script.
 
 Use `--dry-run` or `--explain` to validate the settings file and show the
 migration plan without writing to IRIS:
@@ -170,8 +182,8 @@ migration plan without writing to IRIS:
 iop -M /tmp/settings.py --dry-run
 ```
 
-The plan uses the same sections as `settings.py`: `CLASSES`, `SCHEMAS`, and
-`PRODUCTIONS`. Entries in `CLASSES` are annotated as components or
+The plan uses the same sections as the migration file: `CLASSES`, `SCHEMAS`,
+and `PRODUCTIONS`. Entries in `CLASSES` are annotated as components or
 `PersistentMessage` classes. Migration output includes the mode, namespace, and
 a final `Migration succeeded` line when the migration completes.
 
@@ -179,7 +191,7 @@ More details about the settings file can be found [here](getting-started/registe
 
 ### Remote migrate
 
-If the settings file contains a `REMOTE_SETTINGS` dict, the migration is performed against the remote IRIS instance automatically — no environment variables needed:
+If the migration file contains a `REMOTE_SETTINGS` dict, the migration is performed against the remote IRIS instance automatically — no environment variables needed:
 
 ```python
 # settings.py
@@ -351,6 +363,35 @@ Status can be :
 - suspended
 - troubled
 
+## queue
+
+The queue command displays runtime queue counters for a production.
+
+```bash
+iop --queue IoP.Production
+```
+
+Without an argument, it uses the default production:
+
+```bash
+iop --queue
+```
+
+output :
+```bash
+{
+    "production": "IoP.Production",
+    "items": [
+        {
+            "item": "FileInput",
+            "queue_name": "FileInput",
+            "count": 0,
+            "exists": true
+        }
+    ]
+}
+```
+
 ## version
 
 The version command display the version.
@@ -424,6 +465,7 @@ iop -S            # stop
 iop -k            # kill
 iop -u            # update (hot-reload changed items)
 iop -L            # tail the production log
+iop -q MyApp.Production   # runtime queue counters
 ```
 
 ### Settings file
@@ -499,6 +541,7 @@ Pass `--force-local` to any command to bypass remote mode entirely, even when `I
 
 ```bash
 iop -x --force-local               # status using local IRIS session
+iop -q --force-local               # queue counters using local IRIS session
 iop -M settings.py --force-local   # local migration, ignore REMOTE_SETTINGS
 iop -L --force-local               # tail local log
 iop -x -R settings.py --force-local  # -R is ignored when --force-local is set

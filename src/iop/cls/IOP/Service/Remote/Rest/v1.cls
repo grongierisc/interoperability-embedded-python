@@ -19,6 +19,8 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/default"  Method="PUT"  Call="PutDefault"/>
 <Route Url="/log"      Method="GET"  Call="GetLog"/>
 <Route Url="/export"   Method="GET"  Call="GetExport"/>
+<Route Url="/connections" Method="GET" Call="GetConnections"/>
+<Route Url="/queues"   Method="GET"  Call="GetQueues"/>
 <Route Url="/test"     Method="POST" Call="PostTest"/>
 </Routes>
 }
@@ -256,6 +258,38 @@ ClassMethod GetExport() As %Status
 	}
 }
 
+/// GET /connections?production=MyApp.Production&namespace=USER
+/// Returns runtime graph connections from OnGetConnections.
+ClassMethod GetConnections() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set production = %request.Get("production")
+		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction"), "") }
+		Set jsonStr = ##class(IOP.Utils).ExportProductionConnections(production)
+		Return ..%WriteResponse(jsonStr)
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+/// GET /queues?production=MyApp.Production&namespace=USER
+/// Returns queue counters for production items.
+ClassMethod GetQueues() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set production = %request.Get("production")
+		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction"), "") }
+		Set jsonStr = ##class(IOP.Utils).ExportProductionQueueInfo(production)
+		Return ..%WriteResponse(jsonStr)
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
 /// POST /test
 /// Body: {"target":"Python.MyOp", "classname":"Python.MyMsg", "body":"{}", "namespace":"USER", "restart":true}
 /// If "restart" is true the target component is stopped and restarted before the test message is dispatched. (Default true)
@@ -359,6 +393,8 @@ ClassMethod PutMigrate() As %DynamicObject
 		set namespace = ..ResolveNs(dyna)
 		set targetDirectory = dyna.%Get("remote_folder")
 		set packageName = dyna.%Get("package")
+		set settingsFile = dyna.%Get("settings_file")
+		If settingsFile = "" { Set settingsFile = "settings.py" }
 		// check for namespace existence and user permissions against namespace
 		If '..NamespaceCheck(namespace) {
 			Return ""
@@ -408,7 +444,7 @@ ClassMethod PutMigrate() As %DynamicObject
 		//Do the iop migration
 
 		set iopUtils = ##class(IOP.Wrapper).Import("iop._utils")
-    	do iopUtils."_Utils".migrate(##class(%Library.File).NormalizeFilename("settings.py", packagePath))
+		do iopUtils."_Utils".migrate(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
 	}
 	Catch ex {
 		$$$ThrowOnError(ex.AsStatus())

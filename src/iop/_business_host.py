@@ -13,6 +13,7 @@ from ._decorators import (
 from ._dispatch import dispatch_serializer, dispatch_deserializer, dispach_message
 from ._async_request import AsyncRequest
 from ._generator_request import _GeneratorRequest
+from ._production import Port, resolve_target
 
 
 class _BusinessHost(_Common):
@@ -29,7 +30,7 @@ class _BusinessHost(_Common):
     @output_deserializer
     def send_request_sync(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         timeout: int = -1,
         description: Optional[str] = None,
@@ -48,6 +49,7 @@ class _BusinessHost(_Common):
         Raises:
             TypeError: If request is invalid type
         """
+        target = resolve_target(target)
         return self.iris_handle.dispatchSendRequestSync(
             target, request, timeout, description
         )
@@ -55,7 +57,7 @@ class _BusinessHost(_Common):
     @input_serializer_param(1, "request")
     def send_request_async(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         description: Optional[str] = None,
     ) -> None:
@@ -69,11 +71,12 @@ class _BusinessHost(_Common):
         Raises:
             TypeError: If request is invalid type
         """
+        target = resolve_target(target)
         return self.iris_handle.dispatchSendRequestAsync(target, request, description)
 
     async def send_request_async_ng(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         timeout: int = -1,
         description: Optional[str] = None,
@@ -89,11 +92,12 @@ class _BusinessHost(_Common):
         Returns:
             Response from target component
         """
+        target = resolve_target(target)
         return await AsyncRequest(target, request, timeout, description, self)
 
     def send_generator_request(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         timeout: int = -1,
         description: Optional[str] = None,
@@ -109,11 +113,12 @@ class _BusinessHost(_Common):
         Raises:
             TypeError: If request is not of type Message
         """
+        target = resolve_target(target)
         return _GeneratorRequest(self, target, request, timeout, description)
 
     def send_multi_request_sync(
         self,
-        target_request: List[Tuple[str, Union[Message, Any]]],
+        target_request: List[Tuple[str | Port, Union[Message, Any]]],
         timeout: int = -1,
         description: Optional[str] = None,
     ) -> List[Tuple[str, Union[Message, Any], Any, int]]:
@@ -132,6 +137,9 @@ class _BusinessHost(_Common):
             ValueError: If target_request is empty
         """
         self._validate_target_request(target_request)
+        target_request = [
+            (resolve_target(target), request) for target, request in target_request
+        ]
 
         call_list = [
             self._create_call_structure(target, request)
@@ -153,7 +161,7 @@ class _BusinessHost(_Common):
         ]
 
     def _validate_target_request(
-        self, target_request: List[Tuple[str, Union[Message, Any]]]
+        self, target_request: List[Tuple[str | Port, Union[Message, Any]]]
     ) -> None:
         """Validate the target_request parameter structure."""
         if not isinstance(target_request, list):
@@ -165,11 +173,13 @@ class _BusinessHost(_Common):
         ):
             raise TypeError("target_request must contain tuples of (target, request)")
 
-    def _create_call_structure(self, target: str, request: Union[Message, Any]) -> Any:
+    def _create_call_structure(
+        self, target: str | Port, request: Union[Message, Any]
+    ) -> Any:
         """Create an Ens.CallStructure object for the request."""
         iris = _iris.get_iris()
         call = iris.cls("Ens.CallStructure")._New()
-        call.TargetDispatchName = target
+        call.TargetDispatchName = resolve_target(target)
         call.Request = dispatch_serializer(request)
         return call
 
@@ -186,7 +196,7 @@ class _BusinessHost(_Common):
 
     def SendRequestSync(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         timeout: int = -1,
         description: Optional[str] = None,
@@ -206,7 +216,7 @@ class _BusinessHost(_Common):
 
     def SendRequestAsync(
         self,
-        target: str,
+        target: str | Port,
         request: Union[Message, Any],
         description: Optional[str] = None,
     ) -> None:

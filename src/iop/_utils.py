@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 import importlib
 import importlib.util
 import importlib.resources
@@ -207,9 +208,11 @@ class _Utils:
                 pythonversion,
             )
         except RuntimeError as e:
-            # New message error : Make sure the iop package is installed in iris
             raise RuntimeError(
-                "Iris class : IOP.Utils not found. Make sure the iop package is installed in iris eg: iop --init."
+                "Could not register component "
+                f"{iris_classname} from {module}.{classname}. "
+                "If IRIS reports that IOP.Utils is missing, initialize the IRIS "
+                f"support classes with `iop --init`. Original IRIS error: {e}"
             ) from e
 
     @staticmethod
@@ -482,6 +485,15 @@ class _Utils:
             if not isinstance(productions, list):
                 raise ValueError("PRODUCTIONS must be a list.")
             for production in productions:
+                if _Utils._is_production_object(production):
+                    plan["productions"].append(production.name)
+                    for item in production.component_registrations():
+                        target = item.class_name or item.name
+                        cls = item.component_class
+                        plan["classes"].append(
+                            f"{target} -> {_Utils._python_classname(cls)} (component)"
+                        )
+                    continue
                 if not isinstance(production, dict) or not production:
                     raise ValueError("Each PRODUCTION entry must be a non-empty dict.")
                 plan["productions"].append(next(iter(production.keys())))
@@ -505,13 +517,21 @@ class _Utils:
             # add the path to the system path to the beginning
             path_added = os.path.normpath(os.path.dirname(filename))
             sys.path.insert(0, path_added)
-            # import settings from the specified file
-            settings = _Utils.import_module_from_path("settings", filename)
+            # import the specified file using its real module stem. This keeps
+            # component classes defined in demo.py as demo.ClassName instead of
+            # rewriting them to settings.ClassName.
+            settings = _Utils.import_module_from_path(
+                _Utils._module_name_from_file(filename), filename
+            )
         else:
             # import settings from the settings module
             import settings  # type: ignore
 
         return settings, path_added
+
+    @staticmethod
+    def _module_name_from_file(filename: str) -> str:
+        return os.path.splitext(os.path.basename(filename))[0]
 
     @staticmethod
     def _get_folder_path(filename, path_added_to_sys):
@@ -739,6 +759,15 @@ class _Utils:
         """
         # for each production in the list
         for production in production_list:
+            if _Utils._is_production_object(production):
+                _Utils._register_production_object_components(production, root_path)
+                production = production.to_dict()
+            else:
+                production = copy.deepcopy(production)
+
+            if not isinstance(production, dict) or not production:
+                raise ValueError("Each PRODUCTION entry must be a non-empty dict.")
+
             # get the production name (first key in the dictionary)
             production_name = list(production.keys())[0]
             # set the first key to 'production'
@@ -751,30 +780,52 @@ class _Utils:
             _Utils.register_production(production_name, xml)
 
     @staticmethod
+    def _is_production_object(value) -> bool:
+        return (
+            hasattr(value, "to_dict")
+            and hasattr(value, "component_registrations")
+            and hasattr(value, "name")
+        )
+
+    @staticmethod
+    def _register_production_object_components(production, root_path=None):
+        for item in production.component_registrations():
+            cls = item.component_class
+            if not inspect.isclass(cls):
+                continue
+            path = root_path or os.path.dirname(inspect.getfile(cls))
+            _Utils.register_component(
+                cls.__module__,
+                cls.__name__,
+                path,
+                1,
+                item.class_name,
+            )
+
+    @staticmethod
     def handle_items(production, root_path=None):
         # if an item is a class, register it and replace it with the name of the class
         if "Item" in production["Production"]:
             # for each item in the list
             for i, item in enumerate(production["Production"]["Item"]):
+                if "@ClassName" not in item:
+                    raise ValueError(f"Missing @ClassName for {item.get('@Name')}.")
                 # if the attribute "@ClassName" is a class, register it and replace it with the name of the class
-                if "@ClassName" in item:
-                    if inspect.isclass(item["@ClassName"]):
-                        path = None
-                        if root_path:
-                            path = root_path
-                        else:
-                            path = os.path.dirname(inspect.getfile(item["@ClassName"]))
-                        _Utils.register_component(
-                            item["@ClassName"].__module__,
-                            item["@ClassName"].__name__,
-                            path,
-                            1,
-                            item["@Name"],
-                        )
-                        # replace the class with the name of the class
-                        production["Production"]["Item"][i]["@ClassName"] = item[
-                            "@Name"
-                        ]
+                if inspect.isclass(item["@ClassName"]):
+                    path = None
+                    if root_path:
+                        path = root_path
+                    else:
+                        path = os.path.dirname(inspect.getfile(item["@ClassName"]))
+                    _Utils.register_component(
+                        item["@ClassName"].__module__,
+                        item["@ClassName"].__name__,
+                        path,
+                        1,
+                        item["@Name"],
+                    )
+                    # replace the class with the name of the class
+                    production["Production"]["Item"][i]["@ClassName"] = item["@Name"]
                 # if the attribute "@ClassName" is a dict
                 elif isinstance(item["@ClassName"], dict):
                     # create a new dict where the key is the name of the class and the value is the dict
@@ -783,7 +834,7 @@ class _Utils:
                     _Utils.set_classes_settings(class_dict)
                     # replace the class with the name of the class
                     production["Production"]["Item"][i]["@ClassName"] = item["@Name"]
-                else:
+                elif not isinstance(item["@ClassName"], str):
                     raise ValueError(f"Invalid value for {item['@Name']}.")
 
         return production
@@ -839,6 +890,37 @@ class _Utils:
         string = _Utils.stream_to_string(xdata)
         # convert the xml to a dictionary
         return _Utils.xml_to_json(string)
+
+    @staticmethod
+    def export_production_connections(production_name):
+        """
+        Export runtime-discovered production item connections.
+
+        The IRIS helper calls OnGetConnections for each production item and
+        returns a JSON-compatible graph payload.
+        """
+        data = (
+            _iris.get_iris()
+            .cls("IOP.Utils")
+            .ExportProductionConnections(production_name)
+        )
+        if isinstance(data, dict):
+            return data
+        return json.loads(data)
+
+    @staticmethod
+    def export_production_queue_info(production_name):
+        """
+        Export queue counters for production items.
+        """
+        data = (
+            _iris.get_iris()
+            .cls("IOP.Utils")
+            .ExportProductionQueueInfo(production_name)
+        )
+        if isinstance(data, dict):
+            return data
+        return json.loads(data)
 
     @staticmethod
     def xml_to_json(xml_string: str) -> str:

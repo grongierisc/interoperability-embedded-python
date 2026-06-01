@@ -1,10 +1,13 @@
 # Settings Configuration
 
-The `settings.py` file is the central configuration file for registering your interoperability components. It defines classes, productions, schemas, and remote connection settings.
+The migration file is the central configuration file for registering your
+interoperability components. It is commonly named `settings.py`, but it can be
+any Python file, such as a single-file production named `demo.py`. It defines
+classes, productions, schemas, and remote connection settings.
 
 ## Quick Start
 
-Create a `settings.py` file in your project root:
+Create a migration file in your project root:
 
 ```python
 import bo
@@ -17,11 +20,13 @@ CLASSES = {
 Register your components:
 ```bash
 iop --migrate /path/to/your/project/settings.py
+# or
+iop --migrate /path/to/your/project/demo.py
 ```
 
 ## Configuration Sections
 
-The `settings.py` file supports four main sections:
+The migration file supports four main sections:
 
 | Section | Purpose | Required |
 |---------|---------|----------|
@@ -63,6 +68,89 @@ support.
 ## PRODUCTIONS Section
 
 Define complete production configurations with multiple components.
+
+### Pythonic Production
+
+You can define productions with `Production` objects instead of raw dictionaries.
+This is the authoring DSL for Python-defined topology: items, ports, settings,
+and connections are declared in Python, then migration emits the same IRIS
+production definition shape as the legacy dictionary format.
+
+Python `Production` is the source of truth for Python-authored topology. IRIS
+remains the runtime source of truth. Imported graphs are operational
+reconstructions until metadata persistence makes round-trip fidelity possible.
+
+```python
+from dataclasses import dataclass
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class OrderRequest(Message):
+    order_id: str = ""
+
+
+class FileService(PollingBusinessService):
+    Output = target("orders")
+
+    def on_process_input(self, message_input):
+        return self.send_request_sync(
+            self.Output,
+            OrderRequest(order_id="777"),
+        )
+
+
+class OrderOperation(BusinessOperation):
+    pass
+
+
+prod = Production("Demo.Production", testing_enabled=True)
+file = prod.service("FileInput", FileService)
+orders = prod.operation(OrderOperation)
+prod.connect(file.Output, orders)
+
+PRODUCTIONS = [prod]
+```
+
+`target()` declares an outbound port on the component class. `prod.connect()`
+sets that port to the destination component for the generated production and
+keeps graph metadata available to Python.
+
+You can also reference existing ObjectScript or built-in IRIS components by
+class name. These classes are not registered as Python components.
+
+```python
+prod = Production("Demo.Production")
+file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
+out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
+
+prod.connect(file.port("TargetConfigNames"), out)
+```
+
+Existing IRIS productions can be fetched back into the Python model:
+
+```python
+prod = Production.from_iris("Demo.Production")
+print(prod.graph())
+```
+
+`from_iris()` reads the exported production definition and uses IRIS
+`OnGetConnections` data when available. If runtime connection data cannot be
+read, it falls back to Host settings whose value names another production item.
+The fetched graph is an operational reconstruction, not a replacement for the
+Python source. Logical `target("orders")` names and Python class objects are not
+recoverable from IRIS unless they are also present in the Python source.
+
+Runtime queue counters are separate from the authoring graph:
+
+```python
+prod = Production.from_iris("Demo.Production")
+queues = prod.queue()
+```
+
+Queue data is point-in-time runtime information from IRIS. It is not serialized
+by `prod.to_dict()` and does not change migration output. `prod.queue_info()`
+remains available as a compatibility alias.
 
 ### Minimal Production
 

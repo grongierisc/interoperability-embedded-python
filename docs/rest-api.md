@@ -316,6 +316,71 @@ Exports a production definition as JSON.
 
 ---
 
+## GET /api/iop/connections
+
+Exports runtime graph connections for a production. The endpoint calls
+`OnGetConnections` for each production item, so it can report connections from
+generated Python proxy classes, ObjectScript classes, and built-in `Ens.Host`
+components.
+
+**Query parameters**
+
+| Parameter    | Type   | Default              | Description                          |
+|--------------|--------|----------------------|--------------------------------------|
+| `namespace`  | string | `USER`               | Target IRIS namespace                |
+| `production` | string | last-used production | Production class name to inspect     |
+
+**Response**
+
+```json
+{
+  "production": "MyApp.Production",
+  "items": [
+    {
+      "item": "FileInput",
+      "class_name": "Python.demo.FileService",
+      "connections": ["OrderOperation"],
+      "warnings": []
+    }
+  ],
+  "warnings": []
+}
+```
+
+---
+
+## GET /api/iop/queues
+
+Exports runtime queue counters for production items. Queue data is runtime-only
+metadata and is not written back to production XML.
+
+**Query parameters**
+
+| Parameter    | Type   | Default              | Description                          |
+|--------------|--------|----------------------|--------------------------------------|
+| `namespace`  | string | `USER`               | Target IRIS namespace                |
+| `production` | string | last-used production | Production class name to inspect     |
+
+**Response**
+
+```json
+{
+  "production": "MyApp.Production",
+  "items": [
+    {
+      "item": "FileInput",
+      "queue_name": "FileInput",
+      "class_name": "Python.demo.FileService",
+      "exists": true,
+      "count": 0
+    }
+  ],
+  "warnings": []
+}
+```
+
+---
+
 ## POST /api/iop/test
 
 Sends a test message to a target component and returns the response synchronously.
@@ -356,7 +421,9 @@ Sends a test message to a target component and returns the response synchronousl
 
 ## PUT /api/iop/migrate
 
-Uploads a Python package to the server and runs its `settings.py` migration.
+Uploads a Python package to the server and runs its migration entrypoint. The
+entrypoint defaults to `settings.py`, but clients can pass another Python file
+name such as `demo.py`.
 
 **Namespace** — query string (`?namespace=`) or JSON body field (body wins).
 
@@ -367,9 +434,10 @@ Uploads a Python package to the server and runs its `settings.py` migration.
   "namespace":     "USER",
   "remote_folder": "/opt/iris/packages",
   "package":       "my_package",
+  "settings_file": "demo.py",
   "body": [
     {"name": "__init__.py",  "data": ""},
-    {"name": "settings.py",  "data": "..."}
+    {"name": "demo.py",  "data": "..."}
   ]
 }
 ```
@@ -378,6 +446,7 @@ Uploads a Python package to the server and runs its `settings.py` migration.
 |-----------------|----------|--------------------------------------------------------------------------------|
 | `remote_folder` | No       | Absolute server path to place the package. Defaults to the namespace's routine DB directory. |
 | `package`       | Yes      | Package directory name                                                         |
+| `settings_file` | No       | Migration entrypoint file inside `body`. Defaults to `settings.py`.            |
 | `body`          | Yes      | Array of `{name, data}` objects representing the files to write               |
 
 **Response**

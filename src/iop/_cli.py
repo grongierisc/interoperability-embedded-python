@@ -29,6 +29,7 @@ class CommandType(Enum):
     EXPORT = auto()
     MIGRATE = auto()
     LOG = auto()
+    QUEUE = auto()
     INIT = auto()
     HELP = auto()
     UPDATE = auto()
@@ -50,6 +51,7 @@ class CommandArgs:
     export: Optional[str] = None
     version: bool = False
     log: Optional[str] = None
+    queue: Optional[str] = None
     init: Optional[str] = None
     test: Optional[str] = None
     classname: Optional[str] = None
@@ -114,6 +116,7 @@ class Command:
                 self.args.export,
                 self.args.migrate,
                 self.args.log,
+                self.args.queue,
                 self.args.init,
                 self.args.update,
             ]
@@ -138,6 +141,7 @@ class Command:
             CommandType.EXPORT: self._handle_export,
             CommandType.MIGRATE: self._handle_migrate,
             CommandType.LOG: self._handle_log,
+            CommandType.QUEUE: self._handle_queue,
             CommandType.INIT: self._handle_init,
             CommandType.HELP: self._handle_help,
             CommandType.UPDATE: self._handle_update,
@@ -171,6 +175,8 @@ class Command:
             return CommandType.MIGRATE
         if self.args.log:
             return CommandType.LOG
+        if self.args.queue:
+            return CommandType.QUEUE
         if self.args.init:
             return CommandType.INIT
         if self.args.update:
@@ -282,6 +288,25 @@ class Command:
         elif self.args.log is not None:
             self.director.log_production_top(int(self.args.log))
 
+    def _handle_queue(self) -> None:
+        production_name = (
+            self.director.get_default_production()
+            if self.args.queue == "not_set"
+            else self.args.queue
+        )
+        if not production_name or production_name == "Not defined":
+            print(
+                "Error: no production name provided and no default production is defined.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        print(
+            json.dumps(
+                self.director.export_production_queue_info(production_name),
+                indent=4,
+            )
+        )
+
     def _handle_init(self) -> None:
         path = None if self.args.init == "not_set" else self.args.init
         self.director.setup(path)
@@ -387,13 +412,20 @@ def create_parser() -> argparse.ArgumentParser:
         "-m",
         "-M",
         "--migrate",
-        help="migrate production and classes with settings file",
+        help="migrate production and classes with a Python migration file",
     )
     parser.add_argument(
         "-e", "--export", help="export a production", nargs="?", const="not_set"
     )
     parser.add_argument("-v", "--version", help="display version", action="store_true")
     parser.add_argument("-L", "--log", help="display log", nargs="?", const="not_set")
+    parser.add_argument(
+        "-q",
+        "--queue",
+        help="display runtime queue information",
+        nargs="?",
+        const="not_set",
+    )
     parser.add_argument(
         "-i", "--init", help="init the pex module in iris", nargs="?", const="not_set"
     )
@@ -472,7 +504,7 @@ def main(argv=None) -> None:
     except requests.exceptions.HTTPError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
     sys.exit(0)

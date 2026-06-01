@@ -148,6 +148,22 @@ class TestGetRemoteSettings(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_fallback_settings_path_does_not_execute_file(self):
+        content = (
+            "REMOTE_SETTINGS = {'url': 'http://fallback:8080'}\n"
+            "raise RuntimeError('settings file was executed')\n"
+        )
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            path = f.name
+        try:
+            with patch.dict(os.environ, {}, clear=True):
+                result = get_remote_settings(fallback_settings_path=path)
+            self.assertIsNotNone(result)
+            self.assertEqual(result["url"], "http://fallback:8080")
+        finally:
+            os.unlink(path)
+
     def test_iop_url_takes_priority_over_fallback(self):
         content = "REMOTE_SETTINGS = {'url': 'http://fallback:8080'}\n"
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -274,6 +290,21 @@ class TestLoadRemoteSettingsFromFile(unittest.TestCase):
 
     def test_loads_valid_remote_settings(self):
         content = "REMOTE_SETTINGS = {'url': 'http://host:8080', 'namespace': 'X'}\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            path = f.name
+        try:
+            result = _load_remote_settings_from_file(path)
+            self.assertIsNotNone(result)
+            self.assertEqual(result["url"], "http://host:8080")
+        finally:
+            os.unlink(path)
+
+    def test_loads_without_executing_file(self):
+        content = (
+            "REMOTE_SETTINGS = {'url': 'http://host:8080'}\n"
+            "raise RuntimeError('settings file was executed')\n"
+        )
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(content)
             path = f.name
@@ -675,6 +706,67 @@ class TestExportProduction(unittest.TestCase):
         mock_get.return_value = _mock_response({})
         result = self.d.export_production("MyApp.Production")
         self.assertEqual(result, {})
+
+    @patch("requests.get")
+    def test_export_connections_uses_connections_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response(
+            {
+                "production": "MyApp.Production",
+                "items": [{"item": "FileInput", "connections": ["OrderOperation"]}],
+            }
+        )
+        result = self.d.export_production_connections("MyApp.Production")
+
+        self.assertEqual(result["production"], "MyApp.Production")
+        _, kwargs = mock_get.call_args
+        self.assertTrue(mock_get.call_args.args[0].endswith("/connections"))
+        self.assertEqual(kwargs["params"]["production"], "MyApp.Production")
+
+    @patch("requests.get")
+    def test_export_queue_info_uses_queues_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response(
+            {
+                "production": "MyApp.Production",
+                "items": [{"item": "FileInput", "queue_name": "FileInput", "count": 4}],
+            }
+        )
+        result = self.d.export_production_queue_info("MyApp.Production")
+
+        self.assertEqual(result["items"][0]["count"], 4)
+        _, kwargs = mock_get.call_args
+        self.assertTrue(mock_get.call_args.args[0].endswith("/queues"))
+        self.assertEqual(kwargs["params"]["production"], "MyApp.Production")
+
+
+# ---------------------------------------------------------------------------
+# migrate
+# ---------------------------------------------------------------------------
+
+class TestRemoteMigrate(unittest.TestCase):
+
+    def setUp(self):
+        self.d = _make_director()
+
+    @patch("requests.put")
+    def test_migrate_sends_selected_entrypoint_filename(self, mock_put):
+        mock_put.return_value = _mock_response({})
+        with tempfile.TemporaryDirectory() as tmp:
+            demo_path = os.path.join(tmp, "demo.py")
+            helper_path = os.path.join(tmp, "helper.py")
+            with open(demo_path, "w", encoding="utf-8") as f:
+                f.write("REMOTE_SETTINGS = {'package': 'custompkg'}\n")
+            with open(helper_path, "w", encoding="utf-8") as f:
+                f.write("VALUE = 1\n")
+
+            self.d.migrate(demo_path)
+
+        _, kwargs = mock_put.call_args
+        payload = kwargs["json"]
+        self.assertEqual(payload["settings_file"], "demo.py")
+        self.assertEqual(payload["package"], "custompkg")
+        uploaded_names = {entry["name"] for entry in payload["body"]}
+        self.assertIn("demo.py", uploaded_names)
+        self.assertIn("helper.py", uploaded_names)
 
 
 # ---------------------------------------------------------------------------

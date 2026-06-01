@@ -12,6 +12,7 @@ Or pass a RemoteSettings dict directly (same shape as REMOTE_SETTINGS in setting
 
 from __future__ import annotations
 
+import ast
 import os
 import signal
 import time
@@ -246,6 +247,14 @@ class _RemoteDirector(_DirectorProtocol):
     def export_production(self, production_name: str) -> dict:
         return self._check_error(self._get("/export", {"production": production_name}))
 
+    def export_production_connections(self, production_name: str) -> dict:
+        return self._check_error(
+            self._get("/connections", {"production": production_name})
+        )
+
+    def export_production_queue_info(self, production_name: str) -> dict:
+        return self._check_error(self._get("/queues", {"production": production_name}))
+
     # ------------------------------------------------------------------
     # Migrate
     # ------------------------------------------------------------------
@@ -253,11 +262,11 @@ class _RemoteDirector(_DirectorProtocol):
     def migrate(self, path: str) -> None:
         """Upload .py and .cls files from *path*'s folder to remote IRIS via the IOP migrate API.
 
-        *path* must be an absolute path to a ``settings.py`` file whose directory
-        (and sub-directories) will be walked for ``.py`` / ``.cls`` files.
-        ``REMOTE_SETTINGS`` fields (package, namespace, remote_folder) are read
-        from that same settings file when present; otherwise the director's own
-        namespace / defaults are used.
+        *path* must be an absolute path to the Python migration entrypoint
+        file. The containing directory (and sub-directories) will be walked for
+        ``.py`` / ``.cls`` files. ``REMOTE_SETTINGS`` fields (package,
+        namespace, remote_folder) are read from that same entrypoint when
+        present; otherwise the director's own namespace / defaults are used.
         """
         import importlib.util
 
@@ -277,6 +286,7 @@ class _RemoteDirector(_DirectorProtocol):
             pass
 
         body: List[dict] = []
+        settings_file = os.path.basename(path)
         for dirpath, _, filenames in os.walk(folder):
             for fname in sorted(filenames):
                 if not (fname.endswith(".py") or fname.endswith(".cls")):
@@ -290,6 +300,7 @@ class _RemoteDirector(_DirectorProtocol):
             "namespace": self._namespace,
             "package": package,
             "remote_folder": remote_folder,
+            "settings_file": settings_file,
             "body": body,
         }
         resp = requests.put(
@@ -417,20 +428,35 @@ def _print_log_entry(entry: dict) -> None:
 
 
 def _load_remote_settings_from_file(settings_path: str) -> Optional[Dict[str, Any]]:
-    """Load a ``REMOTE_SETTINGS`` dict from an arbitrary settings.py file."""
+    """Load a literal ``REMOTE_SETTINGS`` dict without executing the file."""
     try:
-        import importlib.util
+        with open(settings_path, "r", encoding="utf-8") as fh:
+            tree = ast.parse(fh.read(), filename=settings_path)
+    except (OSError, SyntaxError):
+        return None
 
-        spec = importlib.util.spec_from_file_location(
-            "_iop_settings_remote", settings_path
-        )
-        mod = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
-        spec.loader.exec_module(mod)  # type: ignore[union-attr]
-        remote = getattr(mod, "REMOTE_SETTINGS", None)
-        if isinstance(remote, dict) and "url" in remote:
-            return remote
-    except Exception:
-        pass
+    try:
+        for node in tree.body:
+            value = None
+            targets = []
+            if isinstance(node, ast.Assign):
+                value = node.value
+                targets = node.targets
+            elif isinstance(node, ast.AnnAssign):
+                value = node.value
+                targets = [node.target]
+            if value is None:
+                continue
+            if any(
+                isinstance(target, ast.Name) and target.id == "REMOTE_SETTINGS"
+                for target in targets
+            ):
+                remote = ast.literal_eval(value)
+                if isinstance(remote, dict) and "url" in remote:
+                    return remote
+                return None
+    except (ValueError, TypeError):
+        return None
     return None
 
 

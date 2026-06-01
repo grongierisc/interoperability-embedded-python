@@ -73,6 +73,17 @@ class TestModuleOperations:
         with pytest.raises(ValueError):
             _Utils.import_module_from_path("invalid", "relative/path")
 
+    def test_load_settings_uses_file_stem_as_module_name(self, tmp_path):
+        demo_file = tmp_path / "demo.py"
+        demo_file.write_text("VALUE = __name__\n")
+
+        module, path = _Utils._load_settings(str(demo_file))
+        try:
+            assert module.__name__ == "demo"
+            assert module.VALUE == "demo"
+        finally:
+            _Utils._cleanup_sys_path(path)
+
 
 class TestProductionOperations:
     def test_set_productions_settings(self, tmp_path):
@@ -156,6 +167,25 @@ class TestMigrationPlan:
         )
         assert "SCHEMAS:\n  settings.DtlMessage" in plan
         assert "PRODUCTIONS:\n  Demo.Production" in plan
+
+    def test_explain_migration_from_non_settings_filename_keeps_module_name(
+        self, tmp_path
+    ):
+        demo_file = tmp_path / "demo.py"
+        demo_file.write_text(
+            "from iop import BusinessOperation, Production\n\n"
+            "class MyOperation(BusinessOperation):\n"
+            "    pass\n\n"
+            "prod = Production('Demo.Production')\n"
+            "prod.operation(MyOperation)\n"
+            "PRODUCTIONS = [prod]\n"
+        )
+
+        plan = _Utils.explain_migration(str(demo_file), mode="LOCAL")
+
+        assert "Demo.Production" in plan
+        assert "demo.MyOperation" in plan
+        assert "settings.MyOperation" not in plan
 
     def test_message_in_classes_gets_actionable_error(self):
         @dataclass

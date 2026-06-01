@@ -123,7 +123,8 @@ class _Director:
     def start_production(production_name=None):
         if production_name is None or production_name == "":
             production_name = _Director.get_default_production()
-        _iris.get_iris().cls("Ens.Director").StartProduction(production_name)
+        status = _iris.get_iris().cls("Ens.Director").StartProduction(production_name)
+        _Utils.raise_on_error(status)
 
     ### stop production
     @staticmethod

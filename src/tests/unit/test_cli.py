@@ -157,6 +157,16 @@ class TestIOPCli(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_value_error_is_printed_without_traceback(self):
+        with patch("iop._local._LocalDirector.migrate") as mock_migrate:
+            mock_migrate.side_effect = ValueError("bad migration file")
+            with patch("sys.stderr", new=StringIO()) as fake_err:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["-m", "/tmp/demo.py", "--force-local"])
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertEqual(fake_err.getvalue().strip(), "Error: bad migration file")
+
     def test_status_and_update(self):
         """Test status and update commands."""
         # Test status
@@ -175,6 +185,38 @@ class TestIOPCli(unittest.TestCase):
                 main(['--update'])
             self.assertEqual(cm.exception.code, 0)
             mock_update.assert_called_once()
+
+    def test_queue(self):
+        """Test runtime queue information command."""
+        payload = {"production": "TestProd", "items": [{"item": "FileInput"}]}
+        with patch(
+            "iop._local._LocalDirector.export_production_queue_info",
+            return_value=payload,
+        ) as mock_queue:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--queue", "TestProd"])
+                self.assertEqual(cm.exception.code, 0)
+
+        mock_queue.assert_called_once_with("TestProd")
+        self.assertIn('"production": "TestProd"', fake_out.getvalue())
+
+    def test_queue_without_name_uses_default_production(self):
+        """--queue without a value uses the default production."""
+        with patch(
+            "iop._local._LocalDirector.export_production_queue_info",
+            return_value={"items": []},
+        ) as mock_queue:
+            with patch(
+                "iop._local._LocalDirector.get_default_production",
+                return_value="Default.Production",
+            ):
+                with patch("sys.stdout", new=StringIO()):
+                    with self.assertRaises(SystemExit) as cm:
+                        main(["--queue"])
+                    self.assertEqual(cm.exception.code, 0)
+
+        mock_queue.assert_called_once_with("Default.Production")
 
     def test_initialization(self):
         """Test initialization command."""
@@ -306,6 +348,21 @@ class TestCLIRemoteMode(unittest.TestCase):
                     main(['-x'])
         self.assertIn("running", out.getvalue())
         mock_get.assert_called_once()
+
+    @patch("requests.get")
+    def test_queue_uses_remote_director(self, mock_get):
+        mock_get.return_value = self._mock_resp(
+            {"production": "MyProd", "items": [{"item": "FileInput", "count": 2}]}
+        )
+        with patch.dict(os.environ, self._BASE_ENV, clear=True):
+            with patch("sys.stdout", new=StringIO()) as out:
+                with self.assertRaises(SystemExit):
+                    main(["--queue", "MyProd"])
+
+        self.assertIn('"count": 2', out.getvalue())
+        args, kwargs = mock_get.call_args
+        self.assertIn("/queues", args[0])
+        self.assertEqual(kwargs["params"]["production"], "MyProd")
 
     @patch("requests.get")
     def test_list_uses_remote_director(self, mock_get):

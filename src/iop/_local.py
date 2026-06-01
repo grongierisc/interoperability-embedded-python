@@ -83,6 +83,12 @@ class _LocalDirector(_DirectorProtocol):
     def export_production(self, production_name: str) -> dict:
         return json.loads(_Utils.export_production(production_name))
 
+    def export_production_connections(self, production_name: str) -> dict:
+        return _Utils.export_production_connections(production_name)
+
+    def export_production_queue_info(self, production_name: str) -> dict:
+        return _Utils.export_production_queue_info(production_name)
+
     # ------------------------------------------------------------------
     # Init / setup
     # ------------------------------------------------------------------

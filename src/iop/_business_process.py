@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Union
 from ._business_host import _BusinessHost
 from ._decorators import input_deserializer, input_serializer_param, output_serializer
 from ._dispatch import create_dispatch, dispach_message
+from ._production import Port, resolve_target
 
 
 class _BusinessProcess(_BusinessHost):
@@ -85,7 +86,7 @@ class _BusinessProcess(_BusinessHost):
     @input_serializer_param(1, "request")
     def send_request_async(
         self,
-        target: str,
+        target: str | Port,
         request: Any,
         description: Optional[str] = None,
         completion_key: Optional[str] = None,
@@ -108,6 +109,7 @@ class _BusinessProcess(_BusinessHost):
             response_required = 1  # type: ignore
         else:
             response_required = 0  # type: ignore
+        target = resolve_target(target)
         return self.iris_handle.dispatchSendRequestAsync(
             target, request, response_required, completion_key, description
         )

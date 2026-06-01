@@ -16,6 +16,11 @@ from iop._persistent_message import Model as Model
 from iop._persistent_message import _PersistentMessage
 from iop._private_session_duplex import _PrivateSessionDuplex
 from iop._private_session_process import _PrivateSessionProcess
+from iop._production import ComponentRef as ComponentRef
+from iop._production import Port as Port
+from iop._production import Production as Production
+from iop._production import ProductionGraph as ProductionGraph
+from iop._production import target as target
 from iop._settings import Category as Category
 from iop._settings import Setting as Setting
 from iop._settings import controls as controls

@@ -404,6 +404,59 @@ Available in all component classes:
     - Override to add custom connection logic
 
 
+### Production Class
+
+`Production` is the Pythonic authoring DSL for production topology.
+
+```python
+from iop import BusinessOperation, PollingBusinessService, Production, target
+
+class FileService(PollingBusinessService):
+    Output = target("orders")
+
+class OrderOperation(BusinessOperation):
+    pass
+
+prod = Production("Demo.Production")
+file = prod.service("FileInput", FileService)
+orders = prod.operation(OrderOperation)
+prod.connect(file.Output, orders)
+```
+
+Python `Production` is the source of truth for Python-authored topology. IRIS
+remains the runtime source of truth. Imported graphs are operational
+reconstructions until metadata persistence makes round-trip fidelity possible.
+
+Key methods:
+
+- `service()`, `process()`, `operation()`: add components to the Python graph
+- `connect(port, component)`: connect a source `Port` to a target component
+- `item(name)`: return a component reference by production item name
+- `graph()`: return a printable `ProductionGraph`
+- `sync()`: register the current Python graph with local IRIS through the existing migration path
+
+ObjectScript and built-in IRIS components can be represented with `class_name`
+and manual ports:
+
+```python
+file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
+out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
+prod.connect(file.port("TargetConfigNames"), out)
+```
+
+Runtime inspection is explicit:
+
+```python
+runtime_prod = Production.from_iris("Demo.Production")
+print(runtime_prod.graph())
+queues = runtime_prod.queue()
+```
+
+`from_iris()` reconstructs an operational view from IRIS export and runtime
+connections. `queue()` returns point-in-time queue counters from IRIS; it is
+runtime metadata and does not affect `to_dict()` or migration output.
+`queue_info()` remains available as a compatibility alias.
+
 ### Director Class 🎭
 Manages InterSystems IRIS productions and business services, particularly for non-polling services.
 

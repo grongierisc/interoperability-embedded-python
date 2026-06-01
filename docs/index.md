@@ -47,4 +47,6 @@ zpm "install pex-embbeded-python"
 
 If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation). Then, follow the [first steps](getting-started/first-steps) to create your first Business Operation.
 
+For the Pythonic production graph direction, see the [production graph roadmap](production-graph-roadmap).
+
 Happy coding!

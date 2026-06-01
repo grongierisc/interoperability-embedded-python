@@ -83,7 +83,7 @@ class TestBusinessService:
 class TestProductionManagement:
     @pytest.fixture(autouse=True)
     def setup_mocks(self):
-        self.start_mock = MagicMock()
+        self.start_mock = MagicMock(return_value=iris.system.Status.OK())
         self.stop_mock = MagicMock()
         self.restart_mock = MagicMock()
         self.update_mock = MagicMock()
@@ -94,6 +94,14 @@ class TestProductionManagement:
 
     def test_start_production(self):
         _Director.start_production("test_prod")
+        self.start_mock.assert_called_once_with("test_prod")
+
+    def test_start_production_raises_on_status_error(self):
+        self.start_mock.return_value = iris.system.Status.Error("start failed")
+
+        with pytest.raises(RuntimeError, match="start failed"):
+            _Director.start_production("test_prod")
+
         self.start_mock.assert_called_once_with("test_prod")
 
     def test_stop_production(self):

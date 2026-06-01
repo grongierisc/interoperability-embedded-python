@@ -474,6 +474,111 @@ ClassMethod ExportProduction(pProductionName As %String) As %String
 	Return xdata
 }
 
+/// Export runtime production connections discovered through OnGetConnections.
+ClassMethod ExportProductionConnections(pProductionName As %String) As %String
+{
+	Set result = {}
+	Set result.production = pProductionName
+	Set result.items = []
+	Set result.warnings = []
+	Try {
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionName)
+		If '$IsObject(production) {
+			Set loaded = ##class(Ens.Config.Production).LoadFromClass(pProductionName)
+			If $IsObject(loaded) {
+				Set production = loaded
+			} Else {
+				Set warning = "Production could not be loaded: "_pProductionName
+				If loaded'="" {
+					Try {
+						If $System.Status.IsError(loaded) {
+							Set warning = warning_": "_$System.Status.GetOneStatusText(loaded)
+						}
+					} Catch exStatus {
+					}
+				}
+				Do result.warnings.%Push(warning)
+				Return result.%ToJSON()
+			}
+		}
+		For i=1:1:production.Items.Count() {
+			Set item = production.Items.GetAt(i)
+			If '$IsObject(item) Continue
+			Set itemResult = {}
+			Set itemResult.item = item.Name
+			Set itemResult."class_name" = item.ClassName
+			Set itemResult.connections = []
+			Set itemResult.warnings = []
+			Try {
+				Kill connections
+				Do ##class(Ens.Config.Production).GetConnections(.connections,item.ClassName,item)
+				Set target = ""
+				For {
+					Set target = $Order(connections(target))
+					Quit:target=""
+					Do itemResult.connections.%Push(target)
+				}
+			} Catch ex {
+				Do itemResult.warnings.%Push(ex.DisplayString())
+			}
+			Do result.items.%Push(itemResult)
+		}
+	} Catch ex {
+		Do result.warnings.%Push(ex.DisplayString())
+	}
+	Return result.%ToJSON()
+}
+
+/// Export queue counters for production items.
+ClassMethod ExportProductionQueueInfo(pProductionName As %String) As %String
+{
+	Set result = {}
+	Set result.production = pProductionName
+	Set result.items = []
+	Set result.warnings = []
+	Try {
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionName)
+		If '$IsObject(production) {
+			Set loaded = ##class(Ens.Config.Production).LoadFromClass(pProductionName)
+			If $IsObject(loaded) {
+				Set production = loaded
+			} Else {
+				Set warning = "Production could not be loaded: "_pProductionName
+				If loaded'="" {
+					Try {
+						If $System.Status.IsError(loaded) {
+							Set warning = warning_": "_$System.Status.GetOneStatusText(loaded)
+						}
+					} Catch exStatus {
+					}
+				}
+				Do result.warnings.%Push(warning)
+				Return result.%ToJSON()
+			}
+		}
+		For i=1:1:production.Items.Count() {
+			Set item = production.Items.GetAt(i)
+			If '$IsObject(item) Continue
+			Set itemResult = {}
+			Set itemResult.item = item.Name
+			Set itemResult."queue_name" = item.Name
+			Set itemResult."class_name" = item.ClassName
+			Set queueCount = ##class(Ens.Queue).GetCount(item.Name)
+			If queueCount="" {
+				Set itemResult.exists = 0
+				Set itemResult.count = 0
+			} Else {
+				Set itemResult.exists = 1
+				Set itemResult.count = +queueCount
+			}
+			Do result.items.%Push(itemResult)
+		}
+	} Catch ex {
+		Do result.warnings.%Push(ex.DisplayString())
+	}
+	Return result.%ToJSON()
+}
+
 ClassMethod dispatchTestComponent(
 	pTargetName As %String,
 	pInput As Ens.Request) As Ens.Response
