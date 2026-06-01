@@ -52,6 +52,7 @@ class DirectorProtocol(Protocol):
         message=None,
         classname: Optional[str] = None,
         body: "str | dict | None" = None,
+        restart: bool = True,
     ) -> Any: ...
 
     # ------------------------------------------------------------------

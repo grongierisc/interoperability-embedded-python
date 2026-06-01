@@ -23,6 +23,7 @@ from iop._production import ProductionDiff as ProductionDiff
 from iop._production import ProductionDiffEntry as ProductionDiffEntry
 from iop._production import ProductionGraph as ProductionGraph
 from iop._production import target as target
+from iop._director_protocol import DirectorProtocol as DirectorProtocol
 from iop._settings import Category as Category
 from iop._settings import Setting as Setting
 from iop._settings import controls as controls

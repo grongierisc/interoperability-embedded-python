@@ -487,7 +487,7 @@ class Production:
         name: str,
         *,
         namespace: Optional[str] = None,
-        director: Any = None,
+        director: Optional[_DirectorProtocol] = None,
     ) -> "Production":
         seed = cls(name, namespace=namespace, director=director)
         runtime_director = _ProductionRuntime(seed).director
@@ -2147,7 +2147,7 @@ class _ProductionRuntime:
         self.production = production
 
     @property
-    def director(self):
+    def director(self) -> _DirectorProtocol:
         if self.production._director is not None:
             return self.production._director
 
