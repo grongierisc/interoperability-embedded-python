@@ -12,12 +12,18 @@ from typing import Any, Optional
 from pydantic import BaseModel
 
 from ._settings import Category, Setting, controls
+from ._director_protocol import DirectorProtocol as _DirectorProtocol
 
 
 def _bool_text(value: bool | str) -> str:
-    if isinstance(value, str):
-        return value.lower()
-    return "true" if value else "false"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    normalized = str(value).lower().strip()
+    if normalized in ("1", "yes", "on"):
+        return "true"
+    if normalized in ("0", "no", "off"):
+        return "false"
+    return normalized
 
 
 def _text_value(value: Any) -> str:
@@ -144,30 +150,22 @@ class GraphEdge:
     origin: str = "authored"
     interaction: str = "request"
     metadata: dict[str, Any] = field(default_factory=dict)
-    runtime: bool = False
-    inferred: bool = False
 
     def __post_init__(self) -> None:
-        if self.runtime and self.inferred:
-            raise ValueError("GraphEdge cannot be both runtime and inferred")
-
         origin = self.origin or "authored"
-        if self.runtime and origin not in {"authored", "runtime"}:
-            raise ValueError("GraphEdge runtime flag conflicts with origin")
-        if self.inferred and origin not in {"authored", "inferred"}:
-            raise ValueError("GraphEdge inferred flag conflicts with origin")
-        if self.runtime:
-            origin = "runtime" if origin == "authored" else origin
-        if self.inferred:
-            origin = "inferred" if origin == "authored" else origin
         if origin not in {"authored", "runtime", "inferred"}:
-            raise ValueError(f"Unsupported GraphEdge origin: {origin}")
-
+            raise ValueError(f"Unsupported GraphEdge origin: {origin!r}")
         object.__setattr__(self, "origin", origin)
-        object.__setattr__(self, "runtime", origin == "runtime")
-        object.__setattr__(self, "inferred", origin == "inferred")
         object.__setattr__(self, "interaction", self.interaction or "unknown")
         object.__setattr__(self, "metadata", dict(self.metadata or {}))
+
+    @property
+    def runtime(self) -> bool:
+        return self.origin == "runtime"
+
+    @property
+    def inferred(self) -> bool:
+        return self.origin == "inferred"
 
     @property
     def source(self) -> str:
@@ -441,6 +439,15 @@ def _settings_to_iris(target_name: str, values: dict[str, Any]) -> list[dict[str
     ]
 
 
+def _apply_settings_update(target: dict[str, Any], updates: Any) -> None:
+    """Merge *updates* into *target*, treating ``None`` values as removals."""
+    for key, value in (updates or {}).items():
+        if value is None:
+            target.pop(key, None)
+        else:
+            target[key] = value
+
+
 class Production:
     """Python authoring DSL for IRIS interoperability production topology.
 
@@ -458,7 +465,7 @@ class Production:
         actor_pool_size: int | str = 2,
         description: str = "",
         namespace: Optional[str] = None,
-        director: Any = None,
+        director: Optional["_DirectorProtocol"] = None,
     ):
         self.name = name
         self.testing_enabled = testing_enabled
@@ -614,7 +621,6 @@ class Production:
                     origin="runtime",
                     interaction=target.get("interaction", "request"),
                     metadata=target.get("metadata", {}),
-                    runtime=True,
                     validate_target=False,
                 )
 
@@ -637,7 +643,6 @@ class Production:
                         target_name,
                         origin="inferred",
                         metadata=metadata,
-                        inferred=True,
                         validate_target=False,
                     )
 
@@ -648,8 +653,8 @@ class Production:
         return tuple(self._items)
 
     @property
-    def edges(self) -> tuple[dict[str, Any], ...]:
-        return tuple(edge.to_dict() for edge in self._edges)
+    def edges(self) -> tuple["GraphEdge", ...]:
+        return tuple(self._edges)
 
     def item(self, name: str) -> ComponentRef:
         try:
@@ -783,11 +788,11 @@ class Production:
             )
 
         if "settings" in kwargs:
-            ref.host_settings.update(dict(kwargs.pop("settings") or {}))
+            _apply_settings_update(ref.host_settings, kwargs.pop("settings"))
         if "host_settings" in kwargs:
-            ref.host_settings.update(dict(kwargs.pop("host_settings") or {}))
+            _apply_settings_update(ref.host_settings, kwargs.pop("host_settings"))
         if "adapter_settings" in kwargs:
-            ref.adapter_settings.update(dict(kwargs.pop("adapter_settings") or {}))
+            _apply_settings_update(ref.adapter_settings, kwargs.pop("adapter_settings"))
         if "other_settings" in kwargs:
             ref.other_settings = [dict(value) for value in kwargs.pop("other_settings")]
         if "ports" in kwargs:
@@ -878,6 +883,33 @@ class Production:
             target_name,
             logical_name=source.logical_name,
             replace_port=True,
+        )
+
+    def connect_add(self, source: Port, target_component: ComponentRef | str) -> None:
+        """Append a fan-out target to a source port without replacing existing targets.
+
+        The IRIS host setting value becomes a comma-separated list of target names.
+        Use instead of ``connect()`` when a single port should route to multiple
+        components.
+        """
+        if not isinstance(source, Port):
+            raise TypeError("source must be a Port returned from a ComponentRef")
+        if source.production is not self:
+            raise ValueError("source port belongs to a different Production")
+        target_name = self._component_name(target_component)
+        existing = source.component.host_settings.get(source.name, "")
+        existing_targets = [t.strip() for t in existing.split(",") if t.strip()]
+        if target_name not in existing_targets:
+            source.component.host_settings[source.name] = ",".join(
+                existing_targets + [target_name]
+            )
+        source.component.port_names.add(source.name)
+        self._register_connection(
+            source.item_name,
+            source.name,
+            target_name,
+            logical_name=source.logical_name,
+            replace_port=False,
         )
 
     def resolve_port(self, port: Port) -> str:
@@ -1038,8 +1070,7 @@ class Production:
         if not refresh:
             return {name: dict(value) for name, value in self._queue_info.items()}
         info = _ProductionRuntime(self).director.export_production_queue_info(self.name)
-        queue_map, warnings = _normalize_queue_info(info)
-        self._graph_warnings.extend(warnings)
+        queue_map, _queue_warnings = _normalize_queue_info(info)
         self._queue_info = queue_map
         return {name: dict(value) for name, value in queue_map.items()}
 
@@ -1352,6 +1383,20 @@ class Production:
             raise ValueError("Production item name is required")
         if ref.name in self._items_by_name:
             raise ValueError(f"Production item already exists: {ref.name}")
+        if ref.component_class is not None:
+            for existing in self._items:
+                if (
+                    existing.component_class is not None
+                    and existing.component_class is not ref.component_class
+                    and existing.class_name == ref.class_name
+                ):
+                    raise ValueError(
+                        f"Python classes {existing.component_class.__qualname__!r} and "
+                        f"{ref.component_class.__qualname__!r} produce the same IRIS "
+                        f"proxy class name {ref.class_name!r}. Rename one of the "
+                        "Python classes or supply an explicit class_name= to resolve "
+                        "the collision."
+                    )
         self._items.append(ref)
         self._items_by_name[ref.name] = ref
 
@@ -1385,8 +1430,6 @@ class Production:
         origin: str = "authored",
         interaction: str = "request",
         metadata: Optional[dict[str, Any]] = None,
-        runtime: bool = False,
-        inferred: bool = False,
         replace_port: bool = False,
         validate_target: bool = True,
     ) -> None:
@@ -1411,8 +1454,6 @@ class Production:
             origin=origin,
             interaction=interaction,
             metadata=dict(metadata or {}),
-            runtime=runtime,
-            inferred=inferred,
         )
 
         if replace_port and source_port:
@@ -1514,9 +1555,9 @@ def _item_signatures(production: Production) -> dict[str, dict[str, Any]]:
 
 
 def _item_signature(item: ComponentRef) -> dict[str, Any]:
-        return {
-            "class_name": item.class_name or "",
-            "category": item.category,
+    return {
+        "class_name": item.class_name or "",
+        "category": item.category,
         "pool_size": _text_value(item.pool_size),
         "enabled": _bool_text(item.enabled),
         "foreground": _bool_text(item.foreground),

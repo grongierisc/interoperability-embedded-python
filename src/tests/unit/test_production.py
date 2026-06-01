@@ -97,7 +97,7 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
     assert settings[("Host", "Output")] == "OrderOperation"
     assert settings[("Adapter", "Charset")] == "utf-8"
 
-    assert prod.edges == (
+    assert prod.graph().to_dict()["edges"] == [
         {
             "source": "FileInput.Output",
             "source_item": "FileInput",
@@ -107,7 +107,7 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "origin": "authored",
             "interaction": "request",
         },
-    )
+    ]
 
 
 def test_component_ref_exposes_adapter_class_name_without_serializing_it():
