@@ -339,6 +339,7 @@ components.
     {
       "item": "FileInput",
       "class_name": "Python.demo.FileService",
+      "adapter_class_name": "Ens.InboundAdapter",
       "connections": ["OrderOperation"],
       "warnings": []
     }

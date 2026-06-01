@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import importlib
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from dataclasses import is_dataclass
@@ -33,6 +34,36 @@ def _auto_proxy_class_name(component_class: type) -> str:
             "_", ""
         )
     )
+
+
+def _adapter_type_from_component_class(component_class: Optional[type]) -> str:
+    if component_class is None:
+        return ""
+    for method_name in ("get_adapter_type", "getAdapterType"):
+        method = getattr(component_class, method_name, None)
+        if not callable(method):
+            continue
+        value = method()
+        if value:
+            return str(value)
+    return ""
+
+
+def _adapter_type_from_class_name(class_name: Optional[str]) -> str:
+    if not class_name or not class_name.startswith("Python."):
+        return ""
+    python_name = class_name.removeprefix("Python.")
+    module_name, separator, class_attr = python_name.rpartition(".")
+    if not separator:
+        return ""
+    try:
+        module = importlib.import_module(module_name)
+        component_class = getattr(module, class_attr)
+    except Exception:
+        return ""
+    if not isinstance(component_class, type):
+        return ""
+    return _adapter_type_from_component_class(component_class)
 
 
 class TargetSetting(Setting):
@@ -82,15 +113,19 @@ class GraphNode:
     kind: str = "component"
     enabled: bool | str = True
     category: str = ""
+    adapter_class_name: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "name": self.name,
             "class_name": self.class_name,
             "kind": self.kind,
             "enabled": self.enabled,
             "category": self.category,
         }
+        if self.adapter_class_name:
+            data["adapter_class_name"] = self.adapter_class_name
+        return data
 
 
 @dataclass(frozen=True)
@@ -291,6 +326,8 @@ class ComponentRef:
     name: str
     component_class: Optional[type] = None
     class_name: Optional[str] = None
+    adapter_class: Optional[type] = None
+    adapter_class_name: str = ""
     kind: str = "component"
     category: str = ""
     pool_size: int | str = 1
@@ -309,6 +346,14 @@ class ComponentRef:
             if self.component_class is None:
                 raise ValueError("component_class or class_name is required")
             self.class_name = _auto_proxy_class_name(self.component_class)
+        if self.adapter_class is not None and not self.adapter_class_name:
+            self.adapter_class_name = _auto_proxy_class_name(self.adapter_class)
+        if not self.adapter_class_name:
+            self.adapter_class_name = _adapter_type_from_component_class(
+                self.component_class
+            )
+        if not self.adapter_class_name:
+            self.adapter_class_name = _adapter_type_from_class_name(self.class_name)
 
     def __getattr__(self, name: str) -> Port:
         if self.component_class is not None:
@@ -490,6 +535,11 @@ class Production:
                 production=production,
                 name=item_data.get("@Name", ""),
                 class_name=item_data.get("@ClassName", ""),
+                adapter_class_name=(
+                    item_data.get("@AdapterClassName")
+                    or item_data.get("@Adapter")
+                    or ""
+                ),
                 kind="component",
                 category=item_data.get("@Category", ""),
                 pool_size=item_data.get("@PoolSize", 1),
@@ -515,10 +565,24 @@ class Production:
             normalized = dict(info)
             production._queue_info[item_name] = normalized
 
+        runtime_item_metadata = _normalize_runtime_item_metadata(connections)
+        for item_name, metadata in runtime_item_metadata.items():
+            ref = production._items_by_name.get(item_name)
+            if ref is None:
+                continue
+            adapter_class_name = metadata.get("adapter_class_name", "")
+            if adapter_class_name and not ref.adapter_class_name:
+                ref.adapter_class_name = adapter_class_name
+
         connection_map, runtime_sources, warnings = _normalize_connections(
             connections
         )
         production._graph_warnings.extend(warnings)
+        runtime_sources_with_targets = {
+            source_item
+            for source_item, targets in connection_map.items()
+            if targets
+        }
 
         for source_item, targets in connection_map.items():
             if source_item not in production._items_by_name:
@@ -555,19 +619,24 @@ class Production:
                 )
 
         for ref in production._items:
-            if ref.name in runtime_sources:
+            if ref.name in runtime_sources_with_targets:
                 continue
             for setting_name, value in ref.host_settings.items():
                 for target_name in _setting_targets(value):
                     if target_name not in production._items_by_name:
                         continue
                     ref.port_names.add(setting_name)
+                    metadata = {"source": "Host setting fallback"}
+                    if ref.name in runtime_sources:
+                        metadata["reason"] = (
+                            "runtime discovery returned no targets"
+                        )
                     production._register_connection(
                         ref.name,
                         setting_name,
                         target_name,
                         origin="inferred",
-                        metadata={"source": "Host setting fallback"},
+                        metadata=metadata,
                         inferred=True,
                         validate_target=False,
                     )
@@ -601,6 +670,8 @@ class Production:
         cls: Optional[type] = None,
         *,
         class_name: Optional[str] = None,
+        adapter_class: Optional[type | str] = None,
+        adapter_class_name: Optional[str] = None,
         kind: str = "component",
         enabled: bool | str = True,
         pool_size: int | str = 1,
@@ -625,11 +696,28 @@ class Production:
         if item_name in self._items_by_name:
             raise ValueError(f"Production item already exists: {item_name}")
 
+        adapter_class_ref: Optional[type] = None
+        resolved_adapter_class_name = adapter_class_name or ""
+        if adapter_class is not None:
+            if isinstance(adapter_class, type):
+                adapter_class_ref = adapter_class
+                resolved_adapter_class_name = (
+                    resolved_adapter_class_name
+                    or _auto_proxy_class_name(adapter_class)
+                )
+            else:
+                resolved_adapter_class_name = (
+                    resolved_adapter_class_name
+                    or str(adapter_class)
+                )
+
         ref = ComponentRef(
             production=self,
             name=item_name,
             component_class=component_class,
             class_name=class_name,
+            adapter_class=adapter_class_ref,
+            adapter_class_name=resolved_adapter_class_name,
             kind=kind,
             category=category,
             pool_size=pool_size,
@@ -675,6 +763,24 @@ class Production:
             ref.class_name = kwargs.pop("class_name")
         if ref.class_name is None and ref.component_class is None:
             raise ValueError("component_class or class_name is required")
+        if "adapter_class" in kwargs:
+            adapter_class = kwargs.pop("adapter_class")
+            if adapter_class is None:
+                ref.adapter_class = None
+            elif isinstance(adapter_class, type):
+                ref.adapter_class = adapter_class
+                if "adapter_class_name" not in kwargs:
+                    ref.adapter_class_name = _auto_proxy_class_name(adapter_class)
+            else:
+                ref.adapter_class = None
+                if "adapter_class_name" not in kwargs:
+                    ref.adapter_class_name = str(adapter_class)
+        if "adapter_class_name" in kwargs:
+            ref.adapter_class_name = str(kwargs.pop("adapter_class_name") or "")
+        if not ref.adapter_class_name:
+            ref.adapter_class_name = _adapter_type_from_component_class(
+                ref.component_class
+            )
 
         if "settings" in kwargs:
             ref.host_settings.update(dict(kwargs.pop("settings") or {}))
@@ -843,6 +949,7 @@ class Production:
                 kind=item.kind,
                 enabled=item.enabled,
                 category=item.category,
+                adapter_class_name=item.adapter_class_name,
             )
             for item in self._items
         )
@@ -894,6 +1001,11 @@ class Production:
     def component_registrations(self) -> tuple[ComponentRef, ...]:
         return tuple(
             item for item in self._items if item.component_class is not None
+        )
+
+    def adapter_registrations(self) -> tuple[ComponentRef, ...]:
+        return tuple(
+            item for item in self._items if item.adapter_class is not None
         )
 
     def start(self, detach: bool = True) -> None:
@@ -963,6 +1075,7 @@ class Production:
             "production": self.name,
             "name": ref.name,
             "class_name": ref.class_name or "",
+            "adapter_class_name": ref.adapter_class_name,
             "kind": ref.kind,
             "category": ref.category,
             "enabled": ref.enabled,
@@ -1401,9 +1514,9 @@ def _item_signatures(production: Production) -> dict[str, dict[str, Any]]:
 
 
 def _item_signature(item: ComponentRef) -> dict[str, Any]:
-    return {
-        "class_name": item.class_name or "",
-        "category": item.category,
+        return {
+            "class_name": item.class_name or "",
+            "category": item.category,
         "pool_size": _text_value(item.pool_size),
         "enabled": _bool_text(item.enabled),
         "foreground": _bool_text(item.foreground),
@@ -1799,6 +1912,35 @@ def _normalize_connections(
 
     warnings.append(f"Ignoring invalid runtime connections: {connections!r}")
     return connection_map, runtime_sources, warnings
+
+
+def _normalize_runtime_item_metadata(connections: Any) -> dict[str, dict[str, str]]:
+    metadata: dict[str, dict[str, str]] = {}
+    if not isinstance(connections, dict):
+        return metadata
+    for item in _as_list(connections.get("items")):
+        if not isinstance(item, dict):
+            continue
+        item_name = (
+            item.get("item")
+            or item.get("name")
+            or item.get("source_item")
+            or ""
+        )
+        if not item_name:
+            continue
+        adapter_class_name = (
+            item.get("adapter_class_name")
+            or item.get("adapter")
+            or item.get("AdapterClassName")
+            or item.get("Adapter")
+            or ""
+        )
+        if adapter_class_name:
+            metadata[str(item_name)] = {
+                "adapter_class_name": str(adapter_class_name)
+            }
+    return metadata
 
 
 def _normalize_connection_target(value: Any) -> Optional[dict[str, Any]]:

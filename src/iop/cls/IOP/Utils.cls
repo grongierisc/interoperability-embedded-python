@@ -507,6 +507,14 @@ ClassMethod ExportProductionConnections(pProductionName As %String) As %String
 			Set itemResult = {}
 			Set itemResult.item = item.Name
 			Set itemResult."class_name" = item.ClassName
+			Set adapterClass = ""
+			Try {
+				Set adapterClass = $Parameter(item.ClassName, "ADAPTER")
+			} Catch exAdapter {
+			}
+			If adapterClass '= "" {
+				Set itemResult."adapter_class_name" = adapterClass
+			}
 			Set itemResult.connections = []
 			Set itemResult.warnings = []
 			Try {

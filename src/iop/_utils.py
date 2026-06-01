@@ -484,14 +484,34 @@ class _Utils:
         if productions is not None:
             if not isinstance(productions, list):
                 raise ValueError("PRODUCTIONS must be a list.")
+            auto_class_entries = set()
             for production in productions:
                 if _Utils._is_production_object(production):
                     plan["productions"].append(production.name)
                     for item in production.component_registrations():
                         target = item.class_name or item.name
                         cls = item.component_class
+                        entry_key = (target, _Utils._python_classname(cls))
+                        if entry_key in auto_class_entries:
+                            continue
+                        auto_class_entries.add(entry_key)
                         plan["classes"].append(
-                            f"{target} -> {_Utils._python_classname(cls)} (component)"
+                            f"{target} -> {entry_key[1]} (component)"
+                        )
+                    adapters = getattr(
+                        production,
+                        "adapter_registrations",
+                        lambda: (),
+                    )()
+                    for item in adapters:
+                        target = item.adapter_class_name
+                        cls = item.adapter_class
+                        entry_key = (target, _Utils._python_classname(cls))
+                        if entry_key in auto_class_entries:
+                            continue
+                        auto_class_entries.add(entry_key)
+                        plan["classes"].append(
+                            f"{target} -> {entry_key[1]} (component)"
                         )
                     continue
                 if not isinstance(production, dict) or not production:
@@ -789,10 +809,15 @@ class _Utils:
 
     @staticmethod
     def _register_production_object_components(production, root_path=None):
+        registered = set()
         for item in production.component_registrations():
             cls = item.component_class
             if not inspect.isclass(cls):
                 continue
+            key = (item.class_name, cls.__module__, cls.__name__)
+            if key in registered:
+                continue
+            registered.add(key)
             path = root_path or os.path.dirname(inspect.getfile(cls))
             _Utils.register_component(
                 cls.__module__,
@@ -800,6 +825,22 @@ class _Utils:
                 path,
                 1,
                 item.class_name,
+            )
+        for item in getattr(production, "adapter_registrations", lambda: ())():
+            cls = item.adapter_class
+            if not inspect.isclass(cls):
+                continue
+            key = (item.adapter_class_name, cls.__module__, cls.__name__)
+            if key in registered:
+                continue
+            registered.add(key)
+            path = root_path or os.path.dirname(inspect.getfile(cls))
+            _Utils.register_component(
+                cls.__module__,
+                cls.__name__,
+                path,
+                1,
+                item.adapter_class_name,
             )
 
     @staticmethod

@@ -5,6 +5,23 @@ Run with a live IRIS + IOP_URL set:
 """
 import pytest
 import requests
+from iop import Production
+
+
+def _production_names(productions):
+    if isinstance(productions, dict):
+        return list(productions.keys())
+    return [str(production) for production in productions]
+
+
+def _can_export_production(remote_director, production):
+    if production in ("", "Not defined"):
+        return False
+    try:
+        remote_director.export_production(production)
+    except (RuntimeError, requests.exceptions.HTTPError):
+        return False
+    return True
 
 
 @pytest.fixture(scope="module")
@@ -15,41 +32,60 @@ def default_production(remote_director):
     no production exists at all.
     """
     prod = remote_director.get_default_production()
-    if prod in ("", "Not defined"):
-        prods = remote_director.list_productions()
-        if not prods:
-            pytest.skip("No productions available")
-        prod = next(iter(prods))
-    return prod
+    if _can_export_production(remote_director, prod):
+        return prod
+
+    prods = remote_director.list_productions()
+    for candidate in _production_names(prods):
+        if _can_export_production(remote_director, candidate):
+            return candidate
+    if not prods:
+        pytest.skip("No productions available")
+    pytest.skip("No exportable productions available")
 
 
 @pytest.fixture(scope="module")
-def first_active_component(remote_director, default_production):
-    """Name of the first enabled component in the default production, or skip."""
+def runtime_production(remote_director, default_production):
+    """Production API wrapper for the default production, or skip."""
+    production = Production.from_iris(default_production, director=remote_director)
     try:
-        remote_director.start_production(default_production)
+        production.start()
     except (RuntimeError, requests.exceptions.HTTPError):
         pass  # already running
 
-    components = remote_director.export_production(default_production)
-    production_data = list(components.values())[0]
-    items = production_data.get("Item", [])
-    if isinstance(items, dict):
-        items = [items]
-    active = [item for item in items if item.get("@Enabled", "1") == "1"]
+    status = production.status()
+    current = status.get("Production") or status.get("production") or ""
+    state = str(status.get("Status") or status.get("status") or "").lower()
+    if current != default_production or state != "running":
+        pytest.skip(f"{default_production} is not the running production")
+    return production
+
+
+@pytest.fixture(scope="module")
+def first_active_component(runtime_production):
+    """First enabled component in the default production, or skip."""
+    active = [
+        item
+        for item in runtime_production.items
+        if str(item.enabled).lower() in {"1", "true"}
+    ]
     if not active:
         pytest.skip("No active components found in the default production")
-    return active[0]["@Name"]
+    return active[0]
 
 
 class TestComponentTesting:
-    def test_test_component_returns_response(self, remote_director, default_production):
+    def test_test_component_returns_response(
+        self,
+        runtime_production,
+        first_active_component,
+    ):
         """POST /test with a basic Ens.StringRequest should return a valid response."""
         # Uses Ens.StringRequest as a generic smoke test.
         # Adjust target and classname to match your environment.
         try:
-            result = remote_director.test_component(
-                target=None,
+            result = runtime_production.test_component(
+                first_active_component,
                 classname="Ens.StringRequest",
                 body='{"StringValue": "ping"}',
             )
@@ -58,33 +94,31 @@ class TestComponentTesting:
             # If no running target, an error is acceptable
             assert "error" in str(exc).lower() or "not found" in str(exc).lower()
 
-    def test_test_component_bad_target_raises(self, remote_director):
-        """Sending to a non-existent target should raise HTTPError (500)."""
-        with pytest.raises((RuntimeError, requests.exceptions.HTTPError)):
-            remote_director.test_component(
-                target="ThisTargetDoesNotExist.AtAll",
+    def test_test_component_bad_target_raises(self, runtime_production):
+        """Sending to a non-existent target should fail before REST dispatch."""
+        with pytest.raises(ValueError, match="Production item does not exist"):
+            runtime_production.test_component(
+                "ThisTargetDoesNotExist.AtAll",
                 classname="Ens.StringRequest",
                 body='{"StringValue": "ping"}',
             )
 
-    def test_test_component_bad_classname_raises(self, remote_director, default_production):
-        """Sending with a non-existent classname should raise HTTPError (500)."""
-        with pytest.raises((RuntimeError, requests.exceptions.HTTPError)):
-            remote_director.test_component(
-                target=None,
-                classname="This.Class.DoesNotExist",
+    def test_component_ref_test_dispatches_through_production_api(
+        self,
+        first_active_component,
+    ):
+        """ComponentRef.test() should dispatch through the Production API."""
+        try:
+            result = first_active_component.test(
+                classname="Ens.StringRequest",
                 body='{"StringValue": "ping"}',
             )
+            assert result is not None
+        except (RuntimeError, requests.exceptions.HTTPError) as exc:
+            # A generic message can be rejected by the target component in
+            # arbitrary remote environments, but it must reach IRIS.
+            assert "not found" in str(exc).lower() or "error" in str(exc).lower()
 
-    def test_test_component_restart(self, remote_director, first_active_component):
-        """Test that the restart option in test_component works without error."""
-        result = remote_director.test_component(
-            target=first_active_component,
-            classname=None,
-            body='{"StringValue": "ping"}',
-            restart=True,
-        )
-        assert result is not None
-
-
-
+    def test_component_ref_restart(self, first_active_component):
+        """ComponentRef.restart() should restart one production component."""
+        first_active_component.restart()

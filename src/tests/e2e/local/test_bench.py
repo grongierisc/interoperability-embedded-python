@@ -1,8 +1,27 @@
-from iop._director import _Director
+from iop import Production
+from iop._local import _LocalDirector
 from iop._utils import _Utils
 import sys
 import os
 import timeit
+
+
+def _start_for_test(production):
+    status = production.status()
+    current = status.get("Production") or status.get("production") or ""
+    state = str(status.get("Status") or status.get("status") or "").lower()
+    if current and current != "Not defined" and state == "running":
+        Production(current).stop()
+    production.set_default()
+    production.start()
+
+
+def _stop_if_running(production):
+    status = production.status()
+    current = status.get("Production") or status.get("production") or ""
+    state = str(status.get("Status") or status.get("status") or "").lower()
+    if current == production.name and state == "running":
+        production.stop()
 
 
 class TestBenchIoP:
@@ -159,15 +178,19 @@ class TestBenchIoP:
             os.path.dirname(os.path.abspath(__file__)), "bench", "settings.py"
         )
         _Utils.migrate(path)
-        _Director.stop_production()
-        _Director.set_default_production("Bench.Production")
-        _Director.start_production()
+        cls.production = Production.from_dict(
+            sys.modules["settings"].BENCH_PRODUCTION.to_dict(),
+            director=_LocalDirector(),
+        )
+        _start_for_test(cls.production)
         cls.persistent_message_cls = sys.modules["settings"].MyPersistentMessage
         cls.results = []
 
     def test_bench_iris(self):
-        _Director.test_component(
-            "Python.BenchIoPProcess", "", "msg.MyMessage", '{"message":"test"}'
+        self.production.test_component(
+            "Python.BenchIoPProcess",
+            classname="msg.MyMessage",
+            body='{"message":"test"}',
         )
 
     def run_benchmark(self, test_case):
@@ -182,8 +205,11 @@ class TestBenchIoP:
             payload = f'{{"message":"{body}"}}' if test_case["use_json"] else body
 
         result = timeit.timeit(
-            lambda: _Director.test_component(
-                test_case["component"], message, classname, payload
+            lambda: self.production.test_component(
+                test_case["component"],
+                message=message,
+                classname=classname,
+                body=payload,
             ),
             number=1,
         )
@@ -196,8 +222,10 @@ class TestBenchIoP:
 
     @classmethod
     def teardown_class(cls):
-        _Director.stop_production()
-        _Director.set_default_production("test")
+        try:
+            _stop_if_running(cls.production)
+        finally:
+            Production("test").set_default()
         current_dir = os.path.dirname(os.path.abspath(__file__))
         with open(os.path.join(current_dir, "bench", "result.txt"), "w") as f:
             for name, result in cls.results:

@@ -63,6 +63,22 @@ def _raw_put(director, path, body, *, include_ns_in_params=False, include_ns_in_
     return resp
 
 
+def _production_names(productions):
+    if isinstance(productions, dict):
+        return list(productions.keys())
+    return [str(production) for production in productions]
+
+
+def _can_export_production(remote_director, production):
+    if production in ("", "Not defined"):
+        return False
+    try:
+        remote_director.export_production(production)
+    except (RuntimeError, requests.exceptions.HTTPError):
+        return False
+    return True
+
+
 # ---------------------------------------------------------------------------
 # GET /version
 # ---------------------------------------------------------------------------
@@ -130,13 +146,14 @@ class TestExport:
     @pytest.fixture(autouse=True)
     def _need_production(self, remote_director):
         prod = remote_director.get_default_production()
-        if prod in ("", "Not defined"):
-            # List productions and pick the first one if no default is set
+        if not _can_export_production(remote_director, prod):
             prods = remote_director.list_productions()
-            if not prods:
-                pytest.skip("No productions available to test export")
-            # Prods is an object with production names as keys, so take the first key
-            prod = next(iter(prods.keys()))
+            for candidate in _production_names(prods):
+                if _can_export_production(remote_director, candidate):
+                    prod = candidate
+                    break
+            else:
+                pytest.skip("No exportable productions available to test export")
         self.production = prod
 
     def test_export_returns_200(self, remote_director):

@@ -1,5 +1,6 @@
 from bench_bo import BenchIoPOperation
 from bench_bp import BenchIoPProcess
+from iop import Production
 from msg import MyPersistentMessage
 
 import os
@@ -22,112 +23,50 @@ iris.cls("%SYSTEM.OBJ").Compile("Bench.*", "cb")
 
 CLASSES = {
     "Bench.Msg.MyPersistentMessage": MyPersistentMessage,
-    "Python.BenchIoPOperation": BenchIoPOperation,
-    "Python.BenchIoPProcess": BenchIoPProcess,
 }
 
-PRODUCTIONS = [
-    {
-        "Bench.Production": {
-            "@Name": "Bench.Production",
-            "@TestingEnabled": "true",
-            "@LogGeneralTraceEvents": "false",
-            "Description": "",
-            "ActorPoolSize": "1",
-            "Item": [
-                {
-                    "@Name": "Bench.Operation",
-                    "@Category": "",
-                    "@ClassName": "Bench.Operation",
-                },
-                {
-                    "@Name": "Python.BenchIoPOperation",
-                    "@Category": "",
-                    "@ClassName": "Python.BenchIoPOperation",
-                    "@PoolSize": "1",
-                    "@Enabled": "true",
-                    "@Foreground": "false",
-                    "@Comment": "",
-                    "@LogTraceEvents": "false",
-                    "@Schedule": "",
-                    "Setting": {
-                        "@Target": "Host",
-                        "@Name": "%classpaths",
-                        "#text": classpaths,
-                    },
-                },
-                {
-                    "@Name": "Python.BenchIoPProcess",
-                    "@Category": "",
-                    "@ClassName": "Python.BenchIoPProcess",
-                    "@PoolSize": "0",
-                    "@Enabled": "true",
-                    "@Foreground": "false",
-                    "@Comment": "",
-                    "@LogTraceEvents": "false",
-                    "@Schedule": "",
-                    "Setting": {
-                        "@Target": "Host",
-                        "@Name": "%classpaths",
-                        "#text": classpaths,
-                    },
-                },
-                {
-                    "@Name": "Python.BenchIoPProcess.To.Cls",
-                    "@Category": "",
-                    "@ClassName": "Python.BenchIoPProcess",
-                    "@PoolSize": "0",
-                    "@Enabled": "true",
-                    "@Foreground": "false",
-                    "@Comment": "",
-                    "@LogTraceEvents": "false",
-                    "@Schedule": "",
-                    "Setting": [
-                        {
-                            "@Target": "Host",
-                            "@Name": "%classpaths",
-                            "#text": classpaths,
-                        },
-                        {
-                            "@Target": "Host",
-                            "@Name": "%settings",
-                            "#text": "target=Bench.Operation",
-                        },
-                    ],
-                },
-                {
-                    "@Name": "Bench.Process",
-                    "@Category": "",
-                    "@ClassName": "Bench.Process",
-                    "@PoolSize": "1",
-                    "@Enabled": "true",
-                    "@Foreground": "false",
-                    "@Comment": "",
-                    "@LogTraceEvents": "false",
-                    "@Schedule": "",
-                    "Setting": {
-                        "@Target": "Host",
-                        "@Name": "TargetConfigName",
-                        "#text": "Python.BenchIoPOperation",
-                    },
-                },
-                {
-                    "@Name": "Bench.Process.To.Cls",
-                    "@Category": "",
-                    "@ClassName": "Bench.Process",
-                    "@PoolSize": "1",
-                    "@Enabled": "true",
-                    "@Foreground": "false",
-                    "@Comment": "",
-                    "@LogTraceEvents": "false",
-                    "@Schedule": "",
-                    "Setting": {
-                        "@Target": "Host",
-                        "@Name": "TargetConfigName",
-                        "#text": "Bench.Operation",
-                    },
-                },
-            ],
-        }
-    }
-]
+BENCH_PRODUCTION = Production(
+    "Bench.Production",
+    testing_enabled=True,
+    actor_pool_size=1,
+)
+
+bench_operation = BENCH_PRODUCTION.operation(
+    "Bench.Operation",
+    class_name="Bench.Operation",
+)
+python_operation = BENCH_PRODUCTION.operation(
+    "Python.BenchIoPOperation",
+    BenchIoPOperation,
+    class_name="Python.BenchIoPOperation",
+    settings={"%classpaths": classpaths},
+)
+python_process = BENCH_PRODUCTION.process(
+    "Python.BenchIoPProcess",
+    BenchIoPProcess,
+    class_name="Python.BenchIoPProcess",
+    pool_size=0,
+    settings={"%classpaths": classpaths},
+)
+python_process_to_cls = BENCH_PRODUCTION.process(
+    "Python.BenchIoPProcess.To.Cls",
+    BenchIoPProcess,
+    class_name="Python.BenchIoPProcess",
+    pool_size=0,
+    settings={"%classpaths": classpaths},
+)
+bench_process = BENCH_PRODUCTION.process(
+    "Bench.Process",
+    class_name="Bench.Process",
+)
+bench_process_to_cls = BENCH_PRODUCTION.process(
+    "Bench.Process.To.Cls",
+    class_name="Bench.Process",
+)
+
+BENCH_PRODUCTION.connect(python_process.target, python_operation)
+BENCH_PRODUCTION.connect(python_process_to_cls.target, bench_operation)
+BENCH_PRODUCTION.connect(bench_process.port("TargetConfigName"), python_operation)
+BENCH_PRODUCTION.connect(bench_process_to_cls.port("TargetConfigName"), bench_operation)
+
+PRODUCTIONS = [BENCH_PRODUCTION]

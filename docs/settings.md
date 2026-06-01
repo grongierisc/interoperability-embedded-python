@@ -131,6 +131,13 @@ out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 prod.connect(file.port("TargetConfigNames"), out)
 ```
 
+`ComponentRef.component_class` is the Python business host implementation class.
+Adapter metadata is separate and exposed through `adapter_class_name`.
+For Python adapter classes that should be registered automatically, pass
+`adapter_class=...` when declaring the production item. The business host class
+must still declare the adapter type with `get_adapter_type()` because IRIS stores
+that adapter on the generated host class, not in production item XML.
+
 Existing IRIS productions can be fetched back into the Python model:
 
 ```python
@@ -141,6 +148,11 @@ print(prod.graph())
 `from_iris()` reads the exported production definition and uses IRIS
 `OnGetConnections` data when available. If runtime connection data cannot be
 read, it falls back to Host settings whose value names another production item.
+If runtime discovery returns no targets for an item, Host settings are still
+used to draw inferred possible routes.
+When available, runtime connection export also supplies adapter metadata such
+as `adapter_class_name`; for loaded Python host classes this can also be
+inferred from `get_adapter_type()`.
 The fetched graph is an operational reconstruction, not a replacement for the
 Python source. Logical `target("orders")` names and Python class objects are not
 recoverable from IRIS unless they are also present in the Python source.

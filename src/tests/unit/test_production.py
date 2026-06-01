@@ -9,6 +9,8 @@ import pytest
 from iop import (
     BusinessOperation,
     BusinessProcess,
+    BusinessService,
+    InboundAdapter,
     Message,
     PollingBusinessService,
     Production,
@@ -30,6 +32,19 @@ class FileService(PollingBusinessService):
 
 class OrderOperation(BusinessOperation):
     pass
+
+
+class PythonInboundAdapter(InboundAdapter):
+    pass
+
+
+class AdapterService(BusinessService):
+    @staticmethod
+    def get_adapter_type():
+        return f"Python.{PythonInboundAdapter.__module__}.PythonInboundAdapter".replace(
+            "_",
+            "",
+        )
 
 
 def _property(component, name):
@@ -92,6 +107,49 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "origin": "authored",
             "interaction": "request",
         },
+    )
+
+
+def test_component_ref_exposes_adapter_class_name_without_serializing_it():
+    prod = Production("Demo.Production")
+    service = prod.service("FileInput", FileService)
+
+    assert service.adapter_class_name == "Ens.InboundAdapter"
+    assert service.inspect(refresh=False)["adapter_class_name"] == "Ens.InboundAdapter"
+    assert prod.graph().to_dict()["nodes"][0]["adapter_class_name"] == (
+        "Ens.InboundAdapter"
+    )
+    assert "@AdapterClassName" not in prod.to_dict()["Demo.Production"]["Item"][0]
+
+
+def test_component_ref_supports_python_adapter_class_registration(tmp_path):
+    prod = Production("Demo.Production")
+    service = prod.service(
+        "Input",
+        AdapterService,
+        adapter_class=PythonInboundAdapter,
+    )
+
+    assert service.adapter_class is PythonInboundAdapter
+    assert service.adapter_class_name == (
+        f"Python.{PythonInboundAdapter.__module__}.PythonInboundAdapter".replace(
+            "_",
+            "",
+        )
+    )
+    assert prod.adapter_registrations() == (service,)
+
+    with patch.object(_Utils, "register_component") as mock_register:
+        with patch.object(_Utils, "register_production"):
+            _Utils.set_productions_settings([prod], str(tmp_path))
+
+    assert mock_register.call_count == 2
+    assert mock_register.call_args_list[1].args == (
+        PythonInboundAdapter.__module__,
+        "PythonInboundAdapter",
+        str(tmp_path),
+        1,
+        service.adapter_class_name,
     )
 
 
@@ -272,7 +330,10 @@ def test_production_component_lifecycle_methods_are_scoped_to_this_production():
         prod.stop_component(orders)
     with pytest.raises(
         RuntimeError,
-        match="Cannot restart component 'OrderOperation' in production 'Demo.Production'",
+        match=(
+            "Cannot restart component 'OrderOperation' "
+            "in production 'Demo.Production'"
+        ),
     ):
         prod.restart_component(orders)
 
@@ -451,6 +512,7 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
     prod = Production.from_dict(exported, connections=connections)
 
     assert prod.item("FileInput").class_name == "EnsLib.File.PassthroughService"
+    assert prod.item("FileInput").adapter_class_name == ""
     assert prod.item("FileInput").adapter_settings == {"FilePath": "/tmp"}
     assert prod.item("FileInput").other_settings == [
         {"@Target": "Custom", "@Name": "Preserved", "#text": "yes"}
@@ -472,6 +534,33 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
     ]
     assert "FileInput [EnsLib.File.PassthroughService]" in str(graph)
     assert "TargetConfigNames -> OrderOperation" in str(graph)
+
+
+def test_production_from_dict_uses_runtime_adapter_metadata():
+    exported = {
+        "Demo.Production": {
+            "Item": [
+                {"@Name": "FileInput", "@ClassName": "Python.demo.FileService"},
+                {"@Name": "OrderOperation", "@ClassName": "Demo.OrderOperation"},
+            ]
+        }
+    }
+    connections = {
+        "items": [
+            {
+                "item": "FileInput",
+                "adapter_class_name": "Ens.InboundAdapter",
+                "connections": ["OrderOperation"],
+            }
+        ]
+    }
+
+    prod = Production.from_dict(exported, connections=connections)
+
+    assert prod.get_component("FileInput").adapter_class_name == "Ens.InboundAdapter"
+    assert prod.graph().to_dict()["nodes"][0]["adapter_class_name"] == (
+        "Ens.InboundAdapter"
+    )
 
 
 def test_production_from_dict_keeps_queue_as_runtime_metadata():
@@ -706,7 +795,7 @@ def test_production_from_dict_falls_back_to_host_setting_inference():
     assert prod.graph().warnings == ("FileInput: boom",)
 
 
-def test_production_from_dict_does_not_infer_when_runtime_discovery_succeeds_empty():
+def test_production_from_dict_infers_when_runtime_discovery_returns_no_targets():
     exported = {
         "Demo.Production": {
             "Item": [
@@ -729,9 +818,23 @@ def test_production_from_dict_does_not_infer_when_runtime_discovery_succeeds_emp
         connections={"items": [{"item": "Router", "connections": []}]},
     )
 
-    assert prod.graph().to_dict()["edges"] == []
-    with pytest.raises(ValueError, match="not connected"):
-        prod.resolve_target("Router.TargetConfigNames")
+    assert prod.resolve_target("Router.TargetConfigNames") == "OrderOperation"
+    assert prod.graph().to_dict()["edges"] == [
+        {
+            "source": "Router.TargetConfigNames",
+            "source_item": "Router",
+            "source_port": "TargetConfigNames",
+            "logical_name": "",
+            "target": "OrderOperation",
+            "origin": "inferred",
+            "interaction": "request",
+            "metadata": {
+                "source": "Host setting fallback",
+                "reason": "runtime discovery returned no targets",
+            },
+            "inferred": True,
+        }
+    ]
 
 
 def test_production_graph_allows_multigraph_edges_but_port_resolution_is_strict():
@@ -815,7 +918,13 @@ def test_production_from_iris_uses_export_and_runtime_connections():
         }
     }
     director.export_production_connections.return_value = {
-        "items": [{"item": "FileInput", "connections": ["OrderOperation"]}]
+        "items": [
+            {
+                "item": "FileInput",
+                "adapter_class_name": "Ens.InboundAdapter",
+                "connections": ["OrderOperation"],
+            }
+        ]
     }
 
     prod = Production.from_iris("Demo.Production", director=director)
@@ -823,6 +932,7 @@ def test_production_from_iris_uses_export_and_runtime_connections():
     director.export_production.assert_called_once_with("Demo.Production")
     director.export_production_connections.assert_called_once_with("Demo.Production")
     assert prod.item("FileInput").Output.resolve() == "OrderOperation"
+    assert prod.get_component("FileInput").adapter_class_name == "Ens.InboundAdapter"
 
 
 def test_objectscript_component_uses_class_name_and_manual_port():
@@ -973,6 +1083,42 @@ def test_migration_plan_lists_production_objects_and_auto_components():
         f"Python.{OrderOperation.__module__}.OrderOperation".replace("_", "")
         + f" -> {OrderOperation.__module__}.OrderOperation (component)"
         in plan["classes"]
+    )
+
+
+def test_production_object_auto_registration_deduplicates_shared_classes(tmp_path):
+    prod = Production("Object.Production")
+    prod.operation(
+        "FirstOrderOperation",
+        OrderOperation,
+        class_name="Python.SharedOrderOperation",
+    )
+    prod.operation(
+        "SecondOrderOperation",
+        OrderOperation,
+        class_name="Python.SharedOrderOperation",
+    )
+
+    class Settings:
+        CLASSES = {}
+        PRODUCTIONS = [prod]
+
+    plan = _Utils._build_migration_plan(Settings, ".")
+    assert plan["classes"].count(
+        "Python.SharedOrderOperation"
+        + f" -> {OrderOperation.__module__}.OrderOperation (component)"
+    ) == 1
+
+    with patch.object(_Utils, "register_component") as mock_register:
+        with patch.object(_Utils, "register_production"):
+            _Utils.set_productions_settings([prod], str(tmp_path))
+
+    mock_register.assert_called_once_with(
+        OrderOperation.__module__,
+        "OrderOperation",
+        str(tmp_path),
+        1,
+        "Python.SharedOrderOperation",
     )
 
 

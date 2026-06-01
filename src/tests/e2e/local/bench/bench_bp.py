@@ -1,6 +1,8 @@
-from iop import BusinessProcess
+from iop import BusinessProcess, target as iop_target
 
 class BenchIoPProcess(BusinessProcess):
+    target = iop_target("operation")
+
     def on_init(self):
         if not hasattr(self, 'size'):
             self.size = 100

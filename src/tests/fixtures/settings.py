@@ -1,6 +1,7 @@
 import bp
 from bo import FileOperation, MySettingOperation
 from bs import RedditService
+from iop import Production
 from message import SimpleMessage, PostMessage
 
 SCHEMAS = [SimpleMessage, PostMessage]
@@ -10,55 +11,27 @@ CLASSES = {
     'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
     'Python.bp': bp,
     'Python.FileOperation': FileOperation,
-    'UnitTest.MySettingOperation': MySettingOperation,
 }
 
-PRODUCTIONS = [
-    {
-        "dc.Python.Production": {
-            "@Name": "dc.Python.Production",
-            "@TestingEnabled": "true",
-            "@LogGeneralTraceEvents": "false",
-            "Description": "",
-            "ActorPoolSize": "2"
-        }
+EMPTY_PRODUCTION = Production("dc.Python.Production", testing_enabled=True)
+
+TEST_SETTING_PRODUCTION = Production(
+    "Python.TestSettingProduction",
+    testing_enabled=True,
+)
+TEST_SETTING_OPERATION = TEST_SETTING_PRODUCTION.operation(
+    "UnitTest.MySettingOperation",
+    MySettingOperation,
+    class_name="UnitTest.MySettingOperation",
+    settings={
+        "my_int_var": 1,
+        "my_float_var": 1.0,
+        "my_untyped_var": 1,
+        "my_str_var": "bar",
     },
-    {
-        "Python.TestSettingProduction": {
-            "@Name": "Python.TestSettingProduction",
-            "@TestingEnabled": "true",
-            "@LogGeneralTraceEvents": "false",
-            "Description": "",
-            "ActorPoolSize": "2",
-            "Item": [
-                {
-                    "@Name": "UnitTest.MySettingOperation",
-                    "@Enabled": "true",
-                    "@ClassName": "UnitTest.MySettingOperation",
-                    "Setting": [
-                    {
-                        "@Target": "Host",
-                        "@Name": "my_int_var",
-                        "#text": "1"
-                    },
-                    {
-                        "@Target": "Host",
-                        "@Name": "my_float_var",
-                        "#text": "1.0"
-                    },
-                    {
-                        "@Target": "Host",
-                        "@Name": "my_untyped_var",
-                        "#text": "1"
-                    },
-                    {
-                        "@Target": "Host",
-                        "@Name": "my_str_var",
-                        "#text": "bar"
-                    }
-                    ]
-                }
-            ]
-        }
-    }
+)
+
+PRODUCTIONS = [
+    EMPTY_PRODUCTION,
+    TEST_SETTING_PRODUCTION,
 ]

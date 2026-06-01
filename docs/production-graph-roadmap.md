@@ -114,8 +114,9 @@ The import path uses two sources:
 
 `OnGetConnections` is the primary graph source when available. If runtime
 connection discovery fails for an item, the importer falls back to Host settings
-whose value names another production item. When runtime discovery succeeds and
-reports no connections, fallback inference is not used for that item.
+whose value names another production item. When runtime discovery reports no
+targets for an item, Host settings are still used to draw inferred possible
+routes.
 
 Queue metadata is imported separately through `Ens.Queue.GetCount(item.Name)`.
 It is runtime production information, not authoring graph data. It is exposed
@@ -146,6 +147,12 @@ prod.connect(file.port("TargetConfigNames"), out)
 Rules:
 
 - Python classes are registered during migration.
+- `ComponentRef.component_class` is the Python business host implementation
+  class, not the adapter class.
+- `ComponentRef.adapter_class_name` exposes the configured adapter type when it
+  is known from Python source or explicitly supplied metadata.
+- Python adapter classes passed with `adapter_class=...` are registered during
+  migration.
 - `class_name` string components are not registered as Python components.
 - ObjectScript classes must already exist in IRIS or be loaded through existing
   `.cls` migration support.

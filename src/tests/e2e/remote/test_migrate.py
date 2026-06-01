@@ -12,9 +12,11 @@ from iop._remote import _RemoteDirector
 
 
 @pytest.fixture
-def minimal_settings_file(remote_settings, tmp_path):
-    """Write a minimal settings.py that points at the remote IRIS instance."""
+def production_settings_file(remote_settings, tmp_path):
+    """Write a minimal Production-based settings.py for the remote IRIS instance."""
     content = f"""\
+from iop import Production
+
 REMOTE_SETTINGS = {{
     "url": "{remote_settings['url']}",
     "username": "{remote_settings.get('username', '')}",
@@ -23,7 +25,7 @@ REMOTE_SETTINGS = {{
 }}
 
 CLASSES = {{}}
-PRODUCTIONS = []
+PRODUCTIONS = [Production("Remote.E2EProduction", testing_enabled=True)]
 """
     settings_path = tmp_path / "settings.py"
     settings_path.write_text(content)
@@ -31,9 +33,7 @@ PRODUCTIONS = []
 
 
 class TestRemoteMigration:
-    def test_migrate_empty_settings(self, minimal_settings_file, remote_settings):
-        """migrate() with an empty CLASSES dict should not raise."""
-        # No classes to register means a PUT with an empty body list;
-        # the server should respond with 200.
+    def test_migrate_production_settings(self, production_settings_file, remote_settings):
+        """migrate() accepts settings authored with the Production API."""
         director = _RemoteDirector(remote_settings)
-        director.migrate(minimal_settings_file)
+        director.migrate(production_settings_file)

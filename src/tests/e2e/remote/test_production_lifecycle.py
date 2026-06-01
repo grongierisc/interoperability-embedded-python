@@ -7,12 +7,50 @@ Run with a live IRIS + IOP_URL set:
     IOP_URL=http://localhost:52773 pytest src/tests/e2e/remote/
 """
 import pytest
+import requests
+from iop import Production
+
+
+def _production_names(productions):
+    if isinstance(productions, dict):
+        return list(productions.keys())
+    return [str(production) for production in productions]
+
+
+def _can_export_production(remote_director, production):
+    if production in ("", "Not defined"):
+        return False
+    try:
+        remote_director.export_production(production)
+    except (RuntimeError, requests.exceptions.HTTPError):
+        return False
+    return True
+
+
+@pytest.fixture(scope="module")
+def default_production_name(remote_director):
+    default = remote_director.get_default_production()
+    if _can_export_production(remote_director, default):
+        return default
+    prods = remote_director.list_productions()
+    for candidate in _production_names(prods):
+        if _can_export_production(remote_director, candidate):
+            return candidate
+    pytest.skip("No exportable productions available on the remote IRIS instance")
+
+
+@pytest.fixture(scope="module")
+def production(remote_director, default_production_name):
+    production = Production(default_production_name, director=remote_director)
+    production.set_default()
+    return production
 
 
 class TestProductionStatus:
     def test_status_returns_dict(self, remote_director):
         """GET /status should return a dict with production and status keys."""
-        result = remote_director.status_production()
+        production = Production("Runtime.Status", director=remote_director)
+        result = production.status()
         assert isinstance(result, dict)
         assert "production" in result or "error" not in result
 
@@ -31,31 +69,25 @@ class TestProductionStatus:
 class TestProductionLifecycle:
     """Start / restart / stop / kill — only run when a production is configured."""
 
-    @pytest.fixture(autouse=True)
-    def _check_production(self, remote_director):
-        """Skip if no default production is defined."""
-        default = remote_director.get_default_production()
-        if default in ("", "Not defined"):
-            pytest.skip("No default production defined on the remote IRIS instance")
-
-    def test_restart(self, remote_director):
+    def test_restart(self, production):
         """POST /restart should complete without error."""
-        remote_director.restart_production()  # return value is None
+        production.restart()  # return value is None
 
-    def test_update(self, remote_director):
+    def test_update(self, production):
         """POST /update should complete without error."""
-        remote_director.update_production()  # return value is None
+        production.update()  # return value is None
 
 
 class TestDefaultProduction:
     def test_set_and_get_default(self, remote_director):
         """PUT /default and GET /default round-trip."""
         original = remote_director.get_default_production()
+        production = Production(original, director=remote_director)
 
         try:
-            remote_director.set_default_production(original)
+            production.set_default()
             result = remote_director.get_default_production()
             assert result == original
         finally:
             # Restore
-            remote_director.set_default_production(original)
+            production.set_default()

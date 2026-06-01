@@ -476,6 +476,26 @@ out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 prod.connect(file.port("TargetConfigNames"), out)
 ```
 
+`ComponentRef.component_class` is the Python business host implementation class.
+It is not the adapter. Adapter metadata is exposed separately:
+
+```python
+file.adapter_class_name
+prod.inspect_component(file)["adapter_class_name"]
+```
+
+For Python adapters that should be registered during migration, pass the adapter
+class explicitly while the business host class still declares its adapter type
+with `get_adapter_type()`:
+
+```python
+file = prod.service(
+    "FileInput",
+    FileService,
+    adapter_class=FileInboundAdapter,
+)
+```
+
 Runtime inspection is explicit:
 
 ```python
@@ -488,6 +508,8 @@ queues = runtime_prod.queue()
 connections. `queue()` returns point-in-time queue counters from IRIS; it is
 runtime metadata and does not affect `to_dict()` or migration output.
 `queue_info()` remains available as a compatibility alias.
+Adapter metadata such as `adapter_class_name` is taken from runtime connection
+metadata when IRIS can provide it, or inferred from loaded Python host classes.
 
 Graph edges expose route metadata such as `origin` (`authored`, `runtime`, or
 `inferred`) and `interaction`. `diff()` ignores that import metadata when the
