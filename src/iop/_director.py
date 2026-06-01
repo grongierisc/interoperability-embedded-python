@@ -146,6 +146,32 @@ class _Director:
     def update_production():
         _iris.get_iris().cls("Ens.Director").UpdateProduction()
 
+    ### start production component
+    @staticmethod
+    def start_component(component_name):
+        status = _iris.get_iris().cls("Ens.Director").EnableConfigItem(
+            component_name,
+            1,
+            1,
+        )
+        _Utils.raise_on_error(status)
+
+    ### stop production component
+    @staticmethod
+    def stop_component(component_name):
+        status = _iris.get_iris().cls("Ens.Director").EnableConfigItem(
+            component_name,
+            0,
+            1,
+        )
+        _Utils.raise_on_error(status)
+
+    ### restart production component
+    @staticmethod
+    def restart_component(component_name):
+        _Director.stop_component(component_name)
+        _Director.start_component(component_name)
+
     ### list production
     @staticmethod
     def list_productions():

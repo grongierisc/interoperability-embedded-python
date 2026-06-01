@@ -427,13 +427,45 @@ Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.
 
+An IRIS production topology is modeled as a directed multigraph of possible
+communication routes. A graph edge is a possible route between production
+items, not a DAG execution dependency.
+
 Key methods:
 
 - `service()`, `process()`, `operation()`: add components to the Python graph
 - `connect(port, component)`: connect a source `Port` to a target component
 - `item(name)`: return a component reference by production item name
+- `component_ref(target)`, `get_component(target)`: return a `ComponentRef`
+  from an item name, component reference, port, or `"Item.Port"` path
 - `graph()`: return a printable `ProductionGraph`
+- `inspect_component(item)`: return component settings, routes, queue, and
+  current runtime production status
+- `start_component(item)`, `stop_component(item)`, `restart_component(item)`:
+  manage one component through IRIS `EnableConfigItem`
+- `test_component(item, message)`: test one component through the production
+  graph
+- `diff(other=None)`: compare deployable settings, items, and routes against
+  another production or the deployed IRIS reconstruction
+- `graph_diff(other=None)`: compare graph topology including edge origin and
+  route metadata
 - `sync()`: register the current Python graph with local IRIS through the existing migration path
+
+`str(port)` returns the stable authoring identity, for example
+`FileInput.Output`. Use `port.resolve()` when you explicitly need the current
+IRIS dispatch target string.
+
+`diff()` is directional: it reports changes needed to make the current/imported
+state match the Python `Production` object.
+
+```python
+print(prod.diff())
+
+runtime_prod = Production.from_iris("Demo.Production")
+delta = prod.diff(runtime_prod)
+if delta.has_changes:
+    print(delta.to_dict())
+```
 
 ObjectScript and built-in IRIS components can be represented with `class_name`
 and manual ports:
@@ -456,6 +488,42 @@ queues = runtime_prod.queue()
 connections. `queue()` returns point-in-time queue counters from IRIS; it is
 runtime metadata and does not affect `to_dict()` or migration output.
 `queue_info()` remains available as a compatibility alias.
+
+Graph edges expose route metadata such as `origin` (`authored`, `runtime`, or
+`inferred`) and `interaction`. `diff()` ignores that import metadata when the
+deployable IRIS shape is equivalent; use `graph_diff()` when you need to compare
+the reconstruction quality or route origin.
+
+`prod.test_component("Item.Port", message)` resolves from the current
+`Production` object graph only. For an already deployed production, first build
+an operational reconstruction with `Production.from_iris(...)`, then call
+`test_component()` on that object. `prod.test(...)` remains as a compatibility
+alias.
+
+Lifecycle helpers such as `prod.stop()`, `prod.restart()`, `prod.kill()`, and
+`prod.update()` verify that IRIS currently points at the same production before
+calling the underlying IRIS lifecycle method.
+
+Component lifecycle helpers follow the same rule:
+
+```python
+orders = prod.component_ref("OrderOperation")
+info = orders.inspect()
+orders.stop()
+orders.start()
+orders.restart()
+orders.test(OrderRequest(order_id="123"))
+
+# equivalent production-level calls
+prod.stop_component("OrderOperation")
+prod.start_component("OrderOperation")
+prod.restart_component(file.Output)
+```
+
+`inspect_component(...)` can take a component reference, item name, `Port`, or
+`"Item.Port"` path. A port resolves to its configured target component.
+`ComponentRef` is a Python handle to the production item, not the live IRIS host
+instance.
 
 ### Director Class 🎭
 Manages InterSystems IRIS productions and business services, particularly for non-polling services.

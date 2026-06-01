@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 from dataclasses import dataclass
 from unittest.mock import MagicMock, patch
 
@@ -88,12 +89,27 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "source_port": "Output",
             "logical_name": "orders",
             "target": "OrderOperation",
+            "origin": "authored",
+            "interaction": "request",
         },
     )
 
 
+def test_port_str_is_identity_not_runtime_resolution():
+    prod = Production("Demo.Production")
+    file = prod.service("FileInput", FileService)
+
+    assert str(file.Output) == "FileInput.Output"
+    with pytest.raises(ValueError, match="not connected"):
+        file.Output.resolve()
+
+
 def test_production_test_resolves_string_port_path_from_object_graph():
     director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Test.Production",
+        "Status": "running",
+    }
     director.test_component.return_value = "ok"
     prod = Production("Test.Production", director=director)
     file = prod.service("FileInput", FileService)
@@ -111,33 +127,33 @@ def test_production_test_resolves_string_port_path_from_object_graph():
     assert json.loads(kwargs["body"]) == {"order_id": "123"}
 
 
-def test_production_test_resolves_port_path_from_export_when_graph_is_empty():
+def test_production_test_component_is_canonical_test_api():
     director = MagicMock()
     director.status_production.return_value = {
-        "Production": "Demo.Production",
+        "Production": "Test.Production",
         "Status": "running",
     }
-    director.export_production.return_value = {
-        "Demo.Production": {
-            "Item": {
-                "@Name": "FileInput",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "Output",
-                    "#text": "OrderOperation",
-                },
-            }
-        }
-    }
     director.test_component.return_value = "ok"
-    prod = Production("Demo.Production", director=director)
+    prod = Production("Test.Production", director=director)
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
 
-    response = prod.test("FileInput.Output", OrderRequest(order_id="123"))
+    assert prod.test_component(orders, OrderRequest(order_id="123")) == "ok"
 
-    assert response == "ok"
-    director.export_production.assert_called_once_with("Demo.Production")
     director.test_component.assert_called_once()
     assert director.test_component.call_args.args[0] == "OrderOperation"
+
+
+def test_production_test_resolves_only_from_object_graph():
+    director = MagicMock()
+    prod = Production("Demo.Production", director=director)
+
+    with pytest.raises(ValueError, match="Production item does not exist: FileInput"):
+        prod.test("FileInput.Output", OrderRequest(order_id="123"))
+
+    director.export_production.assert_not_called()
+    director.test_component.assert_not_called()
 
 
 def test_production_test_reports_existing_stopped_production():
@@ -160,6 +176,20 @@ def test_production_test_reports_existing_stopped_production():
     director.test_component.assert_not_called()
 
 
+def test_production_test_fails_closed_when_status_cannot_be_checked():
+    director = MagicMock()
+    director.status_production.side_effect = RuntimeError("status unavailable")
+    prod = Production("Demo.Production", director=director)
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    with pytest.raises(RuntimeError, match="could not verify production status"):
+        prod.test("FileInput.Output", OrderRequest(order_id="123"))
+
+    director.test_component.assert_not_called()
+
+
 def test_production_start_uses_runtime_start_status():
     director = MagicMock()
     director.start_production.side_effect = RuntimeError(
@@ -171,6 +201,176 @@ def test_production_start_uses_runtime_start_status():
         prod.start()
 
     director.start_production.assert_called_once_with("Demo.Production")
+
+
+def test_production_lifecycle_methods_are_scoped_to_this_production():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Other.Production",
+        "Status": "running",
+    }
+    prod = Production("Demo.Production", director=director)
+
+    with pytest.raises(RuntimeError, match="Cannot stop production 'Demo.Production'"):
+        prod.stop()
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot restart production 'Demo.Production'",
+    ):
+        prod.restart()
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot update production 'Demo.Production'",
+    ):
+        prod.update()
+    with pytest.raises(RuntimeError, match="Cannot kill production 'Demo.Production'"):
+        prod.kill()
+
+    director.stop_production.assert_not_called()
+    director.restart_production.assert_not_called()
+    director.update_production.assert_not_called()
+    director.shutdown_production.assert_not_called()
+
+
+def test_production_lifecycle_methods_call_director_when_current_matches():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Demo.Production",
+        "Status": "running",
+    }
+    prod = Production("Demo.Production", director=director)
+
+    prod.stop()
+    prod.restart()
+    prod.update()
+    prod.kill()
+
+    director.stop_production.assert_called_once()
+    director.restart_production.assert_called_once()
+    director.update_production.assert_called_once()
+    director.shutdown_production.assert_called_once()
+
+
+def test_production_component_lifecycle_methods_are_scoped_to_this_production():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Other.Production",
+        "Status": "running",
+    }
+    prod = Production("Demo.Production", director=director)
+    orders = prod.operation(OrderOperation)
+
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot start component 'OrderOperation' in production 'Demo.Production'",
+    ):
+        prod.start_component(orders)
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot stop component 'OrderOperation' in production 'Demo.Production'",
+    ):
+        prod.stop_component(orders)
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot restart component 'OrderOperation' in production 'Demo.Production'",
+    ):
+        prod.restart_component(orders)
+
+    director.start_component.assert_not_called()
+    director.stop_component.assert_not_called()
+    director.restart_component.assert_not_called()
+
+
+def test_production_component_lifecycle_methods_call_director_when_current_matches():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Demo.Production",
+        "Status": "running",
+    }
+    prod = Production("Demo.Production", director=director)
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    prod.start_component(orders)
+    prod.stop_component("OrderOperation")
+    prod.restart_component(file.Output)
+
+    director.start_component.assert_called_once_with("OrderOperation")
+    director.stop_component.assert_called_once_with("OrderOperation")
+    director.restart_component.assert_called_once_with("OrderOperation")
+
+
+def test_production_component_ref_retrieval_accepts_item_ref_and_port():
+    prod = Production("Demo.Production")
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    assert prod.item("OrderOperation") is orders
+    assert prod.component_ref("OrderOperation") is orders
+    assert prod.component_ref(orders) is orders
+    assert prod.component_ref(file.Output) is orders
+    assert prod.component_ref("FileInput.Output") is orders
+    assert prod.get_component("OrderOperation") is orders
+
+
+def test_component_ref_runtime_methods_delegate_to_production():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Demo.Production",
+        "Status": "running",
+    }
+    director.export_production_queue_info.return_value = {"items": []}
+    director.test_component.return_value = "ok"
+    prod = Production("Demo.Production", director=director)
+    orders = prod.operation(OrderOperation)
+
+    assert orders.inspect()["name"] == "OrderOperation"
+    orders.start()
+    orders.stop()
+    orders.restart()
+    assert orders.test(OrderRequest(order_id="123")) == "ok"
+
+    director.start_component.assert_called_once_with("OrderOperation")
+    director.stop_component.assert_called_once_with("OrderOperation")
+    director.restart_component.assert_called_once_with("OrderOperation")
+    director.test_component.assert_called_once()
+    assert director.test_component.call_args.args[0] == "OrderOperation"
+
+
+def test_production_inspect_component_includes_graph_and_runtime_info():
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Demo.Production",
+        "Status": "running",
+    }
+    director.export_production_queue_info.return_value = {
+        "items": [
+            {
+                "item": "OrderOperation",
+                "queue_name": "OrderOperation",
+                "count": 2,
+            }
+        ]
+    }
+    prod = Production("Demo.Production", director=director)
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    info = prod.inspect_component("FileInput.Output")
+
+    assert info["production"] == "Demo.Production"
+    assert info["name"] == "OrderOperation"
+    assert info["class_name"] == (
+        f"Python.{OrderOperation.__module__}.OrderOperation".replace("_", "")
+    )
+    assert info["incoming"][0]["source"] == "FileInput.Output"
+    assert info["outgoing"] == []
+    assert info["runtime"]["is_running"] is True
+    assert info["runtime"]["queue"]["count"] == 2
+    director.export_production_queue_info.assert_called_once_with("Demo.Production")
 
 
 def test_production_test_reports_another_running_production():
@@ -265,6 +465,8 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
             "source_port": "TargetConfigNames",
             "logical_name": "",
             "target": "OrderOperation",
+            "origin": "runtime",
+            "interaction": "request",
             "runtime": True,
         }
     ]
@@ -329,6 +531,146 @@ def test_production_queue_fetches_and_updates_runtime_metadata():
     director.export_production_queue_info.assert_called_once_with("Demo.Production")
 
 
+def test_production_diff_reports_no_changes_against_equivalent_definition():
+    prod = Production("Demo.Production", testing_enabled=True)
+    file = prod.service("FileInput", FileService, settings={"Limit": 10})
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    diff = prod.diff(Production.from_dict(prod.to_dict()))
+
+    assert diff.has_changes is False
+    assert diff.to_dict() == {
+        "production": "Demo.Production",
+        "has_changes": False,
+        "changes": [],
+    }
+    assert "no changes" in str(diff)
+
+
+def test_production_graph_diff_includes_edge_origin_metadata():
+    prod = Production("Demo.Production", testing_enabled=True)
+    file = prod.service("FileInput", FileService)
+    orders = prod.operation(OrderOperation)
+    prod.connect(file.Output, orders)
+
+    imported = Production.from_dict(prod.to_dict())
+
+    assert prod.diff(imported).has_changes is False
+    graph_diff = prod.graph_diff(imported)
+
+    assert graph_diff.has_changes is True
+    assert {
+        "action": "change",
+        "kind": "connection",
+        "path": "connections.FileInput.Output",
+        "before": [
+            {
+                "target": "OrderOperation",
+                "origin": "inferred",
+                "interaction": "request",
+                "logical_name": "",
+                "metadata": {"source": "Host setting fallback"},
+            }
+        ],
+        "after": [
+            {
+                "target": "OrderOperation",
+                "origin": "authored",
+                "interaction": "request",
+                "logical_name": "orders",
+            }
+        ],
+    } in graph_diff.to_dict()["changes"]
+
+
+def test_production_diff_reports_items_settings_and_connections():
+    current = Production("Demo.Production")
+    current_file = current.service(
+        "FileInput",
+        class_name="Demo.OldFileService",
+        settings={"Limit": 5},
+    )
+    old_orders = current.operation("OldOrderOperation", class_name="Demo.OldOrders")
+    current.connect(current_file.port("Output"), old_orders)
+
+    desired = Production("Demo.Production")
+    desired_file = desired.service(
+        "FileInput",
+        FileService,
+        settings={"Limit": 10},
+    )
+    orders = desired.operation(OrderOperation)
+    desired.connect(desired_file.Output, orders)
+
+    changes = desired.diff(current).to_dict()["changes"]
+
+    assert {
+        "action": "remove",
+        "kind": "item",
+        "path": "items.OldOrderOperation",
+        "before": {
+            "class_name": "Demo.OldOrders",
+            "category": "",
+            "pool_size": "1",
+            "enabled": "true",
+            "foreground": "false",
+            "comment": "",
+            "log_trace_events": "false",
+            "schedule": "",
+            "host_settings": {},
+            "adapter_settings": {},
+            "other_settings": [],
+        },
+    } in changes
+    assert any(
+        change["action"] == "add"
+        and change["kind"] == "item"
+        and change["path"] == "items.OrderOperation"
+        for change in changes
+    )
+    assert {
+        "action": "change",
+        "kind": "item",
+        "path": "items.FileInput.class_name",
+        "before": "Demo.OldFileService",
+        "after": f"Python.{FileService.__module__}.FileService".replace("_", ""),
+    } in changes
+    assert {
+        "action": "change",
+        "kind": "setting",
+        "path": "items.FileInput.settings.Host.Limit",
+        "before": "5",
+        "after": "10",
+    } in changes
+    assert {
+        "action": "change",
+        "kind": "connection",
+        "path": "connections.FileInput.Output",
+        "before": ["OldOrderOperation"],
+        "after": ["OrderOperation"],
+    } in changes
+
+
+def test_production_diff_without_argument_compares_with_iris_reconstruction():
+    desired = Production("Demo.Production", director=MagicMock())
+    file = desired.service("FileInput", FileService)
+    orders = desired.operation(OrderOperation)
+    desired.connect(file.Output, orders)
+    desired._director.export_production.return_value = desired.to_dict()
+    desired._director.export_production_connections.return_value = {
+        "items": [{"item": "FileInput", "connections": ["OrderOperation"]}]
+    }
+
+    diff = desired.diff()
+
+    assert diff.has_changes is False
+    desired._director.export_production.assert_called_once_with("Demo.Production")
+    desired._director.export_production_connections.assert_called_once_with(
+        "Demo.Production"
+    )
+
+
 def test_production_from_dict_falls_back_to_host_setting_inference():
     exported = {
         "Demo.Production": {
@@ -357,7 +699,68 @@ def test_production_from_dict_falls_back_to_host_setting_inference():
 
     assert prod.resolve_target("FileInput.Output") == "OrderOperation"
     assert prod.graph().to_dict()["edges"][0]["inferred"] is True
+    assert prod.graph().to_dict()["edges"][0]["origin"] == "inferred"
+    assert prod.graph().to_dict()["edges"][0]["metadata"] == {
+        "source": "Host setting fallback"
+    }
     assert prod.graph().warnings == ("FileInput: boom",)
+
+
+def test_production_from_dict_does_not_infer_when_runtime_discovery_succeeds_empty():
+    exported = {
+        "Demo.Production": {
+            "Item": [
+                {
+                    "@Name": "Router",
+                    "@ClassName": "Demo.Router",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "TargetConfigNames",
+                        "#text": "OrderOperation",
+                    },
+                },
+                {"@Name": "OrderOperation", "@ClassName": "Demo.OrderOperation"},
+            ]
+        }
+    }
+
+    prod = Production.from_dict(
+        exported,
+        connections={"items": [{"item": "Router", "connections": []}]},
+    )
+
+    assert prod.graph().to_dict()["edges"] == []
+    with pytest.raises(ValueError, match="not connected"):
+        prod.resolve_target("Router.TargetConfigNames")
+
+
+def test_production_graph_allows_multigraph_edges_but_port_resolution_is_strict():
+    exported = {
+        "Demo.Production": {
+            "Item": [
+                {
+                    "@Name": "Router",
+                    "@ClassName": "Demo.Router",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "TargetConfigNames",
+                        "#text": "OrderA,OrderB",
+                    },
+                },
+                {"@Name": "OrderA", "@ClassName": "Demo.OrderOperation"},
+                {"@Name": "OrderB", "@ClassName": "Demo.OrderOperation"},
+            ]
+        }
+    }
+
+    prod = Production.from_dict(exported)
+    edges = prod.graph().to_dict()["edges"]
+
+    assert [edge["target"] for edge in edges] == ["OrderA", "OrderB"]
+    assert all(edge["origin"] == "inferred" for edge in edges)
+    with pytest.raises(ValueError, match="ambiguous"):
+        prod.resolve_target("Router.TargetConfigNames")
+
 
 def test_production_from_dict_keeps_runtime_edge_without_matching_port():
     exported = {
@@ -382,6 +785,8 @@ def test_production_from_dict_keeps_runtime_edge_without_matching_port():
             "source_port": "",
             "logical_name": "",
             "target": "OrderOperation",
+            "origin": "runtime",
+            "interaction": "request",
             "runtime": True,
         }
     ]
@@ -466,6 +871,50 @@ def test_production_sync_registers_current_definition():
 
     mock_set.assert_called_once_with([prod], "/tmp/iop")
     mock_update.assert_called_once()
+
+
+def test_production_sync_restores_namespace_env(monkeypatch):
+    seen = []
+    monkeypatch.setenv("IRISNAMESPACE", "ORIGINAL")
+    prod = Production("Demo.Production", namespace="TARGET")
+    prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
+
+    def capture_namespace(*args, **kwargs):
+        seen.append(os.environ.get("IRISNAMESPACE"))
+
+    with patch.object(
+        _Utils,
+        "set_productions_settings",
+        side_effect=capture_namespace,
+    ):
+        with patch("iop._local._LocalDirector.update_production"):
+            prod.sync(root_path="/tmp/iop")
+
+    assert seen == ["TARGET"]
+    assert os.environ["IRISNAMESPACE"] == "ORIGINAL"
+
+
+def test_production_runtime_director_restores_namespace_env(monkeypatch):
+    seen = []
+    monkeypatch.setenv("IRISNAMESPACE", "ORIGINAL")
+    prod = Production("Demo.Production", namespace="TARGET")
+
+    def capture_status():
+        seen.append(os.environ.get("IRISNAMESPACE"))
+        return {"Production": "Demo.Production", "Status": "running"}
+
+    with patch("iop._remote.get_remote_settings", return_value=None):
+        with patch(
+            "iop._local._LocalDirector.status_production",
+            side_effect=capture_status,
+        ):
+            assert prod.status() == {
+                "Production": "Demo.Production",
+                "Status": "running",
+            }
+
+    assert seen == ["TARGET"]
+    assert os.environ["IRISNAMESPACE"] == "ORIGINAL"
 
 
 def test_set_productions_settings_keeps_legacy_dicts_immutable(tmp_path):

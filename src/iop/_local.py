@@ -52,6 +52,15 @@ class _LocalDirector(_DirectorProtocol):
     def update_production(self) -> None:
         _Director.update_production()
 
+    def start_component(self, component_name: str) -> None:
+        _Director.start_component(component_name)
+
+    def stop_component(self, component_name: str) -> None:
+        _Director.stop_component(component_name)
+
+    def restart_component(self, component_name: str) -> None:
+        _Director.restart_component(component_name)
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------

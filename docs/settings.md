@@ -80,6 +80,10 @@ Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.
 
+The topology is modeled as a directed multigraph of possible communication
+routes. A route edge is not a DAG execution dependency; it says that a component
+may communicate with another component through a port or runtime route.
+
 ```python
 from dataclasses import dataclass
 from iop import BusinessOperation, Message, PollingBusinessService, Production, target
@@ -151,6 +155,57 @@ queues = prod.queue()
 Queue data is point-in-time runtime information from IRIS. It is not serialized
 by `prod.to_dict()` and does not change migration output. `prod.queue_info()`
 remains available as a compatibility alias.
+
+Diffing is explicit and directional:
+
+```python
+delta = prod.diff()
+print(delta)
+```
+
+With no argument, `diff()` imports the deployed IRIS production and reports the
+changes needed to make that runtime reconstruction match the Python
+`Production` object. You can also pass another `Production` or an exported
+production dictionary: `prod.diff(other_prod)`.
+
+`diff()` compares the deployable production shape and ignores route import
+metadata when the IRIS settings are equivalent. Use `prod.graph_diff(...)` to
+compare graph metadata such as whether a route was authored in Python, imported
+from runtime `OnGetConnections`, or inferred from Host settings.
+
+`prod.test_component("Item.Port", message)` resolves from the current
+`Production` object graph only. If you want to test a production that already
+exists in IRIS, use `Production.from_iris(...)` first and call
+`test_component()` on the imported operational reconstruction. `prod.test(...)`
+remains available as a compatibility alias.
+
+Lifecycle methods are scoped to the production object. `prod.stop()`,
+`prod.restart()`, `prod.kill()`, and `prod.update()` verify that IRIS currently
+points at the same production before invoking the underlying IRIS lifecycle
+operation.
+
+Component-level runtime management is also available:
+
+```python
+orders = prod.component_ref("OrderOperation")
+info = orders.inspect()
+orders.stop()
+orders.start()
+orders.restart()
+orders.test(OrderRequest(order_id="123"))
+
+# equivalent production-level calls
+info = prod.inspect_component("OrderOperation")
+prod.stop_component("OrderOperation")
+prod.start_component("OrderOperation")
+prod.restart_component(file.Output)
+```
+
+`inspect_component(...)` returns the component definition, incoming/outgoing
+routes, queue counters when available, and the current runtime production
+status. Component start/stop/restart is scoped to the same production object.
+`ComponentRef` is a Python handle to a production item, not the live IRIS host
+instance.
 
 ### Minimal Production
 

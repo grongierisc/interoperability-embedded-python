@@ -163,6 +163,21 @@ class _RemoteDirector(_DirectorProtocol):
     def update_production(self) -> None:
         self._check_error(self._post("/update"))
 
+    def start_component(self, component_name: str) -> None:
+        self._check_error(
+            self._post("/component/start", {"component": component_name})
+        )
+
+    def stop_component(self, component_name: str) -> None:
+        self._check_error(
+            self._post("/component/stop", {"component": component_name})
+        )
+
+    def restart_component(self, component_name: str) -> None:
+        self._check_error(
+            self._post("/component/restart", {"component": component_name})
+        )
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------

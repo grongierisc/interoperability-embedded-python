@@ -10,6 +10,9 @@ Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.
 
+An IRIS production topology can be modeled as a directed multigraph of possible
+communication routes. These route edges are not DAG execution dependencies.
+
 The long-term direction is for the Python `Production` graph to generate the
 IRIS production definition, while IRIS runtime export and `OnGetConnections`
 provide operational import and compatibility.
@@ -32,10 +35,17 @@ Implemented graph import and display:
 - `Production.from_iris(name)`
 - `Production.from_dict(data, connections=...)`
 - `Production.item(name)`
+- `Production.component_ref(target)`
+- `Production.get_component(target)`
 - `ComponentRef.port(name, logical_name="")`
 - `Production.graph()`
+- `Production.diff(other=None)`
+- `Production.graph_diff(other=None)`
 - `ProductionGraph.to_dict()`
 - printable graph text through `str(prod.graph())`
+
+`str(port)` returns the stable authoring identity, such as `FileInput.Output`.
+Runtime dispatch uses explicit port resolution.
 
 Implemented production lifecycle:
 
@@ -50,6 +60,26 @@ Implemented production lifecycle:
 - `prod.test(...)`
 - `prod.log()`
 - `prod.set_default()`
+- `prod.inspect_component(...)`
+- `prod.start_component(...)`
+- `prod.stop_component(...)`
+- `prod.restart_component(...)`
+- `prod.test_component(...)`
+
+Lifecycle methods that mutate the current runtime production verify that IRIS
+currently points at the same production object before calling the underlying
+IRIS operation.
+
+`prod.test_component("Item.Port", message)` resolves from the current Python
+object graph. It does not silently fall back to IRIS export. Existing deployed
+productions should be reconstructed explicitly with `Production.from_iris(...)`
+before testing by port path. Runtime status checks fail closed when the current
+production cannot be verified. `prod.test(...)` remains a compatibility alias.
+
+`ComponentRef` exposes convenience methods that delegate to its owning
+production: `inspect()`, `start()`, `stop()`, `restart()`, and `test(...)`.
+It is a Python handle to a configured production item, not the live IRIS host
+instance.
 
 Implemented graph-local editing:
 
@@ -58,6 +88,17 @@ Implemented graph-local editing:
 - `prod.delete_component(...)`
 - `prod.disconnect(...)`
 - `prod.sync()` / `prod.apply()` for explicit local IRIS registration
+
+Implemented diffing:
+
+- `prod.diff()` compares the desired Python definition with the deployed IRIS
+  operational reconstruction.
+- `prod.diff(other_prod)` compares with another `Production`.
+- `prod.diff(exported_dict)` compares with an exported production dictionary.
+- The diff is directional: changes describe what must change in the
+  current/imported state to match the Python `Production` object.
+- `prod.graph_diff(...)` includes route metadata such as edge origin and
+  interaction. `prod.diff(...)` remains the deployable IRIS-shape diff.
 
 ## IRIS Graph Import
 
@@ -73,7 +114,8 @@ The import path uses two sources:
 
 `OnGetConnections` is the primary graph source when available. If runtime
 connection discovery fails for an item, the importer falls back to Host settings
-whose value names another production item.
+whose value names another production item. When runtime discovery succeeds and
+reports no connections, fallback inference is not used for that item.
 
 Queue metadata is imported separately through `Ens.Queue.GetCount(item.Name)`.
 It is runtime production information, not authoring graph data. It is exposed
@@ -126,7 +168,7 @@ intent:
 
 - logical `target("orders")` names
 - declared port names and types
-- edge intent
+- richer route intent beyond the current origin/interaction metadata
 - Python source module and class origin
 - runtime-only edges
 - unresolved graph warnings
@@ -134,11 +176,11 @@ intent:
 Without this metadata, IRIS can reconstruct operational topology but not the
 original Python authoring intent.
 
-### Phase 3: Add Graph Diff And Apply
+### Phase 3: Add Graph Apply
 
-Introduce explicit graph diff/apply behavior:
+Graph diff exists in two forms today: deployable `prod.diff(...)` and metadata-
+aware `prod.graph_diff(...)`. The missing piece is explicit graph apply:
 
-- compare Python graph with current IRIS production
 - show additions, updates, removals, and changed settings
 - apply changes only when explicitly requested
 - avoid hidden runtime mutation from simple Python object edits
@@ -161,7 +203,8 @@ Use `ProductionGraph` as the backbone for:
 - visual graph display
 - production validation
 - request routing
-- DAG/Dagster integration
+- workflow/orchestration integration
+- graph projection for DAG-compatible subsets
 - IRIS XML generation
 - future non-IRIS execution backends
 
@@ -182,7 +225,7 @@ production XML becomes one generated output.
 ### Runtime Graph Gaps
 
 - Conditional routing may depend on message content and cannot always be
-  represented as a static edge.
+  represented as one static route edge.
 - BPL, DTL, routing rules, and business rule classes need specialized graph
   import.
 - Dynamic targets can be visible at runtime but not fully recoverable as

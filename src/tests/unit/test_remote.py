@@ -547,6 +547,30 @@ class TestProductionLifecycle(unittest.TestCase):
         args, _ = mock_post.call_args
         self.assertIn("/update", args[0])
 
+    @patch("requests.post")
+    def test_start_component(self, mock_post):
+        mock_post.return_value = _mock_response({"status": "started"})
+        self.d.start_component("Python.MyOp")
+        args, kwargs = mock_post.call_args
+        self.assertTrue(args[0].endswith("/component/start"))
+        self.assertEqual(kwargs["json"]["component"], "Python.MyOp")
+
+    @patch("requests.post")
+    def test_stop_component(self, mock_post):
+        mock_post.return_value = _mock_response({"status": "stopped"})
+        self.d.stop_component("Python.MyOp")
+        args, kwargs = mock_post.call_args
+        self.assertTrue(args[0].endswith("/component/stop"))
+        self.assertEqual(kwargs["json"]["component"], "Python.MyOp")
+
+    @patch("requests.post")
+    def test_restart_component(self, mock_post):
+        mock_post.return_value = _mock_response({"status": "restarted"})
+        self.d.restart_component("Python.MyOp")
+        args, kwargs = mock_post.call_args
+        self.assertTrue(args[0].endswith("/component/restart"))
+        self.assertEqual(kwargs["json"]["component"], "Python.MyOp")
+
 
 # ---------------------------------------------------------------------------
 # Logging

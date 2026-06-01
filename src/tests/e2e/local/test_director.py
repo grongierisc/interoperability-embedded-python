@@ -1,7 +1,7 @@
 import pytest
 import iris
 from iop._director import _Director
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 @pytest.fixture
 def mock_dispatch():
@@ -87,10 +87,12 @@ class TestProductionManagement:
         self.stop_mock = MagicMock()
         self.restart_mock = MagicMock()
         self.update_mock = MagicMock()
+        self.enable_config_item_mock = MagicMock(return_value=iris.system.Status.OK())
         iris.cls('Ens.Director').StartProduction = self.start_mock
         iris.cls('Ens.Director').StopProduction = self.stop_mock
         iris.cls('Ens.Director').RestartProduction = self.restart_mock
         iris.cls('Ens.Director').UpdateProduction = self.update_mock
+        iris.cls('Ens.Director').EnableConfigItem = self.enable_config_item_mock
 
     def test_start_production(self):
         _Director.start_production("test_prod")
@@ -119,6 +121,29 @@ class TestProductionManagement:
     def test_update_production(self):
         _Director.update_production()
         self.update_mock.assert_called_once()
+
+    def test_start_component(self):
+        _Director.start_component("Python.Operation")
+        self.enable_config_item_mock.assert_called_once_with(
+            "Python.Operation",
+            1,
+            1,
+        )
+
+    def test_stop_component(self):
+        _Director.stop_component("Python.Operation")
+        self.enable_config_item_mock.assert_called_once_with(
+            "Python.Operation",
+            0,
+            1,
+        )
+
+    def test_restart_component(self):
+        _Director.restart_component("Python.Operation")
+        assert self.enable_config_item_mock.call_args_list == [
+            call("Python.Operation", 0, 1),
+            call("Python.Operation", 1, 1),
+        ]
 
     def test_list_productions(self):
         iris.cls('IOP.Director').dispatchListProductions = MagicMock(return_value=["prod1", "prod2"])

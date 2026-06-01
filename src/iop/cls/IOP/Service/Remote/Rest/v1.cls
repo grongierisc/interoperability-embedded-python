@@ -14,6 +14,9 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/kill"     Method="POST" Call="PostKill"/>
 <Route Url="/restart"  Method="POST" Call="PostRestart"/>
 <Route Url="/update"   Method="POST" Call="PostUpdate"/>
+<Route Url="/component/start"   Method="POST" Call="PostComponentStart"/>
+<Route Url="/component/stop"    Method="POST" Call="PostComponentStop"/>
+<Route Url="/component/restart" Method="POST" Call="PostComponentRestart"/>
 <Route Url="/list"     Method="GET"  Call="GetList"/>
 <Route Url="/default"  Method="GET"  Call="GetDefault"/>
 <Route Url="/default"  Method="PUT"  Call="PutDefault"/>
@@ -138,6 +141,55 @@ ClassMethod PostUpdate() As %Status
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
 		$$$ThrowOnError(##class(Ens.Director).UpdateProduction())
 		Return ..%WriteResponse({"status": "updated"}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostComponentStart() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = ..ResolveNs(dyna)
+		Set component = dyna.%Get("component")
+		If component = "" { Set component = dyna.%Get("item") }
+		If component = "" { Throw $$$ERROR("NoComponentSpecified") }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(component, 1, 1))
+		Return ..%WriteResponse({"status": "started", "component": (component)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostComponentStop() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = ..ResolveNs(dyna)
+		Set component = dyna.%Get("component")
+		If component = "" { Set component = dyna.%Get("item") }
+		If component = "" { Throw $$$ERROR("NoComponentSpecified") }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(component, 0, 1))
+		Return ..%WriteResponse({"status": "stopped", "component": (component)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod PostComponentRestart() As %Status
+{
+	Try {
+		Set dyna = {}.%FromJSON(%request.Content)
+		Set ns = ..ResolveNs(dyna)
+		Set component = dyna.%Get("component")
+		If component = "" { Set component = dyna.%Get("item") }
+		If component = "" { Throw $$$ERROR("NoComponentSpecified") }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(component, 0, 1))
+		$$$ThrowOnError(##class(Ens.Director).EnableConfigItem(component, 1, 1))
+		Return ..%WriteResponse({"status": "restarted", "component": (component)}.%ToJSON())
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
 	}

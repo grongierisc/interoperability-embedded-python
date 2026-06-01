@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from dataclasses import is_dataclass
+from functools import wraps
 from typing import Any, Optional
 
 from pydantic import BaseModel
@@ -70,7 +72,7 @@ class Port:
         return self.production.resolve_port(self)
 
     def __str__(self) -> str:
-        return self.resolve()
+        return self.path
 
 
 @dataclass(frozen=True)
@@ -93,12 +95,44 @@ class GraphNode:
 
 @dataclass(frozen=True)
 class GraphEdge:
+    """Possible communication route between two production items.
+
+    An IRIS production topology can be modeled as a directed multigraph of
+    possible communication routes. A graph edge is not an execution dependency
+    and does not imply DAG semantics.
+    """
+
     source_item: str
     target: str
     source_port: str = ""
     logical_name: str = ""
+    origin: str = "authored"
+    interaction: str = "request"
+    metadata: dict[str, Any] = field(default_factory=dict)
     runtime: bool = False
     inferred: bool = False
+
+    def __post_init__(self) -> None:
+        if self.runtime and self.inferred:
+            raise ValueError("GraphEdge cannot be both runtime and inferred")
+
+        origin = self.origin or "authored"
+        if self.runtime and origin not in {"authored", "runtime"}:
+            raise ValueError("GraphEdge runtime flag conflicts with origin")
+        if self.inferred and origin not in {"authored", "inferred"}:
+            raise ValueError("GraphEdge inferred flag conflicts with origin")
+        if self.runtime:
+            origin = "runtime" if origin == "authored" else origin
+        if self.inferred:
+            origin = "inferred" if origin == "authored" else origin
+        if origin not in {"authored", "runtime", "inferred"}:
+            raise ValueError(f"Unsupported GraphEdge origin: {origin}")
+
+        object.__setattr__(self, "origin", origin)
+        object.__setattr__(self, "runtime", origin == "runtime")
+        object.__setattr__(self, "inferred", origin == "inferred")
+        object.__setattr__(self, "interaction", self.interaction or "unknown")
+        object.__setattr__(self, "metadata", dict(self.metadata or {}))
 
     @property
     def source(self) -> str:
@@ -113,7 +147,11 @@ class GraphEdge:
             "source_port": self.source_port,
             "logical_name": self.logical_name,
             "target": self.target,
+            "origin": self.origin,
+            "interaction": self.interaction,
         }
+        if self.metadata:
+            data["metadata"] = dict(self.metadata)
         if self.runtime:
             data["runtime"] = True
         if self.inferred:
@@ -154,7 +192,88 @@ class ProductionGraph:
             ):
                 source_port = edge.source_port or "(runtime)"
                 suffix = "" if edge.target in node_names else " (unresolved)"
-                lines.append(f"    {source_port} -> {edge.target}{suffix}")
+                labels = []
+                if edge.origin != "authored":
+                    labels.append(edge.origin)
+                if edge.interaction not in ("", "request"):
+                    labels.append(edge.interaction)
+                label = f" [{', '.join(labels)}]" if labels else ""
+                lines.append(f"    {source_port} -> {edge.target}{suffix}{label}")
+        if self.warnings:
+            lines.append("  warnings:")
+            lines.extend(f"    {warning}" for warning in self.warnings)
+        return "\n".join(lines)
+
+    def __str__(self) -> str:
+        return self.to_text()
+
+
+@dataclass(frozen=True)
+class ProductionDiffEntry:
+    """One deterministic desired-vs-current production difference."""
+
+    action: str
+    kind: str
+    path: str
+    before: Any = None
+    after: Any = None
+    detail: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "action": self.action,
+            "kind": self.kind,
+            "path": self.path,
+        }
+        if self.before is not None:
+            data["before"] = self.before
+        if self.after is not None:
+            data["after"] = self.after
+        if self.detail:
+            data["detail"] = self.detail
+        return data
+
+    def to_text(self) -> str:
+        line = f"{self.action} {self.kind} {self.path}"
+        if self.detail:
+            return f"{line}: {self.detail}"
+        if self.action == "change":
+            return f"{line}: {_diff_value_text(self.before)} -> {_diff_value_text(self.after)}"
+        if self.action == "add":
+            return f"{line}: {_diff_value_text(self.after)}"
+        if self.action == "remove":
+            return f"{line}: {_diff_value_text(self.before)}"
+        return line
+
+
+@dataclass(frozen=True)
+class ProductionDiff:
+    """Directional diff from current runtime/imported state to desired Python state."""
+
+    production_name: str
+    changes: tuple[ProductionDiffEntry, ...]
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(self.changes)
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "production": self.production_name,
+            "has_changes": self.has_changes,
+            "changes": [change.to_dict() for change in self.changes],
+        }
+        if self.warnings:
+            data["warnings"] = list(self.warnings)
+        return data
+
+    def to_text(self) -> str:
+        lines = [f"Production diff: {self.production_name}"]
+        if self.changes:
+            lines.extend(f"  {change.to_text()}" for change in self.changes)
+        else:
+            lines.append("  no changes")
         if self.warnings:
             lines.append("  warnings:")
             lines.extend(f"    {warning}" for warning in self.warnings)
@@ -216,6 +335,32 @@ class ComponentRef:
 
     def set_host_setting(self, name: str, value: Any) -> None:
         self.host_settings[name] = value
+
+    def inspect(self, *, refresh: bool = True) -> dict[str, Any]:
+        return self.production.inspect_component(self, refresh=refresh)
+
+    def start(self) -> None:
+        self.production.start_component(self)
+
+    def stop(self) -> None:
+        self.production.stop_component(self)
+
+    def restart(self) -> None:
+        self.production.restart_component(self)
+
+    def test(
+        self,
+        message: Any = None,
+        *,
+        classname: Optional[str] = None,
+        body: str | dict | None = None,
+    ) -> Any:
+        return self.production.test_component(
+            self,
+            message=message,
+            classname=classname,
+            body=body,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         item: dict[str, Any] = {
@@ -279,8 +424,8 @@ class Production:
         self._director = director
         self._items: list[ComponentRef] = []
         self._items_by_name: dict[str, ComponentRef] = {}
-        self._connections: dict[tuple[str, str], str] = {}
-        self._edges: list[dict[str, Any]] = []
+        self._connections: dict[tuple[str, str], list[str]] = {}
+        self._edges: list[GraphEdge] = []
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
 
@@ -370,9 +515,10 @@ class Production:
             normalized = dict(info)
             production._queue_info[item_name] = normalized
 
-        connection_map, _runtime_sources, warnings = _normalize_connections(connections)
+        connection_map, runtime_sources, warnings = _normalize_connections(
+            connections
+        )
         production._graph_warnings.extend(warnings)
-        runtime_sources_with_known_targets: set[str] = set()
 
         for source_item, targets in connection_map.items():
             if source_item not in production._items_by_name:
@@ -397,18 +543,19 @@ class Production:
                         f"Runtime connection target does not exist: "
                         f"{source_item} -> {target_name}"
                     )
-                else:
-                    runtime_sources_with_known_targets.add(source_item)
                 production._register_connection(
                     source_item,
                     source_port,
                     target_name,
+                    origin="runtime",
+                    interaction=target.get("interaction", "request"),
+                    metadata=target.get("metadata", {}),
                     runtime=True,
                     validate_target=False,
                 )
 
         for ref in production._items:
-            if ref.name in runtime_sources_with_known_targets:
+            if ref.name in runtime_sources:
                 continue
             for setting_name, value in ref.host_settings.items():
                 for target_name in _setting_targets(value):
@@ -419,6 +566,8 @@ class Production:
                         ref.name,
                         setting_name,
                         target_name,
+                        origin="inferred",
+                        metadata={"source": "Host setting fallback"},
                         inferred=True,
                         validate_target=False,
                     )
@@ -431,13 +580,20 @@ class Production:
 
     @property
     def edges(self) -> tuple[dict[str, Any], ...]:
-        return tuple(dict(edge) for edge in self._edges)
+        return tuple(edge.to_dict() for edge in self._edges)
 
     def item(self, name: str) -> ComponentRef:
         try:
             return self._items_by_name[name]
         except KeyError as exc:
             raise ValueError(f"Production item does not exist: {name}") from exc
+
+    def component_ref(self, component: ComponentRef | Port | str) -> ComponentRef:
+        component_name = self._runtime_component_name(component)
+        return self.item(component_name)
+
+    def get_component(self, component: ComponentRef | Port | str) -> ComponentRef:
+        return self.component_ref(component)
 
     def component(
         self,
@@ -542,24 +698,28 @@ class Production:
         self._items_by_name.pop(ref.name, None)
 
         for edge in list(self._edges):
-            if edge.get("target") != ref.name:
+            if edge.target != ref.name:
                 continue
-            source_item = edge.get("source_item", "")
-            source_port = edge.get("source_port", "")
+            source_item = edge.source_item
+            source_port = edge.source_port
             source_ref = self._items_by_name.get(source_item)
             if source_ref is not None and source_port:
                 if source_ref.host_settings.get(source_port) == ref.name:
                     source_ref.host_settings.pop(source_port, None)
 
         self._connections = {
-            key: target
-            for key, target in self._connections.items()
-            if key[0] != ref.name and target != ref.name
+            key: targets
+            for key, targets in (
+                (key, [target for target in targets if target != ref.name])
+                for key, targets in self._connections.items()
+                if key[0] != ref.name
+            )
+            if targets
         }
         self._edges = [
             edge
             for edge in self._edges
-            if edge.get("source_item") != ref.name and edge.get("target") != ref.name
+            if edge.source_item != ref.name and edge.target != ref.name
         ]
 
     def disconnect(self, source: Port | str) -> None:
@@ -583,8 +743,8 @@ class Production:
             edge
             for edge in self._edges
             if not (
-                edge.get("source_item") == item_name
-                and edge.get("source_port") == port_name
+                edge.source_item == item_name
+                and edge.source_port == port_name
             )
         ]
 
@@ -611,15 +771,31 @@ class Production:
             source.name,
             target_name,
             logical_name=source.logical_name,
+            replace_port=True,
         )
 
     def resolve_port(self, port: Port) -> str:
         if port.production is not self:
             raise ValueError("port belongs to a different Production")
-        key = (port.item_name, port.name)
-        if key not in self._connections:
-            raise ValueError(f"Production port is not connected: {port.path}")
-        return self._connections[key]
+        return self._resolve_connection_target(port.item_name, port.name, port.path)
+
+    def _resolve_connection_target(
+        self,
+        item_name: str,
+        port_name: str,
+        path: str,
+    ) -> str:
+        key = (item_name, port_name)
+        targets = self._connections.get(key)
+        if not targets:
+            raise ValueError(f"Production port is not connected: {path}")
+        if len(targets) > 1:
+            target_list = ", ".join(repr(target) for target in targets)
+            raise ValueError(
+                f"Production port is ambiguous: {path} resolves to "
+                f"multiple targets ({target_list})"
+            )
+        return targets[0]
 
     def resolve_target(self, target_or_port: str | Port | ComponentRef) -> str:
         if isinstance(target_or_port, Port):
@@ -638,7 +814,7 @@ class Production:
             key = (item_name, port_name)
             if key not in self._connections:
                 raise ValueError(f"Production port is not connected: {target_name}")
-            return self._connections[key]
+            return self._resolve_connection_target(item_name, port_name, target_name)
 
         raise ValueError(f"Production item does not exist: {target_name}")
 
@@ -670,22 +846,49 @@ class Production:
             )
             for item in self._items
         )
-        edges = tuple(
-            GraphEdge(
-                source_item=edge.get("source_item", ""),
-                source_port=edge.get("source_port", ""),
-                logical_name=edge.get("logical_name", ""),
-                target=edge.get("target", ""),
-                runtime=bool(edge.get("runtime", False)),
-                inferred=bool(edge.get("inferred", False)),
-            )
-            for edge in self._edges
-        )
+        edges = tuple(self._edges)
         return ProductionGraph(
             production_name=self.name,
             nodes=nodes,
             edges=edges,
             warnings=tuple(self._graph_warnings),
+        )
+
+    def diff(
+        self,
+        other: Production | dict[str, Any] | None = None,
+    ) -> ProductionDiff:
+        """Compare deployable IRIS shape against current/imported state.
+
+        With no *other* argument, IRIS is queried through ``from_iris()`` and the
+        returned diff describes what would change to make that runtime
+        reconstruction match this Python object.
+        """
+        return self.diff_deployable(other)
+
+    def diff_deployable(
+        self,
+        other: Production | dict[str, Any] | None = None,
+    ) -> ProductionDiff:
+        """Compare settings, items, and deployable routes.
+
+        Edge import metadata such as ``origin`` is ignored so an authored Python
+        route and an equivalent IRIS setting-inferred route do not produce a
+        false deployment change.
+        """
+        current = self._diff_current(other)
+        return _diff_productions(desired=self, current=current)
+
+    def graph_diff(
+        self,
+        other: Production | dict[str, Any] | None = None,
+    ) -> ProductionDiff:
+        """Compare graph topology including edge origin and route metadata."""
+        current = self._diff_current(other)
+        return _diff_productions(
+            desired=self,
+            current=current,
+            include_graph_metadata=True,
         )
 
     def component_registrations(self) -> tuple[ComponentRef, ...]:
@@ -702,13 +905,19 @@ class Production:
             director.start_production_with_log(self.name)
 
     def stop(self) -> None:
-        _ProductionRuntime(self).director.stop_production()
+        director = _ProductionRuntime(self).director
+        self._require_current_production(director, "stop")
+        director.stop_production()
 
     def restart(self) -> None:
-        _ProductionRuntime(self).director.restart_production()
+        director = _ProductionRuntime(self).director
+        self._require_current_production(director, "restart")
+        director.restart_production()
 
     def kill(self) -> None:
-        _ProductionRuntime(self).director.shutdown_production()
+        director = _ProductionRuntime(self).director
+        self._require_current_production(director, "kill")
+        director.shutdown_production()
 
     def status(self) -> dict:
         return _ProductionRuntime(self).director.status_production()
@@ -726,7 +935,86 @@ class Production:
         return self.queue(refresh=refresh)
 
     def update(self) -> None:
-        _ProductionRuntime(self).director.update_production()
+        director = _ProductionRuntime(self).director
+        self._require_current_production(director, "update")
+        director.update_production()
+
+    def inspect_component(
+        self,
+        component: ComponentRef | Port | str,
+        *,
+        refresh: bool = True,
+    ) -> dict[str, Any]:
+        """Return design-time and runtime details for a production component."""
+        component_name = self._runtime_component_name(component)
+        ref = self.item(component_name)
+        graph = self.graph()
+        outgoing = [
+            edge.to_dict()
+            for edge in graph.edges
+            if edge.source_item == component_name
+        ]
+        incoming = [
+            edge.to_dict()
+            for edge in graph.edges
+            if edge.target == component_name
+        ]
+        info: dict[str, Any] = {
+            "production": self.name,
+            "name": ref.name,
+            "class_name": ref.class_name or "",
+            "kind": ref.kind,
+            "category": ref.category,
+            "enabled": ref.enabled,
+            "pool_size": ref.pool_size,
+            "foreground": ref.foreground,
+            "comment": ref.comment,
+            "log_trace_events": ref.log_trace_events,
+            "schedule": ref.schedule,
+            "settings": {
+                "Host": dict(ref.host_settings),
+                "Adapter": dict(ref.adapter_settings),
+                "Other": [dict(setting) for setting in ref.other_settings],
+            },
+            "ports": sorted(ref.port_names),
+            "outgoing": outgoing,
+            "incoming": incoming,
+        }
+
+        if refresh:
+            runtime_info = self._component_runtime_info(component_name)
+            if runtime_info:
+                info["runtime"] = runtime_info
+        elif component_name in self._queue_info:
+            info["runtime"] = {"queue": dict(self._queue_info[component_name])}
+        return info
+
+    def start_component(self, component: ComponentRef | Port | str) -> None:
+        component_name = self._runtime_component_name(component)
+        director = _ProductionRuntime(self).director
+        self._require_current_runtime(
+            director,
+            f"start component {component_name!r} in production {self.name!r}",
+        )
+        director.start_component(component_name)
+
+    def stop_component(self, component: ComponentRef | Port | str) -> None:
+        component_name = self._runtime_component_name(component)
+        director = _ProductionRuntime(self).director
+        self._require_current_runtime(
+            director,
+            f"stop component {component_name!r} in production {self.name!r}",
+        )
+        director.stop_component(component_name)
+
+    def restart_component(self, component: ComponentRef | Port | str) -> None:
+        component_name = self._runtime_component_name(component)
+        director = _ProductionRuntime(self).director
+        self._require_current_runtime(
+            director,
+            f"restart component {component_name!r} in production {self.name!r}",
+        )
+        director.restart_component(component_name)
 
     def export(self) -> dict:
         return _ProductionRuntime(self).director.export_production(self.name)
@@ -742,13 +1030,12 @@ class Production:
             )
         from ._utils import _Utils
 
-        _Utils.set_productions_settings([self], root_path)
-        if update:
-            from ._local import _LocalDirector
+        with _temporary_env("IRISNAMESPACE", self.namespace):
+            _Utils.set_productions_settings([self], root_path)
+            if update:
+                from ._local import _LocalDirector
 
-            if self.namespace:
-                os.environ["IRISNAMESPACE"] = self.namespace
-            _LocalDirector().update_production()
+                _LocalDirector().update_production()
 
     def apply(self, *, root_path: Optional[str] = None, update: bool = True) -> None:
         self.sync(root_path=root_path, update=update)
@@ -760,7 +1047,7 @@ class Production:
         else:
             director.log_production_top(top)
 
-    def test(
+    def test_component(
         self,
         target_or_port: str | Port | ComponentRef,
         message: Any = None,
@@ -769,13 +1056,7 @@ class Production:
     ) -> Any:
         runtime = _ProductionRuntime(self)
         director = runtime.director
-        try:
-            target_name = self.resolve_target(target_or_port)
-        except ValueError:
-            if isinstance(target_or_port, str) and "." in target_or_port:
-                target_name = self._resolve_target_from_export(director, target_or_port)
-            else:
-                raise
+        target_name = self.resolve_target(target_or_port)
 
         self._raise_if_existing_production_not_running(director)
 
@@ -790,70 +1071,87 @@ class Production:
             body=body,
         )
 
-    def _resolve_target_from_export(self, director: Any, target_path: str) -> str:
-        item_name, _, port_name = target_path.rpartition(".")
-        exported = director.export_production(self.name)
-        production_data = exported.get(self.name) if isinstance(exported, dict) else None
-        if production_data is None and isinstance(exported, dict) and len(exported) == 1:
-            production_data = next(iter(exported.values()))
-        if not isinstance(production_data, dict):
-            raise ValueError(f"Production does not exist or cannot be exported: {self.name}")
-
-        item = _find_named_entry(production_data.get("Item", []), item_name)
-        if item is None:
-            raise ValueError(
-                f"Production item does not exist in {self.name}: {item_name}"
-            )
-
-        setting = _find_setting(item.get("Setting", []), port_name)
-        if setting is None:
-            raise ValueError(
-                f"Production port is not connected in {self.name}: {target_path}"
-            )
-        target_name = setting.get("#text", "")
-        if not target_name:
-            raise ValueError(
-                f"Production port is not connected in {self.name}: {target_path}"
-            )
-        return target_name
+    def test(
+        self,
+        target_or_port: str | Port | ComponentRef,
+        message: Any = None,
+        classname: Optional[str] = None,
+        body: str | dict | None = None,
+    ) -> Any:
+        return self.test_component(
+            target_or_port,
+            message=message,
+            classname=classname,
+            body=body,
+        )
 
     def _raise_if_existing_production_not_running(self, director: Any) -> None:
-        try:
-            status = director.status_production()
-        except Exception:
-            return
-        if not isinstance(status, dict):
-            return
-
-        production_name = status.get("Production") or status.get("production") or ""
-        state = status.get("Status") or status.get("status") or ""
+        production_name, state = self._read_status(director, "test")
         state_lower = str(state).lower()
         if production_name == self.name and str(state).lower() == "running":
             return
 
-        try:
-            productions = director.list_productions()
-        except Exception:
-            productions = {}
-        if isinstance(productions, dict) and self.name in productions:
-            if production_name and production_name != self.name and state_lower == "running":
-                raise RuntimeError(
-                    f"Production {self.name!r} exists but is not running "
-                    f"(currently running production is {production_name!r}). "
-                    f"{self._switch_running_production_message(production_name)} "
-                    "Do that before calling `prod.test(...)`."
-                )
-            if production_name and production_name != self.name:
-                detail = f"current default production is {production_name!r}"
-            elif state:
-                detail = f"current status is {state!r}"
-            else:
-                detail = "it is not the running production"
+        if (
+            production_name
+            and production_name != self.name
+            and state_lower == "running"
+        ):
             raise RuntimeError(
-                f"Production {self.name!r} exists but is not running ({detail}). "
-                f"Start it with `iop --start {self.name} --detach` or "
-                "`prod.start()` before calling `prod.test(...)`."
+                f"Production {self.name!r} exists but is not running "
+                f"(currently running production is {production_name!r}). "
+                f"{self._switch_running_production_message(production_name)} "
+                "Do that before calling `prod.test(...)`."
             )
+        if production_name and production_name != self.name:
+            detail = f"current default production is {production_name!r}"
+        elif state:
+            detail = f"current status is {state!r}"
+        else:
+            detail = "runtime status did not report a running production"
+        raise RuntimeError(
+            f"Production {self.name!r} exists but is not running ({detail}). "
+            f"Start it with `iop --start {self.name} --detach` or "
+            "`prod.start()` before calling `prod.test(...)`."
+        )
+
+    def _require_current_production(self, director: Any, action: str) -> None:
+        self._require_current_runtime(
+            director,
+            f"{action} production {self.name!r}",
+        )
+
+    def _require_current_runtime(self, director: Any, action: str) -> None:
+        production_name, state = self._read_status(director, action)
+        if production_name == self.name:
+            return
+
+        if production_name:
+            detail = f"current/default production is {production_name!r}"
+        elif state:
+            detail = f"current status is {state!r}"
+        else:
+            detail = "runtime status did not report a current/default production"
+        raise RuntimeError(
+            f"Cannot {action}: {detail}. "
+            f"Select {self.name!r} with `prod.set_default()` or start it with "
+            "`prod.start()` before using this lifecycle method."
+        )
+
+    def _read_status(self, director: Any, action: str) -> tuple[str, str]:
+        try:
+            status = director.status_production()
+        except Exception as exc:
+            raise RuntimeError(
+                f"Cannot {action}: could not verify production status ({exc})."
+            ) from exc
+        if not isinstance(status, dict):
+            raise RuntimeError(
+                f"Cannot {action}: production status response is invalid "
+                f"({status!r})."
+            )
+        production_name = status.get("Production") or status.get("production") or ""
+        state = status.get("Status") or status.get("status") or ""
+        return str(production_name), str(state)
 
     def _switch_running_production_message(self, current_production: str) -> str:
         return (
@@ -862,6 +1160,51 @@ class Production:
             f"`iop --start {self.name} --detach`; or call `prod.stop()` and "
             "`prod.start()` explicitly."
         )
+
+    def _component_runtime_info(self, component_name: str) -> dict[str, Any]:
+        director = _ProductionRuntime(self).director
+        runtime: dict[str, Any] = {}
+        warnings: list[str] = []
+
+        try:
+            status = director.status_production()
+        except Exception as exc:
+            warnings.append(f"Could not fetch production status: {exc}")
+        else:
+            if isinstance(status, dict):
+                production_name = (
+                    status.get("Production")
+                    or status.get("production")
+                    or ""
+                )
+                state = status.get("Status") or status.get("status") or ""
+                runtime["production_status"] = dict(status)
+                runtime["current_production"] = str(production_name)
+                runtime["status"] = str(state)
+                runtime["is_current_production"] = production_name == self.name
+                runtime["is_running"] = (
+                    production_name == self.name
+                    and str(state).lower() == "running"
+                )
+            else:
+                warnings.append(
+                    f"Production status response is invalid: {status!r}"
+                )
+
+        try:
+            queue_info = director.export_production_queue_info(self.name)
+        except Exception as exc:
+            warnings.append(f"Could not fetch queue info: {exc}")
+        else:
+            queue_map, queue_warnings = _normalize_queue_info(queue_info)
+            warnings.extend(queue_warnings)
+            self._queue_info = queue_map
+            if component_name in queue_map:
+                runtime["queue"] = dict(queue_map[component_name])
+
+        if warnings:
+            runtime["warnings"] = warnings
+        return runtime
 
     def _component_name(self, target_component: ComponentRef | str) -> str:
         if isinstance(target_component, ComponentRef):
@@ -872,6 +1215,17 @@ class Production:
         if target_name not in self._items_by_name:
             raise ValueError(f"Production item does not exist: {target_name}")
         return target_name
+
+    def _runtime_component_name(self, component: ComponentRef | Port | str) -> str:
+        if isinstance(component, Port):
+            component_name = self.resolve_port(component)
+        elif isinstance(component, ComponentRef):
+            component_name = self._component_name(component)
+        else:
+            component_name = self.resolve_target(str(component))
+        if component_name not in self._items_by_name:
+            raise ValueError(f"Production item does not exist: {component_name}")
+        return component_name
 
     def _component_ref(self, item: ComponentRef | str) -> ComponentRef:
         if isinstance(item, ComponentRef):
@@ -888,6 +1242,26 @@ class Production:
         self._items.append(ref)
         self._items_by_name[ref.name] = ref
 
+    def _diff_current(
+        self,
+        other: Production | dict[str, Any] | None,
+    ) -> Production:
+        if other is None:
+            return self.from_iris(
+                self.name,
+                namespace=self.namespace,
+                director=self._director,
+            )
+        if isinstance(other, Production):
+            return other
+        if isinstance(other, dict):
+            return self.from_dict(
+                other,
+                namespace=self.namespace,
+                director=self._director,
+            )
+        raise TypeError("other must be a Production, production dictionary, or None")
+
     def _register_connection(
         self,
         source_item: str,
@@ -895,8 +1269,12 @@ class Production:
         target_name: str,
         *,
         logical_name: str = "",
+        origin: str = "authored",
+        interaction: str = "request",
+        metadata: Optional[dict[str, Any]] = None,
         runtime: bool = False,
         inferred: bool = False,
+        replace_port: bool = False,
         validate_target: bool = True,
     ) -> None:
         if source_item not in self._items_by_name:
@@ -904,31 +1282,389 @@ class Production:
         if validate_target and target_name not in self._items_by_name:
             raise ValueError(f"Production item does not exist: {target_name}")
         if source_port:
-            self._connections[(source_item, source_port)] = target_name
+            key = (source_item, source_port)
+            if replace_port:
+                self._connections[key] = [target_name]
+            else:
+                self._connections.setdefault(key, [])
+                if target_name not in self._connections[key]:
+                    self._connections[key].append(target_name)
 
-        source = f"{source_item}.{source_port}" if source_port else source_item
-        edge: dict[str, Any] = {
-            "source": source,
-            "source_item": source_item,
-            "source_port": source_port,
-            "logical_name": logical_name,
-            "target": target_name,
-        }
-        if runtime:
-            edge["runtime"] = True
-        if inferred:
-            edge["inferred"] = True
+        edge = GraphEdge(
+            source_item=source_item,
+            source_port=source_port,
+            logical_name=logical_name,
+            target=target_name,
+            origin=origin,
+            interaction=interaction,
+            metadata=dict(metadata or {}),
+            runtime=runtime,
+            inferred=inferred,
+        )
 
+        if replace_port and source_port:
+            self._edges = [
+                existing
+                for existing in self._edges
+                if not (
+                    existing.source_item == source_item
+                    and existing.source_port == source_port
+                )
+            ]
+
+        edge_key = _edge_identity(edge)
         self._edges = [
             existing
             for existing in self._edges
-            if not (
-                existing.get("source_item") == source_item
-                and existing.get("source_port") == source_port
-                and (source_port or existing.get("target") == target_name)
-            )
+            if _edge_identity(existing) != edge_key
         ]
         self._edges.append(edge)
+
+
+def _edge_identity(edge: GraphEdge) -> tuple[Any, ...]:
+    return (
+        edge.source_item,
+        edge.source_port,
+        edge.target,
+        edge.origin,
+        edge.interaction,
+        edge.logical_name,
+        tuple(
+            sorted(
+                (str(key), _canonical_value(value))
+                for key, value in edge.metadata.items()
+            )
+        ),
+    )
+
+
+def _diff_productions(
+    desired: Production,
+    current: Production,
+    *,
+    include_graph_metadata: bool = False,
+) -> ProductionDiff:
+    changes: list[ProductionDiffEntry] = []
+    warnings = _diff_warnings(desired, current)
+
+    if current.name != desired.name:
+        changes.append(
+            ProductionDiffEntry(
+                action="change",
+                kind="production",
+                path="production.name",
+                before=current.name,
+                after=desired.name,
+            )
+        )
+
+    _diff_mapping_values(
+        changes,
+        kind="production",
+        base_path="production",
+        before=_production_signature(current),
+        after=_production_signature(desired),
+    )
+    _diff_items(changes, desired=desired, current=current)
+    _diff_connections(
+        changes,
+        desired=desired,
+        current=current,
+        include_graph_metadata=include_graph_metadata,
+    )
+
+    return ProductionDiff(
+        production_name=desired.name,
+        changes=tuple(changes),
+        warnings=tuple(warnings),
+    )
+
+
+def _diff_warnings(desired: Production, current: Production) -> list[str]:
+    warnings = []
+    warnings.extend(f"desired: {warning}" for warning in desired.graph().warnings)
+    warnings.extend(f"current: {warning}" for warning in current.graph().warnings)
+    return warnings
+
+
+def _production_signature(production: Production) -> dict[str, Any]:
+    return {
+        "testing_enabled": _bool_text(production.testing_enabled),
+        "log_general_trace_events": _bool_text(production.log_general_trace_events),
+        "actor_pool_size": _text_value(production.actor_pool_size),
+        "description": production.description,
+    }
+
+
+def _item_signatures(production: Production) -> dict[str, dict[str, Any]]:
+    return {item.name: _item_signature(item) for item in production.items}
+
+
+def _item_signature(item: ComponentRef) -> dict[str, Any]:
+    return {
+        "class_name": item.class_name or "",
+        "category": item.category,
+        "pool_size": _text_value(item.pool_size),
+        "enabled": _bool_text(item.enabled),
+        "foreground": _bool_text(item.foreground),
+        "comment": item.comment,
+        "log_trace_events": _bool_text(item.log_trace_events),
+        "schedule": item.schedule,
+        "host_settings": _settings_signature(item.host_settings),
+        "adapter_settings": _settings_signature(item.adapter_settings),
+        "other_settings": _canonical_value(item.other_settings),
+    }
+
+
+def _settings_signature(settings: dict[str, Any]) -> dict[str, str]:
+    return {key: _text_value(settings[key]) for key in sorted(settings)}
+
+
+def _diff_items(
+    changes: list[ProductionDiffEntry],
+    *,
+    desired: Production,
+    current: Production,
+) -> None:
+    desired_items = _item_signatures(desired)
+    current_items = _item_signatures(current)
+
+    for item_name in sorted(current_items.keys() - desired_items.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="remove",
+                kind="item",
+                path=f"items.{item_name}",
+                before=current_items[item_name],
+            )
+        )
+
+    for item_name in sorted(desired_items.keys() - current_items.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="add",
+                kind="item",
+                path=f"items.{item_name}",
+                after=desired_items[item_name],
+            )
+        )
+
+    for item_name in sorted(desired_items.keys() & current_items.keys()):
+        _diff_item_fields(
+            changes,
+            item_name=item_name,
+            before=current_items[item_name],
+            after=desired_items[item_name],
+        )
+
+
+def _diff_item_fields(
+    changes: list[ProductionDiffEntry],
+    *,
+    item_name: str,
+    before: dict[str, Any],
+    after: dict[str, Any],
+) -> None:
+    scalar_fields = [
+        "class_name",
+        "category",
+        "pool_size",
+        "enabled",
+        "foreground",
+        "comment",
+        "log_trace_events",
+        "schedule",
+    ]
+    _diff_mapping_values(
+        changes,
+        kind="item",
+        base_path=f"items.{item_name}",
+        before={field: before[field] for field in scalar_fields},
+        after={field: after[field] for field in scalar_fields},
+    )
+    _diff_mapping_values(
+        changes,
+        kind="setting",
+        base_path=f"items.{item_name}.settings.Host",
+        before=before["host_settings"],
+        after=after["host_settings"],
+    )
+    _diff_mapping_values(
+        changes,
+        kind="setting",
+        base_path=f"items.{item_name}.settings.Adapter",
+        before=before["adapter_settings"],
+        after=after["adapter_settings"],
+    )
+    if before["other_settings"] != after["other_settings"]:
+        changes.append(
+            ProductionDiffEntry(
+                action="change",
+                kind="setting",
+                path=f"items.{item_name}.settings.Other",
+                before=before["other_settings"],
+                after=after["other_settings"],
+            )
+        )
+
+
+def _diff_mapping_values(
+    changes: list[ProductionDiffEntry],
+    *,
+    kind: str,
+    base_path: str,
+    before: dict[str, Any],
+    after: dict[str, Any],
+) -> None:
+    for key in sorted(before.keys() - after.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="remove",
+                kind=kind,
+                path=f"{base_path}.{key}",
+                before=before[key],
+            )
+        )
+    for key in sorted(after.keys() - before.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="add",
+                kind=kind,
+                path=f"{base_path}.{key}",
+                after=after[key],
+            )
+        )
+    for key in sorted(before.keys() & after.keys()):
+        if before[key] != after[key]:
+            changes.append(
+                ProductionDiffEntry(
+                    action="change",
+                    kind=kind,
+                    path=f"{base_path}.{key}",
+                    before=before[key],
+                    after=after[key],
+                )
+            )
+
+
+def _diff_connections(
+    changes: list[ProductionDiffEntry],
+    *,
+    desired: Production,
+    current: Production,
+    include_graph_metadata: bool = False,
+) -> None:
+    desired_connections = _connection_signature(
+        desired,
+        include_graph_metadata=include_graph_metadata,
+    )
+    current_connections = _connection_signature(
+        current,
+        include_graph_metadata=include_graph_metadata,
+    )
+
+    for source in sorted(current_connections.keys() - desired_connections.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="remove",
+                kind="connection",
+                path=f"connections.{_connection_source_path(source)}",
+                before=current_connections[source],
+            )
+        )
+    for source in sorted(desired_connections.keys() - current_connections.keys()):
+        changes.append(
+            ProductionDiffEntry(
+                action="add",
+                kind="connection",
+                path=f"connections.{_connection_source_path(source)}",
+                after=desired_connections[source],
+            )
+        )
+    for source in sorted(desired_connections.keys() & current_connections.keys()):
+        before = current_connections[source]
+        after = desired_connections[source]
+        if before != after:
+            changes.append(
+                ProductionDiffEntry(
+                    action="change",
+                    kind="connection",
+                    path=f"connections.{_connection_source_path(source)}",
+                    before=before,
+                    after=after,
+                )
+            )
+
+
+def _connection_signature(
+    production: Production,
+    *,
+    include_graph_metadata: bool = False,
+) -> dict[tuple[str, str], list[Any]]:
+    if include_graph_metadata:
+        detailed_connections: dict[tuple[str, str], list[dict[str, Any]]] = {}
+        for edge in production.graph().edges:
+            source = (edge.source_item, edge.source_port)
+            detailed_connections.setdefault(source, []).append(_edge_diff_value(edge))
+        return {
+            source: sorted(
+                values,
+                key=lambda value: json.dumps(value, sort_keys=True),
+            )
+            for source, values in sorted(detailed_connections.items())
+        }
+
+    connections: dict[tuple[str, str], set[str]] = {}
+    for edge in production.graph().edges:
+        source = (edge.source_item, edge.source_port)
+        connections.setdefault(source, set()).add(edge.target)
+    return {
+        source: list(sorted(targets))
+        for source, targets in sorted(connections.items())
+    }
+
+
+def _edge_diff_value(edge: GraphEdge) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "target": edge.target,
+        "origin": edge.origin,
+        "interaction": edge.interaction,
+        "logical_name": edge.logical_name,
+    }
+    if edge.metadata:
+        data["metadata"] = _canonical_value(edge.metadata)
+    return data
+
+
+def _connection_source_path(source: tuple[str, str]) -> str:
+    source_item, source_port = source
+    if source_port:
+        return f"{source_item}.{source_port}"
+    return source_item
+
+
+def _canonical_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _canonical_value(value[key])
+            for key in sorted(value, key=lambda item: str(item))
+        }
+    if isinstance(value, (list, tuple)):
+        return [_canonical_value(item) for item in value]
+    if isinstance(value, bool):
+        return _bool_text(value)
+    if value is None:
+        return ""
+    return value
+
+
+def _diff_value_text(value: Any) -> str:
+    if isinstance(value, str):
+        return repr(value)
+    try:
+        return json.dumps(value, sort_keys=True)
+    except TypeError:
+        return repr(value)
 
 
 def _message_to_classname_body(message: Any) -> tuple[Optional[str], str | dict | None]:
@@ -948,25 +1684,6 @@ def _as_list(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
     return [value]
-
-
-def _find_named_entry(entries: Any, name: str) -> Optional[dict[str, Any]]:
-    for entry in _as_list(entries):
-        if isinstance(entry, dict) and entry.get("@Name") == name:
-            return entry
-    return None
-
-
-def _find_setting(settings: Any, name: str) -> Optional[dict[str, Any]]:
-    for setting in _as_list(settings):
-        if not isinstance(setting, dict):
-            continue
-        if setting.get("@Name") != name:
-            continue
-        if setting.get("@Target", "Host") not in ("", "Host"):
-            continue
-        return setting
-    return None
 
 
 def _production_payload(data: dict[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -1012,8 +1729,8 @@ def _split_settings(
 
 def _normalize_connections(
     connections: Any,
-) -> tuple[dict[str, list[dict[str, str]]], set[str], list[str]]:
-    connection_map: dict[str, list[dict[str, str]]] = {}
+) -> tuple[dict[str, list[dict[str, Any]]], set[str], list[str]]:
+    connection_map: dict[str, list[dict[str, Any]]] = {}
     runtime_sources: set[str] = set()
     warnings: list[str] = []
 
@@ -1039,16 +1756,19 @@ def _normalize_connections(
                     f"{source}: {value}"
                     for value in item_warnings
                 )
-                if not item_warnings:
-                    runtime_sources.add(source)
+                discovered = False
                 for target in _as_list(item.get("connections")):
                     normalized = _normalize_connection_target(target)
                     if normalized is not None:
+                        discovered = True
                         connection_map.setdefault(source, []).append(normalized)
                 for edge in _as_list(item.get("edges")):
                     normalized = _normalize_connection_target(edge)
                     if normalized is not None:
+                        discovered = True
                         connection_map.setdefault(source, []).append(normalized)
+                if not item_warnings or discovered:
+                    runtime_sources.add(source)
             return connection_map, runtime_sources, warnings
 
         for source, targets in connections.items():
@@ -1081,7 +1801,7 @@ def _normalize_connections(
     return connection_map, runtime_sources, warnings
 
 
-def _normalize_connection_target(value: Any) -> Optional[dict[str, str]]:
+def _normalize_connection_target(value: Any) -> Optional[dict[str, Any]]:
     if isinstance(value, str):
         if not value:
             return None
@@ -1092,7 +1812,28 @@ def _normalize_connection_target(value: Any) -> Optional[dict[str, str]]:
     if not target:
         return None
     source_port = value.get("source_port") or value.get("port") or ""
-    return {"target": str(target), "source_port": str(source_port)}
+    metadata = dict(value.get("metadata") or {})
+    known_keys = {
+        "target",
+        "name",
+        "to",
+        "source_port",
+        "port",
+        "interaction",
+        "metadata",
+    }
+    for key, item in value.items():
+        if key not in known_keys and item is not None:
+            metadata.setdefault(str(key), item)
+    normalized: dict[str, Any] = {
+        "target": str(target),
+        "source_port": str(source_port),
+    }
+    if value.get("interaction"):
+        normalized["interaction"] = str(value["interaction"])
+    if metadata:
+        normalized["metadata"] = metadata
+    return normalized
 
 
 def _normalize_queue_info(value: Any) -> tuple[dict[str, dict[str, Any]], list[str]]:
@@ -1178,6 +1919,46 @@ def resolve_target(target_value: Any) -> Any:
     return target_value
 
 
+@contextmanager
+def _temporary_env(name: str, value: Optional[str]):
+    if not value:
+        yield
+        return
+
+    missing = object()
+    previous = os.environ.get(name, missing)
+    os.environ[name] = value
+    try:
+        yield
+    finally:
+        if previous is missing:
+            os.environ.pop(name, None)
+        else:
+            os.environ[name] = str(previous)
+
+
+class _NamespaceDirectorProxy:
+    def __init__(self, director: Any, namespace: str):
+        self._director = director
+        self._namespace = namespace
+
+    @property
+    def namespace(self) -> str:
+        return self._namespace
+
+    def __getattr__(self, name: str) -> Any:
+        attribute = getattr(self._director, name)
+        if not callable(attribute):
+            return attribute
+
+        @wraps(attribute)
+        def call_with_namespace(*args: Any, **kwargs: Any) -> Any:
+            with _temporary_env("IRISNAMESPACE", self._namespace):
+                return attribute(*args, **kwargs)
+
+        return call_with_namespace
+
+
 class _ProductionRuntime:
     def __init__(self, production: Production):
         self.production = production
@@ -1198,5 +1979,8 @@ class _ProductionRuntime:
             return _RemoteDirector(remote_settings)
 
         if self.production.namespace:
-            os.environ["IRISNAMESPACE"] = self.production.namespace
+            return _NamespaceDirectorProxy(
+                _LocalDirector(),
+                self.production.namespace,
+            )
         return _LocalDirector()

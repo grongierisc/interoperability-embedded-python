@@ -419,6 +419,64 @@ Sends a test message to a target component and returns the response synchronousl
 
 ---
 
+## POST /api/iop/component/start
+
+Starts/enables one component in the current production runtime.
+
+**Namespace** — query string (`?namespace=`) or JSON body field (body wins).
+
+**Request body**
+
+```json
+{"component": "Python.MyOperation"}
+```
+
+`item` is accepted as an alias for `component`.
+
+**Response**
+
+```json
+{"status": "started", "component": "Python.MyOperation"}
+```
+
+---
+
+## POST /api/iop/component/stop
+
+Stops/disables one component in the current production runtime.
+
+**Request body**
+
+```json
+{"component": "Python.MyOperation"}
+```
+
+**Response**
+
+```json
+{"status": "stopped", "component": "Python.MyOperation"}
+```
+
+---
+
+## POST /api/iop/component/restart
+
+Restarts one component by disabling then enabling it.
+
+**Request body**
+
+```json
+{"component": "Python.MyOperation"}
+```
+
+**Response**
+
+```json
+{"status": "restarted", "component": "Python.MyOperation"}
+```
+
+---
+
 ## PUT /api/iop/migrate
 
 Uploads a Python package to the server and runs its migration entrypoint. The
