@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
-from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
+from ..runtime.environment import temporary_env as _temporary_env
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
 from .types import Port
 
@@ -26,24 +25,6 @@ def resolve_target(target_value: Any) -> Any:
     if isinstance(target_value, Port):
         return target_value.resolve()
     return target_value
-
-
-@contextmanager
-def _temporary_env(name: str, value: str | None):
-    if not value:
-        yield
-        return
-
-    missing = object()
-    previous = os.environ.get(name, missing)
-    os.environ[name] = value
-    try:
-        yield
-    finally:
-        if previous is missing:
-            os.environ.pop(name, None)
-        else:
-            os.environ[name] = str(previous)
 
 
 class _NamespaceDirectorProxy:

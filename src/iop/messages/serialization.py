@@ -228,7 +228,7 @@ def dataclass_to_dict(instance: Any) -> dict:
     return result
 
 
-# Maintain backwards compatibility
+# Convenience wrappers used by dispatch and tests.
 def serialize_pickle_message(msg):
     return MessageSerializer.serialize(msg, use_pickle=True, is_generator=False)
 

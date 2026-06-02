@@ -1,40 +1,26 @@
 from __future__ import annotations
 
-import json
-from dataclasses import is_dataclass
 from typing import Any
 
-from pydantic import BaseModel
-
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
+from . import actions as _actions
 from .common import (
     _adapter_type_from_component_class,
     _apply_settings_update,
     _auto_proxy_class_name,
-    _bool_text,
-    _text_value,
 )
 from .component import ComponentRef
 from .diff import _diff_productions
-from .import_ import (
-    _as_list,
-    _is_internal_runtime_target,
-    _matching_host_setting,
-    _normalize_connections,
-    _normalize_queue_info,
-    _normalize_runtime_item_metadata,
-    _production_payload,
-    _setting_targets,
-    _split_settings,
+from .inspection import component_runtime_info, inspect_component
+from .reconstruction import production_from_dict
+from .rendering import (
+    production_graph,
+    production_to_dict,
+    production_to_xml,
 )
-from .runtime import (
-    _has_remote_director,
-    _ProductionRuntime,
-    _temporary_env,
-)
+from .runtime import _ProductionRuntime
 from .types import (
     GraphEdge,
-    GraphNode,
     Port,
     ProductionDiff,
     ProductionGraph,
@@ -137,134 +123,14 @@ class Production:
         namespace: str | None = None,
         director: Any = None,
     ) -> Production:
-        production_name, production_data = _production_payload(data)
-        production = cls(
-            production_name,
-            testing_enabled=production_data.get("@TestingEnabled", False),
-            log_general_trace_events=production_data.get(
-                "@LogGeneralTraceEvents", False
-            ),
-            actor_pool_size=production_data.get("ActorPoolSize", 2),
-            description=production_data.get("Description", ""),
+        return production_from_dict(
+            cls,
+            data,
+            connections=connections,
+            queue_info=queue_info,
             namespace=namespace,
             director=director,
         )
-
-        for item_data in _as_list(production_data.get("Item", [])):
-            if not isinstance(item_data, dict):
-                continue
-            host_settings, adapter_settings, other_settings = _split_settings(
-                item_data.get("Setting", [])
-            )
-            ref = ComponentRef(
-                production=production,
-                name=item_data.get("@Name", ""),
-                class_name=item_data.get("@ClassName", ""),
-                adapter_class_name=(
-                    item_data.get("@AdapterClassName")
-                    or item_data.get("@Adapter")
-                    or ""
-                ),
-                kind="component",
-                category=item_data.get("@Category", ""),
-                pool_size=item_data.get("@PoolSize", 1),
-                enabled=item_data.get("@Enabled", True),
-                foreground=item_data.get("@Foreground", False),
-                comment=item_data.get("@Comment", ""),
-                log_trace_events=item_data.get("@LogTraceEvents", False),
-                schedule=item_data.get("@Schedule", ""),
-                host_settings=host_settings,
-                adapter_settings=adapter_settings,
-                other_settings=other_settings,
-            )
-            production._add_item(ref)
-
-        queue_map, queue_warnings = _normalize_queue_info(queue_info)
-        production._graph_warnings.extend(queue_warnings)
-        for item_name, info in queue_map.items():
-            if item_name not in production._items_by_name:
-                production._graph_warnings.append(
-                    f"Queue info item does not exist: {item_name}"
-                )
-                continue
-            normalized = dict(info)
-            production._queue_info[item_name] = normalized
-
-        runtime_item_metadata = _normalize_runtime_item_metadata(connections)
-        for item_name, metadata in runtime_item_metadata.items():
-            ref = production._items_by_name.get(item_name)
-            if ref is None:
-                continue
-            adapter_class_name = metadata.get("adapter_class_name", "")
-            if adapter_class_name and not ref.adapter_class_name:
-                ref.adapter_class_name = adapter_class_name
-
-        connection_map, runtime_sources, warnings = _normalize_connections(
-            connections
-        )
-        production._graph_warnings.extend(warnings)
-        runtime_sources_with_targets = {
-            source_item
-            for source_item, targets in connection_map.items()
-            if targets
-        }
-
-        for source_item, targets in connection_map.items():
-            if source_item not in production._items_by_name:
-                production._graph_warnings.append(
-                    f"Runtime connection source does not exist: {source_item}"
-                )
-                continue
-            ref = production._items_by_name[source_item]
-            for target in targets:
-                target_name = target.get("target", "")
-                if not target_name:
-                    continue
-                source_port = target.get("source_port", "") or _matching_host_setting(
-                    ref, target_name
-                )
-                if source_port:
-                    ref.port_names.add(source_port)
-                if target_name not in production._items_by_name:
-                    if _is_internal_runtime_target(target_name):
-                        continue
-                    production._graph_warnings.append(
-                        f"Runtime connection target does not exist: "
-                        f"{source_item} -> {target_name}"
-                    )
-                production._register_connection(
-                    source_item,
-                    source_port,
-                    target_name,
-                    origin="runtime",
-                    interaction=target.get("interaction", "request"),
-                    metadata=target.get("metadata", {}),
-                    validate_target=False,
-                )
-
-        for ref in production._items:
-            if ref.name in runtime_sources_with_targets:
-                continue
-            for setting_name, value in ref.host_settings.items():
-                for target_name in _setting_targets(value):
-                    if target_name not in production._items_by_name:
-                        continue
-                    ref.port_names.add(setting_name)
-                    metadata = {"source": "Host setting fallback"}
-                    if ref.name in runtime_sources:
-                        metadata["reason"] = (
-                            "runtime discovery returned no targets"
-                        )
-                    production._register_connection(
-                        ref.name,
-                        setting_name,
-                        target_name,
-                        origin="inferred",
-                        metadata=metadata,
-                        validate_target=False,
-                    )
-
-        return production
 
     @property
     def items(self) -> tuple[ComponentRef, ...]:
@@ -575,41 +441,13 @@ class Production:
         raise ValueError(f"Production item does not exist: {target_name}")
 
     def to_dict(self) -> dict[str, Any]:
-        production: dict[str, Any] = {
-            "@Name": self.name,
-            "@TestingEnabled": _bool_text(self.testing_enabled),
-            "@LogGeneralTraceEvents": _bool_text(self.log_general_trace_events),
-            "Description": self.description,
-            "ActorPoolSize": _text_value(self.actor_pool_size),
-        }
-        if self._items:
-            production["Item"] = [item.to_dict() for item in self._items]
-        return {self.name: production}
+        return production_to_dict(self)
 
     def to_xml(self) -> str:
-        from ..migration.utils import _Utils
-
-        return _Utils.dict_to_xml({"Production": self.to_dict()[self.name]})
+        return production_to_xml(self)
 
     def graph(self) -> ProductionGraph:
-        nodes = tuple(
-            GraphNode(
-                name=item.name,
-                class_name=item.class_name or "",
-                kind=item.kind,
-                enabled=item.enabled,
-                category=item.category,
-                adapter_class_name=item.adapter_class_name,
-            )
-            for item in self._items
-        )
-        edges = tuple(self._edges)
-        return ProductionGraph(
-            production_name=self.name,
-            nodes=nodes,
-            edges=edges,
-            warnings=tuple(self._graph_warnings),
-        )
+        return production_graph(self)
 
     def diff(
         self,
@@ -659,46 +497,28 @@ class Production:
         )
 
     def start(self, detach: bool = True) -> None:
-        runtime = _ProductionRuntime(self)
-        director = runtime.director
-        if detach:
-            director.start_production(self.name)
-        else:
-            director.start_production_with_log(self.name)
+        _actions.start(self, detach=detach)
 
     def stop(self) -> None:
-        director = _ProductionRuntime(self).director
-        self._require_current_production(director, "stop")
-        director.stop_production()
+        _actions.stop(self)
 
     def restart(self) -> None:
-        director = _ProductionRuntime(self).director
-        self._require_current_production(director, "restart")
-        director.restart_production()
+        _actions.restart(self)
 
     def kill(self) -> None:
-        director = _ProductionRuntime(self).director
-        self._require_current_production(director, "kill")
-        director.shutdown_production()
+        _actions.kill(self)
 
     def status(self) -> dict:
-        return _ProductionRuntime(self).director.status_production()
+        return _actions.status(self)
 
     def queue(self, *, refresh: bool = True) -> dict[str, dict[str, Any]]:
-        if not refresh:
-            return {name: dict(value) for name, value in self._queue_info.items()}
-        info = _ProductionRuntime(self).director.export_production_queue_info(self.name)
-        queue_map, _queue_warnings = _normalize_queue_info(info)
-        self._queue_info = queue_map
-        return {name: dict(value) for name, value in queue_map.items()}
+        return _actions.queue(self, refresh=refresh)
 
     def queue_info(self, *, refresh: bool = True) -> dict[str, dict[str, Any]]:
         return self.queue(refresh=refresh)
 
     def update(self) -> None:
-        director = _ProductionRuntime(self).director
-        self._require_current_production(director, "update")
-        director.update_production()
+        _actions.update(self)
 
     def inspect_component(
         self,
@@ -706,108 +526,31 @@ class Production:
         *,
         refresh: bool = True,
     ) -> dict[str, Any]:
-        """Return design-time and runtime details for a production component."""
-        component_name = self._runtime_component_name(component)
-        ref = self.item(component_name)
-        graph = self.graph()
-        outgoing = [
-            edge.to_dict()
-            for edge in graph.edges
-            if edge.source_item == component_name
-        ]
-        incoming = [
-            edge.to_dict()
-            for edge in graph.edges
-            if edge.target == component_name
-        ]
-        info: dict[str, Any] = {
-            "production": self.name,
-            "name": ref.name,
-            "class_name": ref.class_name or "",
-            "adapter_class_name": ref.adapter_class_name,
-            "kind": ref.kind,
-            "category": ref.category,
-            "enabled": ref.enabled,
-            "pool_size": ref.pool_size,
-            "foreground": ref.foreground,
-            "comment": ref.comment,
-            "log_trace_events": ref.log_trace_events,
-            "schedule": ref.schedule,
-            "settings": {
-                "Host": dict(ref.host_settings),
-                "Adapter": dict(ref.adapter_settings),
-                "Other": [dict(setting) for setting in ref.other_settings],
-            },
-            "ports": sorted(ref.port_names),
-            "outgoing": outgoing,
-            "incoming": incoming,
-        }
-
-        if refresh:
-            runtime_info = self._component_runtime_info(component_name)
-            if runtime_info:
-                info["runtime"] = runtime_info
-        elif component_name in self._queue_info:
-            info["runtime"] = {"queue": dict(self._queue_info[component_name])}
-        return info
+        return inspect_component(self, component, refresh=refresh)
 
     def start_component(self, component: ComponentRef | Port | str) -> None:
-        component_name = self._runtime_component_name(component)
-        director = _ProductionRuntime(self).director
-        self._require_current_runtime(
-            director,
-            f"start component {component_name!r} in production {self.name!r}",
-        )
-        director.start_component(component_name)
+        _actions.start_component(self, component)
 
     def stop_component(self, component: ComponentRef | Port | str) -> None:
-        component_name = self._runtime_component_name(component)
-        director = _ProductionRuntime(self).director
-        self._require_current_runtime(
-            director,
-            f"stop component {component_name!r} in production {self.name!r}",
-        )
-        director.stop_component(component_name)
+        _actions.stop_component(self, component)
 
     def restart_component(self, component: ComponentRef | Port | str) -> None:
-        component_name = self._runtime_component_name(component)
-        director = _ProductionRuntime(self).director
-        self._require_current_runtime(
-            director,
-            f"restart component {component_name!r} in production {self.name!r}",
-        )
-        director.restart_component(component_name)
+        _actions.restart_component(self, component)
 
     def export(self) -> dict:
-        return _ProductionRuntime(self).director.export_production(self.name)
+        return _actions.export(self)
 
     def set_default(self) -> None:
-        _ProductionRuntime(self).director.set_default_production(self.name)
+        _actions.set_default(self)
 
     def sync(self, *, root_path: str | None = None, update: bool = True) -> None:
-        if _has_remote_director(self):
-            raise NotImplementedError(
-                "Production.sync() can only register directly with local IRIS. "
-                "Use `iop --migrate <settings_file>` for remote migrations."
-            )
-        from ..migration.utils import _Utils
-
-        with _temporary_env("IRISNAMESPACE", self.namespace):
-            _Utils.set_productions_settings([self], root_path)
-            if update:
-                from ..runtime.local import _LocalDirector
-
-                _LocalDirector().update_production()
+        _actions.sync(self, root_path=root_path, update_runtime=update)
 
     def apply(self, *, root_path: str | None = None, update: bool = True) -> None:
         self.sync(root_path=root_path, update=update)
 
     def log(self, top: int | None = None) -> None:
-        director = _ProductionRuntime(self).director
-        if top is None:
-            director.log_production()
-        else:
-            director.log_production_top(top)
+        _actions.log(self, top)
 
     def test_component(
         self,
@@ -816,18 +559,9 @@ class Production:
         classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
-        runtime = _ProductionRuntime(self)
-        director = runtime.director
-        target_name = self.resolve_target(target_or_port)
-
-        self._raise_if_existing_production_not_running(director)
-
-        if classname is None and body is None and message is not None:
-            classname, body = _message_to_classname_body(message)
-            if classname is not None:
-                message = None
-        return director.test_component(
-            target_name,
+        return _actions.test_component(
+            self,
+            target_or_port,
             message=message,
             classname=classname,
             body=body,
@@ -848,125 +582,22 @@ class Production:
         )
 
     def _raise_if_existing_production_not_running(self, director: Any) -> None:
-        production_name, state = self._read_status(director, "test")
-        state_lower = str(state).lower()
-        if production_name == self.name and str(state).lower() == "running":
-            return
-
-        if (
-            production_name
-            and production_name != self.name
-            and state_lower == "running"
-        ):
-            raise RuntimeError(
-                f"Production {self.name!r} exists but is not running "
-                f"(currently running production is {production_name!r}). "
-                f"{self._switch_running_production_message(production_name)} "
-                "Do that before calling `prod.test(...)`."
-            )
-        if production_name and production_name != self.name:
-            detail = f"current default production is {production_name!r}"
-        elif state:
-            detail = f"current status is {state!r}"
-        else:
-            detail = "runtime status did not report a running production"
-        raise RuntimeError(
-            f"Production {self.name!r} exists but is not running ({detail}). "
-            f"Start it with `iop --start {self.name} --detach` or "
-            "`prod.start()` before calling `prod.test(...)`."
-        )
+        _actions.raise_if_existing_production_not_running(self, director)
 
     def _require_current_production(self, director: Any, action: str) -> None:
-        self._require_current_runtime(
-            director,
-            f"{action} production {self.name!r}",
-        )
+        _actions.require_current_production(self, director, action)
 
     def _require_current_runtime(self, director: Any, action: str) -> None:
-        production_name, state = self._read_status(director, action)
-        if production_name == self.name:
-            return
-
-        if production_name:
-            detail = f"current/default production is {production_name!r}"
-        elif state:
-            detail = f"current status is {state!r}"
-        else:
-            detail = "runtime status did not report a current/default production"
-        raise RuntimeError(
-            f"Cannot {action}: {detail}. "
-            f"Select {self.name!r} with `prod.set_default()` or start it with "
-            "`prod.start()` before using this lifecycle method."
-        )
+        _actions.require_current_runtime(self, director, action)
 
     def _read_status(self, director: Any, action: str) -> tuple[str, str]:
-        try:
-            status = director.status_production()
-        except Exception as exc:
-            raise RuntimeError(
-                f"Cannot {action}: could not verify production status ({exc})."
-            ) from exc
-        if not isinstance(status, dict):
-            raise RuntimeError(
-                f"Cannot {action}: production status response is invalid "
-                f"({status!r})."
-            )
-        production_name = status.get("Production") or status.get("production") or ""
-        state = status.get("Status") or status.get("status") or ""
-        return str(production_name), str(state)
+        return _actions.read_status(self, director, action)
 
     def _switch_running_production_message(self, current_production: str) -> str:
-        return (
-            f"IRIS can run only one production at a time. Stop {current_production!r} "
-            f"first with `iop --stop`, then start {self.name!r} with "
-            f"`iop --start {self.name} --detach`; or call `prod.stop()` and "
-            "`prod.start()` explicitly."
-        )
+        return _actions.switch_running_production_message(self, current_production)
 
     def _component_runtime_info(self, component_name: str) -> dict[str, Any]:
-        director = _ProductionRuntime(self).director
-        runtime: dict[str, Any] = {}
-        warnings: list[str] = []
-
-        try:
-            status = director.status_production()
-        except Exception as exc:
-            warnings.append(f"Could not fetch production status: {exc}")
-        else:
-            if isinstance(status, dict):
-                production_name = (
-                    status.get("Production")
-                    or status.get("production")
-                    or ""
-                )
-                state = status.get("Status") or status.get("status") or ""
-                runtime["production_status"] = dict(status)
-                runtime["current_production"] = str(production_name)
-                runtime["status"] = str(state)
-                runtime["is_current_production"] = production_name == self.name
-                runtime["is_running"] = (
-                    production_name == self.name
-                    and str(state).lower() == "running"
-                )
-            else:
-                warnings.append(
-                    f"Production status response is invalid: {status!r}"
-                )
-
-        try:
-            queue_info = director.export_production_queue_info(self.name)
-        except Exception as exc:
-            warnings.append(f"Could not fetch queue info: {exc}")
-        else:
-            queue_map, queue_warnings = _normalize_queue_info(queue_info)
-            warnings.extend(queue_warnings)
-            self._queue_info = queue_map
-            if component_name in queue_map:
-                runtime["queue"] = dict(queue_map[component_name])
-
-        if warnings:
-            runtime["warnings"] = warnings
-        return runtime
+        return component_runtime_info(self, component_name)
 
     def _component_name(self, target_component: ComponentRef | str) -> str:
         if isinstance(target_component, ComponentRef):
@@ -1091,14 +722,3 @@ class Production:
             if _edge_identity(existing) != edge_key
         ]
         self._edges.append(edge)
-
-
-def _message_to_classname_body(message: Any) -> tuple[str | None, str | dict | None]:
-    classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
-    if isinstance(message, BaseModel):
-        return classname, message.model_dump_json()
-    if is_dataclass(message):
-        from ..messages.serialization import dataclass_to_dict
-
-        return classname, json.dumps(dataclass_to_dict(message))
-    return None, None

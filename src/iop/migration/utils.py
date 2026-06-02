@@ -9,7 +9,6 @@ import os
 import sys
 from typing import Any
 
-import xmltodict
 from pydantic import TypeAdapter
 
 from ..messages.base import _Message, _PydanticMessage
@@ -18,6 +17,20 @@ from ..messages.persistent import (
     register_persistent_message_class,
 )
 from ..runtime import iris as _iris
+from ..runtime.environment import remove_sys_path, temporary_sys_path
+from .io import (
+    dict_to_xml,
+    guess_path,
+    stream_to_string,
+    string_to_stream,
+    xml_to_json,
+)
+from .plans import (
+    MigrationPlanner,
+    format_migration_plan,
+    format_migration_success,
+    format_plan_section,
+)
 
 
 class _Utils:
@@ -392,32 +405,15 @@ class _Utils:
 
     @staticmethod
     def format_migration_success(filename, namespace: str | None = None):
-        suffix = f" in namespace {namespace}" if namespace else ""
-        return f"Migration succeeded{suffix}: {filename}"
+        return format_migration_success(filename, namespace)
 
     @staticmethod
     def format_migration_plan(plan):
-        """Format a migration plan for CLI and migration output."""
-        lines = [f"Migration plan: {plan['settings']}"]
-        if plan.get("mode"):
-            lines.append(f"Mode: {plan['mode']}")
-        if plan.get("namespace"):
-            lines.append(f"Namespace: {plan['namespace']}")
-        lines.append("")
-        lines.extend(_Utils._format_plan_section("CLASSES", plan["classes"]))
-        lines.extend(_Utils._format_plan_section("SCHEMAS", plan["schemas"]))
-        lines.extend(_Utils._format_plan_section("PRODUCTIONS", plan["productions"]))
-        return "\n".join(lines)
+        return format_migration_plan(plan)
 
     @staticmethod
     def _format_plan_section(title, entries):
-        lines = [f"{title}:"]
-        if entries:
-            lines.extend(f"  {entry}" for entry in entries)
-        else:
-            lines.append("  none")
-        lines.append("")
-        return lines
+        return format_plan_section(title, entries)
 
     @staticmethod
     def _build_migration_plan(
@@ -427,84 +423,13 @@ class _Utils:
         mode: str | None = None,
         namespace: str | None = None,
     ):
-        """Build and validate a migration plan from a settings module."""
-        if not path:
-            path = os.path.dirname(inspect.getfile(settings))
-
-        plan = {
-            "settings": filename or inspect.getfile(settings),
-            "mode": mode,
-            "namespace": namespace,
-            "classes": [],
-            "schemas": [],
-            "productions": [],
-        }
-
-        classes = getattr(settings, "CLASSES", {})
-        if not isinstance(classes, dict):
-            raise ValueError("CLASSES must be a dictionary.")
-        for key, value in classes.items():
-            kind, target = _Utils._classify_class_setting(value, path)
-            if kind == "message_schema":
-                schema_hint = value.__name__ if inspect.isclass(value) else target
-                raise ValueError(
-                    f"{target} is a Message/PydanticMessage and cannot be registered "
-                    f"in CLASSES. Use SCHEMAS = [{schema_hint}] if you "
-                    "need DTL support. Otherwise, no migration is required for this "
-                    "message."
-            )
-            if kind == "persistent_message":
-                plan["classes"].append(f"{key} -> {target} (PersistentMessage)")
-            else:
-                plan["classes"].append(f"{key} -> {target} (component)")
-
-        schemas = getattr(settings, "SCHEMAS", None)
-        if schemas is not None:
-            if not isinstance(schemas, list):
-                raise ValueError("SCHEMAS must be a list of message classes.")
-            for cls in schemas:
-                _Utils._validate_dtl_schema_class(cls, "SCHEMAS")
-                plan["schemas"].append(_Utils._python_classname(cls))
-
-        productions = getattr(settings, "PRODUCTIONS", None)
-        if productions is not None:
-            if not isinstance(productions, list):
-                raise ValueError("PRODUCTIONS must be a list.")
-            auto_class_entries = set()
-            for production in productions:
-                if _Utils._is_production_object(production):
-                    plan["productions"].append(production.name)
-                    for item in production.component_registrations():
-                        target = item.class_name or item.name
-                        cls = item.component_class
-                        entry_key = (target, _Utils._python_classname(cls))
-                        if entry_key in auto_class_entries:
-                            continue
-                        auto_class_entries.add(entry_key)
-                        plan["classes"].append(
-                            f"{target} -> {entry_key[1]} (component)"
-                        )
-                    adapters = getattr(
-                        production,
-                        "adapter_registrations",
-                        lambda: (),
-                    )()
-                    for item in adapters:
-                        target = item.adapter_class_name
-                        cls = item.adapter_class
-                        entry_key = (target, _Utils._python_classname(cls))
-                        if entry_key in auto_class_entries:
-                            continue
-                        auto_class_entries.add(entry_key)
-                        plan["classes"].append(
-                            f"{target} -> {entry_key[1]} (component)"
-                        )
-                    continue
-                if not isinstance(production, dict) or not production:
-                    raise ValueError("Each PRODUCTION entry must be a non-empty dict.")
-                plan["productions"].append(next(iter(production.keys())))
-
-        return plan
+        return MigrationPlanner(_Utils).build(
+            settings,
+            path,
+            filename=filename,
+            mode=mode,
+            namespace=namespace,
+        )
 
     @staticmethod
     def _load_settings(filename):
@@ -638,11 +563,7 @@ class _Utils:
         Args:
             path: Path to remove from sys.path
         """
-        if path:
-            try:
-                sys.path.remove(os.path.normpath(path))
-            except ValueError:
-                pass
+        remove_sys_path(path)
 
     @staticmethod
     def import_module_from_path(module_name, file_path):
@@ -735,28 +656,17 @@ class _Utils:
 
     @staticmethod
     def _try_import_class(module_name: str, class_name: str, path: str):
-        remove_path = False
         try:
             path = os.path.abspath(os.path.normpath(path))
             fullpath = _Utils.guess_path(module_name, path)
-            if path not in sys.path:
-                sys.path.insert(0, path)
-                remove_path = True
-            else:
-                remove_path = False
-            try:
-                module = _Utils.import_module_from_path(module_name, fullpath)
-            except Exception:
-                module = importlib.import_module(module_name)
+            with temporary_sys_path(path):
+                try:
+                    module = _Utils.import_module_from_path(module_name, fullpath)
+                except Exception:
+                    module = importlib.import_module(module_name)
             return getattr(module, class_name)
         except Exception:
             return None
-        finally:
-            try:
-                if remove_path:
-                    sys.path.remove(path)
-            except Exception:
-                pass
 
     @staticmethod
     def set_productions_settings(production_list, root_path=None):
@@ -868,18 +778,7 @@ class _Utils:
 
     @staticmethod
     def dict_to_xml(json):
-        """
-        It takes a json and returns an xml
-
-        :param json: a json
-        :return: an xml
-        """
-        xml = xmltodict.unparse(json, pretty=True)
-        # remove the xml version tag
-        xml = xml.replace('<?xml version="1.0" encoding="utf-8"?>', "")
-        # remove the new line at the beginning of the xml
-        xml = xml[1:]
-        return xml
+        return dict_to_xml(json)
 
     @staticmethod
     def register_production(production_name, xml):
@@ -951,71 +850,16 @@ class _Utils:
 
     @staticmethod
     def xml_to_json(xml_string: str) -> str:
-        """Convert an XML string to a JSON string using xmltodict.
-
-        The top-level key is replaced with the production's ``Name`` attribute
-        so callers get ``{"MyApp.Production": {...}}`` instead of
-        ``{"Production": {...}}``.
-
-        :param xml_string: Raw XML to convert
-        :type xml_string: str
-        :return: JSON string
-        :rtype: str
-        """
-
-        def postprocessor(path, key, value):
-            return key, "" if value is None else value
-
-        data = xmltodict.parse(xml_string, postprocessor=postprocessor)
-        if "Production" in data:
-            production_obj = data["Production"]
-            production_name = production_obj.get("@Name", "Production")
-            data = {production_name: production_obj}
-        return json.dumps(data)
+        return xml_to_json(xml_string)
 
     @staticmethod
     def stream_to_string(stream, buffer=1000000) -> str:
-        string = ""
-        stream.Rewind()
-        while not stream.AtEnd:
-            string += stream.Read(buffer)
-        return string
+        return stream_to_string(stream, buffer)
 
     @staticmethod
     def string_to_stream(string: str, buffer=1000000):
-        stream = _iris.get_iris().cls("%Stream.GlobalCharacter")._New()
-        n = buffer
-        chunks = [string[i : i + n] for i in range(0, len(string), n)]
-        for chunk in chunks:
-            stream.Write(chunk)
-        return stream
+        return string_to_stream(_iris.get_iris(), string, buffer)
 
     @staticmethod
     def guess_path(module: str, path: str) -> str:
-        """Determines the full file path for a given module.
-
-        Args:
-            module: Module name/path (e.g. 'foo.bar' or '.foo.bar')
-            path: Base directory path
-
-        Returns:
-            Full path to the module's .py file
-        """
-        if not module:
-            raise ValueError("Module name cannot be empty")
-
-        if module.startswith("."):
-            # Handle relative imports
-            dot_count = len(module) - len(module.lstrip("."))
-            module = module[dot_count:]
-
-            # Go up directory tree based on dot count
-            for _ in range(dot_count - 1):
-                path = os.path.dirname(path)
-
-        # Convert module path to file path
-        if module.endswith(".py"):
-            module_path = module.replace(".", os.sep)
-        else:
-            module_path = module.replace(".", os.sep) + ".py"
-        return os.path.join(path, module_path)
+        return guess_path(module, path)

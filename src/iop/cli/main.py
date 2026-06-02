@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import argparse
 import json
 import logging
 import os
 import sys
-from dataclasses import dataclass
-from enum import Enum, auto
 from importlib.metadata import version
 
 import requests
@@ -15,53 +12,11 @@ from ..migration.utils import _Utils
 from ..runtime.local import _LocalDirector
 from ..runtime.protocol import DirectorProtocol
 from ..runtime.remote import _RemoteDirector, get_remote_settings
+from .formatting import format_test_response
+from .parser import create_parser
+from .types import CommandArgs, CommandType
 
-
-class CommandType(Enum):
-    DEFAULT = auto()
-    LIST = auto()
-    START = auto()
-    STOP = auto()
-    KILL = auto()
-    RESTART = auto()
-    STATUS = auto()
-    TEST = auto()
-    VERSION = auto()
-    EXPORT = auto()
-    MIGRATE = auto()
-    LOG = auto()
-    QUEUE = auto()
-    INIT = auto()
-    HELP = auto()
-    UPDATE = auto()
-
-
-@dataclass
-class CommandArgs:
-    """Container for parsed command arguments"""
-
-    default: str | None = None
-    list: bool = False
-    start: str | None = None
-    detach: bool = False
-    stop: bool = False
-    kill: bool = False
-    restart: bool = False
-    status: bool = False
-    migrate: str | None = None
-    export: str | None = None
-    version: bool = False
-    log: str | None = None
-    queue: str | None = None
-    init: str | None = None
-    test: str | None = None
-    classname: str | None = None
-    body: str | None = None
-    namespace: str | None = None
-    force_local: bool = False
-    remote_settings: str | None = None
-    update: bool = False
-    migration_plan: bool = False
+_format_test_response = format_test_response
 
 
 class Command:
@@ -243,7 +198,7 @@ class Command:
         response = self.director.test_component(
             test_name, classname=classname, body=body
         )
-        print(_format_test_response(response))
+        print(format_test_response(response))
 
     def _handle_version(self) -> None:
         print(version("iris-pex-embedded-python"))
@@ -321,169 +276,6 @@ class Command:
             print(f"\nNamespace: {self.director.namespace}")
         except Exception:
             logging.warning("Could not retrieve default production.")
-
-
-def _format_test_response(response) -> str:
-    """Pretty-print any test_component() return value.
-
-    Handles three cases:
-    - dict  : remote response with ``classname`` / ``body`` keys
-    - str   : local response in ``"ClassName : {json}"`` format
-    - other : Python dataclass / object returned by the local director
-    """
-    if isinstance(response, dict):
-        parts = []
-        if response.get("error"):
-            return f"Error: {response['error']}"
-        if response.get("classname"):
-            parts.append(f"classname: {response['classname']}")
-        body = response.get("body", "")
-        if body:
-            try:
-                parsed = json.loads(body)
-                parts.append("body:\n" + json.dumps(parsed, indent=4))
-            except (json.JSONDecodeError, TypeError):
-                parts.append(f"body: {body}")
-        if response.get("truncated"):
-            parts.append("(response body was truncated)")
-        return "\n".join(parts) if parts else str(response)
-
-    if isinstance(response, str):
-        # Try to detect the "ClassName : {json_body}" pattern from local mode
-        if " : " in response:
-            classname_part, _, body_part = response.partition(" : ")
-            try:
-                parsed = json.loads(body_part)
-                return (
-                    f"classname: {classname_part.strip()}\n"
-                    f"body:\n{json.dumps(parsed, indent=4)}"
-                )
-            except (json.JSONDecodeError, TypeError):
-                pass
-        # Plain string — try JSON pretty-print
-        try:
-            return json.dumps(json.loads(response), indent=4)
-        except (json.JSONDecodeError, TypeError):
-            return response
-
-    # Python dataclass / arbitrary object
-    try:
-        import dataclasses
-
-        if dataclasses.is_dataclass(response):
-            return json.dumps(dataclasses.asdict(response), indent=4)
-    except Exception:
-        pass
-    return str(response)
-
-
-def create_parser() -> argparse.ArgumentParser:
-    """Create and configure argument parser"""
-    main_parser = argparse.ArgumentParser(
-        epilog=(
-            "Remote mode: set IOP_URL (e.g. http://localhost:8080) to run all commands\n"
-            "against a remote IRIS instance via its REST API. Optional env vars:\n"
-            "  IOP_USERNAME, IOP_PASSWORD, IOP_NAMESPACE (default: USER),\n"
-            "  IOP_VERIFY_SSL (set to 0 to disable TLS verification).\n"
-            "Alternatively use -R /path/to/settings.py or set IOP_SETTINGS=\n"
-            "(file must contain a REMOTE_SETTINGS dict with at least 'url').\n"
-            "Use --force-local to suppress remote mode entirely."
-        ),
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser = main_parser.add_mutually_exclusive_group()
-
-    # Main commands
-    parser.add_argument(
-        "-d", "--default", help="set the default production", nargs="?", const="not_set"
-    )
-    parser.add_argument("-l", "--list", help="list productions", action="store_true")
-    parser.add_argument(
-        "-s", "--start", help="start a production", nargs="?", const="not_set"
-    )
-    parser.add_argument("-S", "--stop", help="stop a production", action="store_true")
-    parser.add_argument("-k", "--kill", help="kill a production", action="store_true")
-    parser.add_argument(
-        "-r", "--restart", help="restart a production", action="store_true"
-    )
-    parser.add_argument(
-        "-x", "--status", help="status a production", action="store_true"
-    )
-    parser.add_argument(
-        "-m",
-        "-M",
-        "--migrate",
-        help="migrate production and classes with a Python migration file",
-    )
-    parser.add_argument(
-        "-e", "--export", help="export a production", nargs="?", const="not_set"
-    )
-    parser.add_argument("-v", "--version", help="display version", action="store_true")
-    parser.add_argument("-L", "--log", help="display log", nargs="?", const="not_set")
-    parser.add_argument(
-        "-q",
-        "--queue",
-        help="display runtime queue information",
-        nargs="?",
-        const="not_set",
-    )
-    parser.add_argument(
-        "-i", "--init", help="init the pex module in iris", nargs="?", const="not_set"
-    )
-    parser.add_argument(
-        "-t", "--test", help="test the pex module in iris", nargs="?", const="not_set"
-    )
-    parser.add_argument(
-        "-u", "--update", help="update a production", action="store_true"
-    )
-
-    # Command groups
-    start = main_parser.add_argument_group("start arguments")
-    start.add_argument(
-        "-D", "--detach", help="start a production in detach mode", action="store_true"
-    )
-
-    test = main_parser.add_argument_group("test arguments")
-    test.add_argument(
-        "-C", "--classname", help="test classname", nargs="?", const="not_set"
-    )
-    test.add_argument(
-        "-B",
-        "--body",
-        help="test body (JSON string or @path/to/file.json)",
-        nargs="?",
-        const="not_set",
-    )
-
-    migrate = main_parser.add_argument_group("migrate arguments")
-    migrate.add_argument(
-        "--force-local",
-        help="force local mode, skip remote even if REMOTE_SETTINGS or IOP_URL is present",
-        action="store_true",
-    )
-    migrate.add_argument(
-        "--dry-run",
-        "--explain",
-        dest="migration_plan",
-        help="show the migration plan and validation messages without writing to IRIS",
-        action="store_true",
-    )
-
-    remote = main_parser.add_argument_group("remote arguments")
-    remote.add_argument(
-        "-R",
-        "--remote-settings",
-        help="path to a settings.py containing REMOTE_SETTINGS (overrides IOP_SETTINGS env var)",
-        metavar="FILE",
-    )
-
-    namespace = main_parser.add_argument_group("namespace arguments")
-    namespace.add_argument(
-        "-n", "--namespace", help="set namespace", nargs="?", const="not_set"
-    )
-
-    return main_parser
-
 
 def main(argv=None) -> None:
     parser = create_parser()

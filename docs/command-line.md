@@ -34,9 +34,9 @@ optional arguments:
   -q [QUEUE], --queue [QUEUE]
                         display runtime queue information
   -i INIT, --init INIT
-                        init the pex module in iris
+                        init the iop module in iris
   -t TEST, --test TEST
-                        test the pex module in iris
+                        test the iop module in iris
 
 start arguments:
   -D, --detach         start a production in detach mode

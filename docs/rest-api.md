@@ -266,7 +266,7 @@ while True:
     resp = requests.get(
         "http://localhost:52773/api/iop/log",
         params={"since_id": last_id, "namespace": "USER"},
-        auth=("_SYSTEM", "SYS")
+        auth=("<USER>", "<PASSWORD>"),
     )
     entries = resp.json()
     for entry in entries:

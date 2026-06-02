@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 
 class _Message:
-    """The abstract class that is the superclass for persistent messages sent from one component to another.
+    """Base class for JSON-serialized messages sent between components.
+
     This class has no properties or methods. Users subclass Message and add properties.
-    The IOP framework provides the persistence to objects derived from the Message class.
     """
 
     _iris_id: str | None = None
@@ -17,9 +17,9 @@ class _Message:
 
 
 class _PickleMessage(_Message):
-    """The abstract class that is the superclass for persistent messages sent from one component to another.
+    """Base class for pickle-serialized messages sent between components.
+
     This class has no properties or methods. Users subclass Message and add properties.
-    The IOP framework provides the persistence to objects derived from the Message class.
     """
 
     pass

@@ -12,6 +12,8 @@ from iris_persistence import Model
 from iris_persistence.models import ModelMeta
 from iris_persistence.runtime import get_runtime
 
+from ..runtime.environment import prepend_sys_path
+
 DEFAULT_SUPERCLASS = "Ens.MessageBody"
 DEFAULT_SYNC_MODE = "extend"
 MESSAGE_KIND_PARAMETER = "IOP_MESSAGE_KIND"
@@ -510,11 +512,7 @@ def _decode_iris_identifier(value: str) -> str:
 
 
 def _prepend_sys_path(path: str) -> None:
-    normalized_path = os.path.abspath(os.path.normpath(path))
-    while normalized_path in sys.path:
-        sys.path.remove(normalized_path)
-    sys.path.insert(0, normalized_path)
-    importlib.invalidate_caches()
+    prepend_sys_path(path)
 
 
 def _import_module_from_classpath(module_name: str, python_classpath: str):
