@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `PollingBusinessService` for `iop` and `grongier.pex` to create scheduled polling business services without manually returning `Ens.InboundAdapter`.
 - Add `iop --migrate --dry-run` / `--explain` to print and validate the migration plan without writing to IRIS.
 - Add Pythonic component setting metadata with `setting(...)`, `Setting`, `Category`, and `controls` helpers for IRIS production categories, descriptions, required flags, and editor controls.
+- Add `Production` module: a Python DSL for authoring, importing, diffing, and managing IRIS interoperability production topology entirely from Python. Declare components, ports, and routing with `service()`, `operation()`, `process()`, `connect()`, and `connect_add()`; drive the full production lifecycle (`start`, `stop`, `restart`, `test`, `diff`, `apply`); and export the topology as a typed graph (`ProductionGraph`, `GraphEdge`, `GraphNode`).
 
 ### Changed
 - Register `PollingBusinessService` classes through package/file migration.
