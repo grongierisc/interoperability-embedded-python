@@ -24,9 +24,11 @@ def production_to_dict(production) -> dict[str, Any]:
 
 
 def production_to_xml(production) -> str:
-    from ..migration.utils import _Utils
+    from ..migration import utils as migration_utils
 
-    return _Utils.dict_to_xml({"Production": production_to_dict(production)[production.name]})
+    return migration_utils.dict_to_xml(
+        {"Production": production_to_dict(production)[production.name]}
+    )
 
 
 def production_graph(production) -> ProductionGraph:

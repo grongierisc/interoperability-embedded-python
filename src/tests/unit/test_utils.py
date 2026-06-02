@@ -1,4 +1,5 @@
 """Unit tests for _Utils — no live IRIS instance required."""
+
 import json
 import os
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ import pytest
 from iop import BusinessOperation, Field, PersistentMessage, Production
 from iop.messages.base import _Message as Message
 from iop.messages.base import _PydanticMessage as PydanticMessage
-from iop.migration.utils import _Utils
+from iop.migration import utils as migration_utils
 
 
 @pytest.fixture
@@ -19,20 +20,20 @@ def test_path():
 
 @pytest.fixture
 def register_path(test_path):
-    return os.path.join(test_path, '..', 'fixtures')
+    return os.path.join(test_path, "..", "fixtures")
 
 
 class TestFileOperations:
     def test_filename_to_module(self):
-        assert _Utils.filename_to_module('bo.py') == 'bo'
+        assert migration_utils.filename_to_module("bo.py") == "bo"
 
 
 class TestComponentRegistration:
     def test_register_component_fails_on_iris_error(self, register_path):
-        with patch('iris.cls', side_effect=RuntimeError):
+        with patch("iris.cls", side_effect=RuntimeError):
             with pytest.raises(RuntimeError):
-                _Utils.register_component(
-                    'bo', 'EmailOperation', register_path, 1, 'UnitTest.EmailOperation'
+                migration_utils.register_component(
+                    "bo", "EmailOperation", register_path, 1, "UnitTest.EmailOperation"
                 )
 
     def test_register_file_detects_polling_business_service(self, tmp_path):
@@ -43,8 +44,8 @@ class TestComponentRegistration:
             "    pass\n"
         )
 
-        with patch.object(_Utils, "register_component") as mock_register:
-            _Utils._register_file("bs.py", str(tmp_path), 1, "Python")
+        with patch.object(migration_utils, "register_component") as mock_register:
+            migration_utils._register_file("bs.py", str(tmp_path), 1, "Python")
 
         mock_register.assert_called_once_with(
             "bs", "MyService", str(tmp_path), 1, "Python.bs.MyService"
@@ -52,14 +53,17 @@ class TestComponentRegistration:
 
 
 class TestPathOperations:
-    @pytest.mark.parametrize("module,path,expected", [
-        ('module', '/path/to', '/path/to/module.py'),
-        ('pkg.module', '/path/to', '/path/to/pkg/module.py'),
-        ('.module', '/path/to', '/path/to/module.py'),
-        ('..module', '/path/to/sub', '/path/to/module.py'),
-    ])
+    @pytest.mark.parametrize(
+        "module,path,expected",
+        [
+            ("module", "/path/to", "/path/to/module.py"),
+            ("pkg.module", "/path/to", "/path/to/pkg/module.py"),
+            (".module", "/path/to", "/path/to/module.py"),
+            ("..module", "/path/to/sub", "/path/to/module.py"),
+        ],
+    )
     def test_guess_path(self, module, path, expected):
-        result = _Utils.guess_path(module, path)
+        result = migration_utils.guess_path(module, path)
         assert os.path.normpath(result) == os.path.normpath(expected)
 
 
@@ -68,23 +72,25 @@ class TestModuleOperations:
         module_file = tmp_path / "test_module.py"
         module_file.write_text("TEST_VARIABLE = 'test_value'")
 
-        module = _Utils.import_module_from_path("test_module", str(module_file))
-        assert module.TEST_VARIABLE == 'test_value'
+        module = migration_utils.import_module_from_path(
+            "test_module", str(module_file)
+        )
+        assert module.TEST_VARIABLE == "test_value"
 
     def test_import_module_invalid_path(self):
         with pytest.raises(ValueError):
-            _Utils.import_module_from_path("invalid", "relative/path")
+            migration_utils.import_module_from_path("invalid", "relative/path")
 
     def test_load_settings_uses_file_stem_as_module_name(self, tmp_path):
         demo_file = tmp_path / "demo.py"
         demo_file.write_text("VALUE = __name__\n")
 
-        module, path = _Utils._load_settings(str(demo_file))
+        module, path = migration_utils._load_settings(str(demo_file))
         try:
             assert module.__name__ == "demo"
             assert module.VALUE == "demo"
         finally:
-            _Utils._cleanup_sys_path(path)
+            migration_utils._cleanup_sys_path(path)
 
 
 class TestProductionOperations:
@@ -92,17 +98,19 @@ class TestProductionOperations:
         class TestComponent:
             pass
 
-        production_list = [{
-            "TestProduction": {
-                "Item": [{"@Name": "TestItem", "@ClassName": TestComponent}]
+        production_list = [
+            {
+                "TestProduction": {
+                    "Item": [{"@Name": "TestItem", "@ClassName": TestComponent}]
+                }
             }
-        }]
+        ]
 
-        with patch('iop.migration.utils._Utils.register_component') as mock_register:
+        with patch("iop.migration.utils.register_component") as mock_register:
             with patch(
-                'iop.migration.utils._Utils.register_production_definition'
+                "iop.migration.utils.register_production_definition"
             ) as mock_prod:
-                _Utils.set_productions_settings(production_list, str(tmp_path))
+                migration_utils.set_productions_settings(production_list, str(tmp_path))
                 mock_register.assert_called_once()
                 mock_prod.assert_called_once()
 
@@ -119,20 +127,20 @@ class TestSchemaOperations:
         class FailMessage:
             pass
 
-        with patch('iop.migration.utils._Utils.register_schema') as mock_register:
-            _Utils.register_message_schema(TestMessage)
+        with patch("iop.migration.utils.register_schema") as mock_register:
+            migration_utils.register_message_schema(TestMessage)
             mock_register.assert_called_once()
 
-        with patch('iop.migration.utils._Utils.register_schema') as mock_register:
-            _Utils.register_message_schema(TestMessageSchema)
+        with patch("iop.migration.utils.register_schema") as mock_register:
+            migration_utils.register_message_schema(TestMessageSchema)
             mock_register.assert_called_once()
 
         with pytest.raises(ValueError):
-            _Utils.register_message_schema(FailMessage)
+            migration_utils.register_message_schema(FailMessage)
 
     def test_register_schema(self):
-        with patch('iris.cls') as mock_cls:
-            _Utils.register_schema("test.schema", "{}", "test")
+        with patch("iris.cls") as mock_cls:
+            migration_utils.register_schema("test.schema", "{}", "test")
             mock_cls.return_value.Import.assert_called_once()
 
 
@@ -157,7 +165,7 @@ class TestMigrationPlan:
             "PRODUCTIONS = [{'Demo.Production': {'Item': []}}]\n"
         )
 
-        plan = _Utils.explain_migration(
+        plan = migration_utils.explain_migration(
             str(settings_file), mode="LOCAL", namespace="USER"
         )
 
@@ -166,8 +174,7 @@ class TestMigrationPlan:
         assert "CLASSES:" in plan
         assert "Python.MyOperation -> settings.MyOperation (component)" in plan
         assert (
-            "Demo.Msg.NativeOrder -> settings.NativeOrder (PersistentMessage)"
-            in plan
+            "Demo.Msg.NativeOrder -> settings.NativeOrder (PersistentMessage)" in plan
         )
         assert "SCHEMAS:\n  settings.DtlMessage" in plan
         assert "PRODUCTIONS:\n  Demo.Production" in plan
@@ -185,7 +192,7 @@ class TestMigrationPlan:
             "PRODUCTIONS = [prod]\n"
         )
 
-        plan = _Utils.explain_migration(str(demo_file), mode="LOCAL")
+        plan = migration_utils.explain_migration(str(demo_file), mode="LOCAL")
 
         assert "Demo.Production" in plan
         assert "demo.MyOperation" in plan
@@ -200,7 +207,7 @@ class TestMigrationPlan:
             CLASSES = {"Python.TestMessage": TestMessage}
 
         with pytest.raises(ValueError, match="cannot be registered in CLASSES"):
-            _Utils._build_migration_plan(Settings, os.getcwd())
+            migration_utils._build_migration_plan(Settings, os.getcwd())
 
     def test_register_settings_components_and_schemas(self, tmp_path):
         class MyOperation(BusinessOperation):
@@ -220,10 +227,16 @@ class TestMigrationPlan:
             }
             SCHEMAS = [DtlMessage]
 
-        with patch.object(_Utils, "register_component") as mock_component:
-            with patch.object(_Utils, "register_persistent_message") as mock_native:
-                with patch.object(_Utils, "register_message_schema") as mock_schema:
-                    _Utils._register_settings_components(Settings, str(tmp_path))
+        with patch.object(migration_utils, "register_component") as mock_component:
+            with patch.object(
+                migration_utils, "register_persistent_message"
+            ) as mock_native:
+                with patch.object(
+                    migration_utils, "register_message_schema"
+                ) as mock_schema:
+                    migration_utils._register_settings_components(
+                        Settings, str(tmp_path)
+                    )
 
         mock_component.assert_called_once_with(
             MyOperation.__module__,
@@ -244,9 +257,8 @@ class TestMigrationPlan:
         class NativeOrder(PersistentMessage):
             OrderId: str = Field(required=True)
 
-        prod = (
-            Production("Demo.Production")
-            .message("Demo.Msg.NativeOrder", NativeOrder)
+        prod = Production("Demo.Production").message(
+            "Demo.Msg.NativeOrder", NativeOrder
         )
         prod.operation(MyOperation)
 
@@ -266,17 +278,19 @@ class TestMigrationPlan:
             calls.append("production")
 
         with patch.object(
-            _Utils, "register_persistent_message", side_effect=record_message
+            migration_utils, "register_persistent_message", side_effect=record_message
         ) as mock_native:
             with patch.object(
-                _Utils, "register_component", side_effect=record_component
+                migration_utils, "register_component", side_effect=record_component
             ):
                 with patch.object(
-                    _Utils,
+                    migration_utils,
                     "register_production_definition",
                     side_effect=record_production,
                 ):
-                    _Utils._register_settings_components(Settings, str(tmp_path))
+                    migration_utils._register_settings_components(
+                        Settings, str(tmp_path)
+                    )
 
         mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
         assert calls == ["message", "component", "production"]
@@ -296,9 +310,11 @@ class TestMigrationPlan:
             CLASSES = {"Demo.Msg.NativeOrder": NativeOrder}
             PRODUCTIONS = [prod]
 
-        with patch.object(_Utils, "register_persistent_message") as mock_native:
-            with patch.object(_Utils, "register_production_definition"):
-                _Utils._register_settings_components(Settings, str(tmp_path))
+        with patch.object(
+            migration_utils, "register_persistent_message"
+        ) as mock_native:
+            with patch.object(migration_utils, "register_production_definition"):
+                migration_utils._register_settings_components(Settings, str(tmp_path))
 
         mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
 
@@ -313,17 +329,21 @@ class TestMigrationPlan:
             NativeOrder,
         )
 
-        _Utils._persistent_message_registry.clear()
+        migration_utils._persistent_message_registry.clear()
         try:
-            with patch.object(_Utils, "register_persistent_message") as mock_native:
-                _Utils.set_classes_settings(
+            with patch.object(
+                migration_utils, "register_persistent_message"
+            ) as mock_native:
+                migration_utils.set_classes_settings(
                     {"Demo.Msg.NativeOrder": NativeOrder},
                     root_path=str(tmp_path),
                 )
-                with patch.object(_Utils, "register_production_definition"):
-                    _Utils.set_productions_settings([prod], root_path=str(tmp_path))
+                with patch.object(migration_utils, "register_production_definition"):
+                    migration_utils.set_productions_settings(
+                        [prod], root_path=str(tmp_path)
+                    )
         finally:
-            _Utils._persistent_message_registry.clear()
+            migration_utils._persistent_message_registry.clear()
 
         mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
 
@@ -338,21 +358,23 @@ class TestMigrationPlan:
             NativeOrder,
         )
 
-        _Utils._persistent_message_registry.clear()
+        migration_utils._persistent_message_registry.clear()
         try:
-            with patch.object(_Utils, "register_persistent_message"):
-                _Utils.set_classes_settings(
+            with patch.object(migration_utils, "register_persistent_message"):
+                migration_utils.set_classes_settings(
                     {"Demo.Msg.NativeOrder": NativeOrder},
                     root_path=str(tmp_path),
                 )
                 with pytest.raises(ValueError, match="already registered"):
-                    with patch.object(_Utils, "register_production_definition"):
-                        _Utils.set_productions_settings(
+                    with patch.object(
+                        migration_utils, "register_production_definition"
+                    ):
+                        migration_utils.set_productions_settings(
                             [prod],
                             root_path=str(tmp_path),
                         )
         finally:
-            _Utils._persistent_message_registry.clear()
+            migration_utils._persistent_message_registry.clear()
 
     def test_register_settings_components_rejects_persistent_message_conflicts(
         self, tmp_path
@@ -369,9 +391,9 @@ class TestMigrationPlan:
             CLASSES = {"Demo.Msg.NativeOrder": NativeOrder}
             PRODUCTIONS = [prod]
 
-        with patch.object(_Utils, "register_persistent_message"):
+        with patch.object(migration_utils, "register_persistent_message"):
             with pytest.raises(ValueError, match="already registered"):
-                _Utils._register_settings_components(Settings, str(tmp_path))
+                migration_utils._register_settings_components(Settings, str(tmp_path))
 
     def test_register_production_definition_uses_json_object_helper(self):
         payload = {"Production": {"@Name": "Demo.Production", "Item": []}}
@@ -380,7 +402,7 @@ class TestMigrationPlan:
             mock_iris = mock_get_iris.return_value
             mock_iris.system.Status.IsError.return_value = False
 
-            _Utils.register_production_definition("Demo.Production", payload)
+            migration_utils.register_production_definition("Demo.Production", payload)
 
         helper = mock_iris.cls.return_value
         helper.CreateProductionFromJSON.assert_called_once()
@@ -391,24 +413,27 @@ class TestMigrationPlan:
 class TestXmlToJson:
     def test_production_key_replaced_with_name(self):
         xml = '<Production Name="MyApp.Production"><Item Name="A"/></Production>'
-        result = _Utils.xml_to_json(xml)
+        result = migration_utils.xml_to_json(xml)
         import json
+
         data = json.loads(result)
         assert "MyApp.Production" in data
         assert "Production" not in data
 
     def test_none_values_become_empty_string(self):
         xml = '<Production Name="P"><Item/></Production>'
-        result = _Utils.xml_to_json(xml)
+        result = migration_utils.xml_to_json(xml)
         import json
+
         data = json.loads(result)
         # should not raise and values should not be None
         assert data["P"]["Item"] is not None
 
     def test_fallback_key_when_no_name_attr(self):
         xml = '<Production><Item Name="A"/></Production>'
-        result = _Utils.xml_to_json(xml)
+        result = migration_utils.xml_to_json(xml)
         import json
+
         data = json.loads(result)
         # falls back to 'Production' when @Name is absent
         assert "Production" in data

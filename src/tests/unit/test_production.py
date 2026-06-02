@@ -20,7 +20,7 @@ from iop import (
     target,
 )
 from iop.components.business_host import _BusinessHost
-from iop.migration.utils import _Utils
+from iop.migration import utils as migration_utils
 
 
 @dataclass
@@ -237,9 +237,7 @@ def test_progressive_component_connect_add_appends_fanout_targets():
         .connect_add("Output", second)
     )
 
-    assert file.host_settings["Output"] == (
-        "FirstOrderOperation,SecondOrderOperation"
-    )
+    assert file.host_settings["Output"] == ("FirstOrderOperation,SecondOrderOperation")
     assert [edge.target for edge in prod.graph().edges] == [
         "FirstOrderOperation",
         "SecondOrderOperation",
@@ -277,9 +275,9 @@ def test_component_ref_supports_python_adapter_class_registration(tmp_path):
     )
     assert prod.adapter_registrations() == (service,)
 
-    with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production_definition"):
-            _Utils.set_productions_settings([prod], str(tmp_path))
+    with patch.object(migration_utils, "register_component") as mock_register:
+        with patch.object(migration_utils, "register_production_definition"):
+            migration_utils.set_productions_settings([prod], str(tmp_path))
 
     assert mock_register.call_count == 2
     assert mock_register.call_args_list[1].args == (
@@ -358,9 +356,7 @@ def test_production_test_reports_existing_stopped_production():
         "Production": "Demo.Production",
         "Status": "stopped",
     }
-    director.list_productions.return_value = {
-        "Demo.Production": {"Status": "Stopped"}
-    }
+    director.list_productions.return_value = {"Demo.Production": {"Status": "Stopped"}}
     prod = Production("Demo.Production", director=director)
     file = prod.service("FileInput", FileService)
     orders = prod.operation(OrderOperation)
@@ -469,8 +465,7 @@ def test_production_component_lifecycle_methods_are_scoped_to_this_production():
     with pytest.raises(
         RuntimeError,
         match=(
-            "Cannot restart component 'OrderOperation' "
-            "in production 'Demo.Production'"
+            "Cannot restart component 'OrderOperation' in production 'Demo.Production'"
         ),
     ):
         prod.restart_component(orders)
@@ -1113,7 +1108,7 @@ def test_production_sync_registers_current_definition():
     prod = Production("Demo.Production")
     prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 
-    with patch.object(_Utils, "set_productions_settings") as mock_set:
+    with patch.object(migration_utils, "set_productions_settings") as mock_set:
         with patch("iop.runtime.local._LocalDirector.update_production") as mock_update:
             prod.sync(root_path="/tmp/iop")
 
@@ -1131,7 +1126,7 @@ def test_production_sync_restores_namespace_env(monkeypatch):
         seen.append(os.environ.get("IRISNAMESPACE"))
 
     with patch.object(
-        _Utils,
+        migration_utils,
         "set_productions_settings",
         side_effect=capture_namespace,
     ):
@@ -1178,9 +1173,11 @@ def test_set_productions_settings_keeps_legacy_dicts_immutable(tmp_path):
     ]
     original = copy.deepcopy(production_list)
 
-    with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production_definition") as mock_prod:
-            _Utils.set_productions_settings(production_list, str(tmp_path))
+    with patch.object(migration_utils, "register_component") as mock_register:
+        with patch.object(
+            migration_utils, "register_production_definition"
+        ) as mock_prod:
+            migration_utils.set_productions_settings(production_list, str(tmp_path))
 
     assert production_list == original
     mock_register.assert_called_once()
@@ -1192,9 +1189,11 @@ def test_set_productions_settings_supports_mixed_legacy_and_objects(tmp_path):
     prod = Production("Object.Production")
     prod.operation(OrderOperation)
 
-    with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production_definition") as mock_prod:
-            _Utils.set_productions_settings([legacy, prod], str(tmp_path))
+    with patch.object(migration_utils, "register_component") as mock_register:
+        with patch.object(
+            migration_utils, "register_production_definition"
+        ) as mock_prod:
+            migration_utils.set_productions_settings([legacy, prod], str(tmp_path))
 
     mock_register.assert_called_once_with(
         OrderOperation.__module__,
@@ -1214,7 +1213,7 @@ def test_migration_plan_lists_production_objects_and_auto_components():
         CLASSES = {}
         PRODUCTIONS = [prod]
 
-    plan = _Utils._build_migration_plan(Settings, ".")
+    plan = migration_utils._build_migration_plan(Settings, ".")
 
     assert "Object.Production" in plan["productions"]
     assert (
@@ -1232,14 +1231,13 @@ def test_migration_plan_lists_production_persistent_messages():
         CLASSES = {}
         PRODUCTIONS = [prod]
 
-    plan = _Utils._build_migration_plan(Settings, ".")
+    plan = migration_utils._build_migration_plan(Settings, ".")
 
     assert "Object.Production" in plan["productions"]
     assert (
         "Demo.Msg.NativeOrderMessage"
         + f" -> {NativeOrderMessage.__module__}.NativeOrderMessage "
-        "(PersistentMessage)"
-        in plan["classes"]
+        "(PersistentMessage)" in plan["classes"]
     )
 
 
@@ -1260,15 +1258,18 @@ def test_production_object_auto_registration_deduplicates_shared_classes(tmp_pat
         CLASSES = {}
         PRODUCTIONS = [prod]
 
-    plan = _Utils._build_migration_plan(Settings, ".")
-    assert plan["classes"].count(
-        "Python.SharedOrderOperation"
-        + f" -> {OrderOperation.__module__}.OrderOperation (component)"
-    ) == 1
+    plan = migration_utils._build_migration_plan(Settings, ".")
+    assert (
+        plan["classes"].count(
+            "Python.SharedOrderOperation"
+            + f" -> {OrderOperation.__module__}.OrderOperation (component)"
+        )
+        == 1
+    )
 
-    with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production_definition"):
-            _Utils.set_productions_settings([prod], str(tmp_path))
+    with patch.object(migration_utils, "register_component") as mock_register:
+        with patch.object(migration_utils, "register_production_definition"):
+            migration_utils.set_productions_settings([prod], str(tmp_path))
 
     mock_register.assert_called_once_with(
         OrderOperation.__module__,

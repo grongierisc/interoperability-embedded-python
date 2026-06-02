@@ -1,9 +1,10 @@
-from iop import Production
-from iop.runtime.local import _LocalDirector
-from iop.migration.utils import _Utils
-import sys
 import os
+import sys
 import timeit
+
+from iop import Production
+from iop.migration import utils as migration_utils
+from iop.runtime.local import _LocalDirector
 
 
 def _start_for_test(production):
@@ -177,7 +178,7 @@ class TestBenchIoP:
         path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "bench", "settings.py"
         )
-        _Utils.migrate(path)
+        migration_utils.migrate(path)
         cls.production = Production.from_dict(
             sys.modules["settings"].BENCH_PRODUCTION.to_dict(),
             director=_LocalDirector(),

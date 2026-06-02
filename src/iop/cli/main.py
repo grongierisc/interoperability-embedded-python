@@ -8,7 +8,7 @@ from importlib.metadata import version
 
 import requests
 
-from ..migration.utils import _Utils
+from ..migration import utils as migration_utils
 from ..runtime.local import _LocalDirector
 from ..runtime.protocol import DirectorProtocol
 from ..runtime.remote import _RemoteDirector, get_remote_settings
@@ -219,21 +219,21 @@ class Command:
             mode = "REMOTE" if self._is_remote else "LOCAL"
             if self.args.migration_plan:
                 print(
-                    _Utils.explain_migration(
+                    migration_utils.explain_migration(
                         migrate_path, mode=mode, namespace=self.director.namespace
                     )
                 )
                 return
             if self._is_remote:
                 print(
-                    _Utils.explain_migration(
+                    migration_utils.explain_migration(
                         migrate_path, mode=mode, namespace=self.director.namespace
                     )
                 )
             self.director.migrate(migrate_path)
             if self._is_remote:
                 print(
-                    _Utils.format_migration_success(
+                    migration_utils.format_migration_success(
                         migrate_path, namespace=self.director.namespace
                     )
                 )
@@ -276,6 +276,7 @@ class Command:
             print(f"\nNamespace: {self.director.namespace}")
         except Exception:
             logging.warning("Could not retrieve default production.")
+
 
 def main(argv=None) -> None:
     parser = create_parser()

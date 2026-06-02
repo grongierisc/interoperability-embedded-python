@@ -1,9 +1,9 @@
-from iop import Production
-from iop.runtime.local import _LocalDirector
-from iop.migration.utils import _Utils
-
 import os
 import sys
+
+from iop import Production
+from iop.migration import utils as migration_utils
+from iop.runtime.local import _LocalDirector
 
 
 def _start_for_test(production):
@@ -27,8 +27,10 @@ def _stop_if_running(production):
 class TestProductionSettings:
     @classmethod
     def setup_class(cls):
-        path = os.path.join(os.path.dirname(__file__), '..', '..', 'fixtures', 'settings.py')
-        _Utils.migrate(path)
+        path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "fixtures", "settings.py"
+        )
+        migration_utils.migrate(path)
         cls.production = Production.from_dict(
             sys.modules["settings"].TEST_SETTING_PRODUCTION.to_dict(),
             director=_LocalDirector(),
@@ -38,7 +40,7 @@ class TestProductionSettings:
 
     def test_my_none_var(self):
         rsp = self.operation.test(
-            classname='iris.Ens.StringRequest',
+            classname="iris.Ens.StringRequest",
             body="my_none_var",
         )
         assert rsp.value == None
@@ -46,15 +48,14 @@ class TestProductionSettings:
     def test_my_str_var(self):
         rsp = self.production.test_component(
             self.operation,
-            classname='iris.Ens.StringRequest',
+            classname="iris.Ens.StringRequest",
             body="my_str_var",
         )
         assert rsp.value == "bar"
-
 
     @classmethod
     def teardown_class(cls):
         try:
             _stop_if_running(cls.production)
         finally:
-            Production('test').set_default()
+            Production("test").set_default()

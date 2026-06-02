@@ -97,16 +97,18 @@ def set_default(production) -> None:
     _ProductionRuntime(production).director.set_default_production(production.name)
 
 
-def sync(production, *, root_path: str | None = None, update_runtime: bool = True) -> None:
+def sync(
+    production, *, root_path: str | None = None, update_runtime: bool = True
+) -> None:
     if _has_remote_director(production):
         raise NotImplementedError(
             "Production.sync() can only register directly with local IRIS. "
             "Use `iop --migrate <settings_file>` for remote migrations."
         )
-    from ..migration.utils import _Utils
+    from ..migration import utils as migration_utils
 
     with _temporary_env("IRISNAMESPACE", production.namespace):
-        _Utils.set_productions_settings([production], root_path)
+        migration_utils.set_productions_settings([production], root_path)
         if update_runtime:
             from ..runtime.local import _LocalDirector
 
@@ -151,7 +153,11 @@ def raise_if_existing_production_not_running(production, director: Any) -> None:
     if production_name == production.name and str(state).lower() == "running":
         return
 
-    if production_name and production_name != production.name and state_lower == "running":
+    if (
+        production_name
+        and production_name != production.name
+        and state_lower == "running"
+    ):
         raise RuntimeError(
             f"Production {production.name!r} exists but is not running "
             f"(currently running production is {production_name!r}). "

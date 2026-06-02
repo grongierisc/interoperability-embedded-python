@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from ..migration.utils import _Utils
+from ..migration import utils as _migration_utils
 from ..runtime import iris as _iris
 from .base import _Message
 
@@ -49,7 +49,7 @@ class MessageSerializer:
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
 
         if hasattr(msg, "buffer") and len(json_string) > msg.buffer:
-            msg.json = _Utils.string_to_stream(json_string, msg.buffer)
+            msg.json = _migration_utils.string_to_stream(json_string, msg.buffer)
         else:
             msg.json = json_string
         return msg
@@ -64,7 +64,7 @@ class MessageSerializer:
         else:
             msg = _iris.get_iris().cls("IOP.PickleMessage")._New()
         msg.classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
-        msg.jstr = _Utils.string_to_stream(pickle_string)
+        msg.jstr = _migration_utils.string_to_stream(pickle_string)
         return msg
 
     @staticmethod
@@ -106,7 +106,7 @@ class MessageSerializer:
             )
 
         json_string = (
-            _Utils.stream_to_string(serial.json)
+            _migration_utils.stream_to_string(serial.json)
             if serial.type == "Stream"
             else serial.json
         )
@@ -125,7 +125,7 @@ class MessageSerializer:
 
     @staticmethod
     def _deserialize_pickle(serial: Any) -> Any:
-        string = _Utils.stream_to_string(serial.jstr)
+        string = _migration_utils.stream_to_string(serial.jstr)
         return pickle.loads(codecs.decode(string.encode(), "base64"))
 
     @staticmethod

@@ -17,7 +17,7 @@ from iop.messages.persistent import (
     python_classname_to_iris_classname,
     register_persistent_message_class,
 )
-from iop.migration.utils import _Utils
+from iop.migration import utils as migration_utils
 
 
 @pytest.fixture(autouse=True)
@@ -30,9 +30,9 @@ def fake_runtime():
     persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE.clear()
     persistent_message_module._IRIS_PARAMETER_CACHE.clear()
     persistent_message_module._AUTO_SYNCED.clear()
-    _Utils._persistent_message_registry.clear()
+    migration_utils._persistent_message_registry.clear()
     yield
-    _Utils._persistent_message_registry.clear()
+    migration_utils._persistent_message_registry.clear()
     configure_default_runtime(None)
 
 
@@ -66,7 +66,7 @@ def test_model_is_public_for_nested_objects():
 
 def test_classes_registration_uses_key_as_iris_classname():
     with patch.object(NativeOrderMessage, "sync_schema", classmethod(lambda cls: None)):
-        _Utils.set_classes_settings(
+        migration_utils.set_classes_settings(
             {"Demo.Msg.NativeOrderMessage": NativeOrderMessage},
             root_path=".",
         )

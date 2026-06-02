@@ -3,11 +3,11 @@
 from unittest.mock import MagicMock
 
 from iop import Field, PersistentMessage
-from iop.messages import persistent as persistent_message_module
 from iop.components.business_operation import _BusinessOperation
+from iop.messages import persistent as persistent_message_module
 from iop.messages.dispatch import dispatch_deserializer, dispatch_serializer
 from iop.messages.persistent import register_persistent_message_class
-from iop.migration.utils import _Utils
+from iop.migration import utils as migration_utils
 
 
 class NativeOrderMessage(PersistentMessage):
@@ -26,7 +26,7 @@ def _clear_persistent_message_runtime_caches():
 
 
 def test_persistent_message_native_round_trip():
-    _Utils.setup()
+    migration_utils.setup()
     register_persistent_message_class(
         NativeOrderMessage,
         "UnitTest.NativeOrderMessage",
@@ -47,7 +47,7 @@ def test_persistent_message_native_round_trip():
 
 
 def test_persistent_message_typed_dispatch():
-    _Utils.setup()
+    migration_utils.setup()
     register_persistent_message_class(
         NativeOrderMessage,
         "UnitTest.NativeOrderMessage",
