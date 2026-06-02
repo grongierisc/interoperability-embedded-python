@@ -254,6 +254,8 @@ class MyBS(BusinessService):
         self.send_request_async(&quot;Python.MyBO&quot;, msg)
         self.log_info(&quot;Request sent asynchronously&quot;)
 </code></pre>
+<p>For adapter-specific services, you can still override <code>on_process_input()</code>
+directly. For regular message-driven services, prefer <code>on_message()</code>.</p>
 <h3 id="function-signature-for-businessprocess">Function signature (for BusinessProcess)</h3>
 <pre><code class="language-python">def send_request_async(self, target: str, request: Any, description: Optional[str]=None, completion_key: Optional[str]=None, response_required: bool=True) -&gt; None:
     &quot;&quot;&quot;Send the specified message to the target business process or business operation asynchronously.

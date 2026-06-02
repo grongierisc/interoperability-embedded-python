@@ -223,14 +223,21 @@ CLASSES = {
 <p><strong>Key Methods:</strong></p>
 <ul>
 <li>
-<p><code>on_process_input(self, message_input: Message) -&gt; None</code></p>
+<p><code>on_message(self, request: Message) -&gt; Message | None</code></p>
 <ul>
-<li>Handles incoming messages from adapter</li>
+<li>Handles incoming service messages</li>
 <li>Parameters:<ul>
-<li><code>message_input</code>: The incoming message to process</li>
+<li><code>request</code>: The incoming message to process</li>
 </ul>
 </li>
-<li>Returns: None</li>
+<li>Returns: Optional response message</li>
+</ul>
+</li>
+<li>
+<p><code>on_process_input(self, message_input: Message | None = None) -&gt; Message | None</code></p>
+<ul>
+<li>Low-level IRIS ProcessInput hook</li>
+<li>By default, delegates to <code>on_message</code></li>
 </ul>
 </li>
 <li>
@@ -263,8 +270,8 @@ CLASSES = {
 <pre><code class="language-python">from iop import BusinessService
 
 class MyService(BusinessService):
-    def on_process_input(self, message_input):
-        self.log_info(f&quot;Received: {message_input}&quot;)
+    def on_message(self, request):
+        self.log_info(f&quot;Received: {request}&quot;)
 </code></pre>
 <p><strong>Polling Example:</strong></p>
 <pre><code class="language-python">from iop import PollingBusinessService, Message
@@ -276,14 +283,17 @@ class MyRequest(Message):
     data: str = None
 
 class MyService(PollingBusinessService):
-    def on_process_input(self, message_input):
-        self.log_info(f&quot;Received: {message_input}&quot;)
-        with open(message_input.file_path, 'r') as file:
+    InputFile = &quot;/data/input.txt&quot;
+
+    def on_poll(self):
+        with open(self.InputFile, 'r') as file:
             data = file.read()
         request = MyRequest(data=data)
         self.send_request_async(&quot;MyBusinessOperation&quot;, request)
 </code></pre>
-<p><code>PollingBusinessService</code> uses the default IRIS inbound adapter.</p>
+<p><code>PollingBusinessService</code> uses the default IRIS inbound adapter. Override
+<code>on_poll()</code> for scheduled polling, or override <code>on_process_input()</code> directly
+when you need adapter-level access.</p>
 <h3 id="component-settings">Component Settings</h3>
 <p>Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use <code>setting(...)</code> when you want to control how a setting appears in the IRIS production UI.</p>
 <pre><code class="language-python">from iop import BusinessService, Category, controls, setting
@@ -690,8 +700,12 @@ class MyProcess(BusinessProcess):
 class FileService(PollingBusinessService):
     Output = target(&quot;orders&quot;)
 
+    def on_poll(self):
+        pass
+
 class OrderOperation(BusinessOperation):
-    pass
+    def on_message(self, request):
+        return request
 
 prod = Production(&quot;Demo.Production&quot;)
 file = prod.service(&quot;FileInput&quot;, FileService)

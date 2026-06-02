@@ -228,10 +228,10 @@ CLASSES = {
 
 class MyBusinessService(BusinessService):
 
-    def on_process_input(self, message_input: 'MyRequest'):
+    def on_message(self, message_input: 'MyRequest'):
         # This method is called when the service is called
-        self.log_info(&quot;[Python] MyBusinessService:on_process_input() is called with message: &quot; + message_input.request_string)
-        response = MyResponse(&quot;MyBusinessService:on_process_input() echos&quot;)
+        self.log_info(&quot;[Python] MyBusinessService:on_message() is called with message: &quot; + message_input.request_string)
+        response = MyResponse(&quot;MyBusinessService:on_message() echos&quot;)
         return response
 </code></pre>
 <h3 id="polling-business-service">Polling Business Service</h3>
@@ -240,9 +240,9 @@ class MyBusinessService(BusinessService):
 
 class MyBusinessService(PollingBusinessService):
 
-    def on_process_input(self):
+    def on_poll(self):
         # This method is called by the scheduler
-        self.log_info(&quot;[Python] MyBusinessService:on_process_input() is called&quot;)
+        self.log_info(&quot;[Python] MyBusinessService:on_poll() is called&quot;)
 </code></pre>
 <h2 id="flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</h2>
 <p>To send a message to a business service, use the following code:</p>

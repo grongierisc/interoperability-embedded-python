@@ -428,12 +428,14 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Refactor remote runtime support into dedicated client, director, migration, settings, and setup modules.</li>
 <li>Improve production object migration by automatically registering referenced component, adapter, and <code>PersistentMessage</code> classes with deduplication.</li>
 <li>Improve business host connection discovery and message serialization error handling.</li>
+<li>Improve service hook ergonomics: <code>BusinessService.on_process_input()</code> now delegates to <code>on_message()</code>, and <code>PollingBusinessService</code> now recommends <code>on_poll()</code> for scheduled polling.</li>
 <li>Update demos, tests, and documentation to use the <code>iop</code> package layout, snake_case hooks, and Pythonic production definitions.</li>
 </ul>
 <h3 id="deprecated">Deprecated</h3>
 <ul>
 <li>Deprecate the static <code>iop.Utils</code> / <code>iop.migration.utils._Utils</code> facades in favor of functions in <code>iop.migration.utils</code>; these facades are scheduled for removal in v5.0.</li>
 <li>Deprecate the static <code>iop.Director</code> / <code>iop.runtime.director._Director</code> facades in favor of functions in <code>iop.runtime.director</code>; these facades are scheduled for removal in v5.0.</li>
+<li>Deprecate silent default no-op handlers for unimplemented <code>on_message()</code>, <code>on_process_input()</code>, and <code>on_poll()</code> hooks; they now warn and are scheduled to raise in v5.0.</li>
 </ul>
 <h3 id="fixed">Fixed</h3>
 <ul>
