@@ -1,7 +1,22 @@
 import importlib
+import warnings
+from inspect import signature
 
 from ..messages.decorators import input_deserializer, output_serializer
 from .business_host import _BusinessHost
+
+
+def _accepts_process_input_argument(method) -> bool:
+    try:
+        return len(signature(method).parameters) > 0
+    except (TypeError, ValueError):
+        return True
+
+
+def _call_process_input(method, request):
+    if _accepts_process_input_argument(method):
+        return method(request)
+    return method()
 
 
 class _BusinessService(_BusinessHost):
@@ -25,7 +40,23 @@ class _BusinessService(_BusinessHost):
 
         return
 
-    def on_process_input(self, message_input):
+    def on_message(self, request=None):
+        """Handle a message received by the business service.
+
+        Override this for message-driven services. Adapter-driven services may
+        still override on_process_input() directly when they need the lower
+        level IRIS ProcessInput hook.
+        """
+        warnings.warn(
+            f"{self.__class__.__name__} did not override on_message() or "
+            "on_process_input(); the incoming service message was ignored. "
+            "This default no-op handler will raise NotImplementedError in v5.0.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return None
+
+    def on_process_input(self, message_input=None):
         """Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
         If the business service does not specify an adapter, then the default adapter calls this method with no message
         and the business service is responsible for receiving the data from the external system and validating it.
@@ -34,7 +65,7 @@ class _BusinessService(_BusinessHost):
         message_input: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
             The message can have any structure agreed upon by the inbound adapter and the business service.
         """
-        return None
+        return self.on_message(message_input)
 
     def _set_iris_handles(self, handle_current, handle_partner):
         """For internal use only."""
@@ -50,4 +81,4 @@ class _BusinessService(_BusinessHost):
     @output_serializer
     def _dispatch_on_process_input(self, request):
         """For internal use only."""
-        return self.on_process_input(request)
+        return _call_process_input(self.on_process_input, request)

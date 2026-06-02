@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from iop import BusinessOperation, PollingBusinessService, Message, Production, target
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
 
 
 @dataclass
@@ -11,14 +11,14 @@ class OrderRequest(Message):
 class FileService(PollingBusinessService):
     Output = target("orders")
 
-    def on_process_input(self, message_input):
+    def on_poll(self):
         self.send_request_sync(self.Output, OrderRequest(order_id="777"))
 
 
 class OrderOperation(BusinessOperation):
-    def on_message(self, message_input):
-        print(f"Received order request: {message_input}")
-        return message_input
+    def on_message(self, request):
+        print(f"Received order request: {request}")
+        return request
 
 
 prod = Production("Demo.Production", testing_enabled=True)
@@ -30,4 +30,3 @@ prod.connect(file.Output, orders)
 prod.graph()
 
 PRODUCTIONS = [prod]
-

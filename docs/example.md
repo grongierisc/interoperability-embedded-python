@@ -81,10 +81,10 @@ from iop import BusinessService
 
 class MyBusinessService(BusinessService):
     
-    def on_process_input(self, message_input: 'MyRequest'):
+    def on_message(self, message_input: 'MyRequest'):
         # This method is called when the service is called
-        self.log_info("[Python] MyBusinessService:on_process_input() is called with message: " + message_input.request_string)
-        response = MyResponse("MyBusinessService:on_process_input() echos")
+        self.log_info("[Python] MyBusinessService:on_message() is called with message: " + message_input.request_string)
+        response = MyResponse("MyBusinessService:on_message() echos")
         return response
 ```
 
@@ -97,9 +97,9 @@ from iop import PollingBusinessService
 
 class MyBusinessService(PollingBusinessService):
 
-    def on_process_input(self):
+    def on_poll(self):
         # This method is called by the scheduler
-        self.log_info("[Python] MyBusinessService:on_process_input() is called")
+        self.log_info("[Python] MyBusinessService:on_poll() is called")
 ```
 
 ## Flask app sending a message to an Business Service

@@ -77,11 +77,15 @@ Base class for business services that receive and process incoming data. Busines
 
 **Key Methods:**
 
-- `on_process_input(self, message_input: Message) -> None`
-    - Handles incoming messages from adapter
+- `on_message(self, request: Message) -> Message | None`
+    - Handles incoming service messages
     - Parameters:
-        - `message_input`: The incoming message to process
-    - Returns: None
+        - `request`: The incoming message to process
+    - Returns: Optional response message
+
+- `on_process_input(self, message_input: Message | None = None) -> Message | None`
+    - Low-level IRIS ProcessInput hook
+    - By default, delegates to `on_message`
 
 - `send_request_sync(self, target: str, request: Message, timeout: int = -1) -> Message`
     - Sends a synchronous request and waits for response
@@ -103,8 +107,8 @@ Base class for business services that receive and process incoming data. Busines
 from iop import BusinessService
 
 class MyService(BusinessService):
-    def on_process_input(self, message_input):
-        self.log_info(f"Received: {message_input}")
+    def on_message(self, request):
+        self.log_info(f"Received: {request}")
 ```
 
 **Polling Example:**
@@ -118,15 +122,18 @@ class MyRequest(Message):
     data: str = None
 
 class MyService(PollingBusinessService):
-    def on_process_input(self, message_input):
-        self.log_info(f"Received: {message_input}")
-        with open(message_input.file_path, 'r') as file:
+    InputFile = "/data/input.txt"
+
+    def on_poll(self):
+        with open(self.InputFile, 'r') as file:
             data = file.read()
         request = MyRequest(data=data)
         self.send_request_async("MyBusinessOperation", request)
 ```
 
-`PollingBusinessService` uses the default IRIS inbound adapter.
+`PollingBusinessService` uses the default IRIS inbound adapter. Override
+`on_poll()` for scheduled polling, or override `on_process_input()` directly
+when you need adapter-level access.
 
 ### Component Settings
 
@@ -414,8 +421,12 @@ from iop import BusinessOperation, PollingBusinessService, Production, target
 class FileService(PollingBusinessService):
     Output = target("orders")
 
+    def on_poll(self):
+        pass
+
 class OrderOperation(BusinessOperation):
-    pass
+    def on_message(self, request):
+        return request
 
 prod = Production("Demo.Production")
 file = prod.service("FileInput", FileService)

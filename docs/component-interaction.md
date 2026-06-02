@@ -105,6 +105,9 @@ class MyBS(BusinessService):
         self.log_info("Request sent asynchronously")
 ```
 
+For adapter-specific services, you can still override `on_process_input()`
+directly. For regular message-driven services, prefer `on_message()`.
+
 ### Function signature (for BusinessProcess)
 
 ```python
@@ -309,4 +312,3 @@ class MyGeneratorOperation(BusinessOperation):
             self.log_info(response)
             yield MyGeneratorResponse(my_other_string=response) # notice that we yield a response here
 ```
-

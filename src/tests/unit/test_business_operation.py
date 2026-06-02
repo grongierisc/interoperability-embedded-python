@@ -1,11 +1,12 @@
 """Unit tests for _BusinessOperation — no live IRIS instance required."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+from fixtures.message import SimpleMessage
 
 from iop.components.business_operation import _BusinessOperation
 from iop.messages.dispatch import dispatch_message
-from fixtures.message import SimpleMessage
 
 
 @pytest.fixture
@@ -17,7 +18,8 @@ def operation():
 
 def test_message_handling(operation):
     request = SimpleMessage(integer=1, string="test")
-    assert operation.on_message(request) is None
+    with pytest.warns(RuntimeWarning, match="did not override on_message"):
+        assert operation.on_message(request) is None
     assert not hasattr(operation, "OnMessage")
 
 
@@ -51,7 +53,8 @@ def test_dispatch_methods(operation):
     operation._dispatch_on_init(mock_host)
 
     request = SimpleMessage(integer=1, string="test")
-    operation._dispatch_on_message(request)
+    with pytest.warns(RuntimeWarning, match="did not override on_message"):
+        operation._dispatch_on_message(request)
 
     operation.iris_handle.dispatchOnMessage.assert_not_called()
 

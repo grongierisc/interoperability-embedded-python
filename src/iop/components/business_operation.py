@@ -1,4 +1,5 @@
 import importlib
+import warnings
 from typing import Any
 
 from ..messages.decorators import input_deserializer, output_serializer
@@ -29,6 +30,13 @@ class _BusinessOperation(_BusinessHost):
         Returns:
             Response message
         """
+        warnings.warn(
+            f"{self.__class__.__name__} did not override on_message(); "
+            "the incoming operation message was ignored. "
+            "This default no-op handler will raise NotImplementedError in v5.0.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         return None
 
     def on_keepalive(self) -> None:

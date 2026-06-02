@@ -1,18 +1,19 @@
-from iop import PollingBusinessService, BusinessService, Category, Setting, controls
-from typing import Annotated
-import iris
-
 import json
-import requests
+from typing import Annotated
 
+import iris
+import requests
 from message import PostMessage
 from obj import PostClass
 
+from iop import BusinessService, Category, PollingBusinessService, Setting, controls
+
+
 class RedditService(PollingBusinessService):
     """
-    This service use an Ens.InboundAdapter to, on_process_input every 5
-    seconds, use requests to fetch self.limit posts as data from the reddit
-    API before calling the FilterPostRoutingRule process.
+    This service uses an Ens.InboundAdapter to run on_poll every 5 seconds,
+    fetch self.limit posts from the reddit API, then call the
+    FilterPostRoutingRule process.
     """
 
     feed: Annotated[str, Setting(default="/new/", category=Category.DEV)]
@@ -24,7 +25,7 @@ class RedditService(PollingBusinessService):
     last_post_name: str = ""
 
 
-    def on_process_input(self,message_input):
+    def on_poll(self):
 
         post = self.on_task()
         if post is not None:
@@ -35,10 +36,10 @@ class RedditService(PollingBusinessService):
     def on_task(self) -> PostClass:
           
         try:
-            server = "https://www.reddit.com"
-            request_string = self.feed+".json?before="+self.last_post_name+"&limit="+self.limit
+            _server = "https://www.reddit.com"
+            _request_string = self.feed+".json?before="+self.last_post_name+"&limit="+self.limit
 
-            # response = requests.get(server+request_string)
+            # response = requests.get(_server+_request_string)
             # response.raise_for_status()
 
             # data = response.json()
@@ -47,7 +48,7 @@ class RedditService(PollingBusinessService):
             """)
             updateLast = 0
 
-            for key, value in enumerate(data['data']['children']):
+            for _key, value in enumerate(data['data']['children']):
                 if value['data']['selftext']=="":
                     continue
                 post = PostClass.from_dict(value['data'])
@@ -75,13 +76,14 @@ class RedditServiceWithIrisAdapter(BusinessService):
     This service use our objectscript dc.Reddit.InboundAdapter to receive post
     from reddit and call the FilterPostRoutingRule process.
     """
+    @staticmethod
     def get_adapter_type():
         """
         Name of the registred Adapter
         """
         return "dc.Reddit.InboundAdapter"
 
-    def on_process_input(self, message_input):
+    def on_process_input(self, message_input=None):
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = message_input
         return self.send_request_sync(target=self.target,request=msg)
@@ -98,13 +100,14 @@ class RedditServiceWithPexAdapter(BusinessService):
     This service use our python Python.RedditInboundAdapter to receive post
     from reddit and call the FilterPostRoutingRule process.
     """
+    @staticmethod
     def get_adapter_type():
         """
         Name of the registred Adapter
         """
         return "Python.RedditInboundAdapter"
 
-    def on_process_input(self, message_input):
+    def on_process_input(self, message_input=None):
         self._wait_for_next_call_interval = True
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = message_input

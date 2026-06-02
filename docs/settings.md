@@ -126,7 +126,7 @@ class OrderRequest(Message):
 class FileService(PollingBusinessService):
     Output = target("orders")
 
-    def on_process_input(self, message_input):
+    def on_poll(self):
         return self.send_request_sync(
             self.Output,
             OrderRequest(order_id="777"),
@@ -134,7 +134,8 @@ class FileService(PollingBusinessService):
 
 
 class OrderOperation(BusinessOperation):
-    pass
+    def on_message(self, request):
+        return request
 
 
 prod = Production("Demo.Production", testing_enabled=True)

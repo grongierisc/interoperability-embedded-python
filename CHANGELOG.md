@@ -32,11 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor remote runtime support into dedicated client, director, migration, settings, and setup modules.
 - Improve production object migration by automatically registering referenced component, adapter, and `PersistentMessage` classes with deduplication.
 - Improve business host connection discovery and message serialization error handling.
+- Improve service hook ergonomics: `BusinessService.on_process_input()` now delegates to `on_message()`, and `PollingBusinessService` now recommends `on_poll()` for scheduled polling.
 - Update demos, tests, and documentation to use the `iop` package layout, snake_case hooks, and Pythonic production definitions.
 
 ### Deprecated
 - Deprecate the static `iop.Utils` / `iop.migration.utils._Utils` facades in favor of functions in `iop.migration.utils`; these facades are scheduled for removal in v5.0.
 - Deprecate the static `iop.Director` / `iop.runtime.director._Director` facades in favor of functions in `iop.runtime.director`; these facades are scheduled for removal in v5.0.
+- Deprecate silent default no-op handlers for unimplemented `on_message()`, `on_process_input()`, and `on_poll()` hooks; they now warn and are scheduled to raise in v5.0.
 
 ### Fixed
 - Fix production graph edge assertions and runtime connection handling to match the new graph structure.
