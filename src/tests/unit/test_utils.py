@@ -1,13 +1,15 @@
 """Unit tests for _Utils — no live IRIS instance required."""
-from dataclasses import dataclass
+import json
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from dataclasses import dataclass
+from unittest.mock import patch
 
-from iop.migration.utils import _Utils
+import pytest
+
+from iop import BusinessOperation, Field, PersistentMessage, Production
 from iop.messages.base import _Message as Message
 from iop.messages.base import _PydanticMessage as PydanticMessage
-from iop import BusinessOperation, Field, PersistentMessage
+from iop.migration.utils import _Utils
 
 
 @pytest.fixture
@@ -97,7 +99,9 @@ class TestProductionOperations:
         }]
 
         with patch('iop.migration.utils._Utils.register_component') as mock_register:
-            with patch('iop.migration.utils._Utils.register_production') as mock_prod:
+            with patch(
+                'iop.migration.utils._Utils.register_production_definition'
+            ) as mock_prod:
                 _Utils.set_productions_settings(production_list, str(tmp_path))
                 mock_register.assert_called_once()
                 mock_prod.assert_called_once()
@@ -230,6 +234,158 @@ class TestMigrationPlan:
         )
         mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
         mock_schema.assert_called_once_with(DtlMessage)
+
+    def test_register_settings_components_registers_production_messages_first(
+        self, tmp_path
+    ):
+        class MyOperation(BusinessOperation):
+            pass
+
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        prod = (
+            Production("Demo.Production")
+            .message("Demo.Msg.NativeOrder", NativeOrder)
+        )
+        prod.operation(MyOperation)
+
+        class Settings:
+            CLASSES = {}
+            PRODUCTIONS = [prod]
+
+        calls = []
+
+        def record_message(*args, **kwargs):
+            calls.append("message")
+
+        def record_component(*args, **kwargs):
+            calls.append("component")
+
+        def record_production(*args, **kwargs):
+            calls.append("production")
+
+        with patch.object(
+            _Utils, "register_persistent_message", side_effect=record_message
+        ) as mock_native:
+            with patch.object(
+                _Utils, "register_component", side_effect=record_component
+            ):
+                with patch.object(
+                    _Utils,
+                    "register_production_definition",
+                    side_effect=record_production,
+                ):
+                    _Utils._register_settings_components(Settings, str(tmp_path))
+
+        mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
+        assert calls == ["message", "component", "production"]
+
+    def test_register_settings_components_deduplicates_classes_and_production_messages(
+        self, tmp_path
+    ):
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        prod = Production("Demo.Production").message(
+            "Demo.Msg.NativeOrder",
+            NativeOrder,
+        )
+
+        class Settings:
+            CLASSES = {"Demo.Msg.NativeOrder": NativeOrder}
+            PRODUCTIONS = [prod]
+
+        with patch.object(_Utils, "register_persistent_message") as mock_native:
+            with patch.object(_Utils, "register_production_definition"):
+                _Utils._register_settings_components(Settings, str(tmp_path))
+
+        mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
+
+    def test_direct_class_and_production_helpers_share_persistent_message_registry(
+        self, tmp_path
+    ):
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        prod = Production("Demo.Production").message(
+            "Demo.Msg.NativeOrder",
+            NativeOrder,
+        )
+
+        _Utils._persistent_message_registry.clear()
+        try:
+            with patch.object(_Utils, "register_persistent_message") as mock_native:
+                _Utils.set_classes_settings(
+                    {"Demo.Msg.NativeOrder": NativeOrder},
+                    root_path=str(tmp_path),
+                )
+                with patch.object(_Utils, "register_production_definition"):
+                    _Utils.set_productions_settings([prod], root_path=str(tmp_path))
+        finally:
+            _Utils._persistent_message_registry.clear()
+
+        mock_native.assert_called_once_with(NativeOrder, "Demo.Msg.NativeOrder")
+
+    def test_direct_class_and_production_helpers_reject_persistent_message_conflict(
+        self, tmp_path
+    ):
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        prod = Production("Demo.Production").message(
+            "Demo.Msg.OtherNativeOrder",
+            NativeOrder,
+        )
+
+        _Utils._persistent_message_registry.clear()
+        try:
+            with patch.object(_Utils, "register_persistent_message"):
+                _Utils.set_classes_settings(
+                    {"Demo.Msg.NativeOrder": NativeOrder},
+                    root_path=str(tmp_path),
+                )
+                with pytest.raises(ValueError, match="already registered"):
+                    with patch.object(_Utils, "register_production_definition"):
+                        _Utils.set_productions_settings(
+                            [prod],
+                            root_path=str(tmp_path),
+                        )
+        finally:
+            _Utils._persistent_message_registry.clear()
+
+    def test_register_settings_components_rejects_persistent_message_conflicts(
+        self, tmp_path
+    ):
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        prod = Production("Demo.Production").message(
+            "Demo.Msg.OtherNativeOrder",
+            NativeOrder,
+        )
+
+        class Settings:
+            CLASSES = {"Demo.Msg.NativeOrder": NativeOrder}
+            PRODUCTIONS = [prod]
+
+        with patch.object(_Utils, "register_persistent_message"):
+            with pytest.raises(ValueError, match="already registered"):
+                _Utils._register_settings_components(Settings, str(tmp_path))
+
+    def test_register_production_definition_uses_json_object_helper(self):
+        payload = {"Production": {"@Name": "Demo.Production", "Item": []}}
+
+        with patch("iop.migration.utils._iris.get_iris") as mock_get_iris:
+            mock_iris = mock_get_iris.return_value
+            mock_iris.system.Status.IsError.return_value = False
+
+            _Utils.register_production_definition("Demo.Production", payload)
+
+        helper = mock_iris.cls.return_value
+        helper.CreateProductionFromJSON.assert_called_once()
+        assert helper.CreateProductionFromJSON.call_args.args[0] == "Demo.Production"
+        assert json.loads(helper.CreateProductionFromJSON.call_args.args[1]) == payload
 
 
 class TestXmlToJson:

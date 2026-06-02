@@ -126,6 +126,14 @@ class MigrationPlanner:
         production,
         auto_class_entries: set[tuple[str, str]],
     ) -> None:
+        for registration in getattr(production, "message_registrations", lambda: ())():
+            self._add_auto_class_entry(
+                plan,
+                auto_class_entries,
+                registration.iris_classname,
+                registration.message_class,
+                kind="PersistentMessage",
+            )
         for item in production.component_registrations():
             target = item.class_name or item.name
             cls = item.component_class
@@ -141,9 +149,11 @@ class MigrationPlanner:
         auto_class_entries: set[tuple[str, str]],
         target: str,
         cls: type,
+        *,
+        kind: str = "component",
     ) -> None:
         entry_key = (target, self._utils._python_classname(cls))
         if entry_key in auto_class_entries:
             return
         auto_class_entries.add(entry_key)
-        plan["classes"].append(f"{target} -> {entry_key[1]} (component)")
+        plan["classes"].append(f"{target} -> {entry_key[1]} ({kind})")

@@ -21,6 +21,7 @@ from .rendering import (
 from .runtime import _ProductionRuntime
 from .types import (
     GraphEdge,
+    PersistentMessageRegistration,
     Port,
     ProductionDiff,
     ProductionGraph,
@@ -60,6 +61,7 @@ class Production:
         self._edges: list[GraphEdge] = []
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
+        self._messages: list[PersistentMessageRegistration] = []
 
     def testing(self, enabled: bool | str = True) -> Production:
         self.testing_enabled = enabled
@@ -352,6 +354,56 @@ class Production:
     def operation(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
         return self.component(name_or_cls, cls, kind="operation", **kwargs)
 
+    def message(
+        self,
+        iris_classname: str,
+        msg_cls: type,
+        *,
+        sync_schema: bool = True,
+    ) -> Production:
+        from ..messages.persistent import (
+            get_python_classname,
+            is_persistent_message_class,
+        )
+
+        iris_classname = str(iris_classname or "").strip()
+        if not iris_classname:
+            raise ValueError("PersistentMessage IRIS classname is required")
+        if not is_persistent_message_class(msg_cls):
+            raise TypeError("msg_cls must be a concrete PersistentMessage subclass")
+
+        python_classname = get_python_classname(msg_cls)
+        for registration in self._messages:
+            registered_python_classname = get_python_classname(
+                registration.message_class
+            )
+            if registration.iris_classname == iris_classname:
+                if registered_python_classname != python_classname:
+                    raise ValueError(
+                        "PersistentMessage IRIS classname already registered: "
+                        f"{iris_classname}"
+                    )
+                if registration.sync_schema != bool(sync_schema):
+                    raise ValueError(
+                        "PersistentMessage registration has conflicting sync_schema "
+                        f"for {iris_classname}"
+                    )
+                return self
+            if registered_python_classname == python_classname:
+                raise ValueError(
+                    "PersistentMessage class already registered with IRIS classname "
+                    f"{registration.iris_classname}"
+                )
+
+        self._messages.append(
+            PersistentMessageRegistration(
+                iris_classname=iris_classname,
+                message_class=msg_cls,
+                sync_schema=bool(sync_schema),
+            )
+        )
+        return self
+
     def connect(self, source: Port, target_component: ComponentRef | str) -> None:
         if not isinstance(source, Port):
             raise TypeError("source must be a Port returned from a ComponentRef")
@@ -495,6 +547,9 @@ class Production:
         return tuple(
             item for item in self._items if item.adapter_class is not None
         )
+
+    def message_registrations(self) -> tuple[PersistentMessageRegistration, ...]:
+        return tuple(self._messages)
 
     def start(self, detach: bool = True) -> None:
         _actions.start(self, detach=detach)

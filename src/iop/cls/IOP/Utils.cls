@@ -455,6 +455,147 @@ ClassMethod CreateProduction(
   return $System.OBJ.Compile(produtionClassName,"k-d")
 }
 
+ClassMethod CreateProductionFromJSON(
+	pProductionName As %String,
+	pDefinition As %String) As %Status
+{
+	#dim tSC As %Status = $$$OK
+	#dim ex As %Exception.AbstractException
+	#dim tPayload As %DynamicObject
+	#dim tProductionData As %DynamicObject
+	#dim tProduction As Ens.Config.Production
+	#dim tItems,tDeclaredName
+	Try {
+		Return:(""=pProductionName) $$$ERROR($$$EnsErrGeneral,"Production name is required.")
+		Return:('$ZName(pProductionName,4)) $$$ERROR($$$EnsErrGeneral,"Invalid Production name.")
+
+		Set tPayload = {}.%FromJSON(pDefinition)
+		Set tProductionData = tPayload.%Get("Production")
+		If '$IsObject(tProductionData) {
+			Set tSC = $$$ERROR($$$EnsErrGeneral,"Production JSON must contain a Production object.")
+			Quit
+		}
+		Set tDeclaredName = ..DynamicGet(tProductionData,"@Name","")
+		If ""'=tDeclaredName {
+			If pProductionName'=tDeclaredName {
+				Set tSC = $$$ERROR($$$EnsErrGeneral,"Production JSON name does not match target production name.")
+				Quit
+			}
+		}
+
+		Set tProduction = ##class(Ens.Config.Production).%New()
+		Set tProduction.Name = pProductionName
+		Set tProduction.Description = ..DynamicGet(tProductionData,"Description","")
+		Set tProduction.ActorPoolSize = +..DynamicGet(tProductionData,"ActorPoolSize",2)
+		Set tProduction.TestingEnabled = ..BooleanValue(..DynamicGet(tProductionData,"@TestingEnabled",0))
+		Set tProduction.LogGeneralTraceEvents = ..BooleanValue(..DynamicGet(tProductionData,"@LogGeneralTraceEvents",0))
+
+		$$$ThrowOnError(..InsertSettings(tProduction,tProductionData.%Get("Setting")))
+		Set tItems = tProductionData.%Get("Item")
+		$$$ThrowOnError(..InsertItems(tProduction,tItems))
+
+		Set tSC = tProduction.SaveToClass()
+		Quit:$$$ISERR(tSC)
+		Set tSC = $System.OBJ.Compile(pProductionName,"k-d")
+	} Catch ex {
+		Set tSC = ex.AsStatus()
+	}
+	Quit tSC
+}
+
+ClassMethod DynamicGet(pObject, pName As %String, pDefault = "") [ Internal, Private ]
+{
+	#dim value
+	Try {
+		Set value = pObject.%Get(pName)
+	} Catch ex {
+		Return pDefault
+	}
+	Quit $Select(value="":pDefault,1:value)
+}
+
+ClassMethod BooleanValue(pValue) As %Boolean [ Internal, Private ]
+{
+	Set tValue = $ZCONVERT(pValue,"L")
+	Quit $Select(tValue="true":1,tValue="1":1,tValue="yes":1,tValue="on":1,tValue="false":0,tValue="0":0,tValue="no":0,tValue="off":0,1:+pValue)
+}
+
+ClassMethod IsDynamicArray(pValue) As %Boolean [ Internal, Private ]
+{
+	Quit $Select('$IsObject(pValue):0,pValue.%ClassName(1)="%Library.DynamicArray":1,1:0)
+}
+
+ClassMethod InsertItems(
+	pProduction As Ens.Config.Production,
+	pItems) As %Status [ Internal, Private ]
+{
+	#dim tSC As %Status = $$$OK
+	If '$IsObject(pItems) {
+		Quit tSC
+	}
+	If ..IsDynamicArray(pItems) {
+		For i=0:1:pItems.%Size()-1 {
+			$$$ThrowOnError(..InsertItem(pProduction,pItems.%Get(i)))
+		}
+	} Else {
+		$$$ThrowOnError(..InsertItem(pProduction,pItems))
+	}
+	Quit tSC
+}
+
+ClassMethod InsertItem(
+	pProduction As Ens.Config.Production,
+	pItemData) As %Status [ Internal, Private ]
+{
+	#dim tItem As Ens.Config.Item
+	Set tItem = ##class(Ens.Config.Item).%New()
+	Set tItem.Name = ..DynamicGet(pItemData,"@Name","")
+	Set tItem.ClassName = ..DynamicGet(pItemData,"@ClassName","")
+	Set tItem.Category = ..DynamicGet(pItemData,"@Category","")
+	Set tItem.PoolSize = +..DynamicGet(pItemData,"@PoolSize",0)
+	Set tItem.Enabled = ..BooleanValue(..DynamicGet(pItemData,"@Enabled",1))
+	Set tItem.Foreground = ..BooleanValue(..DynamicGet(pItemData,"@Foreground",0))
+	Set tItem.Comment = ..DynamicGet(pItemData,"@Comment","")
+	Set tItem.LogTraceEvents = ..BooleanValue(..DynamicGet(pItemData,"@LogTraceEvents",0))
+	Set tItem.Schedule = ..DynamicGet(pItemData,"@Schedule","")
+	Set tItem.Production = pProduction
+
+	$$$ThrowOnError(..InsertSettings(tItem,pItemData.%Get("Setting")))
+	Do pProduction.Items.Insert(tItem)
+	Quit $$$OK
+}
+
+ClassMethod InsertSettings(
+	pOwner,
+	pSettings) As %Status [ Internal, Private ]
+{
+	#dim tSC As %Status = $$$OK
+	If '$IsObject(pSettings) {
+		Quit tSC
+	}
+	If ..IsDynamicArray(pSettings) {
+		For i=0:1:pSettings.%Size()-1 {
+			$$$ThrowOnError(..InsertSetting(pOwner,pSettings.%Get(i)))
+		}
+	} Else {
+		$$$ThrowOnError(..InsertSetting(pOwner,pSettings))
+	}
+	Quit tSC
+}
+
+ClassMethod InsertSetting(
+	pOwner,
+	pSettingData) As %Status [ Internal, Private ]
+{
+	#dim tSetting As Ens.Config.Setting
+	Set tSetting = ##class(Ens.Config.Setting).%New()
+	Set tSetting.Target = ..DynamicGet(pSettingData,"@Target","Host")
+	Set tSetting.Name = ..DynamicGet(pSettingData,"@Name","")
+	Set tSetting.Value = ..DynamicGet(pSettingData,"#text","")
+	Do pOwner.Settings.Insert(tSetting)
+	Quit $$$OK
+}
+
 /// Export a production to an XML string
 ClassMethod ExportProduction(pProductionName As %String) As %String
 {

@@ -1,11 +1,11 @@
-from bench_bo import BenchIoPOperation
-from bench_bp import BenchIoPProcess
-from iop import Production
-from msg import MyPersistentMessage
-
 import os
 
 import iris
+from bench_bo import BenchIoPOperation
+from bench_bp import BenchIoPProcess
+from msg import MyPersistentMessage
+
+from iop import Production
 
 # get current directory
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -21,15 +21,12 @@ classpaths = f"{current_dir}|{src_dir}"
 iris.cls("%SYSTEM.OBJ").LoadDir(os.path.join(current_dir, "cls"), "uk", "*.cls", 1)
 iris.cls("%SYSTEM.OBJ").Compile("Bench.*", "cb")
 
-CLASSES = {
-    "Bench.Msg.MyPersistentMessage": MyPersistentMessage,
-}
-
 BENCH_PRODUCTION = Production(
     "Bench.Production",
     testing_enabled=True,
     actor_pool_size=1,
 )
+BENCH_PRODUCTION.message("Bench.Msg.MyPersistentMessage", MyPersistentMessage)
 
 bench_operation = BENCH_PRODUCTION.operation(
     "Bench.Operation",

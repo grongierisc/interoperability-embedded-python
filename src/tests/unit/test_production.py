@@ -10,8 +10,10 @@ from iop import (
     BusinessOperation,
     BusinessProcess,
     BusinessService,
+    Field,
     InboundAdapter,
     Message,
+    PersistentMessage,
     PollingBusinessService,
     Production,
     controls,
@@ -24,6 +26,10 @@ from iop.migration.utils import _Utils
 @dataclass
 class OrderRequest(Message):
     order_id: str = ""
+
+
+class NativeOrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True)
 
 
 class FileService(PollingBusinessService):
@@ -108,6 +114,43 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "interaction": "request",
         },
     ]
+
+
+def test_production_message_registration_api_deduplicates_identical_entries():
+    prod = Production("Demo.Production")
+
+    result = prod.message("Demo.Msg.NativeOrderMessage", NativeOrderMessage)
+    prod.message("Demo.Msg.NativeOrderMessage", NativeOrderMessage)
+
+    assert result is prod
+    registrations = prod.message_registrations()
+    assert len(registrations) == 1
+    assert registrations[0].iris_classname == "Demo.Msg.NativeOrderMessage"
+    assert registrations[0].message_class is NativeOrderMessage
+    assert registrations[0].sync_schema is True
+
+
+def test_production_message_registration_validates_inputs():
+    class OtherNativeMessage(PersistentMessage):
+        Value: str = Field(required=True)
+
+    prod = Production("Demo.Production")
+    prod.message("Demo.Msg.NativeOrderMessage", NativeOrderMessage)
+
+    with pytest.raises(ValueError, match="IRIS classname"):
+        prod.message("", NativeOrderMessage)
+    with pytest.raises(TypeError, match="PersistentMessage"):
+        prod.message("Demo.Msg.OrderRequest", OrderRequest)
+    with pytest.raises(ValueError, match="already registered"):
+        prod.message("Demo.Msg.NativeOrderMessage", OtherNativeMessage)
+    with pytest.raises(ValueError, match="already registered"):
+        prod.message("Demo.Msg.OtherNativeOrderMessage", NativeOrderMessage)
+    with pytest.raises(ValueError, match="sync_schema"):
+        prod.message(
+            "Demo.Msg.NativeOrderMessage",
+            NativeOrderMessage,
+            sync_schema=False,
+        )
 
 
 def test_progressive_authoring_api_matches_deployable_shape():
@@ -235,7 +278,7 @@ def test_component_ref_supports_python_adapter_class_registration(tmp_path):
     assert prod.adapter_registrations() == (service,)
 
     with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production"):
+        with patch.object(_Utils, "register_production_definition"):
             _Utils.set_productions_settings([prod], str(tmp_path))
 
     assert mock_register.call_count == 2
@@ -1136,7 +1179,7 @@ def test_set_productions_settings_keeps_legacy_dicts_immutable(tmp_path):
     original = copy.deepcopy(production_list)
 
     with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production") as mock_prod:
+        with patch.object(_Utils, "register_production_definition") as mock_prod:
             _Utils.set_productions_settings(production_list, str(tmp_path))
 
     assert production_list == original
@@ -1150,7 +1193,7 @@ def test_set_productions_settings_supports_mixed_legacy_and_objects(tmp_path):
     prod.operation(OrderOperation)
 
     with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production") as mock_prod:
+        with patch.object(_Utils, "register_production_definition") as mock_prod:
             _Utils.set_productions_settings([legacy, prod], str(tmp_path))
 
     mock_register.assert_called_once_with(
@@ -1181,6 +1224,25 @@ def test_migration_plan_lists_production_objects_and_auto_components():
     )
 
 
+def test_migration_plan_lists_production_persistent_messages():
+    prod = Production("Object.Production")
+    prod.message("Demo.Msg.NativeOrderMessage", NativeOrderMessage)
+
+    class Settings:
+        CLASSES = {}
+        PRODUCTIONS = [prod]
+
+    plan = _Utils._build_migration_plan(Settings, ".")
+
+    assert "Object.Production" in plan["productions"]
+    assert (
+        "Demo.Msg.NativeOrderMessage"
+        + f" -> {NativeOrderMessage.__module__}.NativeOrderMessage "
+        "(PersistentMessage)"
+        in plan["classes"]
+    )
+
+
 def test_production_object_auto_registration_deduplicates_shared_classes(tmp_path):
     prod = Production("Object.Production")
     prod.operation(
@@ -1205,7 +1267,7 @@ def test_production_object_auto_registration_deduplicates_shared_classes(tmp_pat
     ) == 1
 
     with patch.object(_Utils, "register_component") as mock_register:
-        with patch.object(_Utils, "register_production"):
+        with patch.object(_Utils, "register_production_definition"):
             _Utils.set_productions_settings([prod], str(tmp_path))
 
     mock_register.assert_called_once_with(

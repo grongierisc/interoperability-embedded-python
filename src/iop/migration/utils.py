@@ -34,6 +34,8 @@ from .plans import (
 
 
 class _Utils:
+    _persistent_message_registry: dict[str, tuple[type, bool]] = {}
+
     @staticmethod
     def raise_on_error(sc):
         """
@@ -538,13 +540,23 @@ class _Utils:
         if not path:
             path = os.path.dirname(inspect.getfile(settings))
 
+        persistent_registry: dict[str, tuple[type, bool]] = {}
+
         class_items = getattr(settings, "CLASSES", None)
         if class_items is not None:
-            _Utils.set_classes_settings(class_items, path)
+            _Utils.set_classes_settings(
+                class_items,
+                path,
+                persistent_registry=persistent_registry,
+            )
 
         try:
             # set the productions settings
-            _Utils.set_productions_settings(settings.PRODUCTIONS, path)
+            _Utils.set_productions_settings(
+                settings.PRODUCTIONS,
+                path,
+                persistent_registry=persistent_registry,
+            )
         except AttributeError:
             pass
 
@@ -580,7 +592,7 @@ class _Utils:
         return module
 
     @staticmethod
-    def set_classes_settings(class_items, root_path=None):
+    def set_classes_settings(class_items, root_path=None, persistent_registry=None):
         """
         It takes a dictionary of classes and returns a dictionary of settings for each class
 
@@ -592,7 +604,11 @@ class _Utils:
         for key, value in class_items.items():
             if inspect.isclass(value):
                 if is_persistent_message_class(value):
-                    _Utils.register_persistent_message(value, key)
+                    _Utils._register_persistent_message_once(
+                        value,
+                        key,
+                        persistent_registry=persistent_registry,
+                    )
                     continue
                 if _Utils._is_message_schema_class(value):
                     raise ValueError(
@@ -625,7 +641,11 @@ class _Utils:
                         value["module"], value["class"], value["path"]
                     )
                     if msg_cls is not None and is_persistent_message_class(msg_cls):
-                        _Utils.register_persistent_message(msg_cls, key)
+                        _Utils._register_persistent_message_once(
+                            msg_cls,
+                            key,
+                            persistent_registry=persistent_registry,
+                        )
                         continue
                     if msg_cls is not None and _Utils._is_message_schema_class(msg_cls):
                         raise ValueError(
@@ -669,13 +689,73 @@ class _Utils:
             return None
 
     @staticmethod
-    def set_productions_settings(production_list, root_path=None):
+    def _register_persistent_message_once(
+        msg_cls: type,
+        iris_classname: str,
+        *,
+        sync_schema: bool = True,
+        persistent_registry: dict[str, tuple[type, bool]] | None = None,
+    ):
+        if persistent_registry is None:
+            persistent_registry = _Utils._persistent_message_registry
+
+        iris_classname = str(iris_classname or "").strip()
+        python_classname = _Utils._python_classname(msg_cls)
+        existing = persistent_registry.get(iris_classname)
+        if existing is not None:
+            existing_cls, existing_sync_schema = existing
+            if (
+                _Utils._python_classname(existing_cls) != python_classname
+                or existing_sync_schema != bool(sync_schema)
+            ):
+                raise ValueError(
+                    "Conflicting PersistentMessage registration for "
+                    f"{iris_classname}."
+                )
+            return
+
+        for existing_iris_classname, (
+            existing_cls,
+            existing_sync_schema,
+        ) in persistent_registry.items():
+            if _Utils._python_classname(existing_cls) != python_classname:
+                continue
+            if existing_sync_schema != bool(sync_schema):
+                raise ValueError(
+                    "Conflicting PersistentMessage sync_schema for "
+                    f"{python_classname}."
+                )
+            raise ValueError(
+                f"{python_classname} is already registered as "
+                f"{existing_iris_classname}."
+            )
+
+        persistent_registry[iris_classname] = (msg_cls, bool(sync_schema))
+        if sync_schema:
+            _Utils.register_persistent_message(msg_cls, iris_classname)
+        else:
+            _Utils.register_persistent_message(
+                msg_cls,
+                iris_classname,
+                sync_schema=False,
+            )
+
+    @staticmethod
+    def set_productions_settings(
+        production_list,
+        root_path=None,
+        persistent_registry=None,
+    ):
         """
         It takes a list of dictionaries and registers the productions
         """
         # for each production in the list
         for production in production_list:
             if _Utils._is_production_object(production):
+                _Utils._register_production_object_messages(
+                    production,
+                    persistent_registry=persistent_registry,
+                )
                 _Utils._register_production_object_components(production, root_path)
                 production = production.to_dict()
             else:
@@ -690,10 +770,8 @@ class _Utils:
             production["Production"] = production.pop(production_name)
             # handle Items
             production = _Utils.handle_items(production, root_path)
-            # transform the json as an xml
-            xml = _Utils.dict_to_xml(production)
             # register the production
-            _Utils.register_production(production_name, xml)
+            _Utils.register_production_definition(production_name, production)
 
     @staticmethod
     def _is_production_object(value) -> bool:
@@ -702,6 +780,20 @@ class _Utils:
             and hasattr(value, "component_registrations")
             and hasattr(value, "name")
         )
+
+    @staticmethod
+    def _register_production_object_messages(
+        production,
+        *,
+        persistent_registry=None,
+    ):
+        for registration in getattr(production, "message_registrations", lambda: ())():
+            _Utils._register_persistent_message_once(
+                registration.message_class,
+                registration.iris_classname,
+                sync_schema=registration.sync_schema,
+                persistent_registry=persistent_registry,
+            )
 
     @staticmethod
     def _register_production_object_components(production, root_path=None):
@@ -800,6 +892,20 @@ class _Utils:
             _iris.get_iris()
             .cls("IOP.Utils")
             .CreateProduction(package, production_name, stream)
+        )
+
+    @staticmethod
+    def register_production_definition(production_name: str, production: dict):
+        """
+        Register a production definition through IRIS Ens.Config objects.
+
+        :param production_name: full IRIS production class name
+        :param production: normalized {"Production": {...}} dictionary
+        """
+        _Utils.raise_on_error(
+            _iris.get_iris()
+            .cls("IOP.Utils")
+            .CreateProductionFromJSON(production_name, json.dumps(production))
         )
 
     @staticmethod

@@ -30,7 +30,9 @@ def fake_runtime():
     persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE.clear()
     persistent_message_module._IRIS_PARAMETER_CACHE.clear()
     persistent_message_module._AUTO_SYNCED.clear()
+    _Utils._persistent_message_registry.clear()
     yield
+    _Utils._persistent_message_registry.clear()
     configure_default_runtime(None)
 
 

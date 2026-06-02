@@ -48,6 +48,13 @@ class Port:
 
 
 @dataclass(frozen=True)
+class PersistentMessageRegistration:
+    iris_classname: str
+    message_class: type
+    sync_schema: bool = True
+
+
+@dataclass(frozen=True)
 class GraphNode:
     name: str
     class_name: str

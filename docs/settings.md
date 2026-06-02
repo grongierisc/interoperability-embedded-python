@@ -61,6 +61,23 @@ CLASSES = {
 }
 ```
 
+For Python-authored productions, you can declare native messages on the
+`Production` object instead:
+
+```python
+from iop import Field, PersistentMessage, Production
+
+
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True)
+
+
+prod = Production("Demo.Production")
+prod.message("Demo.Msg.OrderMessage", OrderMessage)
+
+PRODUCTIONS = [prod]
+```
+
 Regular `Message` and `PydanticMessage` classes do not go in `CLASSES` or
 native message registration. Add them to `SCHEMAS` only when you need DTL schema
 support.
