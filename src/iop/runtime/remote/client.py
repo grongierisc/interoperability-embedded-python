@@ -72,6 +72,18 @@ class _RemoteClient:
         self._raise_for_status(resp)
         return resp.json()
 
+    def _delete(self, path: str, params: dict | None = None) -> Any:
+        p = {"namespace": self._namespace, **(params or {})}
+        resp = requests.delete(
+            f"{self._base}{path}",
+            params=p,
+            auth=self._auth,
+            verify=self._verify,
+            timeout=30,
+        )
+        self._raise_for_status(resp)
+        return resp.json()
+
     def _check_error(self, data: Any) -> Any:
         if isinstance(data, dict) and "error" in data:
             raise RuntimeError(data["error"])

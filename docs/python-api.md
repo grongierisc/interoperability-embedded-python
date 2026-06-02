@@ -595,6 +595,55 @@ prod.restart_component(file.Output)
 `ComponentRef` is a Python handle to the production item, not the live IRIS host
 instance.
 
+### Migration Utilities
+
+Use `register_component()` or `bind_component()` to create an IRIS proxy class
+binding for a Python component:
+
+```python
+from iop import bind_component, register_component
+
+register_component(
+    "bo",
+    "FileOperation",
+    "/irisdev/app/src/python/demo",
+    overwrite=1,
+    iris_classname="Python.FileOperation",
+)
+
+# Alias with the same arguments.
+bind_component(
+    "bo",
+    "FileOperation",
+    "/irisdev/app/src/python/demo",
+    overwrite=1,
+    iris_classname="Python.FileOperation",
+)
+```
+
+Use `unregister_component()` or `unbind_component()` to remove an IOP-generated
+IRIS proxy class binding:
+
+```python
+from iop import unbind_component, unregister_component
+
+unregister_component("Python.WrongOperation")
+unbind_component("Python.WrongOperation")
+```
+
+This removes only the IRIS proxy class. It does not delete Python source files
+or production items. If a production item still uses the proxy class, IRIS
+refuses the operation and reports the references.
+
+Use `list_bindings()` to inspect generated proxy classes:
+
+```python
+from iop import list_bindings
+
+bindings = list_bindings()
+unused = list_bindings(unused_only=True)
+```
+
 ### Director Class 🎭
 Manages InterSystems IRIS productions and business services, particularly for non-polling services.
 

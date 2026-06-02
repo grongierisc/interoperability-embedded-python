@@ -75,11 +75,16 @@ class Command:
                 self.args.log,
                 self.args.queue,
                 self.args.init,
+                self.args.bindings,
+                self.args.unbind is not None,
                 self.args.update,
             ]
         )
 
     def execute(self) -> None:
+        if self.args.unused and not self.args.bindings:
+            raise ValueError("--unused can only be used with --bindings.")
+
         if self.args.namespace == "not_set" and not self._has_primary_command():
             print(os.getenv("IRISNAMESPACE", "not set"))
             return
@@ -100,6 +105,8 @@ class Command:
             CommandType.LOG: self._handle_log,
             CommandType.QUEUE: self._handle_queue,
             CommandType.INIT: self._handle_init,
+            CommandType.BINDINGS: self._handle_bindings,
+            CommandType.UNBIND: self._handle_unbind,
             CommandType.HELP: self._handle_help,
             CommandType.UPDATE: self._handle_update,
         }
@@ -136,6 +143,10 @@ class Command:
             return CommandType.QUEUE
         if self.args.init:
             return CommandType.INIT
+        if self.args.bindings:
+            return CommandType.BINDINGS
+        if self.args.unbind is not None:
+            return CommandType.UNBIND
         if self.args.update:
             return CommandType.UPDATE
         return CommandType.HELP
@@ -279,6 +290,20 @@ class Command:
     def _handle_init(self) -> None:
         path = None if self.args.init == "not_set" else self.args.init
         self.director.setup(path)
+
+    def _handle_bindings(self) -> None:
+        print(
+            json.dumps(
+                self.director.list_bindings(unused_only=self.args.unused),
+                indent=4,
+            )
+        )
+
+    def _handle_unbind(self) -> None:
+        if not self.args.unbind:
+            raise ValueError("IRIS class name is required.")
+        self.director.unbind_component(self.args.unbind)
+        print(f"Removed binding {self.args.unbind}.")
 
     def _handle_help(self) -> None:
         create_parser().print_help()

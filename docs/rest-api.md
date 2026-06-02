@@ -478,6 +478,63 @@ Restarts one component by disabling then enabling it.
 
 ---
 
+## DELETE /api/iop/binding
+
+Removes one IOP-generated IRIS proxy class binding.
+
+**Query parameters**
+
+| Parameter   | Type   | Default | Description                     |
+|-------------|--------|---------|---------------------------------|
+| `namespace` | string | `USER`  | Target IRIS namespace           |
+| `class`     | string | -       | IRIS proxy class name to remove |
+
+`classname` is accepted as an alias for `class`.
+
+**Response**
+
+```json
+{"status": "unbound", "class": "Python.WrongOperation"}
+```
+
+This endpoint only removes the generated IRIS proxy class. It does not delete
+Python source files or production items. If any production item still uses the
+proxy class, the endpoint fails and returns those production item references in
+the error text.
+
+---
+
+## GET /api/iop/bindings
+
+Lists IOP-generated IRIS proxy class bindings.
+
+**Query parameters**
+
+| Parameter   | Type    | Default | Description                                      |
+|-------------|---------|---------|--------------------------------------------------|
+| `namespace` | string  | `USER`  | Target IRIS namespace                            |
+| `unused`    | boolean | `false` | Return only proxy classes unused by productions  |
+
+**Response**
+
+```json
+[
+  {
+    "class": "Python.FileOperation",
+    "super": "IOP.BusinessOperation",
+    "module": "bo",
+    "classname": "FileOperation",
+    "classpaths": "/irisdev/app/src/python/demo",
+    "used": true,
+    "used_by": [
+      {"production": "Demo.Production", "item": "FileOut"}
+    ]
+  }
+]
+```
+
+---
+
 ## PUT /api/iop/migrate
 
 Uploads a Python package to the server and runs its migration entrypoint. The

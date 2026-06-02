@@ -11,7 +11,8 @@ output :
 ```bash
 usage: python3 -m iop [-h] [-d [DEFAULT]] [-l] [-s [START]] [-S] [-k] [-r] [-x]
                       [-m MIGRATE] [-e [EXPORT]] [-v] [-L [LOG]] [-q [QUEUE]]
-                      [-i [INIT]] [-t [TEST]] [-u] [-D] [-C [CLASSNAME]]
+                      [-i [INIT]] [--bindings] [--unbind UNBIND] [-t [TEST]]
+                      [-u] [-D] [-C [CLASSNAME]]
                       [-B [BODY]]
 
 optional arguments:
@@ -35,6 +36,8 @@ optional arguments:
                         display runtime queue information
   -i INIT, --init INIT
                         init the iop module in iris
+  --bindings          list IOP-generated IRIS proxy class bindings
+  --unbind UNBIND     remove an IOP-generated IRIS proxy class binding
   -t TEST, --test TEST
                         test the iop module in iris
 
@@ -47,8 +50,22 @@ test arguments:
   -B BODY, --body BODY
                         test body
 
+bindings arguments:
+  --unused            with --bindings, show only proxy classes unused by productions
+
 default production: IoP.Production
 ```
+
+## Terminology
+
+The CLI uses these terms consistently:
+
+- `migrate`: apply a Python migration file to IRIS. This can register classes,
+  schemas, and productions.
+- `bind` or `register`: create an IRIS proxy class that points to a Python
+  component class.
+- `unbind` or `unregister`: remove an IOP-generated IRIS proxy class binding.
+  This does not delete Python source files or production items.
 
 ## help
 
@@ -159,15 +176,16 @@ iop -r
 
 ## migrate
 
-The migrate command migrates a production and its classes using a Python
-migration file. The file can be named `settings.py`, but it can also be a
-single-file production such as `demo.py`.
+The migrate command applies a Python migration file to IRIS. A migration can
+bind Python components as IRIS proxy classes, register schemas, and save
+production definitions. The file can be named `settings.py`, but it can also be
+a single-file production such as `demo.py`.
 
 The migration file path can be relative or absolute.
 
 ```bash
-iop -M /tmp/settings.py
-iop -M /tmp/demo.py
+iop -m /tmp/settings.py
+iop -m /tmp/demo.py
 ```
 
 The migration file is imported by Python. Put executable code such as
@@ -213,6 +231,31 @@ iop -M /tmp/settings.py --force-local
 ```
 
 `--force-local` disables remote mode for **all** commands, not only migrate.
+
+## bindings and unbind
+
+List generated proxy class bindings:
+
+```bash
+iop --bindings
+```
+
+List only proxy classes that are not used by any production item:
+
+```bash
+iop --bindings --unused
+```
+
+The unbind command removes one IOP-generated IRIS proxy class binding:
+
+```bash
+iop --unbind Python.WrongOperation
+```
+
+Unbind only removes the generated IRIS class. It does not delete Python source
+files and it does not remove production items. If any production item still uses
+the proxy class, the command fails and reports the production item references.
+Remove or change those production items first, then run `--unbind` again.
 
 ## init
 

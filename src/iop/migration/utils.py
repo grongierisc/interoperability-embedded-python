@@ -227,6 +227,68 @@ def register_component(
         ) from e
 
 
+def bind_component(
+    module: str,
+    classname: str,
+    path: str,
+    overwrite: int = 1,
+    iris_classname: str = "Python",
+):
+    """
+    Public alias for registering a Python component as an IRIS proxy class.
+    """
+    return register_component(module, classname, path, overwrite, iris_classname)
+
+
+def unregister_component(iris_classname: str):
+    """
+    Remove an IOP-generated IRIS proxy class binding.
+
+    This does not delete Python source files or production items. IRIS refuses
+    to remove the proxy when it is still referenced by a production item.
+    """
+    iris_classname = str(iris_classname or "").strip()
+    if not iris_classname:
+        raise ValueError("IRIS class name is required.")
+    status = (
+        _iris.get_iris()
+        .cls("IOP.Utils")
+        .DeleteComponentProxy(iris_classname)
+    )
+    raise_on_error(status)
+
+
+def unbind_component(iris_classname: str):
+    """
+    Public alias for removing an IOP-generated IRIS proxy class binding.
+    """
+    return unregister_component(iris_classname)
+
+
+def list_component_bindings(unused_only: bool = False) -> list[dict[str, Any]]:
+    """
+    List IOP-generated IRIS proxy class bindings.
+
+    When unused_only is True, return only proxy classes that are not referenced
+    by any production item.
+    """
+    data = (
+        _iris.get_iris()
+        .cls("IOP.Utils")
+        .ListComponentProxies(1 if unused_only else 0)
+    )
+    if isinstance(data, list):
+        return data
+    return json.loads(data)
+
+
+def list_bindings(unused_only: bool = False) -> list[dict[str, Any]]:
+    """
+    Public alias for listing IOP-generated IRIS proxy class bindings.
+    """
+    return list_component_bindings(unused_only=unused_only)
+
+
 def register_folder(path: str, overwrite: int = 1, iris_package_name: str = "Python"):
     """
     > This function takes a path to a folder, and registers all the Python files in that folder as IRIS
@@ -1021,6 +1083,11 @@ class _Utils:
     get_python_settings = _deprecated_static("get_python_settings")
     _get_python_path = _deprecated_static("_get_python_path")
     register_component = _deprecated_static("register_component")
+    bind_component = _deprecated_static("bind_component")
+    unregister_component = _deprecated_static("unregister_component")
+    unbind_component = _deprecated_static("unbind_component")
+    list_component_bindings = _deprecated_static("list_component_bindings")
+    list_bindings = _deprecated_static("list_bindings")
     register_folder = _deprecated_static("register_folder")
     register_file = _deprecated_static("register_file")
     _register_file = _deprecated_static("_register_file")

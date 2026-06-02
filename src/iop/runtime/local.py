@@ -60,6 +60,12 @@ class _LocalDirector(_DirectorProtocol):
     def restart_component(self, component_name: str) -> None:
         _director.restart_component(component_name)
 
+    def list_bindings(self, unused_only: bool = False) -> list[dict]:
+        return _migration_utils.list_component_bindings(unused_only=unused_only)
+
+    def unbind_component(self, iris_classname: str) -> None:
+        _migration_utils.unregister_component(iris_classname)
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------

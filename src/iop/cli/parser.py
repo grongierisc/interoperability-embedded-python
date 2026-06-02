@@ -52,6 +52,15 @@ def create_parser() -> argparse.ArgumentParser:
         "-i", "--init", help="init the iop module in iris", nargs="?", const="not_set"
     )
     parser.add_argument(
+        "--bindings",
+        help="list IOP-generated IRIS proxy class bindings",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--unbind",
+        help="remove an IOP-generated IRIS proxy class binding",
+    )
+    parser.add_argument(
         "-t", "--test", help="test the iop module in iris", nargs="?", const="not_set"
     )
     parser.add_argument("-u", "--update", help="update a production", action="store_true")
@@ -94,6 +103,13 @@ def create_parser() -> argparse.ArgumentParser:
         choices=("json", "python", "graph"),
         default="json",
         help="export format for -e/--export",
+    )
+
+    bindings = main_parser.add_argument_group("bindings arguments")
+    bindings.add_argument(
+        "--unused",
+        help="with --bindings, show only proxy classes unused by productions",
+        action="store_true",
     )
 
     remote = main_parser.add_argument_group("remote arguments")

@@ -72,6 +72,7 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 	#dim ex As %Exception.AbstractException
 	#dim tIsIOP As %Boolean = 0
 	#dim tClass As %Dictionary.CompiledClass
+	#dim tReferences As %DynamicArray
 	
 	Quit:(""=pClassname) $$$ERROR($$$EnsErrGeneral,"Remote class name must be specified.")
 	
@@ -90,14 +91,18 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 			}
 			Set tIsIOP = ("IOP.Utils" = tClass.GeneratedBy)
 		}
-		If tIsIOP {
-			Set tSC = ##class(%Dictionary.ClassDefinition).%DeleteId(pClassname)
-			If $$$ISERR(tSC) {
-				Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Unable to delete proxy class for remote class '%1' : '%2'.",pClassname,$System.Status.GetErrorText(tSC)))
-				Quit
-			}
-		} Else {
+		If 'tIsIOP {
 			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot delete class '%1' because it is not a IOP proxy class.",pClassname))
+			Quit
+		}
+		$$$ThrowOnError(..FindComponentProxyReferences(pClassname,.tReferences))
+		If tReferences.%Size() > 0 {
+			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Cannot delete class '%1' because it is used by production items: %2.",pClassname,..FormatComponentProxyReferences(tReferences)))
+			Quit
+		}
+		Set tSC = ##class(%Dictionary.ClassDefinition).%DeleteId(pClassname)
+		If $$$ISERR(tSC) {
+			Set tSC = $$$ERROR($$$EnsErrGeneral,$$$FormatText("Unable to delete proxy class for remote class '%1' : '%2'.",pClassname,$System.Status.GetErrorText(tSC)))
 			Quit
 		}
 		
@@ -106,6 +111,132 @@ ClassMethod DeleteComponentProxy(pClassname As %String = "") As %Status
 	}
 	
 	Quit tSC
+}
+
+ClassMethod FindComponentProxyReferences(
+	pClassname As %String,
+	ByRef pReferences) As %Status [ Internal ]
+{
+	#dim tSC As %Status = $$$OK
+	#dim ex As %Exception.AbstractException
+	Set pReferences = []
+	Quit:(""=pClassname) $$$ERROR($$$EnsErrGeneral,"Remote class name must be specified.")
+	Try {
+		Set tRS = ##class(%ResultSet).%New("Ens.Config.Production:ProductionStatus")
+		$$$ThrowOnError(tRS.Execute())
+		While tRS.Next() {
+			$$$ThrowOnError(..CollectProductionProxyReferences(tRS.Data("Production"),pClassname,.pReferences))
+		}
+	} Catch ex {
+		Set tSC = ex.AsStatus()
+	}
+	Quit tSC
+}
+
+ClassMethod CollectProductionProxyReferences(
+	pProductionName As %String,
+	pClassname As %String,
+	ByRef pReferences) As %Status [ Internal, Private ]
+{
+	#dim tProduction As Ens.Config.Production
+	#dim tItem As Ens.Config.Item
+	Set tProduction = ##class(Ens.Config.Production).%OpenId(pProductionName)
+	If '$IsObject(tProduction) {
+		Set tLoaded = ##class(Ens.Config.Production).LoadFromClass(pProductionName)
+		If $IsObject(tLoaded) {
+			Set tProduction = tLoaded
+		}
+	}
+	If '$IsObject(tProduction) {
+		Quit $$$OK
+	}
+	For i=1:1:tProduction.Items.Count() {
+		Set tItem = tProduction.Items.GetAt(i)
+		If '$IsObject(tItem) Continue
+		If tItem.ClassName = pClassname {
+			Set tReference = {}
+			Set tReference.production = pProductionName
+			Set tReference.item = tItem.Name
+			Do pReferences.%Push(tReference)
+		}
+	}
+	Quit $$$OK
+}
+
+ClassMethod FormatComponentProxyReferences(pReferences As %DynamicArray) As %String [ Internal, Private ]
+{
+	Set tValue = ""
+	For i=0:1:pReferences.%Size()-1 {
+		Set tReference = pReferences.%Get(i)
+		Set tValue = tValue_$Select(tValue="":"",1:", ")_tReference.production_"/"_tReference.item
+	}
+	Quit tValue
+}
+
+ClassMethod ListComponentProxies(pUnusedOnly As %Boolean = 0) As %String
+{
+	#dim ex As %Exception.AbstractException
+	Set tResult = []
+	Try {
+		Set tStmt = ##class(%SQL.Statement).%New()
+		$$$ThrowOnError(tStmt.%Prepare("SELECT Name FROM %Dictionary.ClassDefinition WHERE GeneratedBy = ? ORDER BY Name"))
+		Set tRS = tStmt.%Execute("IOP.Utils")
+		While tRS.%Next() {
+			Set tClassname = tRS.%Get("Name")
+			If '$classmethod(tClassname,"%Extends","IOP.Common") {
+				Continue
+			}
+			$$$ThrowOnError(..FindComponentProxyReferences(tClassname,.tReferences))
+			If pUnusedOnly {
+				If tReferences.%Size() > 0 {
+					Continue
+				}
+			}
+			Set tEntry = {}
+			Set tEntry."class" = tClassname
+			Set tEntry.super = ..ProxySuperClass(tClassname)
+			Set tEntry.module = ..ProxyPropertyInitialValue(tClassname,"%module")
+			Set tEntry.classname = ..ProxyPropertyInitialValue(tClassname,"%classname")
+			Set tEntry.classpaths = ..ProxyPropertyInitialValue(tClassname,"%classpaths")
+			Set tEntry.used = (tReferences.%Size() > 0)
+			Set tEntry."used_by" = tReferences
+			Do tResult.%Push(tEntry)
+		}
+	} Catch ex {
+		$$$ThrowOnError(ex.AsStatus())
+	}
+	Quit tResult.%ToJSON()
+}
+
+ClassMethod ProxySuperClass(pClassname As %String) As %String [ Internal, Private ]
+{
+	Set tClass = ##class(%Dictionary.ClassDefinition).%OpenId(pClassname)
+	If '$IsObject(tClass) {
+		Quit ""
+	}
+	Quit tClass.Super
+}
+
+ClassMethod ProxyPropertyInitialValue(
+	pClassname As %String,
+	pProperty As %String) As %String [ Internal, Private ]
+{
+	Set tStmt = ##class(%SQL.Statement).%New()
+	$$$ThrowOnError(tStmt.%Prepare("SELECT InitialExpression FROM %Dictionary.PropertyDefinition WHERE parent = ? AND name = ?"))
+	Set tRS = tStmt.%Execute(pClassname,pProperty)
+	If tRS.%Next() {
+		Quit ..UnquoteInitialExpression(tRS.%Get("InitialExpression"))
+	}
+	Quit ""
+}
+
+ClassMethod UnquoteInitialExpression(pValue As %String) As %String [ Internal, Private ]
+{
+	Set tValue = $Get(pValue)
+	If ($Extract(tValue,1)="""")&&($Extract(tValue,*)="""") {
+		Set tValue = $Extract(tValue,2,*-1)
+	}
+	Quit tValue
 }
 
 // ..GetRemoteClassInfo(pRemoteClassname,pModule,pCLASSPATHS,.tClassDetails,.tRemoteSettings)

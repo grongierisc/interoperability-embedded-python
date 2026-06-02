@@ -3,11 +3,21 @@
 import json
 import os
 from dataclasses import dataclass
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from iop import BusinessOperation, Field, PersistentMessage, Production
+from iop import (
+    BusinessOperation,
+    Field,
+    PersistentMessage,
+    Production,
+    bind_component,
+    list_bindings,
+    register_component,
+    unbind_component,
+    unregister_component,
+)
 from iop.messages.base import _Message as Message
 from iop.messages.base import _PydanticMessage as PydanticMessage
 from iop.migration import utils as migration_utils
@@ -29,12 +39,80 @@ class TestFileOperations:
 
 
 class TestComponentRegistration:
+    def test_public_binding_api_is_exported(self):
+        assert register_component is migration_utils.register_component
+        assert bind_component is migration_utils.bind_component
+        assert unregister_component is migration_utils.unregister_component
+        assert unbind_component is migration_utils.unbind_component
+        assert list_bindings is migration_utils.list_bindings
+
     def test_register_component_fails_on_iris_error(self, register_path):
         with patch("iris.cls", side_effect=RuntimeError):
             with pytest.raises(RuntimeError):
                 migration_utils.register_component(
                     "bo", "EmailOperation", register_path, 1, "UnitTest.EmailOperation"
                 )
+
+    def test_unregister_component_deletes_proxy_class(self):
+        iris = MagicMock()
+        iris.cls.return_value.DeleteComponentProxy.return_value = "ok"
+        iris.system.Status.IsError.return_value = False
+
+        with patch.object(migration_utils._iris, "get_iris", return_value=iris):
+            migration_utils.unregister_component("Python.WrongOperation")
+
+        iris.cls.assert_called_once_with("IOP.Utils")
+        iris.cls.return_value.DeleteComponentProxy.assert_called_once_with(
+            "Python.WrongOperation"
+        )
+
+    def test_unregister_component_requires_class_name(self):
+        with pytest.raises(ValueError, match="IRIS class name is required"):
+            migration_utils.unregister_component("")
+
+    def test_bind_component_alias_registers_component(self, register_path):
+        with patch.object(migration_utils, "register_component") as mock_register:
+            migration_utils.bind_component(
+                "bo",
+                "EmailOperation",
+                register_path,
+                1,
+                "UnitTest.EmailOperation",
+            )
+
+        mock_register.assert_called_once_with(
+            "bo",
+            "EmailOperation",
+            register_path,
+            1,
+            "UnitTest.EmailOperation",
+        )
+
+    def test_unbind_component_alias_unregisters_component(self):
+        with patch.object(migration_utils, "unregister_component") as mock_unregister:
+            migration_utils.unbind_component("Python.WrongOperation")
+
+        mock_unregister.assert_called_once_with("Python.WrongOperation")
+
+    def test_list_component_bindings_loads_json(self):
+        payload = [
+            {
+                "class": "Python.WrongOperation",
+                "module": "bo",
+                "classname": "WrongOperation",
+                "used": False,
+                "used_by": [],
+            }
+        ]
+        iris = MagicMock()
+        iris.cls.return_value.ListComponentProxies.return_value = json.dumps(payload)
+
+        with patch.object(migration_utils._iris, "get_iris", return_value=iris):
+            result = migration_utils.list_component_bindings(unused_only=True)
+
+        iris.cls.assert_called_once_with("IOP.Utils")
+        iris.cls.return_value.ListComponentProxies.assert_called_once_with(1)
+        assert result == payload
 
     def test_register_file_detects_polling_business_service(self, tmp_path):
         module_file = tmp_path / "bs.py"

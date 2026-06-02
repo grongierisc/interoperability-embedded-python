@@ -19,6 +19,8 @@ class CommandType(Enum):
     LOG = auto()
     QUEUE = auto()
     INIT = auto()
+    BINDINGS = auto()
+    UNBIND = auto()
     HELP = auto()
     UPDATE = auto()
 
@@ -42,6 +44,9 @@ class CommandArgs:
     log: str | None = None
     queue: str | None = None
     init: str | None = None
+    bindings: bool = False
+    unused: bool = False
+    unbind: str | None = None
     test: str | None = None
     classname: str | None = None
     body: str | None = None

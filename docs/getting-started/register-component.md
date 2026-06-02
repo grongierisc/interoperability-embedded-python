@@ -9,6 +9,11 @@ There are two main ways to register your Python components with IRIS Interoperab
     - Register all components in a file using `register_file` 
     - Register all components in a folder using `register_folder`
 
+Registering a Python component creates an IRIS proxy class that points to the
+Python implementation. The CLI calls this a binding. Removing that proxy class
+is called unbinding or unregistering; it does not delete Python source files or
+production items.
+
 ## With a Settings File
 
 Create a `settings.py` file in the root of your project. This file will be used to register your classes and productions.
@@ -33,21 +38,56 @@ Use the `iop` command line to register your component:
 iop --migrate /path/to/your/project/settings.py
 ```
 
+If the wrong IRIS class name was used, remove the generated proxy class:
+
+```bash
+iop --unbind Python.MyBusinessOperation
+```
+
+If a production item still uses that class, unbind fails and reports the
+production item references. Remove or change those items before unbinding.
+
 ## Using the Python Shell
 
 ### Registering a Single Component
 
-Use the `register_component` method to add a new Python file to the component list for interoperability.
+Use `register_component` or `bind_component` to create an IRIS proxy class
+binding for a Python component.
 
 ```python
-from iop import Utils
-Utils.register_component(<ModuleName>,<ClassName>,<PathToPyFile>,<OverWrite>,<NameOfTheComponent>)
+from iop import bind_component, register_component
+
+register_component(<ModuleName>, <ClassName>, <PathToPyFile>, <OverWrite>, <NameOfTheComponent>)
+bind_component(<ModuleName>, <ClassName>, <PathToPyFile>, <OverWrite>, <NameOfTheComponent>)
 ```
 
 Example:
 ```python
-from iop import Utils
-Utils.register_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+from iop import bind_component
+
+bind_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
+```
+
+### Unregistering a Component Binding
+
+Use `unregister_component` or `unbind_component` to remove an IOP-generated
+IRIS proxy class binding:
+
+```python
+from iop import unbind_component, unregister_component
+
+unregister_component("PEX.MyCombinedBusinessOperation")
+unbind_component("PEX.MyCombinedBusinessOperation")
+```
+
+The Python source file is not changed. IRIS refuses the operation if the proxy
+class is still used by a production item.
+
+You can inspect generated proxy class bindings from the CLI:
+
+```bash
+iop --bindings
+iop --bindings --unused
 ```
 
 ### Registering All Components in a File

@@ -121,6 +121,14 @@ class _RemoteDirector(_RemoteClient, _DirectorProtocol):
             self._post("/component/restart", {"component": component_name})
         )
 
+    def list_bindings(self, unused_only: bool = False) -> list[dict]:
+        params = {"unused": 1} if unused_only else {}
+        data = self._check_error(self._get("/bindings", params))
+        return data if isinstance(data, list) else []
+
+    def unbind_component(self, iris_classname: str) -> None:
+        self._check_error(self._delete("/binding", {"class": iris_classname}))
+
     # ------------------------------------------------------------------
     # Logging
     # ------------------------------------------------------------------

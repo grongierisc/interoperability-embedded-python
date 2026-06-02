@@ -17,6 +17,8 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
 <Route Url="/component/start"   Method="POST" Call="PostComponentStart"/>
 <Route Url="/component/stop"    Method="POST" Call="PostComponentStop"/>
 <Route Url="/component/restart" Method="POST" Call="PostComponentRestart"/>
+<Route Url="/bindings" Method="GET" Call="GetBindings"/>
+<Route Url="/binding"  Method="DELETE" Call="DeleteBinding"/>
 <Route Url="/list"     Method="GET"  Call="GetList"/>
 <Route Url="/default"  Method="GET"  Call="GetDefault"/>
 <Route Url="/default"  Method="PUT"  Call="PutDefault"/>
@@ -193,6 +195,40 @@ ClassMethod PostComponentRestart() As %Status
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
 	}
+}
+
+ClassMethod DeleteBinding() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		Set classname = %request.Get("class")
+		If classname = "" { Set classname = %request.Get("classname") }
+		If classname = "" { Throw $$$ERROR("NoClassSpecified") }
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		$$$ThrowOnError(##class(IOP.Utils).DeleteComponentProxy(classname))
+		Return ..%WriteResponse({"status": "unbound", "class": (classname)}.%ToJSON())
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod GetBindings() As %Status
+{
+	Try {
+		Set ns = ..GetNsParam()
+		Set unused = ..BooleanQueryParam(%request.Get("unused"))
+		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
+		Set jsonStr = ##class(IOP.Utils).ListComponentProxies(unused)
+		Return ..%WriteResponse(jsonStr)
+	} Catch ex {
+		Return ..%WriteErrorResponse(ex.DisplayString())
+	}
+}
+
+ClassMethod BooleanQueryParam(pValue As %String) As %Boolean [ Internal, Private ]
+{
+	Set value = $ZCONVERT(pValue,"L")
+	Quit $Select(value="1":1,value="true":1,value="yes":1,value="on":1,1:0)
 }
 
 ClassMethod GetList() As %Status

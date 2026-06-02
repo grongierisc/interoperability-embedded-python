@@ -298,6 +298,56 @@ class TestIOPCli(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
             mock_setup.assert_called_once_with(None)
 
+    def test_unbind(self):
+        """Test unbinding an IOP-generated proxy class."""
+        with patch(
+            "iop.runtime.local._LocalDirector.unbind_component"
+        ) as mock_unbind:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--unbind", "Python.WrongOperation"])
+                self.assertEqual(cm.exception.code, 0)
+
+        mock_unbind.assert_called_once_with("Python.WrongOperation")
+        self.assertIn("Removed binding Python.WrongOperation.", fake_out.getvalue())
+
+    def test_bindings(self):
+        """Test listing IOP-generated proxy class bindings."""
+        payload = [{"class": "Python.WrongOperation", "used": False, "used_by": []}]
+        with patch(
+            "iop.runtime.local._LocalDirector.list_bindings",
+            return_value=payload,
+        ) as mock_bindings:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--bindings"])
+                self.assertEqual(cm.exception.code, 0)
+
+        mock_bindings.assert_called_once_with(unused_only=False)
+        self.assertIn('"class": "Python.WrongOperation"', fake_out.getvalue())
+
+    def test_bindings_unused(self):
+        """--bindings --unused lists only unused proxy class bindings."""
+        with patch(
+            "iop.runtime.local._LocalDirector.list_bindings",
+            return_value=[],
+        ) as mock_bindings:
+            with patch("sys.stdout", new=StringIO()):
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--bindings", "--unused"])
+                self.assertEqual(cm.exception.code, 0)
+
+        mock_bindings.assert_called_once_with(unused_only=True)
+
+    def test_unused_requires_bindings(self):
+        """--unused is only valid with --bindings."""
+        with patch("sys.stderr", new=StringIO()) as fake_err:
+            with self.assertRaises(SystemExit) as cm:
+                main(["--unused"])
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertIn("--unused can only be used with --bindings", fake_err.getvalue())
+
     def test_component_testing(self):
         """Test component testing functionality."""
         # _LocalDirector.test_component delegates positionally: (target, message, classname, body)
@@ -499,6 +549,34 @@ class TestCLIRemoteMode(unittest.TestCase):
                 main(["-u"])
         args, _ = mock_post.call_args
         self.assertIn("/update", args[0])
+
+    @patch("requests.delete")
+    def test_unbind_uses_remote_director(self, mock_delete):
+        mock_delete.return_value = self._mock_resp({"status": "unbound"})
+        with patch.dict(os.environ, self._BASE_ENV, clear=True):
+            with patch("sys.stdout", new=StringIO()) as out:
+                with self.assertRaises(SystemExit):
+                    main(["--unbind", "Python.WrongOperation"])
+
+        self.assertIn("Removed binding Python.WrongOperation.", out.getvalue())
+        args, kwargs = mock_delete.call_args
+        self.assertIn("/binding", args[0])
+        self.assertEqual(kwargs["params"]["class"], "Python.WrongOperation")
+
+    @patch("requests.get")
+    def test_bindings_uses_remote_director(self, mock_get):
+        mock_get.return_value = self._mock_resp(
+            [{"class": "Python.WrongOperation", "used": False, "used_by": []}]
+        )
+        with patch.dict(os.environ, self._BASE_ENV, clear=True):
+            with patch("sys.stdout", new=StringIO()) as out:
+                with self.assertRaises(SystemExit):
+                    main(["--bindings", "--unused"])
+
+        self.assertIn("Python.WrongOperation", out.getvalue())
+        args, kwargs = mock_get.call_args
+        self.assertIn("/bindings", args[0])
+        self.assertEqual(kwargs["params"]["unused"], 1)
 
     @patch("requests.post")
     def test_test_uses_remote_director(self, mock_post):

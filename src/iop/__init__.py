@@ -20,6 +20,11 @@ from iop.messages.persistent import Field as Field
 from iop.messages.persistent import Model as Model
 from iop.messages.persistent import _PersistentMessage
 from iop.migration.utils import _Utils
+from iop.migration.utils import bind_component as bind_component
+from iop.migration.utils import list_bindings as list_bindings
+from iop.migration.utils import register_component as register_component
+from iop.migration.utils import unbind_component as unbind_component
+from iop.migration.utils import unregister_component as unregister_component
 from iop.production import ComponentRef as ComponentRef
 from iop.production import Port as Port
 from iop.production import Production as Production
@@ -58,9 +63,14 @@ __all__ = [
     "PydanticPickleMessage",
     "Setting",
     "Utils",
+    "bind_component",
     "controls",
+    "list_bindings",
+    "register_component",
     "setting",
     "target",
+    "unbind_component",
+    "unregister_component",
 ]
 
 

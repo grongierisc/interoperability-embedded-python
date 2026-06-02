@@ -1,9 +1,14 @@
 # Settings Configuration
 
-The migration file is the central configuration file for registering your
-interoperability components. It is commonly named `settings.py`, but it can be
-any Python file, such as a single-file production named `demo.py`. It defines
+The migration file is the central configuration file for applying Python IOP
+configuration to IRIS. It is commonly named `settings.py`, but it can be any
+Python file, such as a single-file production named `demo.py`. It defines
 classes, productions, schemas, and remote connection settings.
+
+In this documentation, **migrate** means applying the file to IRIS. **Bind** or
+**register** means creating an IRIS proxy class for a Python component.
+**Unbind** or **unregister** means removing that generated proxy class. Unbind
+does not delete Python source files or production items.
 
 ## Quick Start
 
@@ -17,11 +22,18 @@ CLASSES = {
 }
 ```
 
-Register your components:
+Apply the migration file:
 ```bash
 iop --migrate /path/to/your/project/settings.py
 # or
 iop --migrate /path/to/your/project/demo.py
+```
+
+If you bind a Python class to the wrong IRIS proxy class name, remove that
+binding with:
+
+```bash
+iop --unbind Python.MyBusinessOperation
 ```
 
 ## Configuration Sections

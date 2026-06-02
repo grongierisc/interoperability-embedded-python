@@ -2,16 +2,20 @@
 
 No IRIS instance is required — all HTTP calls are mocked.
 """
-import json
 import os
 import tempfile
 import unittest
-from unittest.mock import MagicMock, patch, call
+from io import StringIO
+from unittest.mock import MagicMock, patch
 
 import requests
 
-from iop.runtime.remote import _RemoteDirector, get_remote_settings, _print_log_entry, _load_remote_settings_from_file
-
+from iop.runtime.remote import (
+    _load_remote_settings_from_file,
+    _print_log_entry,
+    _RemoteDirector,
+    get_remote_settings,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -442,6 +446,14 @@ class TestHttpHelpers(unittest.TestCase):
         self.assertEqual(kwargs["params"]["namespace"], "USER")
         self.assertNotIn("namespace", kwargs["json"])
 
+    @patch("requests.delete")
+    def test_delete_includes_namespace(self, mock_delete):
+        mock_delete.return_value = _mock_response({"status": "ok"})
+        self.d._delete("/binding", {"class": "Python.WrongOperation"})
+        _, kwargs = mock_delete.call_args
+        self.assertEqual(kwargs["params"]["namespace"], "USER")
+        self.assertEqual(kwargs["params"]["class"], "Python.WrongOperation")
+
     @patch("requests.get")
     def test_get_raises_on_error_status(self, mock_get):
         resp = _mock_response({}, status_code=500)
@@ -571,6 +583,32 @@ class TestProductionLifecycle(unittest.TestCase):
         self.assertTrue(args[0].endswith("/component/restart"))
         self.assertEqual(kwargs["json"]["component"], "Python.MyOp")
 
+    @patch("requests.get")
+    def test_list_bindings(self, mock_get):
+        data = [{"class": "Python.MyOp", "used": False, "used_by": []}]
+        mock_get.return_value = _mock_response(data)
+        result = self.d.list_bindings()
+        args, kwargs = mock_get.call_args
+        self.assertTrue(args[0].endswith("/bindings"))
+        self.assertNotIn("unused", kwargs["params"])
+        self.assertEqual(result, data)
+
+    @patch("requests.get")
+    def test_list_bindings_unused(self, mock_get):
+        mock_get.return_value = _mock_response([])
+        result = self.d.list_bindings(unused_only=True)
+        _, kwargs = mock_get.call_args
+        self.assertEqual(kwargs["params"]["unused"], 1)
+        self.assertEqual(result, [])
+
+    @patch("requests.delete")
+    def test_unbind_component(self, mock_delete):
+        mock_delete.return_value = _mock_response({"status": "unbound"})
+        self.d.unbind_component("Python.WrongOperation")
+        args, kwargs = mock_delete.call_args
+        self.assertTrue(args[0].endswith("/binding"))
+        self.assertEqual(kwargs["params"]["class"], "Python.WrongOperation")
+
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -619,15 +657,12 @@ class TestLogging(unittest.TestCase):
     def test_log_production_top_prints(self, mock_get):
         entries = [self._make_log_entry(1, "msg1"), self._make_log_entry(2, "msg2")]
         mock_get.return_value = _mock_response(entries)
-        from io import StringIO
         with patch("builtins.print") as mock_print:
             self.d.log_production_top(top=2)
         self.assertEqual(mock_print.call_count, 2)
 
     def test_print_log_entry(self):
         entry = self._make_log_entry(1, "test message")
-        from io import StringIO
-        import sys
         captured = StringIO()
         with patch("sys.stdout", captured):
             _print_log_entry(entry)
@@ -658,7 +693,7 @@ class TestTestComponent(unittest.TestCase):
     @patch("requests.post")
     def test_with_classname_and_body(self, mock_post):
         mock_post.return_value = _mock_response({"classname": "Python.MyMsg", "body": '{"k":"v"}'})
-        result = self.d.test_component("Python.MyOp", classname="Python.MyMsg", body='{"k":"v"}')
+        self.d.test_component("Python.MyOp", classname="Python.MyMsg", body='{"k":"v"}')
         _, kwargs = mock_post.call_args
         self.assertEqual(kwargs["json"]["classname"], "Python.MyMsg")
         self.assertEqual(kwargs["json"]["body"], '{"k":"v"}')
