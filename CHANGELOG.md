@@ -5,17 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.7.2] - Unreleased
+## [4.0.0] - unreleased
+### Breaking Changes
+- Remove the legacy `grongier.pex` compatibility package and `Grongier.PEX` ObjectScript classes. Use `iop` and `IOP.*` classes instead.
+- Rename Python component lifecycle hooks to snake_case, including `on_init`, `on_message`, and `on_process_input`.
+- Move implementation modules from private `iop._*` files into package namespaces such as `iop.components`, `iop.messages`, `iop.migration`, `iop.production`, and `iop.runtime`.
+- Remove the legacy WSGI helper classes and package metadata from `setup.py`; project metadata is now managed from `pyproject.toml`.
+
 ### Added
-- Add `PollingBusinessService` for `iop` and `grongier.pex` to create scheduled polling business services without manually returning `Ens.InboundAdapter`.
+- Add `PollingBusinessService` for `iop` to create scheduled polling business services without manually returning `Ens.InboundAdapter`.
 - Add `iop --migrate --dry-run` / `--explain` to print and validate the migration plan without writing to IRIS.
 - Add Pythonic component setting metadata with `setting(...)`, `Setting`, `Category`, and `controls` helpers for IRIS production categories, descriptions, required flags, and editor controls.
 - Add `Production` module: a Python DSL for authoring, importing, diffing, and managing IRIS interoperability production topology entirely from Python. Declare components, ports, and routing with `service()`, `operation()`, `process()`, `connect()`, and `connect_add()`; drive the full production lifecycle (`start`, `stop`, `restart`, `test`, `diff`, `apply`); and export the topology as a typed graph (`ProductionGraph`, `GraphEdge`, `GraphNode`).
+- Add production reconstruction and rendering support to import productions from IRIS, rebuild them from dictionaries, export them as JSON, XML, Python drafts, or graph data, and include runtime connections and queue information.
+- Add runtime director abstractions for local and remote IRIS management, including namespace-aware production control, component start/stop/restart, queue inspection, runtime connection export, and `DirectorProtocol`.
+- Add REST endpoints for production connections, queue information, component lifecycle actions, and IOP-generated proxy class bindings.
+- Add CLI support for export formats with `--format json|python|graph`, remote settings files with `-R/--remote-settings`, `--bindings`, `--unused`, and `--unbind`.
+- Add public binding helpers: `bind_component`, `unbind_component`, `list_bindings`, `register_component`, and `unregister_component`.
+- Add support metadata for Python 3.13 and 3.14.
 
 ### Changed
 - Register `PollingBusinessService` classes through package/file migration.
 - Improve migration output and validation for common message registration mistakes.
 - Include mode, namespace, and a final success line in migration output.
+- Refactor the CLI into dedicated parser, formatting, and type modules.
+- Refactor remote runtime support into dedicated client, director, migration, settings, and setup modules.
+- Improve production object migration by automatically registering referenced component, adapter, and `PersistentMessage` classes with deduplication.
+- Improve business host connection discovery and message serialization error handling.
+- Update demos, tests, and documentation to use the `iop` package layout, snake_case hooks, and Pythonic production definitions.
+
+### Deprecated
+- Deprecate the static `iop.Utils` / `iop.migration.utils._Utils` facades in favor of functions in `iop.migration.utils`; these facades are scheduled for removal in v5.0.
+- Deprecate the static `iop.Director` / `iop.runtime.director._Director` facades in favor of functions in `iop.runtime.director`; these facades are scheduled for removal in v5.0.
+
+### Fixed
+- Fix production graph edge assertions and runtime connection handling to match the new graph structure.
+- Fix production lifecycle and migration error handling for local and remote execution paths.
+- Fix component connection discovery so inspection does not execute component initialization hooks.
 
 ## [3.7.1] - 2026-05-28
 ### Added
