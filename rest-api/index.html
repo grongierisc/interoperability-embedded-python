@@ -86,7 +86,21 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#get-apiiopexport">GET /api/iop/export</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopconnections">GET /api/iop/connections</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopqueues">GET /api/iop/queues</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#post-apiioptest">POST /api/iop/test</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopcomponentstart">POST /api/iop/component/start</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopcomponentstop">POST /api/iop/component/stop</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#post-apiiopcomponentrestart">POST /api/iop/component/restart</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#delete-apiiopbinding">DELETE /api/iop/binding</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#get-apiiopbindings">GET /api/iop/bindings</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#put-apiiopmigrate">PUT /api/iop/migrate</a>
     </li>
@@ -421,7 +435,7 @@ while True:
     resp = requests.get(
         &quot;http://localhost:52773/api/iop/log&quot;,
         params={&quot;since_id&quot;: last_id, &quot;namespace&quot;: &quot;USER&quot;},
-        auth=(&quot;_SYSTEM&quot;, &quot;SYS&quot;)
+        auth=(&quot;&lt;USER&gt;&quot;, &quot;&lt;PASSWORD&gt;&quot;),
     )
     entries = resp.json()
     for entry in entries:
@@ -481,6 +495,96 @@ while True:
 }
 </code></pre>
 <hr />
+<h2 id="get-apiiopconnections">GET /api/iop/connections</h2>
+<p>Exports runtime graph connections for a production. The endpoint calls
+<code>OnGetConnections</code> for each production item, so it can report connections from
+generated Python proxy classes, ObjectScript classes, and built-in <code>Ens.Host</code>
+components.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>string</td>
+<td>last-used production</td>
+<td>Production class name to inspect</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;production&quot;: &quot;MyApp.Production&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;item&quot;: &quot;FileInput&quot;,
+      &quot;class_name&quot;: &quot;Python.demo.FileService&quot;,
+      &quot;adapter_class_name&quot;: &quot;Ens.InboundAdapter&quot;,
+      &quot;connections&quot;: [&quot;OrderOperation&quot;],
+      &quot;warnings&quot;: []
+    }
+  ],
+  &quot;warnings&quot;: []
+}
+</code></pre>
+<hr />
+<h2 id="get-apiiopqueues">GET /api/iop/queues</h2>
+<p>Exports runtime queue counters for production items. Queue data is runtime-only
+metadata and is not written back to production XML.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>string</td>
+<td>last-used production</td>
+<td>Production class name to inspect</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{
+  &quot;production&quot;: &quot;MyApp.Production&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;item&quot;: &quot;FileInput&quot;,
+      &quot;queue_name&quot;: &quot;FileInput&quot;,
+      &quot;class_name&quot;: &quot;Python.demo.FileService&quot;,
+      &quot;exists&quot;: true,
+      &quot;count&quot;: 0
+    }
+  ],
+  &quot;warnings&quot;: []
+}
+</code></pre>
+<hr />
 <h2 id="post-apiioptest">POST /api/iop/test</h2>
 <p>Sends a test message to a target component and returns the response synchronously.</p>
 <p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
@@ -532,17 +636,128 @@ while True:
 </code></pre>
 <p><code>truncated</code> is <code>true</code> when the response body was too large to return in full.</p>
 <hr />
+<h2 id="post-apiiopcomponentstart">POST /api/iop/component/start</h2>
+<p>Starts/enables one component in the current production runtime.</p>
+<p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{&quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<p><code>item</code> is accepted as an alias for <code>component</code>.</p>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;started&quot;, &quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiiopcomponentstop">POST /api/iop/component/stop</h2>
+<p>Stops/disables one component in the current production runtime.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{&quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;stopped&quot;, &quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<hr />
+<h2 id="post-apiiopcomponentrestart">POST /api/iop/component/restart</h2>
+<p>Restarts one component by disabling then enabling it.</p>
+<p><strong>Request body</strong></p>
+<pre><code class="language-json">{&quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;restarted&quot;, &quot;component&quot;: &quot;Python.MyOperation&quot;}
+</code></pre>
+<hr />
+<h2 id="delete-apiiopbinding">DELETE /api/iop/binding</h2>
+<p>Removes one IOP-generated IRIS proxy class binding.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>class</code></td>
+<td>string</td>
+<td>-</td>
+<td>IRIS proxy class name to remove</td>
+</tr>
+</tbody>
+</table>
+<p><code>classname</code> is accepted as an alias for <code>class</code>.</p>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">{&quot;status&quot;: &quot;unbound&quot;, &quot;class&quot;: &quot;Python.WrongOperation&quot;}
+</code></pre>
+<p>This endpoint only removes the generated IRIS proxy class. It does not delete
+Python source files or production items. If any production item still uses the
+proxy class, the endpoint fails and returns those production item references in
+the error text.</p>
+<hr />
+<h2 id="get-apiiopbindings">GET /api/iop/bindings</h2>
+<p>Lists IOP-generated IRIS proxy class bindings.</p>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>namespace</code></td>
+<td>string</td>
+<td><code>USER</code></td>
+<td>Target IRIS namespace</td>
+</tr>
+<tr>
+<td><code>unused</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Return only proxy classes unused by productions</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<pre><code class="language-json">[
+  {
+    &quot;class&quot;: &quot;Python.FileOperation&quot;,
+    &quot;super&quot;: &quot;IOP.BusinessOperation&quot;,
+    &quot;module&quot;: &quot;bo&quot;,
+    &quot;classname&quot;: &quot;FileOperation&quot;,
+    &quot;classpaths&quot;: &quot;/irisdev/app/src/python/demo&quot;,
+    &quot;used&quot;: true,
+    &quot;used_by&quot;: [
+      {&quot;production&quot;: &quot;Demo.Production&quot;, &quot;item&quot;: &quot;FileOut&quot;}
+    ]
+  }
+]
+</code></pre>
+<hr />
 <h2 id="put-apiiopmigrate">PUT /api/iop/migrate</h2>
-<p>Uploads a Python package to the server and runs its <code>settings.py</code> migration.</p>
+<p>Uploads a Python package to the server and runs its migration entrypoint. The
+entrypoint defaults to <code>settings.py</code>, but clients can pass another Python file
+name such as <code>demo.py</code>.</p>
 <p><strong>Namespace</strong> — query string (<code>?namespace=</code>) or JSON body field (body wins).</p>
 <p><strong>Request body</strong></p>
 <pre><code class="language-json">{
   &quot;namespace&quot;:     &quot;USER&quot;,
   &quot;remote_folder&quot;: &quot;/opt/iris/packages&quot;,
   &quot;package&quot;:       &quot;my_package&quot;,
+  &quot;settings_file&quot;: &quot;demo.py&quot;,
   &quot;body&quot;: [
     {&quot;name&quot;: &quot;__init__.py&quot;,  &quot;data&quot;: &quot;&quot;},
-    {&quot;name&quot;: &quot;settings.py&quot;,  &quot;data&quot;: &quot;...&quot;}
+    {&quot;name&quot;: &quot;demo.py&quot;,  &quot;data&quot;: &quot;...&quot;}
   ]
 }
 </code></pre>
@@ -564,6 +779,11 @@ while True:
 <td><code>package</code></td>
 <td>Yes</td>
 <td>Package directory name</td>
+</tr>
+<tr>
+<td><code>settings_file</code></td>
+<td>No</td>
+<td>Migration entrypoint file inside <code>body</code>. Defaults to <code>settings.py</code>.</td>
 </tr>
 <tr>
 <td><code>body</code></td>

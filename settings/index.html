@@ -88,6 +88,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#productions-section">PRODUCTIONS Section</a>
         <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#pythonic-production">Pythonic Production</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#minimal-production">Minimal Production</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#full-production-configuration">Full Production Configuration</a>
@@ -153,20 +155,33 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="settings-configuration">Settings Configuration</h1>
-<p>The <code>settings.py</code> file is the central configuration file for registering your interoperability components. It defines classes, productions, schemas, and remote connection settings.</p>
+<p>The migration file is the central configuration file for applying Python IOP
+configuration to IRIS. It is commonly named <code>settings.py</code>, but it can be any
+Python file, such as a single-file production named <code>demo.py</code>. It defines
+classes, productions, schemas, and remote connection settings.</p>
+<p>In this documentation, <strong>migrate</strong> means applying the file to IRIS. <strong>Bind</strong> or
+<strong>register</strong> means creating an IRIS proxy class for a Python component.
+<strong>Unbind</strong> or <strong>unregister</strong> means removing that generated proxy class. Unbind
+does not delete Python source files or production items.</p>
 <h2 id="quick-start">Quick Start</h2>
-<p>Create a <code>settings.py</code> file in your project root:</p>
+<p>Create a migration file in your project root:</p>
 <pre><code class="language-python">import bo
 
 CLASSES = {
     &quot;Python.MyBusinessOperation&quot;: bo.MyBusinessOperation
 }
 </code></pre>
-<p>Register your components:</p>
+<p>Apply the migration file:</p>
 <pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
+# or
+iop --migrate /path/to/your/project/demo.py
+</code></pre>
+<p>If you bind a Python class to the wrong IRIS proxy class name, remove that
+binding with:</p>
+<pre><code class="language-bash">iop --unbind Python.MyBusinessOperation
 </code></pre>
 <h2 id="configuration-sections">Configuration Sections</h2>
-<p>The <code>settings.py</code> file supports four main sections:</p>
+<p>The migration file supports four main sections:</p>
 <table>
 <thead>
 <tr>
@@ -216,11 +231,167 @@ CLASSES = {
     &quot;Demo.Msg.OrderMessage&quot;: OrderMessage,
 }
 </code></pre>
+<p>For Python-authored productions, you can declare native messages on the
+<code>Production</code> object instead:</p>
+<pre><code class="language-python">from iop import Field, PersistentMessage, Production
+
+
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True)
+
+
+prod = Production(&quot;Demo.Production&quot;)
+prod.message(&quot;Demo.Msg.OrderMessage&quot;, OrderMessage)
+
+PRODUCTIONS = [prod]
+</code></pre>
 <p>Regular <code>Message</code> and <code>PydanticMessage</code> classes do not go in <code>CLASSES</code> or
 native message registration. Add them to <code>SCHEMAS</code> only when you need DTL schema
 support.</p>
 <h2 id="productions-section">PRODUCTIONS Section</h2>
 <p>Define complete production configurations with multiple components.</p>
+<h3 id="pythonic-production">Pythonic Production</h3>
+<p>You can define productions with <code>Production</code> objects instead of raw dictionaries.
+This is the authoring DSL for Python-defined topology: items, ports, settings,
+and connections are declared in Python, then migration emits the same IRIS
+production definition shape as the legacy dictionary format.</p>
+<p>Python <code>Production</code> is the source of truth for Python-authored topology. IRIS
+remains the runtime source of truth. Imported graphs are operational
+reconstructions until metadata persistence makes round-trip fidelity possible.</p>
+<p>The topology is modeled as a directed multigraph of possible communication
+routes. A route edge is not a DAG execution dependency; it says that a component
+may communicate with another component through a port or runtime route.</p>
+<pre><code class="language-python">from dataclasses import dataclass
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class OrderRequest(Message):
+    order_id: str = &quot;&quot;
+
+
+class FileService(PollingBusinessService):
+    Output = target(&quot;orders&quot;)
+
+    def on_process_input(self, message_input):
+        return self.send_request_sync(
+            self.Output,
+            OrderRequest(order_id=&quot;777&quot;),
+        )
+
+
+class OrderOperation(BusinessOperation):
+    pass
+
+
+prod = Production(&quot;Demo.Production&quot;, testing_enabled=True)
+file = prod.service(&quot;FileInput&quot;, FileService)
+orders = prod.operation(OrderOperation)
+prod.connect(file.Output, orders)
+
+PRODUCTIONS = [prod]
+</code></pre>
+<p><code>target()</code> declares an outbound port on the component class. <code>prod.connect()</code>
+sets that port to the destination component for the generated production and
+keeps graph metadata available to Python.</p>
+<p>You can also author the same topology progressively:</p>
+<pre><code class="language-python">prod = (
+    Production(&quot;Demo.Production&quot;)
+    .testing()
+    .actor_pool(2)
+    .describe(&quot;Order ingestion&quot;)
+)
+
+orders = prod.operation(OrderOperation)
+
+file = (
+    prod.service(&quot;FileInput&quot;, FileService)
+    .pool(2)
+    .host_setting(&quot;Limit&quot;, 10)
+    .adapter_setting(&quot;Charset&quot;, &quot;utf-8&quot;)
+    .connect(&quot;Output&quot;, orders)
+)
+
+PRODUCTIONS = [prod]
+</code></pre>
+<p>Progressive methods mutate the same <code>Production</code> and <code>ComponentRef</code> objects.
+There is no separate public builder.</p>
+<p>You can also reference existing ObjectScript or built-in IRIS components by
+class name. These classes are not registered as Python components.</p>
+<pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)
+file = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
+out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
+
+prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
+</code></pre>
+<p><code>ComponentRef.component_class</code> is the Python business host implementation class.
+Adapter metadata is separate and exposed through <code>adapter_class_name</code>.
+For Python adapter classes that should be registered automatically, pass
+<code>adapter_class=...</code> when declaring the production item. The business host class
+must still declare the adapter type with <code>get_adapter_type()</code> because IRIS stores
+that adapter on the generated host class, not in production item XML.</p>
+<p>Existing IRIS productions can be fetched back into the Python model:</p>
+<pre><code class="language-python">prod = Production.from_iris(&quot;Demo.Production&quot;)
+print(prod.graph())
+</code></pre>
+<p><code>from_iris()</code> reads the exported production definition and uses IRIS
+<code>OnGetConnections</code> data when available. If runtime connection data cannot be
+read, it falls back to Host settings whose value names another production item.
+If runtime discovery returns no targets for an item, Host settings are still
+used to draw inferred possible routes.
+When available, runtime connection export also supplies adapter metadata such
+as <code>adapter_class_name</code>; for loaded Python host classes this can also be
+inferred from <code>get_adapter_type()</code>.
+The fetched graph is an operational reconstruction, not a replacement for the
+Python source. Logical <code>target("orders")</code> names and Python class objects are not
+recoverable from IRIS unless they are also present in the Python source.</p>
+<p>Runtime queue counters are separate from the authoring graph:</p>
+<pre><code class="language-python">prod = Production.from_iris(&quot;Demo.Production&quot;)
+queues = prod.queue()
+</code></pre>
+<p>Queue data is point-in-time runtime information from IRIS. It is not serialized
+by <code>prod.to_dict()</code> and does not change migration output. <code>prod.queue_info()</code>
+remains available as a compatibility alias.</p>
+<p>Diffing is explicit and directional:</p>
+<pre><code class="language-python">delta = prod.diff()
+print(delta)
+</code></pre>
+<p>With no argument, <code>diff()</code> imports the deployed IRIS production and reports the
+changes needed to make that runtime reconstruction match the Python
+<code>Production</code> object. You can also pass another <code>Production</code> or an exported
+production dictionary: <code>prod.diff(other_prod)</code>.</p>
+<p><code>diff()</code> compares the deployable production shape and ignores route import
+metadata when the IRIS settings are equivalent. Use <code>prod.graph_diff(...)</code> to
+compare graph metadata such as whether a route was authored in Python, imported
+from runtime <code>OnGetConnections</code>, or inferred from Host settings.</p>
+<p><code>prod.test_component("Item.Port", message)</code> resolves from the current
+<code>Production</code> object graph only. If you want to test a production that already
+exists in IRIS, use <code>Production.from_iris(...)</code> first and call
+<code>test_component()</code> on the imported operational reconstruction. <code>prod.test(...)</code>
+remains available as a compatibility alias.</p>
+<p>Lifecycle methods are scoped to the production object. <code>prod.stop()</code>,
+<code>prod.restart()</code>, <code>prod.kill()</code>, and <code>prod.update()</code> verify that IRIS currently
+points at the same production before invoking the underlying IRIS lifecycle
+operation.</p>
+<p>Component-level runtime management is also available:</p>
+<pre><code class="language-python">orders = prod.component_ref(&quot;OrderOperation&quot;)
+info = orders.inspect()
+orders.stop()
+orders.start()
+orders.restart()
+orders.test(OrderRequest(order_id=&quot;123&quot;))
+
+# equivalent production-level calls
+info = prod.inspect_component(&quot;OrderOperation&quot;)
+prod.stop_component(&quot;OrderOperation&quot;)
+prod.start_component(&quot;OrderOperation&quot;)
+prod.restart_component(file.Output)
+</code></pre>
+<p><code>inspect_component(...)</code> returns the component definition, incoming/outgoing
+routes, queue counters when available, and the current runtime production
+status. Component start/stop/restart is scoped to the same production object.
+<code>ComponentRef</code> is a Python handle to a production item, not the live IRIS host
+instance.</p>
 <h3 id="minimal-production">Minimal Production</h3>
 <pre><code class="language-python">PRODUCTIONS = [
     {

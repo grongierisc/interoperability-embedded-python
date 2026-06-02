@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/production-graph-roadmap/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Production Graph Roadmap And Gaps - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Production Graph Roadmap And Gaps";
+        var mkdocs_page_input_path = "production-graph-roadmap.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/production-graph-roadmap/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../settings/">Settings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Production Graph Roadmap And Gaps</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="production-graph-roadmap-and-gaps">Production Graph Roadmap And Gaps</h1>
+<h2 id="summary">Summary</h2>
+<p><code>Production</code> is the Python authoring DSL for interoperability production
+topology. It owns the Python-authored graph: items, ports, settings, and
+connections.</p>
+<p>Python <code>Production</code> is the source of truth for Python-authored topology. IRIS
+remains the runtime source of truth. Imported graphs are operational
+reconstructions until metadata persistence makes round-trip fidelity possible.</p>
+<p>An IRIS production topology can be modeled as a directed multigraph of possible
+communication routes. These route edges are not DAG execution dependencies.</p>
+<p>The long-term direction is for the Python <code>Production</code> graph to generate the
+IRIS production definition, while IRIS runtime export and <code>OnGetConnections</code>
+provide operational import and compatibility.</p>
+<h2 id="current-state">Current State</h2>
+<p>Implemented graph authoring:</p>
+<ul>
+<li><code>Production</code></li>
+<li><code>ComponentRef</code></li>
+<li><code>Port</code></li>
+<li><code>target()</code></li>
+<li><code>prod.service(...)</code></li>
+<li><code>prod.process(...)</code></li>
+<li><code>prod.operation(...)</code></li>
+<li><code>prod.connect(source_port, target_component)</code></li>
+</ul>
+<p>Implemented graph import and display:</p>
+<ul>
+<li><code>Production.from_iris(name)</code></li>
+<li><code>Production.from_dict(data, connections=...)</code></li>
+<li><code>Production.item(name)</code></li>
+<li><code>Production.component_ref(target)</code></li>
+<li><code>Production.get_component(target)</code></li>
+<li><code>ComponentRef.port(name, logical_name="")</code></li>
+<li><code>Production.graph()</code></li>
+<li><code>Production.diff(other=None)</code></li>
+<li><code>Production.graph_diff(other=None)</code></li>
+<li><code>ProductionGraph.to_dict()</code></li>
+<li>printable graph text through <code>str(prod.graph())</code></li>
+</ul>
+<p><code>str(port)</code> returns the stable authoring identity, such as <code>FileInput.Output</code>.
+Runtime dispatch uses explicit port resolution.</p>
+<p>Implemented production lifecycle:</p>
+<ul>
+<li><code>prod.start()</code></li>
+<li><code>prod.stop()</code></li>
+<li><code>prod.restart()</code></li>
+<li><code>prod.kill()</code></li>
+<li><code>prod.status()</code></li>
+<li><code>prod.queue()</code></li>
+<li><code>prod.update()</code></li>
+<li><code>prod.export()</code></li>
+<li><code>prod.test(...)</code></li>
+<li><code>prod.log()</code></li>
+<li><code>prod.set_default()</code></li>
+<li><code>prod.inspect_component(...)</code></li>
+<li><code>prod.start_component(...)</code></li>
+<li><code>prod.stop_component(...)</code></li>
+<li><code>prod.restart_component(...)</code></li>
+<li><code>prod.test_component(...)</code></li>
+</ul>
+<p>Lifecycle methods that mutate the current runtime production verify that IRIS
+currently points at the same production object before calling the underlying
+IRIS operation.</p>
+<p><code>prod.test_component("Item.Port", message)</code> resolves from the current Python
+object graph. It does not silently fall back to IRIS export. Existing deployed
+productions should be reconstructed explicitly with <code>Production.from_iris(...)</code>
+before testing by port path. Runtime status checks fail closed when the current
+production cannot be verified. <code>prod.test(...)</code> remains a compatibility alias.</p>
+<p><code>ComponentRef</code> exposes convenience methods that delegate to its owning
+production: <code>inspect()</code>, <code>start()</code>, <code>stop()</code>, <code>restart()</code>, and <code>test(...)</code>.
+It is a Python handle to a configured production item, not the live IRIS host
+instance.</p>
+<p>Implemented graph-local editing:</p>
+<ul>
+<li><code>prod.add_component(...)</code></li>
+<li><code>prod.update_component(...)</code></li>
+<li><code>prod.delete_component(...)</code></li>
+<li><code>prod.disconnect(...)</code></li>
+<li><code>prod.sync()</code> / <code>prod.apply()</code> for explicit local IRIS registration</li>
+</ul>
+<p>Implemented diffing:</p>
+<ul>
+<li><code>prod.diff()</code> compares the desired Python definition with the deployed IRIS
+  operational reconstruction.</li>
+<li><code>prod.diff(other_prod)</code> compares with another <code>Production</code>.</li>
+<li><code>prod.diff(exported_dict)</code> compares with an exported production dictionary.</li>
+<li>The diff is directional: changes describe what must change in the
+  current/imported state to match the Python <code>Production</code> object.</li>
+<li><code>prod.graph_diff(...)</code> includes route metadata such as edge origin and
+  interaction. <code>prod.diff(...)</code> remains the deployable IRIS-shape diff.</li>
+</ul>
+<h2 id="iris-graph-import">IRIS Graph Import</h2>
+<p>The import path uses two sources:</p>
+<ol>
+<li>Exported production definition</li>
+<li>Provides items, classes, settings, pool size, enabled state, schedule, and
+     production-level attributes.</li>
+<li>Runtime connection discovery</li>
+<li>Uses IRIS <code>OnGetConnections</code> through <code>Ens.Config.Production.GetConnections</code>.</li>
+<li>Works for generated Python proxy classes, ObjectScript classes, built-in
+     <code>Ens.Host</code> components, and classes extending <code>IOP.Common</code>.</li>
+</ol>
+<p><code>OnGetConnections</code> is the primary graph source when available. If runtime
+connection discovery fails for an item, the importer falls back to Host settings
+whose value names another production item. When runtime discovery reports no
+targets for an item, Host settings are still used to draw inferred possible
+routes.</p>
+<p>Queue metadata is imported separately through <code>Ens.Queue.GetCount(item.Name)</code>.
+It is runtime production information, not authoring graph data. It is exposed
+through <code>prod.queue()</code>, cached separately from the topology graph, and is not
+serialized into the production definition. <code>prod.queue_info()</code> remains available
+as a compatibility alias.</p>
+<h2 id="python-and-objectscript-components">Python And ObjectScript Components</h2>
+<p>Python-authored components use Python classes:</p>
+<pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)
+file = prod.service(&quot;FileInput&quot;, FileService)
+orders = prod.operation(OrderOperation)
+prod.connect(file.Output, orders)
+</code></pre>
+<p>ObjectScript and built-in IRIS components use <code>class_name</code>:</p>
+<pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)
+file = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
+out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
+prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
+</code></pre>
+<p>Rules:</p>
+<ul>
+<li>Python classes are registered during migration.</li>
+<li><code>ComponentRef.component_class</code> is the Python business host implementation
+  class, not the adapter class.</li>
+<li><code>ComponentRef.adapter_class_name</code> exposes the configured adapter type when it
+  is known from Python source or explicitly supplied metadata.</li>
+<li>Python adapter classes passed with <code>adapter_class=...</code> are registered during
+  migration.</li>
+<li><code>class_name</code> string components are not registered as Python components.</li>
+<li>ObjectScript classes must already exist in IRIS or be loaded through existing
+  <code>.cls</code> migration support.</li>
+<li>Manual ports are required when Python has no <code>target()</code> descriptor.</li>
+</ul>
+<h2 id="roadmap">Roadmap</h2>
+<h3 id="phase-1-solidify-graph-import">Phase 1: Solidify Graph Import</h3>
+<ul>
+<li>Add more e2e coverage for <code>Production.from_iris(...)</code>.</li>
+<li>Validate graph import against Python proxy classes and ObjectScript classes.</li>
+<li>Improve warning messages for runtime-only and unresolved edges.</li>
+<li>Keep settings fallback for environments where <code>OnGetConnections</code> is not
+  available.</li>
+</ul>
+<h3 id="phase-2-persist-iop-graph-metadata">Phase 2: Persist IOP Graph Metadata</h3>
+<p>Persist IOP-owned metadata so Python-to-IRIS-to-Python round trips lose less
+intent:</p>
+<ul>
+<li>logical <code>target("orders")</code> names</li>
+<li>declared port names and types</li>
+<li>richer route intent beyond the current origin/interaction metadata</li>
+<li>Python source module and class origin</li>
+<li>runtime-only edges</li>
+<li>unresolved graph warnings</li>
+</ul>
+<p>Without this metadata, IRIS can reconstruct operational topology but not the
+original Python authoring intent.</p>
+<h3 id="phase-3-add-graph-apply">Phase 3: Add Graph Apply</h3>
+<p>Graph diff exists in two forms today: deployable <code>prod.diff(...)</code> and metadata-
+aware <code>prod.graph_diff(...)</code>. The missing piece is explicit graph apply:</p>
+<ul>
+<li>show additions, updates, removals, and changed settings</li>
+<li>apply changes only when explicitly requested</li>
+<li>avoid hidden runtime mutation from simple Python object edits</li>
+</ul>
+<p>This should become the safe path for component-level CRUD.</p>
+<h3 id="phase-4-improve-objectscript-introspection">Phase 4: Improve ObjectScript Introspection</h3>
+<p>Use IRIS class metadata to improve non-Python support:</p>
+<ul>
+<li>discover settings and controls from ObjectScript classes</li>
+<li>identify <code>Ens.DataType.ConfigName</code> settings as candidate ports</li>
+<li>expose setting metadata in <code>ProductionGraph</code></li>
+<li>distinguish static, dynamic, and conditional runtime connections</li>
+</ul>
+<h3 id="phase-5-make-graph-the-orchestration-backbone">Phase 5: Make Graph The Orchestration Backbone</h3>
+<p>Use <code>ProductionGraph</code> as the backbone for:</p>
+<ul>
+<li>visual graph display</li>
+<li>production validation</li>
+<li>request routing</li>
+<li>workflow/orchestration integration</li>
+<li>graph projection for DAG-compatible subsets</li>
+<li>IRIS XML generation</li>
+<li>future non-IRIS execution backends</li>
+</ul>
+<p>At this stage, the graph becomes the canonical design artifact and IRIS
+production XML becomes one generated output.</p>
+<h2 id="gaps">Gaps</h2>
+<h3 id="metadata-gaps">Metadata Gaps</h3>
+<ul>
+<li>IRIS export does not preserve Python class objects.</li>
+<li>IRIS export does not preserve logical names from <code>target("orders")</code>.</li>
+<li>IRIS export does not preserve the Python module/class origin unless stored as
+  explicit metadata.</li>
+<li><code>OnGetConnections</code> usually returns target names, not always source port names.</li>
+<li>Runtime-discovered edges may not map cleanly to a specific <code>Port</code>.</li>
+</ul>
+<h3 id="runtime-graph-gaps">Runtime Graph Gaps</h3>
+<ul>
+<li>Conditional routing may depend on message content and cannot always be
+  represented as one static route edge.</li>
+<li>BPL, DTL, routing rules, and business rule classes need specialized graph
+  import.</li>
+<li>Dynamic targets can be visible at runtime but not fully recoverable as
+  design-time graph intent.</li>
+<li>A production must be compiled and available in IRIS for runtime connection
+  discovery.</li>
+<li>Queue counts are point-in-time runtime counters and can change immediately
+  after they are fetched.</li>
+<li>Current queue support reports item queue counts, not full queue browser data
+  such as active message details or retry controls.</li>
+</ul>
+<h3 id="sync-gaps">Sync Gaps</h3>
+<ul>
+<li><code>prod.sync()</code> currently registers the full current production definition
+  locally; it is not yet a fine-grained graph diff.</li>
+<li>Remote sync still belongs to migration because remote registration also needs
+  source upload.</li>
+<li>Component add/update/delete are graph-local edits until explicitly applied.</li>
+<li>Delete safety needs policy for running productions, queued messages, and
+  dependent routing.</li>
+</ul>
+<h3 id="objectscript-gaps">ObjectScript Gaps</h3>
+<ul>
+<li>ObjectScript source code is not reconstructed from production export.</li>
+<li>Built-in and ObjectScript classes need manual ports unless IRIS setting
+  introspection is added.</li>
+<li>Existing ObjectScript classes may implement custom <code>OnGetConnections</code>
+  behavior that reports runtime targets without exposing source setting names.</li>
+</ul>
+<h2 id="source-of-truth-decision">Source Of Truth Decision</h2>
+<p>Python <code>Production</code> graph is the intended future source of truth for
+Python-authored design-time topology.</p>
+<p>IRIS remains authoritative for:</p>
+<ul>
+<li>runtime state</li>
+<li>deployed compiled classes</li>
+<li>queues and jobs</li>
+<li>logs</li>
+<li>current production status</li>
+<li>legacy production definitions</li>
+</ul>
+<p>The transition is complete only when graph metadata persistence and graph
+diff/apply can round-trip Python and IRIS production definitions without losing
+important design intent.</p>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

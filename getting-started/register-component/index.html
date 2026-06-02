@@ -63,6 +63,8 @@
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#registering-a-single-component">Registering a Single Component</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#unregistering-a-component-binding">Unregistering a Component Binding</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#registering-all-components-in-a-file">Registering All Components in a File</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#registering-all-components-in-a-folder">Registering All Components in a Folder</a>
@@ -179,6 +181,10 @@
 </ul>
 </li>
 </ul>
+<p>Registering a Python component creates an IRIS proxy class that points to the
+Python implementation. The CLI calls this a binding. Removing that proxy class
+is called unbinding or unregistering; it does not delete Python source files or
+production items.</p>
 <h2 id="with-a-settings-file">With a Settings File</h2>
 <p>Create a <code>settings.py</code> file in the root of your project. This file will be used to register your classes and productions.</p>
 <h3 id="example-of-settingspy">Example of <code>settings.py</code></h3>
@@ -194,15 +200,38 @@ CLASSES = {
 <p>Use the <code>iop</code> command line to register your component:</p>
 <pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
 </code></pre>
+<p>If the wrong IRIS class name was used, remove the generated proxy class:</p>
+<pre><code class="language-bash">iop --unbind Python.MyBusinessOperation
+</code></pre>
+<p>If a production item still uses that class, unbind fails and reports the
+production item references. Remove or change those items before unbinding.</p>
 <h2 id="using-the-python-shell">Using the Python Shell</h2>
 <h3 id="registering-a-single-component">Registering a Single Component</h3>
-<p>Use the <code>register_component</code> method to add a new Python file to the component list for interoperability.</p>
-<pre><code class="language-python">from iop import Utils
-Utils.register_component(&lt;ModuleName&gt;,&lt;ClassName&gt;,&lt;PathToPyFile&gt;,&lt;OverWrite&gt;,&lt;NameOfTheComponent&gt;)
+<p>Use <code>register_component</code> or <code>bind_component</code> to create an IRIS proxy class
+binding for a Python component.</p>
+<pre><code class="language-python">from iop import bind_component, register_component
+
+register_component(&lt;ModuleName&gt;, &lt;ClassName&gt;, &lt;PathToPyFile&gt;, &lt;OverWrite&gt;, &lt;NameOfTheComponent&gt;)
+bind_component(&lt;ModuleName&gt;, &lt;ClassName&gt;, &lt;PathToPyFile&gt;, &lt;OverWrite&gt;, &lt;NameOfTheComponent&gt;)
 </code></pre>
 <p>Example:</p>
-<pre><code class="language-python">from iop import Utils
-Utils.register_component(&quot;MyCombinedBusinessOperation&quot;,&quot;MyCombinedBusinessOperation&quot;,&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX.MyCombinedBusinessOperation&quot;)
+<pre><code class="language-python">from iop import bind_component
+
+bind_component(&quot;MyCombinedBusinessOperation&quot;,&quot;MyCombinedBusinessOperation&quot;,&quot;/irisdev/app/src/python/demo/&quot;,1,&quot;PEX.MyCombinedBusinessOperation&quot;)
+</code></pre>
+<h3 id="unregistering-a-component-binding">Unregistering a Component Binding</h3>
+<p>Use <code>unregister_component</code> or <code>unbind_component</code> to remove an IOP-generated
+IRIS proxy class binding:</p>
+<pre><code class="language-python">from iop import unbind_component, unregister_component
+
+unregister_component(&quot;PEX.MyCombinedBusinessOperation&quot;)
+unbind_component(&quot;PEX.MyCombinedBusinessOperation&quot;)
+</code></pre>
+<p>The Python source file is not changed. IRIS refuses the operation if the proxy
+class is still used by a production item.</p>
+<p>You can inspect generated proxy class bindings from the CLI:</p>
+<pre><code class="language-bash">iop --bindings
+iop --bindings --unused
 </code></pre>
 <h3 id="registering-all-components-in-a-file">Registering All Components in a File</h3>
 <p>Use the <code>register_file</code> method to add all components in a file to the component list for interoperability.</p>
