@@ -3,10 +3,10 @@ import iris
 import pytest
 from unittest.mock import MagicMock
 
-from iop._business_host import _BusinessHost
-from iop._dispatch import (
+from iop.components.business_host import _BusinessHost
+from iop.messages.dispatch import (
     deserialize_message, deserialize_pickle_message,
-    dispach_message, dispatch_serializer,
+    dispatch_message, dispatch_serializer,
     serialize_message, serialize_pickle_message,
 )
 from fixtures.message import (
@@ -45,7 +45,7 @@ class TestGeneratorRequest:
             iris.cls("IOP.Generator.Message.Ack")._New()
         )
 
-        from iop._generator_request import _GeneratorRequest
+        from iop.components.generator_request import _GeneratorRequest
         generator = _GeneratorRequest(business_host, "test_target", SimpleMessage(integer=1, string='test'))
 
         assert generator.host == business_host
@@ -128,4 +128,4 @@ class TestBusinessService:
         )
         message = PostMessage(Post=post, Found='True', ToEmailAddress='test')
 
-        dispach_message(bs, message)
+        dispatch_message(bs, message)

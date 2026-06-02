@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pytest
 import iris
 
-from iop._serialization import (
+from iop.messages.serialization import (
     SerializationError,
     serialize_message,
     deserialize_message,

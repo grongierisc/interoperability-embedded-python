@@ -1,4 +1,4 @@
-from grongier.pex import BusinessProcess
+from iop import BusinessProcess
 from msg import MyBenchPickle as message
 import iris
 

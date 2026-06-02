@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -rf ./build
+rm -rf ./build ./dist
 
 set -eo pipefail
 
@@ -11,6 +11,6 @@ echo "$PYTHON_BIN"
 set -x
 
 cd "$PROJECT"
-$PYTHON_BIN setup.py sdist bdist_wheel
+$PYTHON_BIN -m build
 
 set +x

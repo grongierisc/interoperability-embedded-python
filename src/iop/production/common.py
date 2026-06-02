@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from typing import Any, Optional
+from typing import Any
 
 
 def _bool_text(value: bool | str) -> str:
@@ -31,20 +31,18 @@ def _auto_proxy_class_name(component_class: type) -> str:
     )
 
 
-def _adapter_type_from_component_class(component_class: Optional[type]) -> str:
+def _adapter_type_from_component_class(component_class: type | None) -> str:
     if component_class is None:
         return ""
-    for method_name in ("get_adapter_type", "getAdapterType"):
-        method = getattr(component_class, method_name, None)
-        if not callable(method):
-            continue
+    method = getattr(component_class, "get_adapter_type", None)
+    if callable(method):
         value = method()
         if value:
             return str(value)
     return ""
 
 
-def _adapter_type_from_class_name(class_name: Optional[str]) -> str:
+def _adapter_type_from_class_name(class_name: str | None) -> str:
     if not class_name or not class_name.startswith("Python."):
         return ""
     python_name = class_name.removeprefix("Python.")

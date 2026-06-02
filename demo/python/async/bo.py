@@ -1,4 +1,4 @@
-from grongier.pex import BusinessOperation
+from iop import BusinessOperation
 from msg import MyMessage
 
 import time

@@ -1,21 +1,25 @@
-from iop._business_operation import _BusinessOperation
-from iop._business_process import _BusinessProcess
-from iop._business_service import _BusinessService
-from iop._director import _Director
-from iop._inbound_adapter import _InboundAdapter
-from iop._message import (
+from iop.components.business_operation import _BusinessOperation
+from iop.components.business_process import _BusinessProcess
+from iop.components.business_service import _BusinessService
+from iop.components.inbound_adapter import _InboundAdapter
+from iop.components.outbound_adapter import _OutboundAdapter
+from iop.components.polling_business_service import _PollingBusinessServiceMixin
+from iop.components.private_session_duplex import _PrivateSessionDuplex
+from iop.components.private_session_process import _PrivateSessionProcess
+from iop.components.settings import Category as Category
+from iop.components.settings import Setting as Setting
+from iop.components.settings import controls as controls
+from iop.components.settings import setting as setting
+from iop.messages.base import (
     _Message,
     _PickleMessage,
     _PydanticMessage,
     _PydanticPickleMessage,
 )
-from iop._outbound_adapter import _OutboundAdapter
-from iop._polling_business_service import _PollingBusinessServiceMixin
-from iop._persistent_message import Field as Field
-from iop._persistent_message import Model as Model
-from iop._persistent_message import _PersistentMessage
-from iop._private_session_duplex import _PrivateSessionDuplex
-from iop._private_session_process import _PrivateSessionProcess
+from iop.messages.persistent import Field as Field
+from iop.messages.persistent import Model as Model
+from iop.messages.persistent import _PersistentMessage
+from iop.migration.utils import _Utils
 from iop.production import ComponentRef as ComponentRef
 from iop.production import Port as Port
 from iop.production import Production as Production
@@ -23,12 +27,8 @@ from iop.production import ProductionDiff as ProductionDiff
 from iop.production import ProductionDiffEntry as ProductionDiffEntry
 from iop.production import ProductionGraph as ProductionGraph
 from iop.production import target as target
-from iop._director_protocol import DirectorProtocol as DirectorProtocol
-from iop._settings import Category as Category
-from iop._settings import Setting as Setting
-from iop._settings import controls as controls
-from iop._settings import setting as setting
-from iop._utils import _Utils
+from iop.runtime.director import _Director
+from iop.runtime.protocol import DirectorProtocol as DirectorProtocol
 
 
 class Utils(_Utils):

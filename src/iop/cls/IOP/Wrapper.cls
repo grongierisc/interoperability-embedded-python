@@ -13,7 +13,7 @@ ClassMethod Import(
         do $system.Python.Debugging(1)
         if debugPort > 0 {
             
-            set debugpy = ##class(%SYS.Python).Import("iop._debugpy")
+            set debugpy = ##class(%SYS.Python).Import("iop.components.debugpy")
             do debugpy."debugpy_in_iris"($zu(12),debugPort)
         }
 

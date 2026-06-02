@@ -15,7 +15,7 @@ class RedditService(BusinessService):
         """
         return "Ens.InboundAdapter"
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Feed'):
             self.Feed = "/new/"
@@ -30,15 +30,15 @@ class RedditService(BusinessService):
         
         return 1
 
-    def OnProcessInput(self,request):
+    def on_process_input(self,request):
 
-        post = self.OnTask()
+        post = self.on_task()
         if post is not None:
             msg = PostMessage()
             msg.Post = post
             self.send_request_sync("test",msg)
 
-    def OnTask(self) -> PostClass:
+    def on_task(self) -> PostClass:
           
         try:
             server = "https://www.reddit.com"
@@ -66,11 +66,11 @@ class RedditService(BusinessService):
 
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 429:
-                self.LOGWARNING(err.__str__())
+                self.log_warning(err.__str__())
             else:
                 raise err
         except Exception as err: 
-            self.LOGERROR(err.__str__())
+            self.log_error(err.__str__())
             raise err
 
         return None
@@ -84,12 +84,12 @@ class RedditServiceWithIrisAdapter(BusinessService):
         """
         return "dc.Reddit.InboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def on_process_input(self, messageInput):
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = messageInput
-        return self.SendRequestSync(self.Target,msg)
+        return self.send_request_sync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"
@@ -104,12 +104,12 @@ class RedditServiceWithPexAdapter(BusinessService):
         """
         return "Python.RedditInboundAdapter"
 
-    def OnProcessInput(self, messageInput):
+    def on_process_input(self, messageInput):
         msg = iris.cls("dc.Demo.PostMessage")._New()
         msg.Post = messageInput
-        return self.SendRequestSync(self.Target,msg)
+        return self.send_request_sync(self.Target,msg)
 
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Target'):
             self.Target = "Python.FilterPostRoutingRule"

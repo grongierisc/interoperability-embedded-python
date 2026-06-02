@@ -7,8 +7,6 @@ WORKDIR /irisdev/app
 
 # map the source code of iop into iris python lib
 RUN ln -s /irisdev/app/src/iop /usr/irissys/mgr/python/iop
-# for retrocompatibility
-RUN ln -s /irisdev/app/src/grongier /usr/irissys/mgr/python/grongier
 
 ## Python stuff
 ARG IRISUSERNAME

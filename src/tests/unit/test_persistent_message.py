@@ -6,9 +6,9 @@ from iris_persistence.runtime import configure_default_runtime
 from iris_persistence.testing import InMemoryAdapter
 
 from iop import Field, Model, PersistentMessage
-from iop import _persistent_message as persistent_message_module
-from iop._dispatch import dispatch_serializer
-from iop._persistent_message import (
+from iop.messages import persistent as persistent_message_module
+from iop.messages.dispatch import dispatch_serializer
+from iop.messages.persistent import (
     deserialize_persistent_message,
     get_python_classpath,
     iris_classname_to_python_classname,
@@ -17,7 +17,7 @@ from iop._persistent_message import (
     python_classname_to_iris_classname,
     register_persistent_message_class,
 )
-from iop._utils import _Utils
+from iop.migration.utils import _Utils
 
 
 @pytest.fixture(autouse=True)
@@ -150,7 +150,7 @@ def test_deserializes_registered_native_object_from_class_cache():
     native = FakeNative()
     setattr(native, "%ClassName", lambda full=1: "Demo.Msg.NativeOrderMessage")
 
-    with patch("iop._persistent_message.get_iris_class_parameter") as get_parameter:
+    with patch("iop.messages.persistent.get_iris_class_parameter") as get_parameter:
         message = deserialize_persistent_message(native)
 
     assert isinstance(message, NativeOrderMessage)
@@ -278,7 +278,7 @@ def test_deserializes_iris_originated_message_with_class_parameters(tmp_path):
 
     try:
         with patch(
-            "iop._persistent_message.get_iris_class_parameter",
+            "iop.messages.persistent.get_iris_class_parameter",
             side_effect=lambda iris_classname, parameter: parameter_values.get(
                 (iris_classname, parameter)
             ),

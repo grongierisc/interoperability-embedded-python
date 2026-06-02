@@ -1,8 +1,8 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from iop._inbound_adapter import _InboundAdapter
-from iop._outbound_adapter import _OutboundAdapter
+from iop.components.inbound_adapter import _InboundAdapter
+from iop.components.outbound_adapter import _OutboundAdapter
 
 @pytest.fixture
 def inbound_adapter():
@@ -29,13 +29,9 @@ class TestInboundAdapter:
         assert inbound_adapter.business_host == handle_partner
         assert inbound_adapter.business_host_python == "TestClass"
 
-    def test_on_task_calls_deprecated(self, inbound_adapter):
-        # Test that on_task calls OnTask for backwards compatibility
-        with patch.object(inbound_adapter, 'OnTask', return_value="test_response") as mock_on_task:
-            result = inbound_adapter.on_task()
-            
-        mock_on_task.assert_called_once()
-        assert result == "test_response"
+    def test_on_task_default(self, inbound_adapter):
+        assert inbound_adapter.on_task() is None
+        assert not hasattr(inbound_adapter, "OnTask")
 
 class TestOutboundAdapter:
     def test_set_iris_handles(self, outbound_adapter):

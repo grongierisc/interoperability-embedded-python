@@ -1,4 +1,4 @@
-from grongier.pex import DuplexService
+from iop import DuplexService
 import iris
 
 class Service(DuplexService):

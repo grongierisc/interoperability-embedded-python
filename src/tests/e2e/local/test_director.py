@@ -1,6 +1,6 @@
 import pytest
 import iris
-from iop._director import _Director
+from iop.runtime.director import _Director
 from unittest.mock import AsyncMock, MagicMock, call
 
 @pytest.fixture

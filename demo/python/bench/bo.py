@@ -1,6 +1,6 @@
 
 import iris
-from grongier.pex import BusinessOperation
+from iop import BusinessOperation
 from msg import MyBenchPickle as msg
 
 class MyBench(BusinessOperation):

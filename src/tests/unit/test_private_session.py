@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from iop._private_session_duplex import _PrivateSessionDuplex
-from iop._private_session_process import _PrivateSessionProcess
+from iop.components.private_session_duplex import _PrivateSessionDuplex
+from iop.components.private_session_process import _PrivateSessionProcess
 from fixtures.message import SimpleMessage, MyResponse
 
 @pytest.fixture

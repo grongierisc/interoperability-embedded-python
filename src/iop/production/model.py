@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import is_dataclass
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
-from .._director_protocol import DirectorProtocol as _DirectorProtocol
+from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
 from .common import (
     _adapter_type_from_component_class,
     _apply_settings_update,
@@ -28,21 +28,17 @@ from .import_ import (
     _split_settings,
 )
 from .runtime import (
-    _ProductionRuntime,
     _has_remote_director,
+    _ProductionRuntime,
     _temporary_env,
-    resolve_target,
 )
 from .types import (
     GraphEdge,
     GraphNode,
     Port,
     ProductionDiff,
-    ProductionDiffEntry,
     ProductionGraph,
-    TargetSetting,
     _edge_identity,
-    target,
 )
 
 
@@ -62,8 +58,8 @@ class Production:
         log_general_trace_events: bool | str = False,
         actor_pool_size: int | str = 2,
         description: str = "",
-        namespace: Optional[str] = None,
-        director: Optional["_DirectorProtocol"] = None,
+        namespace: str | None = None,
+        director: _DirectorProtocol | None = None,
     ):
         self.name = name
         self.testing_enabled = testing_enabled
@@ -79,27 +75,27 @@ class Production:
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
 
-    def testing(self, enabled: bool | str = True) -> "Production":
+    def testing(self, enabled: bool | str = True) -> Production:
         self.testing_enabled = enabled
         return self
 
-    def tracing(self, enabled: bool | str = True) -> "Production":
+    def tracing(self, enabled: bool | str = True) -> Production:
         self.log_general_trace_events = enabled
         return self
 
-    def actor_pool(self, size: int | str) -> "Production":
+    def actor_pool(self, size: int | str) -> Production:
         self.actor_pool_size = size
         return self
 
-    def describe(self, text: str) -> "Production":
+    def describe(self, text: str) -> Production:
         self.description = text
         return self
 
-    def in_namespace(self, namespace: Optional[str]) -> "Production":
+    def in_namespace(self, namespace: str | None) -> Production:
         self.namespace = namespace
         return self
 
-    def with_director(self, director: Optional["_DirectorProtocol"]) -> "Production":
+    def with_director(self, director: _DirectorProtocol | None) -> Production:
         self._director = director
         return self
 
@@ -108,9 +104,9 @@ class Production:
         cls,
         name: str,
         *,
-        namespace: Optional[str] = None,
-        director: Optional[_DirectorProtocol] = None,
-    ) -> "Production":
+        namespace: str | None = None,
+        director: _DirectorProtocol | None = None,
+    ) -> Production:
         seed = cls(name, namespace=namespace, director=director)
         runtime_director = _ProductionRuntime(seed).director
         exported = runtime_director.export_production(name)
@@ -138,9 +134,9 @@ class Production:
         *,
         connections: Any = None,
         queue_info: Any = None,
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
         director: Any = None,
-    ) -> "Production":
+    ) -> Production:
         production_name, production_data = _production_payload(data)
         production = cls(
             production_name,
@@ -275,7 +271,7 @@ class Production:
         return tuple(self._items)
 
     @property
-    def edges(self) -> tuple["GraphEdge", ...]:
+    def edges(self) -> tuple[GraphEdge, ...]:
         return tuple(self._edges)
 
     def item(self, name: str) -> ComponentRef:
@@ -294,11 +290,11 @@ class Production:
     def component(
         self,
         name_or_cls: str | type,
-        cls: Optional[type] = None,
+        cls: type | None = None,
         *,
-        class_name: Optional[str] = None,
-        adapter_class: Optional[type | str] = None,
-        adapter_class_name: Optional[str] = None,
+        class_name: str | None = None,
+        adapter_class: type | str | None = None,
+        adapter_class_name: str | None = None,
         kind: str = "component",
         enabled: bool | str = True,
         pool_size: int | str = 1,
@@ -307,11 +303,11 @@ class Production:
         comment: str = "",
         log_trace_events: bool | str = False,
         schedule: str = "",
-        settings: Optional[dict[str, Any]] = None,
-        adapter_settings: Optional[dict[str, Any]] = None,
+        settings: dict[str, Any] | None = None,
+        adapter_settings: dict[str, Any] | None = None,
     ) -> ComponentRef:
         item_name: str
-        component_class: Optional[type]
+        component_class: type | None
 
         if isinstance(name_or_cls, type) and cls is None:
             component_class = name_or_cls
@@ -323,7 +319,7 @@ class Production:
         if item_name in self._items_by_name:
             raise ValueError(f"Production item already exists: {item_name}")
 
-        adapter_class_ref: Optional[type] = None
+        adapter_class_ref: type | None = None
         resolved_adapter_class_name = adapter_class_name or ""
         if adapter_class is not None:
             if isinstance(adapter_class, type):
@@ -481,13 +477,13 @@ class Production:
             )
         ]
 
-    def service(self, name_or_cls: str | type, cls: Optional[type] = None, **kwargs):
+    def service(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
         return self.component(name_or_cls, cls, kind="service", **kwargs)
 
-    def process(self, name_or_cls: str | type, cls: Optional[type] = None, **kwargs):
+    def process(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
         return self.component(name_or_cls, cls, kind="process", **kwargs)
 
-    def operation(self, name_or_cls: str | type, cls: Optional[type] = None, **kwargs):
+    def operation(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
         return self.component(name_or_cls, cls, kind="operation", **kwargs)
 
     def connect(self, source: Port, target_component: ComponentRef | str) -> None:
@@ -591,7 +587,7 @@ class Production:
         return {self.name: production}
 
     def to_xml(self) -> str:
-        from .._utils import _Utils
+        from ..migration.utils import _Utils
 
         return _Utils.dict_to_xml({"Production": self.to_dict()[self.name]})
 
@@ -788,25 +784,25 @@ class Production:
     def set_default(self) -> None:
         _ProductionRuntime(self).director.set_default_production(self.name)
 
-    def sync(self, *, root_path: Optional[str] = None, update: bool = True) -> None:
+    def sync(self, *, root_path: str | None = None, update: bool = True) -> None:
         if _has_remote_director(self):
             raise NotImplementedError(
                 "Production.sync() can only register directly with local IRIS. "
                 "Use `iop --migrate <settings_file>` for remote migrations."
             )
-        from .._utils import _Utils
+        from ..migration.utils import _Utils
 
         with _temporary_env("IRISNAMESPACE", self.namespace):
             _Utils.set_productions_settings([self], root_path)
             if update:
-                from .._local import _LocalDirector
+                from ..runtime.local import _LocalDirector
 
                 _LocalDirector().update_production()
 
-    def apply(self, *, root_path: Optional[str] = None, update: bool = True) -> None:
+    def apply(self, *, root_path: str | None = None, update: bool = True) -> None:
         self.sync(root_path=root_path, update=update)
 
-    def log(self, top: Optional[int] = None) -> None:
+    def log(self, top: int | None = None) -> None:
         director = _ProductionRuntime(self).director
         if top is None:
             director.log_production()
@@ -817,7 +813,7 @@ class Production:
         self,
         target_or_port: str | Port | ComponentRef,
         message: Any = None,
-        classname: Optional[str] = None,
+        classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
         runtime = _ProductionRuntime(self)
@@ -841,7 +837,7 @@ class Production:
         self,
         target_or_port: str | Port | ComponentRef,
         message: Any = None,
-        classname: Optional[str] = None,
+        classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
         return self.test_component(
@@ -1051,7 +1047,7 @@ class Production:
         logical_name: str = "",
         origin: str = "authored",
         interaction: str = "request",
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         replace_port: bool = False,
         validate_target: bool = True,
     ) -> None:
@@ -1097,12 +1093,12 @@ class Production:
         self._edges.append(edge)
 
 
-def _message_to_classname_body(message: Any) -> tuple[Optional[str], str | dict | None]:
+def _message_to_classname_body(message: Any) -> tuple[str | None, str | dict | None]:
     classname = f"{message.__class__.__module__}.{message.__class__.__name__}"
     if isinstance(message, BaseModel):
         return classname, message.model_dump_json()
     if is_dataclass(message):
-        from .._serialization import dataclass_to_dict
+        from ..messages.serialization import dataclass_to_dict
 
         return classname, json.dumps(dataclass_to_dict(message))
     return None, None

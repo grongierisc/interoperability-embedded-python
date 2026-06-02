@@ -3,7 +3,7 @@ import os
 import pytest
 import iris
 
-from iop._utils import _Utils
+from iop.migration.utils import _Utils
 
 
 @pytest.fixture

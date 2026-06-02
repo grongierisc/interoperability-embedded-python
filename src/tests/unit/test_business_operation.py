@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from iop._business_operation import _BusinessOperation
-from iop._dispatch import dispach_message
+from iop.components.business_operation import _BusinessOperation
+from iop.messages.dispatch import dispatch_message
 from fixtures.message import SimpleMessage
 
 
@@ -18,7 +18,7 @@ def operation():
 def test_message_handling(operation):
     request = SimpleMessage(integer=1, string="test")
     assert operation.on_message(request) is None
-    assert operation.OnMessage(request) is None
+    assert not hasattr(operation, "OnMessage")
 
 
 def test_keepalive(operation):
@@ -69,7 +69,7 @@ def test_dispatch_with_custom_handlers():
     op.iris_handle = MagicMock()
 
     request = SimpleMessage(integer=1, string="test")
-    response = dispach_message(op, request)
+    response = dispatch_message(op, request)
 
     assert isinstance(response, SimpleMessage)
     assert response.integer == 2

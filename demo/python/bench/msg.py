@@ -1,5 +1,5 @@
-from grongier.pex import Message
-from grongier.pex import PickleMessage
+from iop import Message
+from iop import PickleMessage
 from dataclasses import dataclass
 
 @dataclass

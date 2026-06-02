@@ -1,6 +1,6 @@
 from iop import Production
-from iop._local import _LocalDirector
-from iop._utils import _Utils
+from iop.runtime.local import _LocalDirector
+from iop.migration.utils import _Utils
 import sys
 import os
 import timeit

@@ -1,4 +1,4 @@
-from grongier.pex import Message
+from iop import Message
 from dataclasses import dataclass
 
 @dataclass

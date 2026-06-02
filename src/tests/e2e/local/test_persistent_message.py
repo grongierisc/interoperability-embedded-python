@@ -3,11 +3,11 @@
 from unittest.mock import MagicMock
 
 from iop import Field, PersistentMessage
-from iop import _persistent_message as persistent_message_module
-from iop._business_operation import _BusinessOperation
-from iop._dispatch import dispatch_deserializer, dispatch_serializer
-from iop._persistent_message import register_persistent_message_class
-from iop._utils import _Utils
+from iop.messages import persistent as persistent_message_module
+from iop.components.business_operation import _BusinessOperation
+from iop.messages.dispatch import dispatch_deserializer, dispatch_serializer
+from iop.messages.persistent import register_persistent_message_class
+from iop.migration.utils import _Utils
 
 
 class NativeOrderMessage(PersistentMessage):

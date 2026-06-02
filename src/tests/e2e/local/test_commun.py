@@ -4,9 +4,9 @@ import sys
 import random
 import string
 import pytest
-from iop._message_validator import is_iris_object_instance, is_message_class, is_pickle_message_class
+from iop.messages.validation import is_iris_object_instance, is_message_class, is_pickle_message_class
 from fixtures.message import SimpleMessage, SimpleMessageNotMessage, PickledMessage
-from iop._common import _Common
+from iop.components.common import _Common
 
 # Constants
 INSTALL_DIR = os.getenv('IRISINSTALLDIR', None) or os.getenv('ISC_PACKAGE_INSTALLDIR', None)

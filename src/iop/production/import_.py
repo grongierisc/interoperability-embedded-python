@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from .common import _text_value
 
@@ -157,7 +157,7 @@ def _normalize_runtime_item_metadata(connections: Any) -> dict[str, dict[str, st
     return metadata
 
 
-def _normalize_connection_target(value: Any) -> Optional[dict[str, Any]]:
+def _normalize_connection_target(value: Any) -> dict[str, Any] | None:
     if isinstance(value, str):
         if not value:
             return None
@@ -229,7 +229,7 @@ def _normalize_queue_info(value: Any) -> tuple[dict[str, dict[str, Any]], list[s
     return queue_map, warnings
 
 
-def _normalize_queue_item(value: Any) -> Optional[tuple[str, dict[str, Any]]]:
+def _normalize_queue_item(value: Any) -> tuple[str, dict[str, Any]] | None:
     if not isinstance(value, dict):
         return None
     item_name = value.get("item") or value.get("name") or value.get("queue_name") or ""

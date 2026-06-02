@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from .common import (
     _adapter_type_from_class_name,
@@ -21,9 +21,9 @@ class ComponentRef:
 
     production: Any
     name: str
-    component_class: Optional[type] = None
-    class_name: Optional[str] = None
-    adapter_class: Optional[type] = None
+    component_class: type | None = None
+    class_name: str | None = None
+    adapter_class: type | None = None
     adapter_class_name: str = ""
     kind: str = "component"
     category: str = ""
@@ -82,56 +82,56 @@ class ComponentRef:
     def set_host_setting(self, name: str, value: Any) -> None:
         self.host_settings[name] = value
 
-    def pool(self, size: int | str) -> "ComponentRef":
+    def pool(self, size: int | str) -> ComponentRef:
         self.pool_size = size
         return self
 
-    def enable(self, enabled: bool | str = True) -> "ComponentRef":
+    def enable(self, enabled: bool | str = True) -> ComponentRef:
         self.enabled = enabled
         return self
 
-    def disable(self) -> "ComponentRef":
+    def disable(self) -> ComponentRef:
         return self.enable(False)
 
-    def run_foreground(self, enabled: bool | str = True) -> "ComponentRef":
+    def run_foreground(self, enabled: bool | str = True) -> ComponentRef:
         self.foreground = enabled
         return self
 
-    def trace(self, enabled: bool | str = True) -> "ComponentRef":
+    def trace(self, enabled: bool | str = True) -> ComponentRef:
         self.log_trace_events = enabled
         return self
 
-    def schedule_on(self, schedule: str) -> "ComponentRef":
+    def schedule_on(self, schedule: str) -> ComponentRef:
         self.schedule = schedule
         return self
 
-    def comment_as(self, text: str) -> "ComponentRef":
+    def comment_as(self, text: str) -> ComponentRef:
         self.comment = text
         return self
 
-    def category_as(self, category: str) -> "ComponentRef":
+    def category_as(self, category: str) -> ComponentRef:
         self.category = category
         return self
 
-    def host_setting(self, name: str, value: Any) -> "ComponentRef":
+    def host_setting(self, name: str, value: Any) -> ComponentRef:
         _apply_settings_update(self.host_settings, {name: value})
         return self
 
-    def host_settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+    def host_settings_update(self, values: dict[str, Any]) -> ComponentRef:
         _apply_settings_update(self.host_settings, values)
         return self
 
-    def setting(self, name: str, value: Any) -> "ComponentRef":
+    def setting(self, name: str, value: Any) -> ComponentRef:
         return self.host_setting(name, value)
 
-    def settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+    def settings_update(self, values: dict[str, Any]) -> ComponentRef:
         return self.host_settings_update(values)
 
-    def adapter_setting(self, name: str, value: Any) -> "ComponentRef":
+    def adapter_setting(self, name: str, value: Any) -> ComponentRef:
         _apply_settings_update(self.adapter_settings, {name: value})
         return self
 
-    def adapter_settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+    def adapter_settings_update(self, values: dict[str, Any]) -> ComponentRef:
         _apply_settings_update(self.adapter_settings, values)
         return self
 
@@ -140,7 +140,7 @@ class ComponentRef:
         target: str,
         name: str,
         value: Any,
-    ) -> "ComponentRef":
+    ) -> ComponentRef:
         if target == "Host":
             return self.host_setting(name, value)
         if target == "Adapter":
@@ -167,8 +167,8 @@ class ComponentRef:
     def connect(
         self,
         port_name: str | Port,
-        target_component: "ComponentRef | str",
-    ) -> "ComponentRef":
+        target_component: ComponentRef | str,
+    ) -> ComponentRef:
         port = self._coerce_port(port_name)
         self.production.connect(port, target_component)
         return self
@@ -176,8 +176,8 @@ class ComponentRef:
     def connect_add(
         self,
         port_name: str | Port,
-        target_component: "ComponentRef | str",
-    ) -> "ComponentRef":
+        target_component: ComponentRef | str,
+    ) -> ComponentRef:
         port = self._coerce_port(port_name)
         self.production.connect_add(port, target_component)
         return self
@@ -207,7 +207,7 @@ class ComponentRef:
         self,
         message: Any = None,
         *,
-        classname: Optional[str] = None,
+        classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
         return self.production.test_component(

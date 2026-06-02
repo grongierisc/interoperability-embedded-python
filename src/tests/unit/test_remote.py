@@ -1,4 +1,4 @@
-"""Unit tests for iop._remote: _RemoteDirector and get_remote_settings.
+"""Unit tests for iop.runtime.remote: _RemoteDirector and get_remote_settings.
 
 No IRIS instance is required — all HTTP calls are mocked.
 """
@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch, call
 
 import requests
 
-from iop._remote import _RemoteDirector, get_remote_settings, _print_log_entry, _load_remote_settings_from_file
+from iop.runtime.remote import _RemoteDirector, get_remote_settings, _print_log_entry, _load_remote_settings_from_file
 
 
 # ---------------------------------------------------------------------------

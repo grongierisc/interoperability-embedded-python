@@ -4,9 +4,9 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-from iop._utils import _Utils
-from iop._message import _Message as Message
-from iop._message import _PydanticMessage as PydanticMessage
+from iop.migration.utils import _Utils
+from iop.messages.base import _Message as Message
+from iop.messages.base import _PydanticMessage as PydanticMessage
 from iop import BusinessOperation, Field, PersistentMessage
 
 
@@ -96,8 +96,8 @@ class TestProductionOperations:
             }
         }]
 
-        with patch('iop._utils._Utils.register_component') as mock_register:
-            with patch('iop._utils._Utils.register_production') as mock_prod:
+        with patch('iop.migration.utils._Utils.register_component') as mock_register:
+            with patch('iop.migration.utils._Utils.register_production') as mock_prod:
                 _Utils.set_productions_settings(production_list, str(tmp_path))
                 mock_register.assert_called_once()
                 mock_prod.assert_called_once()
@@ -115,11 +115,11 @@ class TestSchemaOperations:
         class FailMessage:
             pass
 
-        with patch('iop._utils._Utils.register_schema') as mock_register:
+        with patch('iop.migration.utils._Utils.register_schema') as mock_register:
             _Utils.register_message_schema(TestMessage)
             mock_register.assert_called_once()
 
-        with patch('iop._utils._Utils.register_schema') as mock_register:
+        with patch('iop.migration.utils._Utils.register_schema') as mock_register:
             _Utils.register_message_schema(TestMessageSchema)
             mock_register.assert_called_once()
 

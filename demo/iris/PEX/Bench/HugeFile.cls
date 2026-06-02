@@ -79,7 +79,7 @@ ClassMethod Python() As %Status [ Language = python ]
     file_content = f.read()
     f.close()
     import iris
-    from grongier.pex import BusinessProcess,Message
+    from iop import BusinessProcess, Message
     bp = BusinessProcess()
     msg = Message()
     msg.bytes = file_content

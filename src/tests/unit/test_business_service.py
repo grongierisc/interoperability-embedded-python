@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from iop import PollingBusinessService
-from iop._business_service import _BusinessService
+from iop.components.business_service import _BusinessService
 from fixtures.message import SimpleMessage
 
 @pytest.fixture
@@ -11,12 +11,9 @@ def service():
     return svc
 
 def test_process_input(service):
-    # Test on_process_input
     message = SimpleMessage(integer=1, string='test')
     assert service.on_process_input(message) is None
-    
-    # Test deprecated OnProcessInput
-    assert service.OnProcessInput(message) is None
+    assert not hasattr(service, "OnProcessInput")
 
 def test_adapter_handling():
     # Test adapter setup with mock IRIS adapter

@@ -5,8 +5,8 @@ import json
 import os
 import tempfile
 import requests
-from iop._cli import main, _format_test_response
-from iop._director import _Director
+from iop.cli.main import main, _format_test_response
+from iop.runtime.director import _Director
 
 class TestIOPCli(unittest.TestCase):
     """Test cases for IOP CLI functionality."""
@@ -14,7 +14,7 @@ class TestIOPCli(unittest.TestCase):
     def setUp(self):
         # Force local mode regardless of any IOP_URL / IOP_SETTINGS env vars
         # that may be set by a parallel e2e test session.
-        self._remote_patcher = patch('iop._cli.get_remote_settings', return_value=None)
+        self._remote_patcher = patch('iop.cli.main.get_remote_settings', return_value=None)
         self._remote_patcher.start()
 
     def tearDown(self):
@@ -46,7 +46,7 @@ class TestIOPCli(unittest.TestCase):
     def test_namespace_with_value_prints_help(self):
         """Test namespace assignment prints help when no other command is provided."""
         with patch.dict(os.environ, {}, clear=True):
-            with patch('iop._director._Director.get_default_production') as mock_default:
+            with patch('iop.runtime.director._Director.get_default_production') as mock_default:
                 mock_default.return_value = 'Bench.Production'
                 with patch('sys.stdout', new=StringIO()) as fake_out:
                     with self.assertRaises(SystemExit) as cm:
@@ -59,15 +59,15 @@ class TestIOPCli(unittest.TestCase):
     def test_default_settings(self):
         """Test default production settings."""
         # Test with name
-        with patch('iop._director._Director.set_default_production') as mock_set, \
-             patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+        with patch('iop.runtime.director._Director.set_default_production') as mock_set, \
+             patch('iop.runtime.director._Director.get_default_production', return_value='Bench.Production'):
             with self.assertRaises(SystemExit) as cm:
                 main(['-d', 'Bench.Production'])
             self.assertEqual(cm.exception.code, 0)
             mock_set.assert_called_once_with('Bench.Production')
 
         # Test without name — just prints the current default
-        with patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+        with patch('iop.runtime.director._Director.get_default_production', return_value='Bench.Production'):
             with self.assertRaises(SystemExit) as cm:
                 main(['-d'])
             self.assertEqual(cm.exception.code, 0)
@@ -75,21 +75,21 @@ class TestIOPCli(unittest.TestCase):
     def test_production_controls(self):
         """Test production control commands (start, stop, restart, kill)."""
         # Test start
-        with patch('iop._director._Director.start_production_with_log') as mock_start:
+        with patch('iop.runtime.director._Director.start_production_with_log') as mock_start:
             with self.assertRaises(SystemExit) as cm:
                 main(['-s', 'my_production'])
             self.assertEqual(cm.exception.code, 0)
             mock_start.assert_called_once_with('my_production')
 
-        with patch('iop._director._Director.start_production') as mock_start:
+        with patch('iop.runtime.director._Director.start_production') as mock_start:
             with self.assertRaises(SystemExit) as cm:
                 main(['-s', 'my_production', '-D'])
             self.assertEqual(cm.exception.code, 0)
             mock_start.assert_called_once_with('my_production')
 
         # Test stop
-        with patch('iop._director._Director.stop_production') as mock_stop:
-            with patch('iop._director._Director.get_default_production', return_value='Bench.Production'):
+        with patch('iop.runtime.director._Director.stop_production') as mock_stop:
+            with patch('iop.runtime.director._Director.get_default_production', return_value='Bench.Production'):
                 with patch('sys.stdout', new=StringIO()) as fake_out:
                     with self.assertRaises(SystemExit) as cm:
                         main(['-S'])
@@ -98,14 +98,14 @@ class TestIOPCli(unittest.TestCase):
                     self.assertEqual(fake_out.getvalue().strip(), 'Production Bench.Production stopped')
 
         # Test restart
-        with patch('iop._director._Director.restart_production') as mock_restart:
+        with patch('iop.runtime.director._Director.restart_production') as mock_restart:
             with self.assertRaises(SystemExit) as cm:
                 main(['-r'])
             self.assertEqual(cm.exception.code, 0)
             mock_restart.assert_called_once()
 
         # Test kill
-        with patch('iop._director._Director.shutdown_production') as mock_shutdown:
+        with patch('iop.runtime.director._Director.shutdown_production') as mock_shutdown:
             with self.assertRaises(SystemExit) as cm:
                 main(['-k'])
             self.assertEqual(cm.exception.code, 0)
@@ -114,21 +114,21 @@ class TestIOPCli(unittest.TestCase):
     def test_migration(self):
         """Test migration functionality."""
         # Test relative path
-        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+        with patch('iop.runtime.local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', 'settings.json'])
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with(os.path.join(os.getcwd(), 'settings.json'))
 
         # Test absolute path
-        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+        with patch('iop.runtime.local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json'])
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with('/tmp/settings.json')
 
         # Test with force_local flag (--force-local selects _LocalDirector)
-        with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+        with patch('iop.runtime.local._LocalDirector.migrate') as mock_migrate:
             with self.assertRaises(SystemExit) as cm:
                 main(['-m', '/tmp/settings.json', '--force-local'])
             self.assertEqual(cm.exception.code, 0)
@@ -141,7 +141,7 @@ class TestIOPCli(unittest.TestCase):
             f.write(content)
             path = f.name
         try:
-            with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+            with patch('iop.runtime.local._LocalDirector.migrate') as mock_migrate:
                 with patch('sys.stdout', new=StringIO()) as fake_out:
                     with self.assertRaises(SystemExit) as cm:
                         main(['-m', path, '--dry-run'])
@@ -158,7 +158,7 @@ class TestIOPCli(unittest.TestCase):
             os.unlink(path)
 
     def test_value_error_is_printed_without_traceback(self):
-        with patch("iop._local._LocalDirector.migrate") as mock_migrate:
+        with patch("iop.runtime.local._LocalDirector.migrate") as mock_migrate:
             mock_migrate.side_effect = ValueError("bad migration file")
             with patch("sys.stderr", new=StringIO()) as fake_err:
                 with self.assertRaises(SystemExit) as cm:
@@ -170,7 +170,7 @@ class TestIOPCli(unittest.TestCase):
     def test_status_and_update(self):
         """Test status and update commands."""
         # Test status
-        with patch('iop._director._Director.status_production') as mock_status:
+        with patch('iop.runtime.director._Director.status_production') as mock_status:
             mock_status.return_value = {"Production": "TestProd", "Status": "running"}
             with patch('sys.stdout', new=StringIO()) as fake_out:
                 with self.assertRaises(SystemExit) as cm:
@@ -180,7 +180,7 @@ class TestIOPCli(unittest.TestCase):
                 self.assertIn('"Production": "TestProd"', fake_out.getvalue())
 
         # Test update
-        with patch('iop._director._Director.update_production') as mock_update:
+        with patch('iop.runtime.director._Director.update_production') as mock_update:
             with self.assertRaises(SystemExit) as cm:
                 main(['--update'])
             self.assertEqual(cm.exception.code, 0)
@@ -190,7 +190,7 @@ class TestIOPCli(unittest.TestCase):
         """Test runtime queue information command."""
         payload = {"production": "TestProd", "items": [{"item": "FileInput"}]}
         with patch(
-            "iop._local._LocalDirector.export_production_queue_info",
+            "iop.runtime.local._LocalDirector.export_production_queue_info",
             return_value=payload,
         ) as mock_queue:
             with patch("sys.stdout", new=StringIO()) as fake_out:
@@ -204,11 +204,11 @@ class TestIOPCli(unittest.TestCase):
     def test_queue_without_name_uses_default_production(self):
         """--queue without a value uses the default production."""
         with patch(
-            "iop._local._LocalDirector.export_production_queue_info",
+            "iop.runtime.local._LocalDirector.export_production_queue_info",
             return_value={"items": []},
         ) as mock_queue:
             with patch(
-                "iop._local._LocalDirector.get_default_production",
+                "iop.runtime.local._LocalDirector.get_default_production",
                 return_value="Default.Production",
             ):
                 with patch("sys.stdout", new=StringIO()):
@@ -220,7 +220,7 @@ class TestIOPCli(unittest.TestCase):
 
     def test_initialization(self):
         """Test initialization command."""
-        with patch('iop._utils._Utils.setup') as mock_setup:
+        with patch('iop.migration.utils._Utils.setup') as mock_setup:
             with self.assertRaises(SystemExit) as cm:
                 main(['-i'])
             self.assertEqual(cm.exception.code, 0)
@@ -230,14 +230,14 @@ class TestIOPCli(unittest.TestCase):
         """Test component testing functionality."""
         # _LocalDirector.test_component delegates positionally: (target, message, classname, body)
         # Test with ASCII
-        with patch('iop._director._Director.test_component', return_value='ok') as mock_test:
+        with patch('iop.runtime.director._Director.test_component', return_value='ok') as mock_test:
             with self.assertRaises(SystemExit) as cm:
                 main(['-t', 'my_test', '-C', 'MyClass', '-B', 'my_body'])
             self.assertEqual(cm.exception.code, 0)
             mock_test.assert_called_once_with('my_test', None, 'MyClass', 'my_body')
 
         # Test with Unicode
-        with patch('iop._director._Director.test_component', return_value='ok') as mock_test:
+        with patch('iop.runtime.director._Director.test_component', return_value='ok') as mock_test:
             with self.assertRaises(SystemExit) as cm:
                 main(['-t', 'my_test', '-C', 'MyClass', '-B', 'あいうえお'])
             self.assertEqual(cm.exception.code, 0)
@@ -250,7 +250,7 @@ class TestIOPCli(unittest.TestCase):
             f.write(body_data)
             path = f.name
         try:
-            with patch('iop._director._Director.test_component', return_value='ok') as mock_test:
+            with patch('iop.runtime.director._Director.test_component', return_value='ok') as mock_test:
                 with self.assertRaises(SystemExit) as cm:
                     main(['-t', 'my_test', '-C', 'MyClass', '-B', f'@{path}'])
                 self.assertEqual(cm.exception.code, 0)
@@ -446,7 +446,7 @@ class TestCLIRemoteMode(unittest.TestCase):
         """-i in remote mode calls director.setup() via the Atelier API, not a local-only warning."""
         env = {**self._BASE_ENV}
         with patch.dict(os.environ, env, clear=True):
-            with patch('iop._remote._RemoteDirector.setup') as mock_setup:
+            with patch('iop.runtime.remote._RemoteDirector.setup') as mock_setup:
                 with self.assertRaises(SystemExit):
                     main(['-i'])
         mock_setup.assert_called_once_with(None)
@@ -455,7 +455,7 @@ class TestCLIRemoteMode(unittest.TestCase):
     # --force-local
     # ------------------------------------------------------------------
 
-    @patch("iop._local._Director")
+    @patch("iop.runtime.local._Director")
     def test_force_local_bypasses_remote_env(self, mock_director):
         """--force-local must use _LocalDirector even when IOP_URL is set."""
         mock_director.status_production.return_value = {"status": "stopped"}
@@ -468,7 +468,7 @@ class TestCLIRemoteMode(unittest.TestCase):
                 # No HTTP call should have been made
                 mock_get.assert_not_called()
 
-    @patch("iop._local._Director")
+    @patch("iop.runtime.local._Director")
     def test_force_local_with_migrate(self, mock_director):
         """--force-local should keep migration local even when IOP_URL is set."""
         mock_director.migrate.return_value = None
@@ -483,7 +483,7 @@ class TestCLIRemoteMode(unittest.TestCase):
             env = {**self._BASE_ENV}
             with patch.dict(os.environ, env, clear=True):
                 with patch("requests.put") as mock_put:
-                    with patch('iop._local._LocalDirector.migrate') as mock_migrate:
+                    with patch('iop.runtime.local._LocalDirector.migrate') as mock_migrate:
                         with self.assertRaises(SystemExit):
                             main(['-M', path, '--force-local'])
                         mock_migrate.assert_called_once_with(path)
@@ -510,7 +510,7 @@ class TestCLIRemoteMode(unittest.TestCase):
         try:
             # No env vars set — remote mode comes only from the settings file
             with patch.dict(os.environ, {}, clear=True):
-                with patch("iop._remote._RemoteDirector.migrate") as mock_migrate:
+                with patch("iop.runtime.remote._RemoteDirector.migrate") as mock_migrate:
                     with patch('sys.stdout', new=StringIO()) as fake_out:
                         with self.assertRaises(SystemExit):
                             main(['-M', path])
@@ -597,7 +597,7 @@ class TestCLIRemoteMode(unittest.TestCase):
         try:
             with patch.dict(os.environ, {}, clear=True):
                 with patch("requests.get") as mock_get:
-                    with patch("iop._local._LocalDirector.status_production",
+                    with patch("iop.runtime.local._LocalDirector.status_production",
                                return_value={"status": "stopped"}):
                         with self.assertRaises(SystemExit):
                             main(['-x', '-R', path, '--force-local'])

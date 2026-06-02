@@ -8,7 +8,7 @@ Run with a live IRIS + IOP_URL set:
 """
 import pytest
 
-from iop._remote import _RemoteDirector
+from iop.runtime.remote import _RemoteDirector
 
 
 @pytest.fixture

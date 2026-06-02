@@ -2,7 +2,7 @@
 import pytest
 from dataclasses import dataclass
 
-from iop._serialization import SerializationError, serialize_message
+from iop.messages.serialization import SerializationError, serialize_message
 from iop import Message
 
 

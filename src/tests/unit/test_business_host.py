@@ -2,8 +2,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from iop._business_host import _BusinessHost
-from iop._dispatch import dispatch_serializer
+from iop.components.business_host import _BusinessHost
+from iop.messages.dispatch import dispatch_serializer
 from fixtures.message import (
     SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, MyResponse
 )
@@ -19,7 +19,7 @@ def business_host():
 
 class TestBusinessHostAsync:
     @pytest.mark.asyncio
-    @patch('iop._async_request.dispatch_deserializer')
+    @patch('iop.components.async_request.dispatch_deserializer')
     async def test_send_request_async_ng(self, mock_deserializer, business_host):
         business_host.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
         business_host.iris_handle.dispatchIsRequestDone.return_value = 2
@@ -32,8 +32,8 @@ class TestBusinessHostAsync:
 
 
 class TestGeneratorRequest:
-    @patch('iop._business_host._iris.get_iris')
-    @patch('iop._business_host.dispach_message')
+    @patch('iop.components.business_host._iris.get_iris')
+    @patch('iop.components.business_host.dispatch_message')
     def test_dispatch_generator_started(self, mock_dispatch, mock_iris, business_host):
         mock_generator = iter([1, 2, 3])
         mock_dispatch.return_value = mock_generator
@@ -45,7 +45,7 @@ class TestGeneratorRequest:
         assert result == mock_ack
         assert hasattr(business_host, '_gen')
 
-    @patch('iop._business_host.dispach_message')
+    @patch('iop.components.business_host.dispatch_message')
     def test_dispatch_generator_started_not_iterable(self, mock_dispatch, business_host):
         mock_dispatch.return_value = SimpleMessage(integer=1, string='test')
 

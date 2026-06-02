@@ -42,10 +42,11 @@ repository = "https://github.com/grongierisc/interoperability-embedded-python"
 issues = "https://github.com/grongierisc/interoperability-embedded-python/issues"
 
 [project.scripts]
-iop = "iop._cli:main"
+iop = "iop.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["iop*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
@@ -59,3 +60,11 @@ markers = [
     "e2e_local: end-to-end test requiring a local IRIS instance",
     "e2e_remote: end-to-end test requiring a remote IRIS instance via REST API",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

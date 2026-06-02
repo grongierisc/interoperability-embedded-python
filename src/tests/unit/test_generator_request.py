@@ -1,5 +1,5 @@
 import pytest
-from iop._generator_request import _GeneratorRequest
+from iop.components.generator_request import _GeneratorRequest
 from iop import PydanticMessage
 from unittest.mock import Mock, patch
 

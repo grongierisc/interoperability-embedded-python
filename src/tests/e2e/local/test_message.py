@@ -1,7 +1,7 @@
 import iris
 
 from iop import Message, PickleMessage, PydanticMessage, PydanticPickleMessage
-from iop._dispatch import dispatch_serializer, dispatch_deserializer
+from iop.messages.dispatch import dispatch_serializer, dispatch_deserializer
 
 from dataclasses import dataclass
 

@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from .._settings import Category, Setting, controls
+from ..components.settings import Category, Setting, controls
 
 
 class TargetSetting(Setting):

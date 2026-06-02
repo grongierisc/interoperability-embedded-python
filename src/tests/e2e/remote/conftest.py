@@ -27,7 +27,7 @@ from os.path import dirname as d, abspath
 _tests_dir = d(d(d(abspath(__file__))))
 sys.path.append(d(_tests_dir))           # src/
 
-from iop._remote import get_remote_settings
+from iop.runtime.remote import get_remote_settings
 
 _ENV_FILE = Path(__file__).parents[4] / ".env.remote"
 
@@ -60,5 +60,5 @@ def remote_settings():
 @pytest.fixture(scope="session")
 def remote_director(remote_settings):
     """A session-scoped _RemoteDirector ready to use."""
-    from iop._remote import _RemoteDirector
+    from iop.runtime.remote import _RemoteDirector
     return _RemoteDirector(remote_settings)

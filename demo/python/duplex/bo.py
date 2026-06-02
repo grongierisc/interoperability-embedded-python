@@ -1,4 +1,4 @@
-from grongier.pex import DuplexOperation
+from iop import DuplexOperation
 import iris
 
 class Operation(DuplexOperation):

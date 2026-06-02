@@ -7,8 +7,8 @@ from typing import List, Optional
 import pytest
 from pydantic import BaseModel
 
-from iop._message import _Message as Message, _PydanticMessage as PydanticMessage
-from iop._serialization import (
+from iop.messages.base import _Message as Message, _PydanticMessage as PydanticMessage
+from iop.messages.serialization import (
     SerializationError,
     serialize_message,
     deserialize_message,

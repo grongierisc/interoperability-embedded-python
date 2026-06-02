@@ -3,18 +3,18 @@ from __future__ import annotations
 import os
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from .._director_protocol import DirectorProtocol as _DirectorProtocol
+from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
 from .types import Port
 
 if TYPE_CHECKING:
     from .model import Production
 
 
-def _has_remote_director(production: "Production") -> bool:
+def _has_remote_director(production: Production) -> bool:
     try:
-        from .._remote import _RemoteDirector
+        from ..runtime.remote import _RemoteDirector
     except Exception:
         return False
 
@@ -29,7 +29,7 @@ def resolve_target(target_value: Any) -> Any:
 
 
 @contextmanager
-def _temporary_env(name: str, value: Optional[str]):
+def _temporary_env(name: str, value: str | None):
     if not value:
         yield
         return
@@ -69,7 +69,7 @@ class _NamespaceDirectorProxy:
 
 
 class _ProductionRuntime:
-    def __init__(self, production: "Production"):
+    def __init__(self, production: Production):
         self.production = production
 
     @property
@@ -77,8 +77,8 @@ class _ProductionRuntime:
         if self.production._director is not None:
             return self.production._director
 
-        from .._local import _LocalDirector
-        from .._remote import _RemoteDirector, get_remote_settings
+        from ..runtime.local import _LocalDirector
+        from ..runtime.remote import _RemoteDirector, get_remote_settings
 
         remote_settings = get_remote_settings()
         if remote_settings:

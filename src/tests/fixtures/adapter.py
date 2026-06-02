@@ -5,7 +5,7 @@ import json
 
 class RedditInboundAdapter(iop.InboundAdapter):
     
-    def OnInit(self):
+    def on_init(self):
         
         if not hasattr(self,'Feed'):
             self.Feed = "/new/"
@@ -17,8 +17,8 @@ class RedditInboundAdapter(iop.InboundAdapter):
         
         return 1
 
-    def OnTask(self):
-        self.LOGINFO(f"LIMIT:{self.Limit}")
+    def on_task(self):
+        self.log_info(f"LIMIT:{self.Limit}")
         if self.Feed == "" :
             return 1
         
@@ -27,7 +27,7 @@ class RedditInboundAdapter(iop.InboundAdapter):
         try:
             server = "https://www.reddit.com"
             requestString = self.Feed+".json?before="+self.LastPostName+"&limit="+self.Limit
-            self.LOGINFO(server+requestString)
+            self.log_info(server+requestString)
             response = requests.get(server+requestString)
             response.raise_for_status()
 
@@ -46,11 +46,11 @@ class RedditInboundAdapter(iop.InboundAdapter):
                 response = self.BusinessHost.ProcessInput(post)
         except requests.exceptions.HTTPError as err:
             if err.response.status_code == 429:
-                self.LOGWARNING(err.__str__())
+                self.log_warning(err.__str__())
             else:
                 raise err
         except Exception as err: 
-            self.LOGERROR(err.__str__())
+            self.log_error(err.__str__())
             raise err
 
         return tSC

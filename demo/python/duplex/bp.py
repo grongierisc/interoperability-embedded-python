@@ -1,4 +1,4 @@
-from grongier.pex import DuplexProcess
+from iop import DuplexProcess
 
 class Process(DuplexProcess):
 

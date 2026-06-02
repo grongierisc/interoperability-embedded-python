@@ -1,0 +1,290 @@
+from inspect import getsource
+from typing import Any
+
+from ..messages.base import _Message as Message
+from ..messages.decorators import (
+    input_deserializer,
+    input_serializer_param,
+    output_deserializer,
+    output_serializer,
+)
+from ..messages.dispatch import (
+    dispatch_deserializer,
+    dispatch_message,
+    dispatch_serializer,
+)
+from ..production import Port, resolve_target
+from ..runtime import iris as _iris
+from .async_request import AsyncRequest
+from .common import _Common
+from .generator_request import _GeneratorRequest
+
+
+class _BusinessHost(_Common):
+    """Base class for business components that defines common methods.
+
+    This is a superclass for BusinessService, BusinessProcess, and BusinessOperation that
+    defines common functionality like message serialization/deserialization and request handling.
+    """
+
+    buffer: int = 64000
+    DISPATCH: list[tuple[str, str]] = []
+
+    @input_serializer_param(1, "request")
+    @output_deserializer
+    def send_request_sync(
+        self,
+        target: str | Port,
+        request: Message | Any,
+        timeout: int = -1,
+        description: str | None = None,
+    ) -> Any:
+        """Send message synchronously to target component.
+
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever
+            description: Optional description for logging
+
+        Returns:
+            Response from target component
+
+        Raises:
+            TypeError: If request is invalid type
+        """
+        target = resolve_target(target)
+        return self.iris_handle.dispatchSendRequestSync(
+            target, request, timeout, description
+        )
+
+    @input_serializer_param(1, "request")
+    def send_request_async(
+        self,
+        target: str | Port,
+        request: Message | Any,
+        description: str | None = None,
+    ) -> None:
+        """Send message asynchronously to target component.
+
+        Args:
+            target: Name of target component
+            request: Message to send
+            description: Optional description for logging
+
+        Raises:
+            TypeError: If request is invalid type
+        """
+        target = resolve_target(target)
+        return self.iris_handle.dispatchSendRequestAsync(target, request, description)
+
+    async def send_request_async_ng(
+        self,
+        target: str | Port,
+        request: Message | Any,
+        timeout: int = -1,
+        description: str | None = None,
+    ) -> Any:
+        """Send message asynchronously to target component with asyncio.
+
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever
+            description: Optional description for logging
+
+        Returns:
+            Response from target component
+        """
+        target = resolve_target(target)
+        return await AsyncRequest(target, request, timeout, description, self)
+
+    def send_generator_request(
+        self,
+        target: str | Port,
+        request: Message | Any,
+        timeout: int = -1,
+        description: str | None = None,
+    ) -> _GeneratorRequest:
+        """Send message as a generator request to target component.
+        Args:
+            target: Name of target component
+            request: Message to send
+            timeout: Timeout in seconds, -1 means wait forever
+            description: Optional description for logging
+        Returns:
+            _GeneratorRequest: An instance of _GeneratorRequest to iterate over responses
+        Raises:
+            TypeError: If request is not of type Message
+        """
+        target = resolve_target(target)
+        return _GeneratorRequest(self, target, request, timeout, description)
+
+    def send_multi_request_sync(
+        self,
+        target_request: list[tuple[str | Port, Message | Any]],
+        timeout: int = -1,
+        description: str | None = None,
+    ) -> list[tuple[str, Message | Any, Any, int]]:
+        """Send multiple messages synchronously to target components.
+
+        Args:
+            target_request: List of tuples (target, request) to send
+            timeout: Timeout in seconds, -1 means wait forever
+            description: Optional description for logging
+
+        Returns:
+            List of tuples (target, request, response, status)
+
+        Raises:
+            TypeError: If target_request is not a list of tuples
+            ValueError: If target_request is empty
+        """
+        self._validate_target_request(target_request)
+        target_request = [
+            (resolve_target(target), request) for target, request in target_request
+        ]
+
+        call_list = [
+            self._create_call_structure(target, request)
+            for target, request in target_request
+        ]
+
+        response_list = self.iris_handle.dispatchSendRequestSyncMultiple(
+            call_list, timeout
+        )
+
+        return [
+            (
+                target_request[i][0],
+                target_request[i][1],
+                dispatch_deserializer(response_list[i].Response),
+                response_list[i].ResponseCode,
+            )
+            for i in range(len(target_request))
+        ]
+
+    def _validate_target_request(
+        self, target_request: list[tuple[str | Port, Message | Any]]
+    ) -> None:
+        """Validate the target_request parameter structure."""
+        if not isinstance(target_request, list):
+            raise TypeError("target_request must be a list")
+        if not target_request:
+            raise ValueError("target_request must not be empty")
+        if not all(
+            isinstance(item, tuple) and len(item) == 2 for item in target_request
+        ):
+            raise TypeError("target_request must contain tuples of (target, request)")
+
+    def _create_call_structure(
+        self, target: str | Port, request: Message | Any
+    ) -> Any:
+        """Create an Ens.CallStructure object for the request."""
+        iris = _iris.get_iris()
+        call = iris.cls("Ens.CallStructure")._New()
+        call.TargetDispatchName = resolve_target(target)
+        call.Request = dispatch_serializer(request)
+        return call
+
+    @staticmethod
+    def OnGetConnections() -> list[str] | None:
+        """Return all configured targets for this class.
+
+        Implement this method to allow connections between components to show up
+        in the interoperability UI.
+
+        Returns:
+            An IRISList containing all targets for this class. Default is None.
+        """
+        return None
+
+    @staticmethod
+    def get_adapter_type() -> str | None:
+        """Returns the name of the registered Adapter.
+
+        Returns:
+            Name of the registered Adapter
+        """
+        return
+
+    def on_get_connections(self) -> list[str]:
+        """Return targets found in send_request_sync and send_request_async calls.
+
+        Implement this method to allow connections between components to show up
+        in the interoperability UI.
+
+        Returns:
+            A list containing all targets for this class.
+        """
+        ## Parse the class code to find all invocations of send_request_sync and send_request_async
+        ## and return the targets
+        target_list = []
+        # get the source code of the class
+        source = getsource(self.__class__)
+        # find all invocations of send_request_sync and send_request_async
+        for method in [
+            "send_request_sync",
+            "send_request_async",
+        ]:
+            i = source.find(method)
+            while i != -1:
+                j = source.find("(", i)
+                if j != -1:
+                    k = source.find(",", j)
+                    if k != -1:
+                        target = source[j + 1 : k]
+                        if target.find("=") != -1:
+                            # it's a keyword argument, remove the keyword
+                            target = target[target.find("=") + 1 :].strip()
+                        if target not in target_list:
+                            target_list.append(target)
+                i = source.find(method, i + 1)
+
+        for target in target_list:
+            # if target is a string, remove the quotes
+            if target[0] == "'" and target[-1] == "'":
+                target_list[target_list.index(target)] = target[1:-1]
+            elif target[0] == '"' and target[-1] == '"':
+                target_list[target_list.index(target)] = target[1:-1]
+            # if target is a variable, try to find the value of the variable
+            else:
+                self.on_init()
+                try:
+                    if target.find("self.") != -1:
+                        # it's a class variable
+                        target_list[target_list.index(target)] = getattr(
+                            self, target[target.find(".") + 1 :]
+                        )
+                    elif target.find(".") != -1:
+                        # it's a class variable
+                        target_list[target_list.index(target)] = getattr(
+                            getattr(self, target[: target.find(".")]),
+                            target[target.find(".") + 1 :],
+                        )
+                    else:
+                        target_list[target_list.index(target)] = getattr(self, target)
+                except Exception:
+                    pass
+
+        return target_list
+
+    @input_deserializer
+    def _dispatch_generator_started(self, request: Any) -> Any:
+        """For internal use only."""
+        self._gen = dispatch_message(self, request)
+        # check if self._gen is a generator
+        if not hasattr(self._gen, "__iter__"):
+            raise TypeError(
+                f"Expected a generator or iterable object, got: {type(self._gen).__name__}"
+            )
+
+        return _iris.get_iris().IOP.Generator.Message.Ack._New()
+
+    @output_serializer
+    def _dispatch_generator_poll(self) -> Any:
+        """For internal use only."""
+        try:
+            return next(self._gen)
+        except StopIteration:
+            return _iris.get_iris().IOP.Generator.Message.Stop._New()

@@ -1,1 +1,0 @@
-from iop._director import _Director

@@ -302,7 +302,7 @@ ClassMethod GetExport() As %Status
 		While 'xdata.AtEnd { Set xml = xml _ xdata.Read(32000) }
 
 		// Convert to JSON via Python xmltodict
-		Set iopUtils = ##class(IOP.Wrapper).Import("iop._utils")
+		Set iopUtils = ##class(IOP.Wrapper).Import("iop.migration.utils")
 		Set jsonStr = iopUtils."_Utils"."xml_to_json"(xml)
 		Return ..%WriteResponse(jsonStr)
 	} Catch ex {
@@ -495,7 +495,7 @@ ClassMethod PutMigrate() As %DynamicObject
 
 		//Do the iop migration
 
-		set iopUtils = ##class(IOP.Wrapper).Import("iop._utils")
+		set iopUtils = ##class(IOP.Wrapper).Import("iop.migration.utils")
 		do iopUtils."_Utils".migrate(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
 	}
 	Catch ex {

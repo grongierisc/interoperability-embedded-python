@@ -4,12 +4,12 @@ import decimal
 import uuid
 from dataclasses import dataclass
 
-from iop._dispatch import (
+from iop.messages.dispatch import (
     dispatch_serializer,
     dispatch_deserializer
     )
 
-from iop._serialization import (
+from iop.messages.serialization import (
     dataclass_from_dict, 
     serialize_message, 
     deserialize_message, 
@@ -17,8 +17,8 @@ from iop._serialization import (
     deserialize_pickle_message
     )
 
-from iop._message import _Message as Message
-from iop._message import _PydanticMessage as PydanticMessage
+from iop.messages.base import _Message as Message
+from iop.messages.base import _PydanticMessage as PydanticMessage
 
 class SimpleModel(PydanticMessage):
     text: str

@@ -17,8 +17,8 @@ from iop import (
     controls,
     target,
 )
-from iop._business_host import _BusinessHost
-from iop._utils import _Utils
+from iop.components.business_host import _BusinessHost
+from iop.migration.utils import _Utils
 
 
 @dataclass
@@ -1071,7 +1071,7 @@ def test_production_sync_registers_current_definition():
     prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 
     with patch.object(_Utils, "set_productions_settings") as mock_set:
-        with patch("iop._local._LocalDirector.update_production") as mock_update:
+        with patch("iop.runtime.local._LocalDirector.update_production") as mock_update:
             prod.sync(root_path="/tmp/iop")
 
     mock_set.assert_called_once_with([prod], "/tmp/iop")
@@ -1092,7 +1092,7 @@ def test_production_sync_restores_namespace_env(monkeypatch):
         "set_productions_settings",
         side_effect=capture_namespace,
     ):
-        with patch("iop._local._LocalDirector.update_production"):
+        with patch("iop.runtime.local._LocalDirector.update_production"):
             prod.sync(root_path="/tmp/iop")
 
     assert seen == ["TARGET"]
@@ -1108,9 +1108,9 @@ def test_production_runtime_director_restores_namespace_env(monkeypatch):
         seen.append(os.environ.get("IRISNAMESPACE"))
         return {"Production": "Demo.Production", "Status": "running"}
 
-    with patch("iop._remote.get_remote_settings", return_value=None):
+    with patch("iop.runtime.remote.get_remote_settings", return_value=None):
         with patch(
-            "iop._local._LocalDirector.status_production",
+            "iop.runtime.local._LocalDirector.status_production",
             side_effect=capture_status,
         ):
             assert prod.status() == {

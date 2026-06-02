@@ -58,16 +58,6 @@ The Python logging is automatically mapped to the appropriate IRIS logging metho
 
 - Python `DEBUG` → IRIS `LogTrace`
 - Python `INFO` → IRIS `LogInfo`
-- Python `WARNING` → IRIS `LogWarning` 
+- Python `WARNING` → IRIS `LogWarning`
 - Python `ERROR` → IRIS `LogError`
 - Python `CRITICAL` → IRIS `LogAlert`
-
-## Legacy Methods
-
-The following methods are deprecated but maintained for backwards compatibility:
-
-- `LOGINFO()` - Use `log_info()` instead
-- `LOGALERT()` - Use `log_alert()` instead
-- `LOGWARNING()` - Use `log_warning()` instead
-- `LOGERROR()` - Use `log_error()` instead
-- `LOGASSERT()` - Use `log_assert()` instead

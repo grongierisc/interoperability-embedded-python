@@ -3,8 +3,8 @@ import iris
 import pytest
 from unittest.mock import MagicMock
 
-from iop._business_operation import _BusinessOperation
-from iop._dispatch import dispatch_serializer
+from iop.components.business_operation import _BusinessOperation
+from iop.messages.dispatch import dispatch_serializer
 from fixtures.message import SimpleMessage
 
 

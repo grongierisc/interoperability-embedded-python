@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 def _diff_productions(
-    desired: "Production",
-    current: "Production",
+    desired: Production,
+    current: Production,
     *,
     include_graph_metadata: bool = False,
 ) -> ProductionDiff:
@@ -58,14 +58,14 @@ def _diff_productions(
     )
 
 
-def _diff_warnings(desired: "Production", current: "Production") -> list[str]:
+def _diff_warnings(desired: Production, current: Production) -> list[str]:
     warnings = []
     warnings.extend(f"desired: {warning}" for warning in desired.graph().warnings)
     warnings.extend(f"current: {warning}" for warning in current.graph().warnings)
     return warnings
 
 
-def _production_signature(production: "Production") -> dict[str, Any]:
+def _production_signature(production: Production) -> dict[str, Any]:
     return {
         "testing_enabled": _bool_text(production.testing_enabled),
         "log_general_trace_events": _bool_text(production.log_general_trace_events),
@@ -74,11 +74,11 @@ def _production_signature(production: "Production") -> dict[str, Any]:
     }
 
 
-def _item_signatures(production: "Production") -> dict[str, dict[str, Any]]:
+def _item_signatures(production: Production) -> dict[str, dict[str, Any]]:
     return {item.name: _item_signature(item) for item in production.items}
 
 
-def _item_signature(item: "ComponentRef") -> dict[str, Any]:
+def _item_signature(item: ComponentRef) -> dict[str, Any]:
     return {
         "class_name": item.class_name or "",
         "category": item.category,
@@ -101,8 +101,8 @@ def _settings_signature(settings: dict[str, Any]) -> dict[str, str]:
 def _diff_items(
     changes: list[ProductionDiffEntry],
     *,
-    desired: "Production",
-    current: "Production",
+    desired: Production,
+    current: Production,
 ) -> None:
     desired_items = _item_signatures(desired)
     current_items = _item_signatures(current)
@@ -228,8 +228,8 @@ def _diff_mapping_values(
 def _diff_connections(
     changes: list[ProductionDiffEntry],
     *,
-    desired: "Production",
-    current: "Production",
+    desired: Production,
+    current: Production,
     include_graph_metadata: bool = False,
 ) -> None:
     desired_connections = _connection_signature(
@@ -275,7 +275,7 @@ def _diff_connections(
 
 
 def _connection_signature(
-    production: "Production",
+    production: Production,
     *,
     include_graph_metadata: bool = False,
 ) -> dict[tuple[str, str], list[Any]]:
