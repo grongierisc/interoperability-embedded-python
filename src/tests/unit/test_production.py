@@ -110,6 +110,101 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
     ]
 
 
+def test_progressive_authoring_api_matches_deployable_shape():
+    director = MagicMock()
+    prod = (
+        Production("Demo.Production")
+        .testing()
+        .tracing()
+        .actor_pool(3)
+        .describe("Order ingestion")
+        .in_namespace("IRISAPP")
+        .with_director(director)
+    )
+
+    orders = prod.operation(OrderOperation).pool(4).trace()
+    file = (
+        prod.service("FileInput", FileService)
+        .category_as("Inbound")
+        .pool(2)
+        .disable()
+        .enable()
+        .run_foreground()
+        .trace()
+        .schedule_on("*/5 * * * *")
+        .comment_as("Read order files")
+        .host_setting("Removed", "temporary")
+        .host_setting("Removed", None)
+        .host_settings_update({"Limit": 10})
+        .setting("Mode", "test")
+        .settings_update({"Mode": "prod"})
+        .adapter_setting("Charset", "utf-8")
+        .adapter_settings_update({"Timeout": 5})
+        .other_setting("Custom", "Preserved", "yes")
+        .connect("Output", orders)
+    )
+
+    assert file is prod.item("FileInput")
+    assert prod.namespace == "IRISAPP"
+    assert prod._director is director
+
+    data = prod.to_dict()["Demo.Production"]
+    file_item = data["Item"][1]
+    settings = {
+        (setting["@Target"], setting["@Name"]): setting["#text"]
+        for setting in file_item["Setting"]
+    }
+
+    assert data["@TestingEnabled"] == "true"
+    assert data["@LogGeneralTraceEvents"] == "true"
+    assert data["ActorPoolSize"] == "3"
+    assert data["Description"] == "Order ingestion"
+
+    assert file_item["@Name"] == "FileInput"
+    assert file_item["@Category"] == "Inbound"
+    assert file_item["@PoolSize"] == "2"
+    assert file_item["@Enabled"] == "true"
+    assert file_item["@Foreground"] == "true"
+    assert file_item["@LogTraceEvents"] == "true"
+    assert file_item["@Schedule"] == "*/5 * * * *"
+    assert file_item["@Comment"] == "Read order files"
+
+    assert settings[("Host", "Limit")] == "10"
+    assert settings[("Host", "Mode")] == "prod"
+    assert settings[("Host", "Output")] == "OrderOperation"
+    assert ("Host", "Removed") not in settings
+    assert settings[("Adapter", "Charset")] == "utf-8"
+    assert settings[("Adapter", "Timeout")] == "5"
+    assert settings[("Custom", "Preserved")] == "yes"
+
+    graph_edge = prod.graph().to_dict()["edges"][0]
+    assert graph_edge["source"] == "FileInput.Output"
+    assert graph_edge["logical_name"] == "orders"
+    assert graph_edge["target"] == "OrderOperation"
+
+
+def test_progressive_component_connect_add_appends_fanout_targets():
+    prod = Production("Demo.Production")
+    first = prod.operation("FirstOrderOperation", OrderOperation)
+    second = prod.operation("SecondOrderOperation", class_name="Demo.SecondOperation")
+
+    file = (
+        prod.service("FileInput", FileService)
+        .connect_add("Output", first)
+        .connect_add("Output", second)
+    )
+
+    assert file.host_settings["Output"] == (
+        "FirstOrderOperation,SecondOrderOperation"
+    )
+    assert [edge.target for edge in prod.graph().edges] == [
+        "FirstOrderOperation",
+        "SecondOrderOperation",
+    ]
+    with pytest.raises(ValueError, match="ambiguous"):
+        file.Output.resolve()
+
+
 def test_component_ref_exposes_adapter_class_name_without_serializing_it():
     prod = Production("Demo.Production")
     service = prod.service("FileInput", FileService)

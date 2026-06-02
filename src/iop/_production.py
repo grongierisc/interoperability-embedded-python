@@ -368,6 +368,10 @@ class ComponentRef:
         raise AttributeError(name)
 
     def port(self, name: str, logical_name: str = "") -> Port:
+        if not logical_name and self.component_class is not None:
+            descriptor = getattr(self.component_class, name, None)
+            if isinstance(descriptor, TargetSetting):
+                logical_name = descriptor.logical_name
         self.port_names.add(name)
         return Port(
             production=self.production,
@@ -378,6 +382,115 @@ class ComponentRef:
 
     def set_host_setting(self, name: str, value: Any) -> None:
         self.host_settings[name] = value
+
+    def pool(self, size: int | str) -> "ComponentRef":
+        self.pool_size = size
+        return self
+
+    def enable(self, enabled: bool | str = True) -> "ComponentRef":
+        self.enabled = enabled
+        return self
+
+    def disable(self) -> "ComponentRef":
+        return self.enable(False)
+
+    def run_foreground(self, enabled: bool | str = True) -> "ComponentRef":
+        self.foreground = enabled
+        return self
+
+    def trace(self, enabled: bool | str = True) -> "ComponentRef":
+        self.log_trace_events = enabled
+        return self
+
+    def schedule_on(self, schedule: str) -> "ComponentRef":
+        self.schedule = schedule
+        return self
+
+    def comment_as(self, text: str) -> "ComponentRef":
+        self.comment = text
+        return self
+
+    def category_as(self, category: str) -> "ComponentRef":
+        self.category = category
+        return self
+
+    def host_setting(self, name: str, value: Any) -> "ComponentRef":
+        _apply_settings_update(self.host_settings, {name: value})
+        return self
+
+    def host_settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+        _apply_settings_update(self.host_settings, values)
+        return self
+
+    def setting(self, name: str, value: Any) -> "ComponentRef":
+        return self.host_setting(name, value)
+
+    def settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+        return self.host_settings_update(values)
+
+    def adapter_setting(self, name: str, value: Any) -> "ComponentRef":
+        _apply_settings_update(self.adapter_settings, {name: value})
+        return self
+
+    def adapter_settings_update(self, values: dict[str, Any]) -> "ComponentRef":
+        _apply_settings_update(self.adapter_settings, values)
+        return self
+
+    def other_setting(
+        self,
+        target: str,
+        name: str,
+        value: Any,
+    ) -> "ComponentRef":
+        if target == "Host":
+            return self.host_setting(name, value)
+        if target == "Adapter":
+            return self.adapter_setting(name, value)
+
+        self.other_settings = [
+            setting
+            for setting in self.other_settings
+            if not (
+                setting.get("@Target") == target
+                and setting.get("@Name") == name
+            )
+        ]
+        if value is not None:
+            self.other_settings.append(
+                {
+                    "@Target": target,
+                    "@Name": name,
+                    "#text": _text_value(value),
+                }
+            )
+        return self
+
+    def connect(
+        self,
+        port_name: str | Port,
+        target_component: "ComponentRef | str",
+    ) -> "ComponentRef":
+        port = self._coerce_port(port_name)
+        self.production.connect(port, target_component)
+        return self
+
+    def connect_add(
+        self,
+        port_name: str | Port,
+        target_component: "ComponentRef | str",
+    ) -> "ComponentRef":
+        port = self._coerce_port(port_name)
+        self.production.connect_add(port, target_component)
+        return self
+
+    def _coerce_port(self, port_name: str | Port) -> Port:
+        if isinstance(port_name, Port):
+            if port_name.production is not self.production:
+                raise ValueError("source port belongs to a different Production")
+            if port_name.component is not self:
+                raise ValueError("source port belongs to a different component")
+            return port_name
+        return self.port(str(port_name))
 
     def inspect(self, *, refresh: bool = True) -> dict[str, Any]:
         return self.production.inspect_component(self, refresh=refresh)
@@ -480,6 +593,30 @@ class Production:
         self._edges: list[GraphEdge] = []
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
+
+    def testing(self, enabled: bool | str = True) -> "Production":
+        self.testing_enabled = enabled
+        return self
+
+    def tracing(self, enabled: bool | str = True) -> "Production":
+        self.log_general_trace_events = enabled
+        return self
+
+    def actor_pool(self, size: int | str) -> "Production":
+        self.actor_pool_size = size
+        return self
+
+    def describe(self, text: str) -> "Production":
+        self.description = text
+        return self
+
+    def in_namespace(self, namespace: Optional[str]) -> "Production":
+        self.namespace = namespace
+        return self
+
+    def with_director(self, director: Optional["_DirectorProtocol"]) -> "Production":
+        self._director = director
+        return self
 
     @classmethod
     def from_iris(

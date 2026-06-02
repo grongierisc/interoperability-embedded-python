@@ -120,6 +120,32 @@ PRODUCTIONS = [prod]
 sets that port to the destination component for the generated production and
 keeps graph metadata available to Python.
 
+You can also author the same topology progressively:
+
+```python
+prod = (
+    Production("Demo.Production")
+    .testing()
+    .actor_pool(2)
+    .describe("Order ingestion")
+)
+
+orders = prod.operation(OrderOperation)
+
+file = (
+    prod.service("FileInput", FileService)
+    .pool(2)
+    .host_setting("Limit", 10)
+    .adapter_setting("Charset", "utf-8")
+    .connect("Output", orders)
+)
+
+PRODUCTIONS = [prod]
+```
+
+Progressive methods mutate the same `Production` and `ComponentRef` objects.
+There is no separate public builder.
+
 You can also reference existing ObjectScript or built-in IRIS components by
 class name. These classes are not registered as Python components.
 

@@ -423,6 +423,54 @@ orders = prod.operation(OrderOperation)
 prod.connect(file.Output, orders)
 ```
 
+The same production can be authored progressively. Fluent methods mutate and
+return the same `Production` or `ComponentRef`; there is no separate builder
+object.
+
+```python
+prod = (
+    Production("Demo.Production")
+    .testing()
+    .tracing()
+    .actor_pool(2)
+    .describe("Order ingestion")
+)
+
+orders = prod.operation(OrderOperation)
+
+file = (
+    prod.service("FileInput", FileService)
+    .pool(2)
+    .host_setting("Limit", 10)
+    .adapter_setting("Charset", "utf-8")
+    .connect("Output", orders)
+)
+```
+
+For ObjectScript or built-in IRIS components, use manual port names:
+
+```python
+out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
+
+inp = (
+    prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
+    .adapter_setting("FilePath", "/tmp/in")
+    .connect("TargetConfigNames", out)
+)
+```
+
+Progressive production methods include `testing()`, `tracing()`,
+`actor_pool()`, `describe()`, `in_namespace()`, and `with_director()`.
+Progressive component methods include `pool()`, `enable()`, `disable()`,
+`run_foreground()`, `trace()`, `schedule_on()`, `comment_as()`,
+`category_as()`, `host_setting()`, `host_settings_update()`, `setting()`,
+`settings_update()`, `adapter_setting()`, `adapter_settings_update()`,
+`other_setting()`, `connect()`, and `connect_add()`.
+
+`host_settings`, `adapter_settings`, and `foreground` are public data
+attributes on `ComponentRef`, so their fluent update methods use distinct names
+instead of shadowing those attributes.
+
 Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.
