@@ -81,6 +81,26 @@ class TestModuleOperations:
         with pytest.raises(ValueError):
             migration_utils.import_module_from_path("invalid", "relative/path")
 
+    def test_try_import_class_reports_import_time_errors(self, tmp_path):
+        module_file = tmp_path / "broken.py"
+        module_file.write_text("import missing_dependency\n\nclass Broken:\n    pass\n")
+
+        with pytest.raises(ImportError, match="Failed to import"):
+            migration_utils._try_import_class("broken", "Broken", str(tmp_path))
+
+    def test_try_import_class_reports_missing_class(self, tmp_path):
+        module_file = tmp_path / "component.py"
+        module_file.write_text("class Other:\n    pass\n")
+
+        with pytest.raises(ImportError, match="does not define class"):
+            migration_utils._try_import_class("component", "Missing", str(tmp_path))
+
+    def test_try_import_class_allows_missing_target_module(self, tmp_path):
+        assert (
+            migration_utils._try_import_class("missing", "Component", str(tmp_path))
+            is None
+        )
+
     def test_load_settings_uses_file_stem_as_module_name(self, tmp_path):
         demo_file = tmp_path / "demo.py"
         demo_file.write_text("VALUE = __name__\n")

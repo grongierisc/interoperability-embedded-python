@@ -1,5 +1,7 @@
 from typing import Annotated
 
+import pytest
+
 from iop import BusinessService, Category, Setting, controls, setting
 
 
@@ -89,6 +91,18 @@ def test_plain_attributes_keep_default_python_attributes_category():
         "",
         "",
     ]
+
+
+def test_get_properties_raises_when_legacy_info_fails():
+    class Service(BusinessService):
+        Directory = ""
+
+        @staticmethod
+        def Directory_info():
+            raise ValueError("broken metadata")
+
+    with pytest.raises(RuntimeError, match="Failed to build settings metadata"):
+        Service._get_properties()
 
 
 def test_controls_expose_pythonic_and_raw_selector_strings():

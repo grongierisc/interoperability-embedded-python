@@ -75,3 +75,15 @@ class TestBusinessService:
         connections = bs.on_get_connections()
 
         assert len(connections) == 1
+
+    def test_connection_discovery_does_not_call_on_init(self):
+        class Service(_BusinessHost):
+            target = "Python.Target"
+
+            def on_init(self):
+                raise AssertionError("on_init should not run during inspection")
+
+            def on_message(self, request):
+                return self.send_request_sync(self.target, request)
+
+        assert Service().on_get_connections() == ["Python.Target"]

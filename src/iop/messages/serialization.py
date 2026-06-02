@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import codecs
+import copy
 import importlib
 import inspect
 import json
@@ -33,7 +34,6 @@ class MessageSerializer:
         message: Any, use_pickle: bool = False, is_generator: bool = False
     ) -> Any:
         """Serializes a message to IRIS format."""
-        message = remove_iris_id(message)
         if use_pickle:
             return MessageSerializer._serialize_pickle(message, is_generator)
         return MessageSerializer._serialize_json(message, is_generator)
@@ -157,8 +157,9 @@ class MessageSerializer:
 
 
 def remove_iris_id(message: Any) -> Any:
+    message = copy.copy(message)
     try:
-        del message._iris_id
+        delattr(message, "_iris_id")
     except AttributeError:
         pass
     return message
@@ -209,6 +210,8 @@ def dataclass_to_dict(instance: Any) -> dict:
     Handles non attended fields."""
     result = {}
     for field in instance.__dict__:
+        if field == "_iris_id":
+            continue
         value = getattr(instance, field)
         if is_dataclass(value):
             result[field] = dataclass_to_dict(value)

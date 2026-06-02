@@ -395,8 +395,11 @@ class _Common:
                         _string_metadata(control),  # Control/editor context
                     ]
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to build settings metadata for "
+                f"{cls.__module__}.{cls.__qualname__}"
+            ) from exc
         return ret
 
     # Logging methods

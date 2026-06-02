@@ -2,7 +2,12 @@
 import pytest
 from dataclasses import dataclass
 
-from iop.messages.serialization import SerializationError, serialize_message
+from iop.messages.serialization import (
+    SerializationError,
+    deserialize_pickle_message,
+    serialize_message,
+    serialize_pickle_message,
+)
 from iop import Message
 
 
@@ -21,3 +26,29 @@ def test_raise_not_message():
     msg = MyObject(value="test")
     with pytest.raises(SerializationError):
         serialize_message(msg)
+
+
+@dataclass
+class IrisIdMessage(Message):
+    value: str = ""
+
+
+def test_json_serialization_preserves_original_iris_id():
+    msg = IrisIdMessage(value="test")
+    msg._iris_id = "123"
+
+    serial = serialize_message(msg)
+
+    assert msg._iris_id == "123"
+    assert "_iris_id" not in serial.json
+
+
+def test_pickle_serialization_preserves_original_iris_id():
+    msg = IrisIdMessage(value="test")
+    msg._iris_id = "123"
+
+    serial = serialize_pickle_message(msg)
+    result = deserialize_pickle_message(serial)
+
+    assert msg._iris_id == "123"
+    assert result.get_iris_id() is None

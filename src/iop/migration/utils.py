@@ -586,7 +586,11 @@ def import_module_from_path(module_name, file_path):
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
-    spec.loader.exec_module(module)
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(module_name, None)
+        raise
     return module
 
 
@@ -672,17 +676,49 @@ def set_classes_settings(class_items, root_path=None, persistent_registry=None):
 
 
 def _try_import_class(module_name: str, class_name: str, path: str):
-    try:
-        path = os.path.abspath(os.path.normpath(path))
-        fullpath = guess_path(module_name, path)
-        with temporary_sys_path(path):
-            try:
-                module = import_module_from_path(module_name, fullpath)
-            except Exception:
-                module = importlib.import_module(module_name)
-        return getattr(module, class_name)
-    except Exception:
+    path = os.path.abspath(os.path.normpath(path))
+    fullpath = guess_path(module_name, path)
+    with temporary_sys_path(path):
+        module = _import_class_module(module_name, fullpath)
+    if module is None:
         return None
+    try:
+        return getattr(module, class_name)
+    except AttributeError as exc:
+        raise ImportError(
+            f"Module {module_name!r} does not define class {class_name!r}."
+        ) from exc
+
+
+def _import_class_module(module_name: str, fullpath: str):
+    try:
+        return import_module_from_path(module_name, fullpath)
+    except FileNotFoundError:
+        pass
+    except ModuleNotFoundError as exc:
+        if not _is_missing_target_module(exc, module_name):
+            raise ImportError(
+                f"Failed to import {module_name!r} from {fullpath!r}."
+            ) from exc
+    except Exception as exc:
+        raise ImportError(
+            f"Failed to import {module_name!r} from {fullpath!r}."
+        ) from exc
+
+    try:
+        return importlib.import_module(module_name)
+    except ModuleNotFoundError as exc:
+        if _is_missing_target_module(exc, module_name):
+            return None
+        raise ImportError(f"Failed to import module {module_name!r}.") from exc
+
+
+def _is_missing_target_module(exc: ModuleNotFoundError, module_name: str) -> bool:
+    missing_name = getattr(exc, "name", None)
+    return bool(
+        missing_name
+        and (module_name == missing_name or module_name.startswith(f"{missing_name}."))
+    )
 
 
 def _register_persistent_message_once(

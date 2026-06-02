@@ -1,3 +1,5 @@
+import ast
+import textwrap
 from inspect import getsource
 from typing import Any
 
@@ -18,6 +20,65 @@ from ..runtime import iris as _iris
 from .async_request import AsyncRequest
 from .common import _Common
 from .generator_request import _GeneratorRequest
+
+_CONNECTION_METHODS = {"send_request_sync", "send_request_async"}
+_UNRESOLVED = object()
+
+
+def _call_name(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    if isinstance(node, ast.Name):
+        return node.id
+    return None
+
+
+def _call_target_node(call: ast.Call) -> ast.AST | None:
+    for keyword in call.keywords:
+        if keyword.arg == "target":
+            return keyword.value
+    if call.args:
+        return call.args[0]
+    return None
+
+
+def _resolve_connection_target(host: Any, node: ast.AST) -> Any:
+    try:
+        value = ast.literal_eval(node)
+    except (ValueError, SyntaxError):
+        value = _UNRESOLVED
+    if isinstance(value, str):
+        return value
+
+    if isinstance(node, ast.Name):
+        return getattr(host, node.id, _UNRESOLVED)
+
+    if isinstance(node, ast.Attribute):
+        return _resolve_attribute_target(host, node)
+
+    return _UNRESOLVED
+
+
+def _resolve_attribute_target(host: Any, node: ast.Attribute) -> Any:
+    chain = []
+    current: ast.AST = node
+    while isinstance(current, ast.Attribute):
+        chain.append(current.attr)
+        current = current.value
+
+    if isinstance(current, ast.Name):
+        if current.id == "self":
+            value = host
+        else:
+            value = getattr(host, current.id, _UNRESOLVED)
+    else:
+        return _UNRESOLVED
+
+    for attr in reversed(chain):
+        if value is _UNRESOLVED:
+            return _UNRESOLVED
+        value = getattr(value, attr, _UNRESOLVED)
+    return value
 
 
 class _BusinessHost(_Common):
@@ -217,55 +278,23 @@ class _BusinessHost(_Common):
         Returns:
             A list containing all targets for this class.
         """
-        ## Parse the class code to find all invocations of send_request_sync and send_request_async
-        ## and return the targets
-        target_list = []
-        # get the source code of the class
-        source = getsource(self.__class__)
-        # find all invocations of send_request_sync and send_request_async
-        for method in [
-            "send_request_sync",
-            "send_request_async",
-        ]:
-            i = source.find(method)
-            while i != -1:
-                j = source.find("(", i)
-                if j != -1:
-                    k = source.find(",", j)
-                    if k != -1:
-                        target = source[j + 1 : k]
-                        if target.find("=") != -1:
-                            # it's a keyword argument, remove the keyword
-                            target = target[target.find("=") + 1 :].strip()
-                        if target not in target_list:
-                            target_list.append(target)
-                i = source.find(method, i + 1)
+        source = textwrap.dedent(getsource(self.__class__))
+        tree = ast.parse(source)
+        target_list: list[str] = []
 
-        for target in target_list:
-            # if target is a string, remove the quotes
-            if target[0] == "'" and target[-1] == "'":
-                target_list[target_list.index(target)] = target[1:-1]
-            elif target[0] == '"' and target[-1] == '"':
-                target_list[target_list.index(target)] = target[1:-1]
-            # if target is a variable, try to find the value of the variable
-            else:
-                self.on_init()
-                try:
-                    if target.find("self.") != -1:
-                        # it's a class variable
-                        target_list[target_list.index(target)] = getattr(
-                            self, target[target.find(".") + 1 :]
-                        )
-                    elif target.find(".") != -1:
-                        # it's a class variable
-                        target_list[target_list.index(target)] = getattr(
-                            getattr(self, target[: target.find(".")]),
-                            target[target.find(".") + 1 :],
-                        )
-                    else:
-                        target_list[target_list.index(target)] = getattr(self, target)
-                except Exception:
-                    pass
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if _call_name(node.func) not in _CONNECTION_METHODS:
+                continue
+
+            target_node = _call_target_node(node)
+            if target_node is None:
+                continue
+
+            target = _resolve_connection_target(self, target_node)
+            if isinstance(target, str) and target not in target_list:
+                target_list.append(target)
 
         return target_list
 
