@@ -40,16 +40,26 @@ jobs:
     - name: Install dependencies
       id: set-version
       run: |
-        VERSION=$(grep version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
-        [ $GITHUB_EVENT_NAME == 'release' ] && VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
-        [ $GITHUB_EVENT_NAME == 'push' ] && VERSION+=b && VERSION+=$(($(git tag -l "*$VERSION*" | cut -db -f2 | sort -n | tail -1)+1)) 
-        sed -ie "s/version = .*/version = \"$VERSION\"/" pyproject.toml
+        VERSION=$(awk -F'"' '/^version = / {print $2; exit}' pyproject.toml)
+        if [ -z "$VERSION" ]; then
+          echo "Could not find project version in pyproject.toml" >&2
+          exit 1
+        fi
+        if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+        fi
+        if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+          LAST_BETA=$(git tag -l "v${VERSION}b*" | awk -F'b' '{print $NF}' | sort -n | tail -1)
+          VERSION="${VERSION}b$(( ${LAST_BETA:-0} + 1 ))"
+        fi
+        sed -i -E "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
         python -m pip install --upgrade pip
         pip install -U pip setuptools
         pip install -r requirements-dev.txt
-        echo version=$VERSION >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
         NAME="iris_pex_embedded_python"-${VERSION}-py3-none-any
-        echo name=$NAME >> $GITHUB_OUTPUT
+        echo "name=$NAME" >> "$GITHUB_OUTPUT"
     - name: Build package
       run: ./build-dist.sh
     - name: Publish package
@@ -72,9 +82,10 @@ jobs:
       run: |
         git config --global user.name 'ProjectBot'
         git config --global user.email 'bot@users.noreply.github.com'
-        VERSION=${{ github.event.release.tag_name }} && VERSION=${VERSION/v/}
-        VERSION=`echo $VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=.`
-        sed -ie "s/version = .*/version = \"$VERSION\"/" pyproject.toml
+        VERSION="${{ github.event.release.tag_name }}"
+        VERSION="${VERSION#v}"
+        VERSION=$(echo "$VERSION" | awk -F. '/[0-9]+\./{$NF++; print}' OFS=.)
+        sed -i -E "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
         git add pyproject.toml
         git commit -m 'auto bump version with release'
         git push

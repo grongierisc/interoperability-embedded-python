@@ -128,7 +128,19 @@ ClassMethod PostRestart() As %Status
 		Try { Set dyna = {}.%FromJSON(%request.Content) } Catch { Set dyna = {} }
 		Set ns = ..ResolveNs(dyna)
 		If ns '= "" { Do ..NamespaceCheck(ns)  New $NAMESPACE  Set $NAMESPACE = ns }
-		$$$ThrowOnError(##class(Ens.Director).RestartProduction())
+		$$$ThrowOnError(##class(Ens.Director).GetProductionStatus(.production, .status))
+		If production = "" { Set production = $Get(^Ens.Configuration("csp","LastProduction")) }
+		If production = "" { Throw $$$ERROR("NoProductionSpecified") }
+		Set sc = ##class(Ens.Director).RestartProduction()
+		If $$$ISERR(sc) {
+			Set errorText = $SYSTEM.Status.GetErrorText(sc)
+			If $Find(errorText, "ErrProductionNotQuiescent") {
+				$$$ThrowOnError(##class(Ens.Director).StopProduction(10, 1))
+				$$$ThrowOnError(##class(Ens.Director).StartProduction(production))
+			} Else {
+				$$$ThrowOnError(sc)
+			}
+		}
 		Return ..%WriteResponse({"status": "restarted"}.%ToJSON())
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
