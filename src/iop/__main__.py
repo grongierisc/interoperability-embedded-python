@@ -1,5 +1,5 @@
 # main entry is cli.main()
 if __name__ == "__main__":
-    import iop.cli.main as _cli
+    from iop.cli.main import main
 
-    _cli.main()
+    main()

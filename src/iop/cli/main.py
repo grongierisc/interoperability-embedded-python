@@ -9,6 +9,7 @@ from importlib.metadata import version
 import requests
 
 from ..migration import utils as migration_utils
+from ..production import Production
 from ..runtime.local import _LocalDirector
 from ..runtime.protocol import DirectorProtocol
 from ..runtime.remote import _RemoteDirector, get_remote_settings
@@ -209,7 +210,19 @@ class Command:
             if self.args.export == "not_set"
             else self.args.export
         )
-        print(json.dumps(self.director.export_production(export_name), indent=4))
+        export_format = self.args.export_format or "json"
+        if export_format == "json":
+            print(json.dumps(self.director.export_production(export_name), indent=4))
+            return
+
+        production = Production.from_iris(export_name, director=self.director)
+        if export_format == "python":
+            print(production.to_python(), end="")
+            return
+        if export_format == "graph":
+            print(production.graph())
+            return
+        raise ValueError(f"Unsupported export format: {export_format}")
 
     def _handle_migrate(self) -> None:
         migrate_path = self.args.migrate

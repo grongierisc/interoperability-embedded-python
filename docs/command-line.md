@@ -296,7 +296,15 @@ If an argument is given, the export command export the production given in argum
 iop -e IoP.Production
 ```
 
-output :
+JSON is the default export format. It is useful for raw inspection and
+round-trip diagnostics, but it is not the recommended brownfield authoring
+artifact.
+
+```bash
+iop -e IoP.Production --format json
+```
+
+output:
 ```bash
 {
     "Production": {
@@ -337,6 +345,24 @@ output :
         ]
     }
 }
+```
+
+For brownfield modernization, export a readable Python draft:
+
+```bash
+iop -e IoP.Production --format python > production_settings.py
+```
+
+The generated file uses the `Production` DSL with `component(...)`,
+`connect(...)`, and `connect_add(...)` calls. Review it before migration because
+IRIS export cannot fully recover original Python classes, variable names,
+logical `target(...)` names, persistent message declarations, or every dynamic
+runtime route.
+
+You can inspect only the reconstructed route graph with:
+
+```bash
+iop -e IoP.Production --format graph
 ```
 
 ## status

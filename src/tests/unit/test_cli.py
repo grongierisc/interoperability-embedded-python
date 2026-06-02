@@ -1,4 +1,5 @@
 import os
+import runpy
 import tempfile
 import unittest
 from io import StringIO
@@ -20,6 +21,12 @@ class TestIOPCli(unittest.TestCase):
 
     def tearDown(self):
         self._remote_patcher.stop()
+
+    def test_module_entrypoint_calls_cli_main(self):
+        with patch("iop.cli.main.main") as mock_main:
+            runpy.run_module("iop", run_name="__main__")
+
+        mock_main.assert_called_once_with()
 
     def test_help_and_basic_commands(self):
         """Test basic CLI commands like help and namespace."""
@@ -234,6 +241,54 @@ class TestIOPCli(unittest.TestCase):
                     self.assertEqual(cm.exception.code, 0)
 
         mock_queue.assert_called_once_with("Default.Production")
+
+    def test_export_defaults_to_json(self):
+        payload = {"Demo.Production": {"@Name": "Demo.Production", "Item": []}}
+        with patch(
+            "iop.runtime.local._LocalDirector.export_production",
+            return_value=payload,
+        ) as mock_export:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--export", "Demo.Production"])
+                self.assertEqual(cm.exception.code, 0)
+
+        mock_export.assert_called_once_with("Demo.Production")
+        self.assertIn('"Demo.Production"', fake_out.getvalue())
+
+    def test_export_python_format_uses_production_reconstruction(self):
+        production = MagicMock()
+        production.to_python.return_value = "from iop import Production\n"
+        with patch(
+            "iop.cli.main.Production.from_iris",
+            return_value=production,
+        ) as mock_from_iris:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--export", "Demo.Production", "--format", "python"])
+                self.assertEqual(cm.exception.code, 0)
+
+        assert mock_from_iris.call_args.args[0] == "Demo.Production"
+        assert mock_from_iris.call_args.kwargs["director"].__class__.__name__ == (
+            "_LocalDirector"
+        )
+        production.to_python.assert_called_once_with()
+        self.assertEqual(fake_out.getvalue(), "from iop import Production\n")
+
+    def test_export_graph_format_prints_reconstructed_graph(self):
+        production = MagicMock()
+        production.graph.return_value = "Demo.Production\n  FileInput"
+        with patch(
+            "iop.cli.main.Production.from_iris",
+            return_value=production,
+        ):
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--export", "Demo.Production", "--format", "graph"])
+                self.assertEqual(cm.exception.code, 0)
+
+        production.graph.assert_called_once_with()
+        self.assertIn("Demo.Production", fake_out.getvalue())
 
     def test_initialization(self):
         """Test initialization command."""

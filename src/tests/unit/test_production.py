@@ -1,3 +1,4 @@
+import ast
 import copy
 import json
 import os
@@ -151,6 +152,43 @@ def test_production_message_registration_validates_inputs():
             NativeOrderMessage,
             sync_schema=False,
         )
+
+
+def test_production_to_python_renders_brownfield_draft():
+    prod = Production("Demo.Production", testing_enabled=True, actor_pool_size=3)
+    file_input = prod.component(
+        "File Input",
+        class_name="EnsLib.File.PassthroughService",
+        settings={
+            "Limit": "10",
+            "TargetConfigNames": "Order Operation",
+        },
+        adapter_settings={"FilePath": "/data/in"},
+    )
+    order_operation = prod.component(
+        "Order Operation",
+        class_name="Demo.OrderOperation",
+    )
+    prod.connect(file_input.port("TargetConfigNames"), order_operation)
+
+    text = prod.to_python()
+
+    ast.parse(text)
+    assert "from iop import Production" in text
+    assert "prod = Production('Demo.Production'," in text
+    assert "testing_enabled=True" in text
+    assert "actor_pool_size=3" in text
+    assert "file_input = prod.component(" in text
+    assert "order_operation = prod.component(" in text
+    assert "class_name='EnsLib.File.PassthroughService'" in text
+    assert "'Limit': '10'" in text
+    assert "'TargetConfigNames':" not in text
+    assert "adapter_settings={" in text
+    assert (
+        "prod.connect(file_input.port('TargetConfigNames'), order_operation)"
+        in text
+    )
+    assert text.endswith("PRODUCTIONS = [prod]\n")
 
 
 def test_progressive_authoring_api_matches_deployable_shape():

@@ -16,6 +16,7 @@ from .reconstruction import production_from_dict
 from .rendering import (
     production_graph,
     production_to_dict,
+    production_to_python,
     production_to_xml,
 )
 from .runtime import _ProductionRuntime
@@ -497,6 +498,9 @@ class Production:
 
     def to_xml(self) -> str:
         return production_to_xml(self)
+
+    def to_python(self) -> str:
+        return production_to_python(self)
 
     def graph(self) -> ProductionGraph:
         return production_graph(self)

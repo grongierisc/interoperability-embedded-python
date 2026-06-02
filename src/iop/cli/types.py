@@ -37,6 +37,7 @@ class CommandArgs:
     status: bool = False
     migrate: str | None = None
     export: str | None = None
+    export_format: str = "json"
     version: bool = False
     log: str | None = None
     queue: str | None = None

@@ -87,6 +87,15 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
 
+    export = main_parser.add_argument_group("export arguments")
+    export.add_argument(
+        "--format",
+        dest="export_format",
+        choices=("json", "python", "graph"),
+        default="json",
+        help="export format for -e/--export",
+    )
+
     remote = main_parser.add_argument_group("remote arguments")
     remote.add_argument(
         "-R",
