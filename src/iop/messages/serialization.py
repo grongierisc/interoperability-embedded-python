@@ -22,6 +22,12 @@ class SerializationError(Exception):
     pass
 
 
+class MessageClassImportError(SerializationError, ImportError):
+    """Raised when a JSON message's Python class cannot be imported."""
+
+    pass
+
+
 class TempPydanticModel(BaseModel):
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
 
@@ -93,8 +99,8 @@ class MessageSerializer:
             )
             module = importlib.import_module(module_name)
             msg_class = getattr(module, class_name)
-        except Exception as e:
-            raise SerializationError(
+        except (ModuleNotFoundError, AttributeError, ValueError) as e:
+            raise MessageClassImportError(
                 f"Failed to load class {serial.classname}: {str(e)}"
             ) from e
 
@@ -130,9 +136,12 @@ class MessageSerializer:
 
     @staticmethod
     def _parse_classname(classname: str) -> tuple[str, str]:
-        j = classname.rindex(".")
+        try:
+            j = classname.rindex(".")
+        except ValueError as e:
+            raise ValueError(f"Classname must include a module: {classname}") from e
         if j <= 0:
-            raise SerializationError(f"Classname must include a module: {classname}")
+            raise ValueError(f"Classname must include a module: {classname}")
         return classname[:j], classname[j + 1 :]
 
     @staticmethod

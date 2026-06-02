@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from functools import wraps
 
 from ..messages.dispatch import dispatch_deserializer, dispatch_serializer
+from ..messages.serialization import MessageClassImportError
 from ..migration import utils as _migration_utils
 from ..runtime import iris as _iris
 
@@ -327,11 +328,20 @@ def test_component(target, message=None, classname=None, body=None):
     response = iris.cls("IOP.Utils").dispatchTestComponent(target, serial_message)
     try:
         deserialized_response = dispatch_deserializer(response)
-    except ImportError:
-        # can't import the class, return the string
-        deserialized_response = (
-            f"{response.classname} : {_migration_utils.stream_to_string(response.jstr)}"
-        )
+    except MessageClassImportError:
+        if response._IsA("IOP.Message"):
+            body = (
+                _migration_utils.stream_to_string(response.json)
+                if response.type == "Stream"
+                else response.json
+            )
+            deserialized_response = {
+                "classname": response.classname,
+                "body": body,
+                "truncated": False,
+            }
+        else:
+            raise
     return deserialized_response
 
 

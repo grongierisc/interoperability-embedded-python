@@ -1,14 +1,17 @@
 """Unit tests for serialization — no live IRIS instance required."""
-import pytest
 from dataclasses import dataclass
 
+import pytest
+
+from iop import Message
 from iop.messages.serialization import (
+    MessageClassImportError,
     SerializationError,
+    deserialize_message,
     deserialize_pickle_message,
     serialize_message,
     serialize_pickle_message,
 )
-from iop import Message
 
 
 @dataclass
@@ -52,3 +55,17 @@ def test_pickle_serialization_preserves_original_iris_id():
 
     assert msg._iris_id == "123"
     assert result.get_iris_id() is None
+
+
+def test_json_deserialization_class_import_error_is_import_error():
+    class FakeSerial:
+        classname = "missing.module.MyMsg"
+        type = "String"
+        json = "{}"
+
+    with pytest.raises(MessageClassImportError) as exc:
+        deserialize_message(FakeSerial())
+
+    assert isinstance(exc.value, SerializationError)
+    assert isinstance(exc.value, ImportError)
+    assert "Failed to load class missing.module.MyMsg" in str(exc.value)

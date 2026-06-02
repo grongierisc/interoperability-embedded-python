@@ -5,9 +5,34 @@ No IRIS instance required — all underlying calls are mocked.
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from iop.messages.serialization import MessageClassImportError
+from iop.runtime import director as runtime_director
 from iop.runtime.local import _LocalDirector
+
+
+class FakeTestResponse:
+    def __init__(self, classname, body, is_iop_message=True):
+        self.classname = classname
+        self.json = body
+        self.jstr = "pickle body should not be used"
+        self.type = "String"
+        self._is_iop_message = is_iop_message
+
+    def _IsA(self, classname):
+        return classname == "IOP.Message" and self._is_iop_message
+
+
+class FakeIris:
+    def __init__(self, response):
+        self.utils = MagicMock()
+        self.utils.dispatchTestComponent.return_value = response
+
+    def cls(self, classname):
+        if classname == "IOP.Utils":
+            return self.utils
+        raise AssertionError(f"Unexpected IRIS class lookup: {classname}")
 
 
 class TestLocalDirectorDelegation(unittest.TestCase):
@@ -118,6 +143,34 @@ class TestLocalDirectorDelegation(unittest.TestCase):
         )
         mock.assert_called_once_with("Python.MyOp", msg, "Python.MyMsg", '{"k":"v"}')
         self.assertEqual(result, "response")
+
+    def test_test_component_returns_raw_json_when_response_class_is_not_importable(self):
+        response = FakeTestResponse(
+            classname="hello_world.msg.MyMsg",
+            body='{"greeting": "hello"}',
+        )
+        iris = FakeIris(response)
+
+        with (
+            patch.object(runtime_director._iris, "get_iris", return_value=iris),
+            patch.object(runtime_director, "dispatch_serializer", return_value="serial"),
+            patch.object(
+                runtime_director,
+                "dispatch_deserializer",
+                side_effect=MessageClassImportError("missing class"),
+            ),
+        ):
+            result = runtime_director.test_component("Python.MyOp", message=object())
+
+        iris.utils.dispatchTestComponent.assert_called_once_with("Python.MyOp", "serial")
+        self.assertEqual(
+            result,
+            {
+                "classname": "hello_world.msg.MyMsg",
+                "body": '{"greeting": "hello"}',
+                "truncated": False,
+            },
+        )
 
     # ------------------------------------------------------------------
     # Export
