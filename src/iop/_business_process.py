@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Union
 from ._business_host import _BusinessHost
 from ._decorators import input_deserializer, input_serializer_param, output_serializer
 from ._dispatch import create_dispatch, dispach_message
-from ._production import Port, resolve_target
+from .production import Port, resolve_target
 
 
 class _BusinessProcess(_BusinessHost):

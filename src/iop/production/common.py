@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import importlib
+from typing import Any, Optional
+
+
+def _bool_text(value: bool | str) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    normalized = str(value).lower().strip()
+    if normalized in ("1", "yes", "on"):
+        return "true"
+    if normalized in ("0", "no", "off"):
+        return "false"
+    return normalized
+
+
+def _text_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return _bool_text(value)
+    return str(value)
+
+
+def _auto_proxy_class_name(component_class: type) -> str:
+    return (
+        f"Python.{component_class.__module__}.{component_class.__name__}".replace(
+            "_", ""
+        )
+    )
+
+
+def _adapter_type_from_component_class(component_class: Optional[type]) -> str:
+    if component_class is None:
+        return ""
+    for method_name in ("get_adapter_type", "getAdapterType"):
+        method = getattr(component_class, method_name, None)
+        if not callable(method):
+            continue
+        value = method()
+        if value:
+            return str(value)
+    return ""
+
+
+def _adapter_type_from_class_name(class_name: Optional[str]) -> str:
+    if not class_name or not class_name.startswith("Python."):
+        return ""
+    python_name = class_name.removeprefix("Python.")
+    module_name, separator, class_attr = python_name.rpartition(".")
+    if not separator:
+        return ""
+    try:
+        module = importlib.import_module(module_name)
+        component_class = getattr(module, class_attr)
+    except Exception:
+        return ""
+    if not isinstance(component_class, type):
+        return ""
+    return _adapter_type_from_component_class(component_class)
+
+
+def _settings_to_iris(target_name: str, values: dict[str, Any]) -> list[dict[str, str]]:
+    return [
+        {
+            "@Target": target_name,
+            "@Name": name,
+            "#text": _text_value(value),
+        }
+        for name, value in values.items()
+    ]
+
+
+def _apply_settings_update(target: dict[str, Any], updates: Any) -> None:
+    """Merge *updates* into *target*, treating ``None`` values as removals."""
+    for key, value in (updates or {}).items():
+        if value is None:
+            target.pop(key, None)
+        else:
+            target[key] = value

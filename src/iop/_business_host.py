@@ -13,7 +13,7 @@ from ._decorators import (
 from ._dispatch import dispatch_serializer, dispatch_deserializer, dispach_message
 from ._async_request import AsyncRequest
 from ._generator_request import _GeneratorRequest
-from ._production import Port, resolve_target
+from .production import Port, resolve_target
 
 
 class _BusinessHost(_Common):
