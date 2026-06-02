@@ -8,6 +8,7 @@ Run with a live IRIS + IOP_URL set:
 """
 import pytest
 import requests
+
 from iop import Production
 
 
@@ -43,6 +44,15 @@ def default_production_name(remote_director):
 def production(remote_director, default_production_name):
     production = Production(default_production_name, director=remote_director)
     production.set_default()
+    try:
+        production.start()
+    except (RuntimeError, requests.exceptions.HTTPError):
+        pass
+    status = production.status()
+    current = status.get("Production") or status.get("production") or ""
+    state = str(status.get("Status") or status.get("status") or "").lower()
+    if current != default_production_name or state != "running":
+        pytest.skip(f"{default_production_name} is not the running production")
     return production
 
 

@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import timeit
 
 from iop import Production
@@ -8,11 +9,19 @@ from iop.runtime.local import _LocalDirector
 
 
 def _start_for_test(production):
+    director = _LocalDirector()
     status = production.status()
     current = status.get("Production") or status.get("production") or ""
     state = str(status.get("Status") or status.get("status") or "").lower()
     if current and current != "Not defined" and state == "running":
-        Production(current).stop()
+        Production(current, director=director).kill()
+        for _ in range(30):
+            status = director.status_production()
+            current = status.get("Production") or status.get("production") or ""
+            state = str(status.get("Status") or status.get("status") or "").lower()
+            if state != "running":
+                break
+            time.sleep(1)
     production.set_default()
     production.start()
 

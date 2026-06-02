@@ -303,7 +303,12 @@ ClassMethod GetExport() As %Status
 
 		// Convert to JSON via Python xmltodict
 		Set iopUtils = ##class(IOP.Wrapper).Import("iop.migration.utils")
-			Set jsonStr = iopUtils."xml_to_json"(xml)
+		Set builtins = ##class(%SYS.Python).Import("builtins")
+		If builtins.hasattr(iopUtils, "xml_to_json") {
+			Set jsonStr = builtins.getattr(iopUtils, "xml_to_json")."__call__"(xml)
+		} Else {
+			Set jsonStr = iopUtils."_Utils"."xml_to_json"(xml)
+		}
 		Return ..%WriteResponse(jsonStr)
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
@@ -496,7 +501,12 @@ ClassMethod PutMigrate() As %DynamicObject
 		//Do the iop migration
 
 		set iopUtils = ##class(IOP.Wrapper).Import("iop.migration.utils")
-			do iopUtils.migrate(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
+		set builtins = ##class(%SYS.Python).Import("builtins")
+		If builtins.hasattr(iopUtils, "migrate") {
+			do builtins.getattr(iopUtils, "migrate")."__call__"(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
+		} Else {
+			do iopUtils."_Utils".migrate(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
+		}
 	}
 	Catch ex {
 		$$$ThrowOnError(ex.AsStatus())

@@ -197,6 +197,8 @@ class _RemoteDirector(_RemoteClient, _DirectorProtocol):
             except Exception:
                 err_msg = str(exc)
             raise RuntimeError(err_msg) from exc
+        except requests.exceptions.RequestException as exc:
+            raise RuntimeError(f"Remote test component error: {exc}") from exc
 
     # ------------------------------------------------------------------
     # Export
