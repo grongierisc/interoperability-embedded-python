@@ -250,7 +250,7 @@ Method OnTearDown() As %Status
     #dim tSC As %Status = $$$OK
     try {
         If ..%InPrivateSession Set tSC=..StopPrivateSession() Quit:$$$ISERR(tSC)
-        do ..%class."_dispatch_on_tear_down"()
+        do ..%class."_dispatch_on_tear_down"($this)
     } catch {
         Set tSC=$$$EnsSystemError
     }

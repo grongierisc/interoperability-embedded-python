@@ -187,7 +187,7 @@ Method OnTearDown() As %Status
     set tSC = $$$OK
     if $isObject(..%class) {
         try {
-            do ..%class."_dispatch_on_tear_down"()
+            do ..%class."_dispatch_on_tear_down"($this)
         } catch ex {
             set tSC = ex.AsStatus()
         }
