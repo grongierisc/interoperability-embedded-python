@@ -1,3 +1,6 @@
+import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from inspect import Parameter, signature
 from typing import Any
 
@@ -29,6 +32,34 @@ _PICKLE_MESSAGE_CLASSES = {
     "IOP.PickleMessage",
     "IOP.Generator.Message.StartPickle",
 }
+_HANDLER_ATTRIBUTE = "__iop_handler_message__"
+
+
+@dataclass(frozen=True)
+class _DispatchCandidate:
+    message: str
+    method: str
+    source: str
+    priority: int
+    index: int
+
+
+def handler(message_type: Any) -> Callable[[Callable], Callable]:
+    """Declare a method as the handler for a message type.
+
+    Args:
+        message_type: The message class, fully qualified class name string, or
+            IRIS object instance this method handles.
+    """
+    message = _message_class_name(message_type)
+    if message is None:
+        raise TypeError("handler() requires a message class or class name")
+
+    def _handler(method: Callable) -> Callable:
+        setattr(method, _HANDLER_ATTRIBUTE, message)
+        return method
+
+    return _handler
 
 
 def dispatch_serializer(message: Any, is_generator: bool = False) -> Any:
@@ -119,7 +150,7 @@ def dispatch_message(host: Any, request: Any) -> Any:
 
     for msg, method in host.DISPATCH:
         if msg == module + "." + classname:
-            call = method
+            return getattr(host, method)(request)
 
     return getattr(host, call)(request)
 
@@ -129,14 +160,35 @@ def create_dispatch(host: Any) -> None:
     The dispatch table consists of tuples of (fully_qualified_class_name, method_name).
     Only methods that take a single typed parameter are considered as handlers.
     """
-    dispatch = _declared_dispatch(host)
+    candidates: list[_DispatchCandidate] = []
+    index = 0
+
+    for message, method in _decorated_dispatch(host):
+        candidates.append(
+            _DispatchCandidate(message, method, "@handler", priority=0, index=index)
+        )
+        index += 1
+
+    for message, method in _declared_dispatch(host):
+        candidates.append(
+            _DispatchCandidate(message, method, "DISPATCH", priority=1, index=index)
+        )
+        index += 1
 
     for method_name in get_callable_methods(host):
+        if _handler_message(getattr(host, method_name)) is not None:
+            continue
         handler_info = get_handler_info(host, method_name)
-        if handler_info and handler_info not in dispatch:
-            dispatch.append(handler_info)
+        if handler_info:
+            message, method = handler_info
+            candidates.append(
+                _DispatchCandidate(
+                    message, method, "typed method", priority=1, index=index
+                )
+            )
+            index += 1
 
-    host.DISPATCH = dispatch
+    host.DISPATCH = _deduplicate_dispatch(host, candidates)
 
 
 def _declared_dispatch(host: Any) -> list[tuple[str, str]]:
@@ -148,6 +200,82 @@ def _declared_dispatch(host: Any) -> list[tuple[str, str]]:
         return list(class_dispatch)
 
     return []
+
+
+def _decorated_dispatch(host: Any) -> list[tuple[str, str]]:
+    dispatch = []
+    for method_name in dir(host):
+        method = getattr(host, method_name)
+        if not callable(method):
+            continue
+        message = _handler_message(method)
+        if message is not None:
+            dispatch.append((message, method_name))
+    return dispatch
+
+
+def _deduplicate_dispatch(
+    host: Any, candidates: list[_DispatchCandidate]
+) -> list[tuple[str, str]]:
+    selected: dict[str, _DispatchCandidate] = {}
+
+    for candidate in candidates:
+        current = selected.get(candidate.message)
+        if current is None:
+            selected[candidate.message] = candidate
+            continue
+
+        if current.method == candidate.method:
+            if _is_higher_priority(candidate, current):
+                selected[candidate.message] = candidate
+            continue
+
+        if _is_higher_priority(candidate, current):
+            _log_duplicate_mapping(host, kept=candidate, discarded=current)
+            selected[candidate.message] = candidate
+        else:
+            _log_duplicate_mapping(host, kept=current, discarded=candidate)
+
+    return [
+        (candidate.message, candidate.method)
+        for candidate in sorted(selected.values(), key=lambda item: item.index)
+    ]
+
+
+def _is_higher_priority(
+    candidate: _DispatchCandidate, current: _DispatchCandidate
+) -> bool:
+    if candidate.priority != current.priority:
+        return candidate.priority < current.priority
+    return candidate.index > current.index
+
+
+def _log_duplicate_mapping(
+    host: Any, kept: _DispatchCandidate, discarded: _DispatchCandidate
+) -> None:
+    message = (
+        f"Duplicate dispatch mapping for {kept.message}: "
+        f"keeping {kept.method} from {kept.source}; "
+        f"discarding {discarded.method} from {discarded.source}."
+    )
+    log_warning = getattr(host, "log_warning", None)
+    if callable(log_warning):
+        try:
+            log_warning(message)
+            return
+        except Exception:
+            pass
+
+    logging.getLogger(__name__).warning(message)
+
+
+def _handler_message(method: Any) -> str | None:
+    message = getattr(method, _HANDLER_ATTRIBUTE, None)
+    if message is not None:
+        return message
+
+    func = getattr(method, "__func__", None)
+    return getattr(func, _HANDLER_ATTRIBUTE, None)
 
 
 def get_callable_methods(host: Any) -> list[str]:
@@ -172,20 +300,27 @@ def get_handler_info(host: Any, method_name: str) -> tuple[str, str] | None:
         param: Parameter = next(iter(params.values()))
         annotation = param.annotation
 
-        if isinstance(annotation, str):
-            # return it as is, assuming it's a fully qualified class name
-            return annotation, method_name
-
-        if is_iris_object_instance(annotation):
-            return (
-                f"{type(annotation).__module__}.{type(annotation).__name__}",
-                method_name,
-            )
-
-        if annotation == Parameter.empty or not isinstance(annotation, type):
+        if annotation == Parameter.empty:
             return None
 
-        return f"{annotation.__module__}.{annotation.__name__}", method_name
+        message = _message_class_name(annotation)
+        if message is None:
+            return None
+
+        return message, method_name
 
     except ValueError:
         return None
+
+
+def _message_class_name(message_type: Any) -> str | None:
+    if isinstance(message_type, str):
+        return message_type
+
+    if is_iris_object_instance(message_type):
+        return f"{type(message_type).__module__}.{type(message_type).__name__}"
+
+    if not isinstance(message_type, type):
+        return None
+
+    return f"{message_type.__module__}.{message_type.__name__}"

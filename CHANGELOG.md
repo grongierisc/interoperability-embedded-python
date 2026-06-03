@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add REST endpoints for production connections, queue information, component lifecycle actions, and IOP-generated proxy class bindings.
 - Add CLI support for export formats with `--format json|python|graph`, remote settings files with `-R/--remote-settings`, `--bindings`, `--unused`, and `--unbind`.
 - Add public binding helpers: `bind_component`, `unbind_component`, `list_bindings`, `register_component`, and `unregister_component`.
+- Add `@handler(MessageType)` for explicit business operation and business process message dispatch; duplicate mappings now emit a warning that identifies the discarded handler.
 - Add support metadata for Python 3.13 and 3.14.
 
 ### Changed

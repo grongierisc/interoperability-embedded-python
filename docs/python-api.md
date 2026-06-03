@@ -72,6 +72,53 @@ CLASSES = {
 
 When `CLASSES` is used, migration writes message metadata parameters (`IOP_MESSAGE_KIND`, `IOP_PYTHON_CLASS`, and `IOP_PYTHON_CLASSPATH`) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If `Meta.classname` conflicts with the `CLASSES` key, migration fails.
 
+### Message Dispatch
+
+Business operations and business processes can route different message classes to different methods. Use `@handler(MessageType)` when you want the mapping to be explicit.
+
+```python
+from dataclasses import dataclass
+from iop import BusinessOperation, Message, handler
+
+@dataclass
+class CreateOrder(Message):
+    order_id: str = None
+
+@dataclass
+class CancelOrder(Message):
+    order_id: str = None
+
+class OrderOperation(BusinessOperation):
+    @handler(CreateOrder)
+    def create_order(self, request):
+        return None
+
+    @handler(CancelOrder)
+    def cancel_order(self, request):
+        return None
+```
+
+`MessageType` can be a Python message class or a fully-qualified class name string:
+
+```python
+class OrderOperation(BusinessOperation):
+    @handler("orders.messages.CreateOrder")
+    def create_order(self, request):
+        return None
+```
+
+The decorated method should accept the incoming request as its only argument after `self`. A type annotation on the decorated method is optional because the decorator supplies the dispatch mapping.
+
+If no `@handler` is declared for a message, IOP keeps the legacy behavior: public callable methods with one typed argument are added to the dispatch table automatically.
+
+Dispatch priority is:
+
+1. `@handler(MessageType)`
+2. Explicit `DISPATCH` entries
+3. Legacy typed-method discovery
+
+When more than one mapping targets the same message type, IOP keeps the highest-priority mapping and logs a warning through the component warning logger, so the discarded handler appears in the IRIS logs. Duplicate mappings at the same priority keep the later entry for backward compatibility and log which earlier handler was discarded.
+
 ### BusinessService 🔄
 Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.
 
@@ -282,8 +329,8 @@ Base class for business operations that process requests and perform specific bu
 
 **Example:**
 ```python
-from iop import BusinessOperation, Message
 from dataclasses import dataclass
+from iop import BusinessOperation, Message, handler
 
 @dataclass
 class MyRequest(Message):
@@ -294,7 +341,8 @@ class MyResponse(Message):
     my_string: str = None
 
 class MyOperation(BusinessOperation):
-    def on_message(self, request):
+    @handler(MyRequest)
+    def handle_my_request(self, request):
         self.log_info(f"Received: {request}")
         return MyResponse(my_string="Hello World")
 ```

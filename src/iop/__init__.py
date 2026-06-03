@@ -16,6 +16,7 @@ from iop.messages.base import (
     _PydanticMessage,
     _PydanticPickleMessage,
 )
+from iop.messages.decorators import handler as handler
 from iop.messages.persistent import Field as Field
 from iop.messages.persistent import Model as Model
 from iop.messages.persistent import _PersistentMessage
@@ -85,6 +86,7 @@ __all__ = [
     "Utils",
     "bind_component",
     "controls",
+    "handler",
     "list_bindings",
     "register_component",
     "setting",

@@ -3,6 +3,7 @@ from functools import wraps
 from typing import Any
 
 from .dispatch import dispatch_deserializer, dispatch_serializer
+from .dispatch import handler as handler
 
 
 def input_serializer(fonction: Callable) -> Callable:
