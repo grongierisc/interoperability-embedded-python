@@ -718,20 +718,21 @@ class returns a normal <code>Production</code> object, so <code>to_dict()</code>
 <pre><code class="language-python">from iop import OperationItem, Production, Route, ServiceItem
 
 
+ORDER_OPERATION = OperationItem(&quot;OrderOperation&quot;, OrderOperation)
+
+
 class DemoProduction(Production):
     name = &quot;Demo.Production&quot;
     testing_enabled = True
 
-    services = [
+    services = (
         ServiceItem(
             &quot;FileInput&quot;,
             FileService,
-            routes=[Route(FileService.Output, &quot;OrderOperation&quot;)],
-        )
-    ]
-    operations = [
-        OperationItem(&quot;OrderOperation&quot;, OrderOperation)
-    ]
+            routes=(Route(FileService.Output, ORDER_OPERATION),),
+        ),
+    )
+    operations = (ORDER_OPERATION,)
 
 
 prod = DemoProduction()
@@ -740,23 +741,24 @@ prod = DemoProduction()
 <pre><code class="language-python">from iop import OperationItem, Production, Route, ServiceItem
 
 
+FILE_OUT = OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
+
+
 class FileProduction(Production):
     name = &quot;Demo.FileProduction&quot;
 
-    services = [
+    services = (
         ServiceItem(
             &quot;FileIn&quot;,
             &quot;EnsLib.File.PassthroughService&quot;,
             adapter_settings={&quot;FilePath&quot;: &quot;/tmp/in&quot;},
-            routes=[Route(&quot;TargetConfigNames&quot;, &quot;FileOut&quot;)],
-        )
-    ]
-    operations = [
-        OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
-    ]
+            routes=(Route(&quot;TargetConfigNames&quot;, FILE_OUT),),
+        ),
+    )
+    operations = (FILE_OUT,)
 </code></pre>
 <p><code>target("orders")</code> declares a configurable outbound port on <code>FileService</code>.
-<code>Route(FileService.Output, "OrderOperation")</code> wires that port to a production
+<code>Route(FileService.Output, ORDER_OPERATION)</code> wires that port to a production
 item. This separation mirrors the instance-style form:
 <code>prod.connect(file.Output, orders)</code>.</p>
 <p>For Python component classes, prefer passing the descriptor
@@ -765,14 +767,20 @@ there is no Python descriptor, so pass the IRIS setting name string such as
 <code>"TargetConfigNames"</code>.</p>
 <p><code>Route(port, targets)</code> writes the Host setting for the port and records graph
 edges by calling the same connection API used by instance-style authoring.
-<code>targets</code> can be a string or a sequence for fan-out:</p>
-<pre><code class="language-python">Route(&quot;TargetConfigNames&quot;, [&quot;AuditOperation&quot;, &quot;OrderOperation&quot;])
+<code>targets</code> can be an item declaration, a string item name, or a sequence for
+fan-out:</p>
+<pre><code class="language-python">AUDIT = OperationItem(&quot;AuditOperation&quot;, &quot;Demo.AuditOperation&quot;)
+ORDERS = OperationItem(&quot;OrderOperation&quot;, &quot;Demo.OrderOperation&quot;)
+Route(&quot;TargetConfigNames&quot;, (AUDIT, ORDERS))
 </code></pre>
 <p>Use <code>settings</code> or <code>host_settings</code> for non-route Host settings. Route ports
 belong in <code>Route</code>; declaring the same port in Host settings raises an error.
 Only known route aliases such as <code>target_config_names</code> are normalized to IRIS
 names such as <code>TargetConfigNames</code>. Other Host and Adapter setting keys are
 emitted exactly as supplied.</p>
+<p>Use tuples for class-level <code>services</code>, <code>processes</code>, <code>operations</code>, and route
+lists. Lists still work, but tuples avoid accidental mutation of shared class
+attributes.</p>
 <p>The same production can be authored progressively. Fluent methods mutate and
 return the same <code>Production</code> or <code>ComponentRef</code>; there is no separate builder
 object.</p>

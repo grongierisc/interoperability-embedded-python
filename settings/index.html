@@ -330,53 +330,60 @@ class OrderOperation(BusinessOperation):
         return request
 
 
+ORDER_OPERATION = OperationItem(&quot;OrderOperation&quot;, OrderOperation)
+
+
 class DemoProduction(Production):
     name = &quot;Demo.Production&quot;
     testing_enabled = True
 
-    services = [
+    services = (
         ServiceItem(
             &quot;FileInput&quot;,
             FileService,
-            routes=[Route(FileService.Output, &quot;OrderOperation&quot;)],
-        )
-    ]
-    operations = [
-        OperationItem(&quot;OrderOperation&quot;, OrderOperation)
-    ]
+            routes=(Route(FileService.Output, ORDER_OPERATION),),
+        ),
+    )
+    operations = (ORDER_OPERATION,)
 
 
 PRODUCTIONS = [DemoProduction()]
 </code></pre>
 <p>For existing IRIS classes, use the IRIS class name string:</p>
-<pre><code class="language-python">class FileProduction(Production):
+<pre><code class="language-python">FILE_OUT = OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
+
+
+class FileProduction(Production):
     name = &quot;Demo.FileProduction&quot;
 
-    services = [
+    services = (
         ServiceItem(
             &quot;FileIn&quot;,
             &quot;EnsLib.File.PassthroughService&quot;,
             adapter_settings={&quot;FilePath&quot;: &quot;/tmp/in&quot;},
-            routes=[Route(&quot;TargetConfigNames&quot;, &quot;FileOut&quot;)],
-        )
-    ]
-    operations = [
-        OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
-    ]
+            routes=(Route(&quot;TargetConfigNames&quot;, FILE_OUT),),
+        ),
+    )
+    operations = (FILE_OUT,)
 
 
 PRODUCTIONS = [FileProduction()]
 </code></pre>
 <p><code>target("orders")</code> declares the outbound port on the Python component class.
-<code>Route(FileService.Output, "OrderOperation")</code> wires that port to a production
+<code>Route(FileService.Output, ORDER_OPERATION)</code> wires that port to a production
 item. This is the class-style equivalent of <code>prod.connect(file.Output, orders)</code>.</p>
 <p>For Python component classes, prefer the descriptor form
 <code>Route(FileService.Output, ...)</code>. For existing IRIS classes, use the IRIS
 setting name string, for example <code>Route("TargetConfigNames", "FileOut")</code>.</p>
 <p><code>Route(port, targets)</code> owns the route Host setting and records graph metadata.
+<code>targets</code> can be an item declaration, a string item name, or a sequence for
+fan-out.
 Use <code>settings</code> or <code>host_settings</code> only for non-route Host settings. If a route
 port is also present in Host settings, migration raises an error so the route
 stays explicit.</p>
+<p>Use tuples for class-level <code>services</code>, <code>processes</code>, <code>operations</code>, and route
+lists. Lists still work, but tuples avoid accidental mutation of shared class
+attributes.</p>
 <p>You can also author the same topology progressively:</p>
 <pre><code class="language-python">prod = (
     Production(&quot;Demo.Production&quot;)

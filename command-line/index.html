@@ -441,9 +441,11 @@ runtime route.</p>
 <pre><code class="language-bash">iop -e IoP.Production --format class &gt; production_class_settings.py
 </code></pre>
 <p>The generated file uses <code>Production</code> subclasses with <code>ComponentItem</code>,
-<code>ServiceItem</code>, <code>ProcessItem</code>, <code>OperationItem</code>, and <code>Route</code>. It uses string class
-names because exported IRIS metadata cannot reliably recover Python class
-objects. Review item grouping and inferred routes before migration.</p>
+<code>ServiceItem</code>, <code>ProcessItem</code>, <code>OperationItem</code>, and <code>Route</code>. It uses tuples for
+declaration attributes and string class names because exported IRIS metadata
+cannot reliably recover Python class objects. Imported items without explicit
+role metadata are emitted as <code>ComponentItem</code>; review item grouping, Python proxy
+TODOs, and inferred routes before migration.</p>
 <p>You can inspect only the reconstructed route graph with:</p>
 <pre><code class="language-bash">iop -e IoP.Production --format graph
 </code></pre>
