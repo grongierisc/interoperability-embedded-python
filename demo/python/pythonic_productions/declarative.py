@@ -30,20 +30,21 @@ class OrderOperation(BusinessOperation):
         return request
 
 
+ORDER_OPERATION = OperationItem("OrderOperation", OrderOperation)
+
+
 class DeclarativeProduction(Production):
     name = "Demo.DeclarativeProduction"
     testing_enabled = True
 
-    services = [
+    services = (
         ServiceItem(
             "FileInput",
             FileService,
-            routes=[Route(FileService.Output, "OrderOperation")],
-        )
-    ]
-    operations = [
-        OperationItem("OrderOperation", OrderOperation),
-    ]
+            routes=(Route(FileService.Output, ORDER_OPERATION),),
+        ),
+    )
+    operations = (ORDER_OPERATION,)
 
 
 prod = DeclarativeProduction()

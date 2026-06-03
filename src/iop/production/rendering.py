@@ -88,7 +88,10 @@ def production_to_python(production) -> str:
 
 def production_to_class(production) -> str:
     item_names = {item.name for item in production.items}
-    route_targets = _valid_route_targets(_route_targets(production, item_names), item_names)
+    route_targets = _valid_route_targets(
+        _route_targets(production, item_names),
+        item_names,
+    )
     item_groups = _class_item_groups(production.items)
     used_items = {
         _class_item_type(kind)
@@ -105,12 +108,23 @@ def production_to_class(production) -> str:
         "# Generated from IRIS production export.",
         "# Review before using as source of truth; some runtime/dynamic routing intent",
         "# cannot be fully reconstructed from deployed IRIS metadata.",
-        f"from iop import {', '.join(imports)}",
-        "",
-        "",
-        f"class {class_name}(Production):",
-        f"    name = {_literal(production.name)}",
     ]
+    if _has_string_python_proxy_items(production.items):
+        lines.extend(
+            [
+                "# TODO: replace Python.* string class names with imported Python",
+                "# classes before re-migration, or ensure the proxy classes already exist.",
+            ]
+        )
+    lines.extend(
+        [
+            f"from iop import {', '.join(imports)}",
+            "",
+            "",
+            f"class {class_name}(Production):",
+            f"    name = {_literal(production.name)}",
+        ]
+    )
     lines.extend(_class_production_setting_lines(production))
     lines.append("")
 
@@ -119,10 +133,10 @@ def production_to_class(production) -> str:
         if not items:
             continue
         attr_name = _class_item_attr(kind)
-        lines.append(f"    {attr_name} = [")
+        lines.append(f"    {attr_name} = (")
         for item in items:
             lines.extend(_class_item_lines(item, kind, route_targets))
-        lines.append("    ]")
+        lines.append("    )")
         lines.append("")
 
     unresolved = _unresolved_class_routes(production, item_names)
@@ -141,7 +155,15 @@ def production_to_class(production) -> str:
 
 
 def _class_production_setting_lines(production) -> list[str]:
-    settings = [
+    return [
+        f"    {name} = {_literal(value)}"
+        for name, value, default in _production_setting_literals(production)
+        if value != default
+    ]
+
+
+def _production_setting_literals(production) -> list[tuple[str, Any, Any]]:
+    return [
         ("testing_enabled", _bool_literal(production.testing_enabled), False),
         (
             "log_general_trace_events",
@@ -156,11 +178,6 @@ def _class_production_setting_lines(production) -> list[str]:
         ("alert_notification_operation", production.alert_notification_operation, ""),
         ("alert_notification_recipients", production.alert_notification_recipients, ""),
         ("alert_action_window", _int_literal(production.alert_action_window), 60),
-    ]
-    return [
-        f"    {name} = {_literal(value)}"
-        for name, value, default in settings
-        if value != default
     ]
 
 
@@ -179,13 +196,6 @@ def _class_item_groups(items) -> dict[str, list[Any]]:
 def _class_item_kind(item) -> str:
     if item.kind in {"service", "process", "operation"}:
         return item.kind
-    class_name = str(item.class_name or "").lower()
-    if "service" in class_name:
-        return "service"
-    if "process" in class_name:
-        return "process"
-    if "operation" in class_name:
-        return "operation"
     return "component"
 
 
@@ -239,11 +249,21 @@ def _class_item_lines(item, kind: str, route_targets) -> list[str]:
     if routes:
         kwargs.append(("routes", routes))
 
-    lines = [
-        f"        {_class_item_type(kind)}(",
-        f"            {_literal(item.name)},",
-        f"            {_literal(item.class_name or '')},",
-    ]
+    lines = []
+    if _is_string_python_proxy_item(item):
+        lines.extend(
+            [
+                "        # TODO: replace this proxy class name with the Python",
+                "        # class object if this item should be auto-registered.",
+            ]
+        )
+    lines.extend(
+        [
+            f"        {_class_item_type(kind)}(",
+            f"            {_literal(item.name)},",
+            f"            {_literal(item.class_name or '')},",
+        ]
+    )
     for name, value in kwargs:
         lines.extend(_class_keyword_lines(name, value))
     lines.append("        ),")
@@ -285,15 +305,27 @@ def _class_keyword_lines(name: str, value: Any) -> list[str]:
 def _class_route_keyword_lines(routes: list[tuple[str, list[str]]]) -> list[str]:
     if len(routes) == 1:
         port, targets = routes[0]
-        target_literal = _literal(targets[0]) if len(targets) == 1 else _literal(targets)
-        return [f"            routes=[Route({_literal(port)}, {target_literal})],"]
+        target_literal = _class_route_targets_literal(targets)
+        return [f"            routes=(Route({_literal(port)}, {target_literal}),),"]
 
-    lines = ["            routes=["]
+    lines = ["            routes=("]
     for port, targets in routes:
-        target_literal = _literal(targets[0]) if len(targets) == 1 else _literal(targets)
+        target_literal = _class_route_targets_literal(targets)
         lines.append(f"                Route({_literal(port)}, {target_literal}),")
-    lines.append("            ],")
+    lines.append("            ),")
     return lines
+
+
+def _class_route_targets_literal(targets: list[str]) -> str:
+    return _literal(targets[0]) if len(targets) == 1 else _literal(tuple(targets))
+
+
+def _has_string_python_proxy_items(items) -> bool:
+    return any(_is_string_python_proxy_item(item) for item in items)
+
+
+def _is_string_python_proxy_item(item) -> bool:
+    return str(item.class_name or "").startswith("Python.")
 
 
 def _indented_dict_keyword_lines(
@@ -361,37 +393,9 @@ def _production_class_name(production_name: str) -> str:
 
 
 def _production_constructor_lines(production) -> list[str]:
-    kwargs = [
-        ("testing_enabled", _bool_literal(production.testing_enabled), False),
-        (
-            "log_general_trace_events",
-            _bool_literal(production.log_general_trace_events),
-            False,
-        ),
-        ("actor_pool_size", _int_literal(production.actor_pool_size), 2),
-        ("description", production.description, ""),
-        ("shutdown_timeout", _int_literal(production.shutdown_timeout), 120),
-        ("update_timeout", _int_literal(production.update_timeout), 10),
-        (
-            "alert_notification_manager",
-            production.alert_notification_manager,
-            "",
-        ),
-        (
-            "alert_notification_operation",
-            production.alert_notification_operation,
-            "",
-        ),
-        (
-            "alert_notification_recipients",
-            production.alert_notification_recipients,
-            "",
-        ),
-        ("alert_action_window", _int_literal(production.alert_action_window), 60),
-    ]
     rendered = [
         (name, value)
-        for name, value, default in kwargs
+        for name, value, default in _production_setting_literals(production)
         if value != default
     ]
     if not rendered:

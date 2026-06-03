@@ -187,20 +187,21 @@ class OrderOperation(BusinessOperation):
         return request
 
 
+ORDER_OPERATION = OperationItem("OrderOperation", OrderOperation)
+
+
 class DemoProduction(Production):
     name = "Demo.Production"
     testing_enabled = True
 
-    services = [
+    services = (
         ServiceItem(
             "FileInput",
             FileService,
-            routes=[Route(FileService.Output, "OrderOperation")],
-        )
-    ]
-    operations = [
-        OperationItem("OrderOperation", OrderOperation)
-    ]
+            routes=(Route(FileService.Output, ORDER_OPERATION),),
+        ),
+    )
+    operations = (ORDER_OPERATION,)
 
 
 PRODUCTIONS = [DemoProduction()]
@@ -209,27 +210,28 @@ PRODUCTIONS = [DemoProduction()]
 For existing IRIS classes, use the IRIS class name string:
 
 ```python
+FILE_OUT = OperationItem("FileOut", "EnsLib.File.PassthroughOperation")
+
+
 class FileProduction(Production):
     name = "Demo.FileProduction"
 
-    services = [
+    services = (
         ServiceItem(
             "FileIn",
             "EnsLib.File.PassthroughService",
             adapter_settings={"FilePath": "/tmp/in"},
-            routes=[Route("TargetConfigNames", "FileOut")],
-        )
-    ]
-    operations = [
-        OperationItem("FileOut", "EnsLib.File.PassthroughOperation")
-    ]
+            routes=(Route("TargetConfigNames", FILE_OUT),),
+        ),
+    )
+    operations = (FILE_OUT,)
 
 
 PRODUCTIONS = [FileProduction()]
 ```
 
 `target("orders")` declares the outbound port on the Python component class.
-`Route(FileService.Output, "OrderOperation")` wires that port to a production
+`Route(FileService.Output, ORDER_OPERATION)` wires that port to a production
 item. This is the class-style equivalent of `prod.connect(file.Output, orders)`.
 
 For Python component classes, prefer the descriptor form
@@ -237,9 +239,15 @@ For Python component classes, prefer the descriptor form
 setting name string, for example `Route("TargetConfigNames", "FileOut")`.
 
 `Route(port, targets)` owns the route Host setting and records graph metadata.
+`targets` can be an item declaration, a string item name, or a sequence for
+fan-out.
 Use `settings` or `host_settings` only for non-route Host settings. If a route
 port is also present in Host settings, migration raises an error so the route
 stays explicit.
+
+Use tuples for class-level `services`, `processes`, `operations`, and route
+lists. Lists still work, but tuples avoid accidental mutation of shared class
+attributes.
 
 You can also author the same topology progressively:
 

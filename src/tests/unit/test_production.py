@@ -1,5 +1,6 @@
 import ast
 import copy
+import inspect
 import json
 import os
 from dataclasses import dataclass
@@ -257,28 +258,51 @@ def test_production_to_class_renders_declarative_draft():
     assert "class DeclarativeProduction(Production):" in text
     assert "name = 'Demo.DeclarativeProduction'" in text
     assert "testing_enabled = True" in text
-    assert "services = [" in text
+    assert "services = (" in text
     assert "ServiceItem(" in text
     assert "'EnsLib.File.PassthroughService'" in text
     assert "settings={" in text
     assert "adapter_settings={" in text
-    assert "routes=[Route('TargetConfigNames', 'OrderOperation')]" in text
-    assert "operations = [" in text
+    assert "routes=(Route('TargetConfigNames', 'OrderOperation'),)" in text
+    assert "operations = (" in text
     assert "OperationItem(" in text
     assert text.endswith("PRODUCTIONS = [DeclarativeProduction()]\n")
 
 
 def test_production_to_class_uses_component_item_for_unknown_roles():
     prod = Production("Demo.GenericProduction")
-    prod.component("CustomHost", class_name="Demo.CustomHost")
+    prod.component("CustomHost", class_name="Demo.CustomService")
 
     text = prod.to_class()
 
     ast.parse(text)
     assert "ComponentItem" in text
-    assert "components = [" in text
+    assert "components = (" in text
     assert "ComponentItem(" in text
+    assert "ServiceItem(" not in text
     assert "PRODUCTIONS = [GenericProduction()]" in text
+
+
+def test_production_to_class_warns_for_string_python_proxies():
+    prod = Production.from_dict(
+        {
+            "Demo.ImportedProduction": {
+                "Item": [
+                    {
+                        "@Name": "FileInput",
+                        "@ClassName": "Python.demo.FileService",
+                    }
+                ]
+            }
+        }
+    )
+
+    text = prod.to_class()
+
+    ast.parse(text)
+    assert "replace Python.* string class names" in text
+    assert "replace this proxy class name with the Python" in text
+    assert "ComponentItem(" in text
 
 
 def test_declarative_production_string_class_names_match_instance_shape():
@@ -444,6 +468,10 @@ def test_declarative_production_name_defaults_and_constructor_overrides():
     assert override.actor_pool_size == 4
 
 
+def test_production_constructor_does_not_expose_hydration_flag():
+    assert "_hydrate_declarations" not in inspect.signature(Production).parameters
+
+
 def test_declarative_production_routes_support_fanout_and_port_aliases():
     class FanoutProduction(Production):
         name = "Demo.FanoutProduction"
@@ -466,6 +494,30 @@ def test_declarative_production_routes_support_fanout_and_port_aliases():
         (edge.source_port, edge.target)
         for edge in prod.graph().edges
     ] == [
+        ("TargetConfigNames", "First"),
+        ("TargetConfigNames", "Second"),
+    ]
+
+
+def test_declarative_routes_accept_item_declarations_as_targets():
+    first = OperationItem("First", "Demo.First")
+    second = OperationItem("Second", "Demo.Second")
+
+    class ItemReferenceProduction(Production):
+        name = "Demo.ItemReferenceProduction"
+        services = (
+            ServiceItem(
+                "Router",
+                "Demo.Router",
+                routes=(Route("target_config_names", (first, second)),),
+            ),
+        )
+        operations = (first, second)
+
+    prod = ItemReferenceProduction()
+
+    assert prod.item("Router").host_settings["TargetConfigNames"] == "First,Second"
+    assert [(edge.source_port, edge.target) for edge in prod.graph().edges] == [
         ("TargetConfigNames", "First"),
         ("TargetConfigNames", "Second"),
     ]

@@ -416,9 +416,11 @@ iop -e IoP.Production --format class > production_class_settings.py
 ```
 
 The generated file uses `Production` subclasses with `ComponentItem`,
-`ServiceItem`, `ProcessItem`, `OperationItem`, and `Route`. It uses string class
-names because exported IRIS metadata cannot reliably recover Python class
-objects. Review item grouping and inferred routes before migration.
+`ServiceItem`, `ProcessItem`, `OperationItem`, and `Route`. It uses tuples for
+declaration attributes and string class names because exported IRIS metadata
+cannot reliably recover Python class objects. Imported items without explicit
+role metadata are emitted as `ComponentItem`; review item grouping, Python proxy
+TODOs, and inferred routes before migration.
 
 You can inspect only the reconstructed route graph with:
 

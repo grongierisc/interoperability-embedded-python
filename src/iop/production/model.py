@@ -11,10 +11,7 @@ from .common import (
     _auto_proxy_class_name,
 )
 from .component import ComponentRef
-from .declarations import (
-    _ProductionItemDeclaration,
-    normalize_route_port_for_match,
-)
+from .declarative import _DeclarativeProductionMixin
 from .diff import _diff_productions
 from .inspection import component_runtime_info, inspect_component
 from .reconstruction import production_from_dict
@@ -38,7 +35,7 @@ from .types import (
 _MISSING = object()
 
 
-class Production:
+class Production(_DeclarativeProductionMixin):
     """Python authoring DSL for IRIS interoperability production topology.
 
     Python Production is the source of truth for Python-authored topology.
@@ -62,8 +59,80 @@ class Production:
         alert_action_window: int | str | object = _MISSING,
         namespace: str | None | object = _MISSING,
         director: _DirectorProtocol | None | object = _MISSING,
-        _hydrate_declarations: bool = True,
     ):
+        self._initialize(
+            name,
+            testing_enabled=testing_enabled,
+            log_general_trace_events=log_general_trace_events,
+            actor_pool_size=actor_pool_size,
+            description=description,
+            shutdown_timeout=shutdown_timeout,
+            update_timeout=update_timeout,
+            alert_notification_manager=alert_notification_manager,
+            alert_notification_operation=alert_notification_operation,
+            alert_notification_recipients=alert_notification_recipients,
+            alert_action_window=alert_action_window,
+            namespace=namespace,
+            director=director,
+            hydrate_declarations=True,
+        )
+
+    @classmethod
+    def _new_unhydrated(
+        cls,
+        name: str | object = _MISSING,
+        *,
+        testing_enabled: bool | str | object = _MISSING,
+        log_general_trace_events: bool | str | object = _MISSING,
+        actor_pool_size: int | str | object = _MISSING,
+        description: str | object = _MISSING,
+        shutdown_timeout: int | str | object = _MISSING,
+        update_timeout: int | str | object = _MISSING,
+        alert_notification_manager: str | object = _MISSING,
+        alert_notification_operation: str | object = _MISSING,
+        alert_notification_recipients: str | object = _MISSING,
+        alert_action_window: int | str | object = _MISSING,
+        namespace: str | None | object = _MISSING,
+        director: _DirectorProtocol | None | object = _MISSING,
+    ) -> Production:
+        production = object.__new__(cls)
+        Production._initialize(
+            production,
+            name,
+            testing_enabled=testing_enabled,
+            log_general_trace_events=log_general_trace_events,
+            actor_pool_size=actor_pool_size,
+            description=description,
+            shutdown_timeout=shutdown_timeout,
+            update_timeout=update_timeout,
+            alert_notification_manager=alert_notification_manager,
+            alert_notification_operation=alert_notification_operation,
+            alert_notification_recipients=alert_notification_recipients,
+            alert_action_window=alert_action_window,
+            namespace=namespace,
+            director=director,
+            hydrate_declarations=False,
+        )
+        return production
+
+    def _initialize(
+        self,
+        name: str | object = _MISSING,
+        *,
+        testing_enabled: bool | str | object = _MISSING,
+        log_general_trace_events: bool | str | object = _MISSING,
+        actor_pool_size: int | str | object = _MISSING,
+        description: str | object = _MISSING,
+        shutdown_timeout: int | str | object = _MISSING,
+        update_timeout: int | str | object = _MISSING,
+        alert_notification_manager: str | object = _MISSING,
+        alert_notification_operation: str | object = _MISSING,
+        alert_notification_recipients: str | object = _MISSING,
+        alert_action_window: int | str | object = _MISSING,
+        namespace: str | None | object = _MISSING,
+        director: _DirectorProtocol | None | object = _MISSING,
+        hydrate_declarations: bool,
+    ) -> None:
         self.name = self._resolve_production_name(name)
         self.testing_enabled = self._production_default(
             "testing_enabled", testing_enabled, False
@@ -114,7 +183,7 @@ class Production:
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
         self._messages: list[PersistentMessageRegistration] = []
-        if _hydrate_declarations:
+        if hydrate_declarations:
             self._hydrate_declared_items()
 
     def _resolve_production_name(self, name: str | object) -> str:
@@ -137,143 +206,6 @@ class Production:
         if class_value is not _MISSING:
             return class_value
         return default
-
-    def _hydrate_declared_items(self) -> None:
-        declarations: list[_ProductionItemDeclaration] = []
-        for attr_name, expected_kind in (
-            ("components", "component"),
-            ("services", "service"),
-            ("processes", "process"),
-            ("operations", "operation"),
-        ):
-            for declaration in self._declared_items(attr_name):
-                if declaration.kind != expected_kind:
-                    raise TypeError(
-                        f"{attr_name} must contain {expected_kind.title()}Item "
-                        f"declarations"
-                    )
-                self._raise_declared_route_conflicts(declaration)
-                self._add_declared_item(declaration)
-                declarations.append(declaration)
-
-        for declaration in declarations:
-            self._connect_declared_routes(declaration)
-
-    def _declared_items(self, attr_name: str) -> tuple[_ProductionItemDeclaration, ...]:
-        values = getattr(type(self), attr_name, ())
-        if values is None:
-            return ()
-        if isinstance(values, _ProductionItemDeclaration):
-            return (values,)
-        try:
-            declarations = tuple(values)
-        except TypeError as exc:
-            raise TypeError(f"{attr_name} must be an iterable of item declarations") from exc
-        for declaration in declarations:
-            if not isinstance(declaration, _ProductionItemDeclaration):
-                raise TypeError(f"{attr_name} must contain production item declarations")
-        return declarations
-
-    def _raise_declared_route_conflicts(
-        self,
-        declaration: _ProductionItemDeclaration,
-    ) -> None:
-        host_ports = {
-            normalize_route_port_for_match(name)
-            for name in declaration.host_setting_values
-        }
-        route_ports = {route.port_name for route in declaration.route_values}
-        conflicts = sorted(host_ports & route_ports)
-        if not conflicts:
-            return
-        names = ", ".join(repr(name) for name in conflicts)
-        raise ValueError(
-            f"{declaration.kind.title()} item {declaration.name!r} declares route "
-            f"port(s) in Host settings: {names}. Declare route ports with Route only."
-        )
-
-    def _add_declared_item(self, declaration: _ProductionItemDeclaration) -> None:
-        kwargs: dict[str, Any] = {
-            "enabled": declaration.enabled,
-            "pool_size": declaration.pool_size,
-            "category": declaration.category,
-            "foreground": declaration.foreground,
-            "comment": declaration.comment,
-            "log_trace_events": declaration.log_trace_events,
-            "schedule": declaration.schedule,
-            "settings": declaration.host_setting_values,
-            "adapter_settings": declaration.adapter_setting_values,
-        }
-        if declaration.adapter_class is not None:
-            kwargs["adapter_class"] = declaration.adapter_class
-        if declaration.adapter_class_name is not None:
-            kwargs["adapter_class_name"] = declaration.adapter_class_name
-
-        method = {
-            "component": self.component,
-            "service": self.service,
-            "process": self.process,
-            "operation": self.operation,
-        }[declaration.kind]
-
-        component = declaration.component
-        if isinstance(component, type):
-            if declaration.class_name is not None:
-                kwargs["class_name"] = declaration.class_name
-            ref = method(declaration.name, component, **kwargs)
-            ref.other_settings = declaration.other_setting_values
-            return
-
-        class_name = declaration.class_name
-        if component is not None:
-            component_class_name = str(component)
-            if class_name is not None and class_name != component_class_name:
-                raise ValueError(
-                    f"{declaration.kind.title()} item {declaration.name!r} "
-                    "declares conflicting component and class_name values"
-                )
-            class_name = component_class_name
-
-        if class_name is None:
-            raise ValueError(
-                f"{declaration.kind.title()} item {declaration.name!r} requires "
-                "a component class or class_name"
-            )
-        kwargs["class_name"] = class_name
-        ref = method(declaration.name, **kwargs)
-        ref.other_settings = declaration.other_setting_values
-
-    def _connect_declared_routes(self, declaration: _ProductionItemDeclaration) -> None:
-        source = self.item(declaration.name)
-        for route in declaration.route_values:
-            self._raise_if_route_port_owner_mismatch(source, route)
-            port = source.port(
-                route.port_name,
-                logical_name=route.route_logical_name,
-            )
-            targets = route.target_names
-            self.connect(port, targets[0])
-            for target in targets[1:]:
-                self.connect_add(port, target)
-
-    def _raise_if_route_port_owner_mismatch(
-        self,
-        source: ComponentRef,
-        route: Any,
-    ) -> None:
-        owner = route.port_owner
-        if (
-            owner is None
-            or source.component_class is None
-            or issubclass(source.component_class, owner)
-        ):
-            return
-        raise ValueError(
-            f"Route port {route.port_name!r} belongs to "
-            f"{owner.__module__}.{owner.__qualname__}, not "
-            f"{source.component_class.__module__}."
-            f"{source.component_class.__qualname__}"
-        )
 
     def testing(self, enabled: bool | str = True) -> Production:
         self.testing_enabled = enabled
@@ -337,11 +269,10 @@ class Production:
         namespace: str | None = None,
         director: _DirectorProtocol | None = None,
     ) -> Production:
-        seed = cls(
+        seed = cls._new_unhydrated(
             name,
             namespace=namespace,
             director=director,
-            _hydrate_declarations=False,
         )
         runtime_director = _ProductionRuntime(seed).director
         exported = runtime_director.export_production(name)

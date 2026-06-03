@@ -442,20 +442,21 @@ class returns a normal `Production` object, so `to_dict()`, `diff()`, `sync()`,
 from iop import OperationItem, Production, Route, ServiceItem
 
 
+ORDER_OPERATION = OperationItem("OrderOperation", OrderOperation)
+
+
 class DemoProduction(Production):
     name = "Demo.Production"
     testing_enabled = True
 
-    services = [
+    services = (
         ServiceItem(
             "FileInput",
             FileService,
-            routes=[Route(FileService.Output, "OrderOperation")],
-        )
-    ]
-    operations = [
-        OperationItem("OrderOperation", OrderOperation)
-    ]
+            routes=(Route(FileService.Output, ORDER_OPERATION),),
+        ),
+    )
+    operations = (ORDER_OPERATION,)
 
 
 prod = DemoProduction()
@@ -467,24 +468,25 @@ For built-in IRIS or ObjectScript classes, pass the IRIS class name string:
 from iop import OperationItem, Production, Route, ServiceItem
 
 
+FILE_OUT = OperationItem("FileOut", "EnsLib.File.PassthroughOperation")
+
+
 class FileProduction(Production):
     name = "Demo.FileProduction"
 
-    services = [
+    services = (
         ServiceItem(
             "FileIn",
             "EnsLib.File.PassthroughService",
             adapter_settings={"FilePath": "/tmp/in"},
-            routes=[Route("TargetConfigNames", "FileOut")],
-        )
-    ]
-    operations = [
-        OperationItem("FileOut", "EnsLib.File.PassthroughOperation")
-    ]
+            routes=(Route("TargetConfigNames", FILE_OUT),),
+        ),
+    )
+    operations = (FILE_OUT,)
 ```
 
 `target("orders")` declares a configurable outbound port on `FileService`.
-`Route(FileService.Output, "OrderOperation")` wires that port to a production
+`Route(FileService.Output, ORDER_OPERATION)` wires that port to a production
 item. This separation mirrors the instance-style form:
 `prod.connect(file.Output, orders)`.
 
@@ -495,10 +497,13 @@ there is no Python descriptor, so pass the IRIS setting name string such as
 
 `Route(port, targets)` writes the Host setting for the port and records graph
 edges by calling the same connection API used by instance-style authoring.
-`targets` can be a string or a sequence for fan-out:
+`targets` can be an item declaration, a string item name, or a sequence for
+fan-out:
 
 ```python
-Route("TargetConfigNames", ["AuditOperation", "OrderOperation"])
+AUDIT = OperationItem("AuditOperation", "Demo.AuditOperation")
+ORDERS = OperationItem("OrderOperation", "Demo.OrderOperation")
+Route("TargetConfigNames", (AUDIT, ORDERS))
 ```
 
 Use `settings` or `host_settings` for non-route Host settings. Route ports
@@ -506,6 +511,10 @@ belong in `Route`; declaring the same port in Host settings raises an error.
 Only known route aliases such as `target_config_names` are normalized to IRIS
 names such as `TargetConfigNames`. Other Host and Adapter setting keys are
 emitted exactly as supplied.
+
+Use tuples for class-level `services`, `processes`, `operations`, and route
+lists. Lists still work, but tuples avoid accidental mutation of shared class
+attributes.
 
 The same production can be authored progressively. Fluent methods mutate and
 return the same `Production` or `ComponentRef`; there is no separate builder

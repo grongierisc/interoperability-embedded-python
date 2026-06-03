@@ -28,7 +28,7 @@ def production_from_dict(
 ):
     production_name, production_data = _production_payload(data)
     production_settings = _split_production_settings(production_data.get("Setting"))
-    production = production_cls(
+    production = production_cls._new_unhydrated(
         production_name,
         testing_enabled=production_data.get("@TestingEnabled", False),
         log_general_trace_events=production_data.get("@LogGeneralTraceEvents", False),
@@ -48,7 +48,6 @@ def production_from_dict(
         alert_action_window=production_settings.get("alert_action_window", 60),
         namespace=namespace,
         director=director,
-        _hydrate_declarations=False,
     )
 
     _add_imported_items(production, production_data)

@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Protocol
 
 from .common import SETTING_NAME_ALIASES
 from .types import TargetSetting
+
+
+class _NamedRouteTarget(Protocol):
+    @property
+    def name(self) -> str: ...
 
 
 @dataclass(frozen=True)
@@ -13,7 +18,7 @@ class Route:
     """Declarative route from a production item port to one or more targets."""
 
     port: str | TargetSetting
-    targets: str | Iterable[str]
+    targets: str | _NamedRouteTarget | Iterable[str | _NamedRouteTarget]
     logical_name: str = ""
 
     @property
@@ -36,13 +41,19 @@ class Route:
 
     @property
     def target_names(self) -> tuple[str, ...]:
-        if isinstance(self.targets, str):
+        if _is_route_target(self.targets):
             targets = (self.targets,)
         else:
-            targets = tuple(str(target) for target in self.targets)
+            try:
+                targets = tuple(self.targets)
+            except TypeError as exc:
+                raise TypeError(
+                    f"Route {self.port_name!r} targets must be an item name, "
+                    "a production item declaration, or an iterable of either"
+                ) from exc
         if not targets:
             raise ValueError(f"Route {self.port_name!r} requires at least one target")
-        return targets
+        return tuple(_route_target_name(target, self.port_name) for target in targets)
 
 
 @dataclass(frozen=True)
@@ -141,6 +152,24 @@ def normalize_route_port(name: str | TargetSetting) -> str:
 
 def normalize_route_port_for_match(name: str | TargetSetting) -> str:
     return normalize_route_port(name)
+
+
+def _is_route_target(value: Any) -> bool:
+    return isinstance(value, str) or isinstance(value, _ProductionItemDeclaration)
+
+
+def _route_target_name(value: Any, port_name: str) -> str:
+    if isinstance(value, str):
+        if value:
+            return value
+    elif isinstance(value, _ProductionItemDeclaration):
+        if value.name:
+            return value.name
+
+    raise TypeError(
+        f"Route {port_name!r} targets must be item names or production item "
+        "declarations"
+    )
 
 
 def _mapping(
