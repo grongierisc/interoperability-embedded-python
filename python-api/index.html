@@ -712,6 +712,67 @@ file = prod.service(&quot;FileInput&quot;, FileService)
 orders = prod.operation(OrderOperation)
 prod.connect(file.Output, orders)
 </code></pre>
+<p>The same topology can be declared as a production subclass. Instantiating the
+class returns a normal <code>Production</code> object, so <code>to_dict()</code>, <code>diff()</code>, <code>sync()</code>,
+<code>apply()</code>, lifecycle methods, and migration all work the same way.</p>
+<pre><code class="language-python">from iop import OperationItem, Production, Route, ServiceItem
+
+
+class DemoProduction(Production):
+    name = &quot;Demo.Production&quot;
+    testing_enabled = True
+
+    services = [
+        ServiceItem(
+            &quot;FileInput&quot;,
+            FileService,
+            routes=[Route(FileService.Output, &quot;OrderOperation&quot;)],
+        )
+    ]
+    operations = [
+        OperationItem(&quot;OrderOperation&quot;, OrderOperation)
+    ]
+
+
+prod = DemoProduction()
+</code></pre>
+<p>For built-in IRIS or ObjectScript classes, pass the IRIS class name string:</p>
+<pre><code class="language-python">from iop import OperationItem, Production, Route, ServiceItem
+
+
+class FileProduction(Production):
+    name = &quot;Demo.FileProduction&quot;
+
+    services = [
+        ServiceItem(
+            &quot;FileIn&quot;,
+            &quot;EnsLib.File.PassthroughService&quot;,
+            adapter_settings={&quot;FilePath&quot;: &quot;/tmp/in&quot;},
+            routes=[Route(&quot;TargetConfigNames&quot;, &quot;FileOut&quot;)],
+        )
+    ]
+    operations = [
+        OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
+    ]
+</code></pre>
+<p><code>target("orders")</code> declares a configurable outbound port on <code>FileService</code>.
+<code>Route(FileService.Output, "OrderOperation")</code> wires that port to a production
+item. This separation mirrors the instance-style form:
+<code>prod.connect(file.Output, orders)</code>.</p>
+<p>For Python component classes, prefer passing the descriptor
+(<code>FileService.Output</code>) to <code>Route</code>. For built-in IRIS or ObjectScript classes,
+there is no Python descriptor, so pass the IRIS setting name string such as
+<code>"TargetConfigNames"</code>.</p>
+<p><code>Route(port, targets)</code> writes the Host setting for the port and records graph
+edges by calling the same connection API used by instance-style authoring.
+<code>targets</code> can be a string or a sequence for fan-out:</p>
+<pre><code class="language-python">Route(&quot;TargetConfigNames&quot;, [&quot;AuditOperation&quot;, &quot;OrderOperation&quot;])
+</code></pre>
+<p>Use <code>settings</code> or <code>host_settings</code> for non-route Host settings. Route ports
+belong in <code>Route</code>; declaring the same port in Host settings raises an error.
+Only known route aliases such as <code>target_config_names</code> are normalized to IRIS
+names such as <code>TargetConfigNames</code>. Other Host and Adapter setting keys are
+emitted exactly as supplied.</p>
 <p>The same production can be authored progressively. Fluent methods mutate and
 return the same <code>Production</code> or <code>ComponentRef</code>; there is no separate builder
 object.</p>

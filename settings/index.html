@@ -295,6 +295,88 @@ PRODUCTIONS = [prod]
 <p><code>target()</code> declares an outbound port on the component class. <code>prod.connect()</code>
 sets that port to the destination component for the generated production and
 keeps graph metadata available to Python.</p>
+<p>You can also write the same production as a class declaration. The class is a
+template; put an instance in <code>PRODUCTIONS</code>.</p>
+<pre><code class="language-python">from dataclasses import dataclass
+from iop import (
+    BusinessOperation,
+    Message,
+    OperationItem,
+    PollingBusinessService,
+    Production,
+    Route,
+    ServiceItem,
+    target,
+)
+
+
+@dataclass
+class OrderRequest(Message):
+    order_id: str = &quot;&quot;
+
+
+class FileService(PollingBusinessService):
+    Output = target(&quot;orders&quot;)
+
+    def on_poll(self):
+        return self.send_request_sync(
+            self.Output,
+            OrderRequest(order_id=&quot;777&quot;),
+        )
+
+
+class OrderOperation(BusinessOperation):
+    def on_message(self, request):
+        return request
+
+
+class DemoProduction(Production):
+    name = &quot;Demo.Production&quot;
+    testing_enabled = True
+
+    services = [
+        ServiceItem(
+            &quot;FileInput&quot;,
+            FileService,
+            routes=[Route(FileService.Output, &quot;OrderOperation&quot;)],
+        )
+    ]
+    operations = [
+        OperationItem(&quot;OrderOperation&quot;, OrderOperation)
+    ]
+
+
+PRODUCTIONS = [DemoProduction()]
+</code></pre>
+<p>For existing IRIS classes, use the IRIS class name string:</p>
+<pre><code class="language-python">class FileProduction(Production):
+    name = &quot;Demo.FileProduction&quot;
+
+    services = [
+        ServiceItem(
+            &quot;FileIn&quot;,
+            &quot;EnsLib.File.PassthroughService&quot;,
+            adapter_settings={&quot;FilePath&quot;: &quot;/tmp/in&quot;},
+            routes=[Route(&quot;TargetConfigNames&quot;, &quot;FileOut&quot;)],
+        )
+    ]
+    operations = [
+        OperationItem(&quot;FileOut&quot;, &quot;EnsLib.File.PassthroughOperation&quot;)
+    ]
+
+
+PRODUCTIONS = [FileProduction()]
+</code></pre>
+<p><code>target("orders")</code> declares the outbound port on the Python component class.
+<code>Route(FileService.Output, "OrderOperation")</code> wires that port to a production
+item. This is the class-style equivalent of <code>prod.connect(file.Output, orders)</code>.</p>
+<p>For Python component classes, prefer the descriptor form
+<code>Route(FileService.Output, ...)</code>. For existing IRIS classes, use the IRIS
+setting name string, for example <code>Route("TargetConfigNames", "FileOut")</code>.</p>
+<p><code>Route(port, targets)</code> owns the route Host setting and records graph metadata.
+Use <code>settings</code> or <code>host_settings</code> only for non-route Host settings. If a route
+port is also present in Host settings, migration raises an error so the route
+stays explicit.</p>
 <p>You can also author the same topology progressively:</p>
 <pre><code class="language-python">prod = (
     Production(&quot;Demo.Production&quot;)
