@@ -220,6 +220,9 @@ If the migration file contains a `REMOTE_SETTINGS` dict, the migration is perfor
 
 ```python
 # settings.py
+from iop import Production
+
+
 REMOTE_SETTINGS = {
     "url": "http://localhost:52773",
     "username": "admin",
@@ -227,8 +230,10 @@ REMOTE_SETTINGS = {
     "namespace": "USER",
 }
 
-CLASSES = { ... }
-PRODUCTIONS = [ ... ]
+prod = Production("Demo.Production", testing_enabled=True)
+# Add services, processes, operations, and connections here.
+
+PRODUCTIONS = [prod]
 ```
 
 To disable remote mode and run the migration locally even when `REMOTE_SETTINGS` is present or `IOP_URL` is set, pass `--force-local`:
@@ -577,7 +582,10 @@ export IOP_SETTINGS=/path/to/settings.py
 The settings file format is the same either way:
 
 ```python
-# settings.py — used by both migration and remote CLI
+# settings.py - used by both migration and remote CLI
+from iop import Production
+
+
 REMOTE_SETTINGS = {
     "url":        "http://iris-server:52773",
     "username":   "admin",
@@ -586,12 +594,14 @@ REMOTE_SETTINGS = {
     "verify_ssl": True,
 }
 
-# Optionally also define CLASSES / PRODUCTIONS for migration
-CLASSES = { ... }
-PRODUCTIONS = [ ... ]
+# Optionally also define a production graph for migration.
+prod = Production("Demo.Production", testing_enabled=True)
+PRODUCTIONS = [prod]
 ```
 
-This is the same file format used by `iop -m` for migrations, so a single `settings.py` can serve both purposes — describe which classes to register **and** how to reach the remote IRIS instance.
+This is the same file format used by `iop -m` for migrations, so a single
+`settings.py` can serve both purposes: describe a production graph and how to
+reach the remote IRIS instance.
 
 ### Namespace override
 

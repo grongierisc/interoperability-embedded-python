@@ -446,6 +446,11 @@ Available in all component classes:
 
 **Lifecycle Methods:**
 
+> **Warning:** Component constructors are not lifecycle hooks. IoP/IRIS
+> allocates component instances with `__new__()` and does not call custom
+> `__init__()` methods. Put startup logic in `on_init()`, and use class
+> attributes or `iop.Setting` for configurable defaults.
+
 - `on_init(self) -> None`
     - Initialize component when it starts
     - Override to add custom initialization

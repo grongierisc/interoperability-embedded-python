@@ -15,11 +15,19 @@ does not delete Python source files or production items.
 Create a migration file in your project root:
 
 ```python
-import bo
+from iop import BusinessOperation, Production
 
-CLASSES = {
-    "Python.MyBusinessOperation": bo.MyBusinessOperation
-}
+
+class MyBusinessOperation(BusinessOperation):
+    def on_message(self, request):
+        self.log_info("Hello from IoP")
+        return request
+
+
+prod = Production("Demo.Production", testing_enabled=True)
+prod.operation("MyBusinessOperation", MyBusinessOperation)
+
+PRODUCTIONS = [prod]
 ```
 
 Apply the migration file:
@@ -40,16 +48,19 @@ iop --unbind Python.MyBusinessOperation
 
 The migration file supports four main sections:
 
-| Section | Purpose | Required |
-|---------|---------|----------|
-| `CLASSES` | Define interoperability components and native `PersistentMessage` classes | ✅ |
-| `PRODUCTIONS` | Configure production workflows | ❌ |
-| `SCHEMAS` | Register message schemas for DTL | ❌ |
-| `REMOTE_SETTINGS` | Configure remote IRIS connections | ❌ |
+| Section | Purpose |
+|---------|---------|
+| `PRODUCTIONS` | Define Python-authored production graphs with `Production` objects |
+| `CLASSES` | Define standalone component bindings and native `PersistentMessage` classes |
+| `SCHEMAS` | Register message schemas for DTL |
+| `REMOTE_SETTINGS` | Configure remote IRIS connections |
 
 ## CLASSES Section
 
-Register your interoperability components (BusinessOperations, BusinessProcesses, BusinessServices).
+Use `CLASSES` for standalone component bindings that are not declared in a
+Python `Production` graph. New Python-authored productions usually do not need
+component entries in `CLASSES`; migration registers component classes from the
+`Production` graph.
 
 ### Basic Usage
 
@@ -374,7 +385,12 @@ status. Component start/stop/restart is scoped to the same production object.
 `ComponentRef` is a Python handle to a production item, not the live IRIS host
 instance.
 
-### Minimal Production
+### Legacy Production Dictionaries
+
+Raw production dictionaries are still accepted for compatibility and export
+round trips. Prefer `Production` objects for new Python-authored topology.
+
+#### Minimal Legacy Dictionary
 
 ```python
 PRODUCTIONS = [
@@ -396,7 +412,7 @@ PRODUCTIONS = [
 ]
 ```
 
-### Full Production Configuration
+#### Full Legacy Dictionary
 
 ```python
 import os
@@ -437,7 +453,7 @@ PRODUCTIONS = [
 
 **Item Attributes:**
 - `@Name`: Component instance name
-- `@ClassName`: Class reference (from CLASSES or direct class)
+- `@ClassName`: IRIS class name or class reference
 - `@PoolSize`: Component pool size
 - `@Enabled`: Enable/disable component
 - `@LogTraceEvents`: Enable component-specific logging
@@ -482,10 +498,33 @@ REMOTE_SETTINGS = {
 
 ```python
 import os
-import bp
-from bo import FileOperation, EmailOperation
-from bs import RedditService
-from msg import RedditPost
+from dataclasses import dataclass
+
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class RedditPost(Message):
+    title: str = ""
+    url: str = ""
+
+
+class RedditService(PollingBusinessService):
+    Output = target()
+    Limit: int = 10
+
+    def on_poll(self):
+        self.send_request_async(
+            self.Output,
+            RedditPost(title="Latest post", url="https://example.invalid/post"),
+        )
+
+
+class FileOperation(BusinessOperation):
+    def on_message(self, request: RedditPost):
+        self.log_info(f"Exporting {request.title}")
+        return request
+
 
 # Remote connection settings
 REMOTE_SETTINGS = {
@@ -495,49 +534,24 @@ REMOTE_SETTINGS = {
     "namespace": "IRISAPP"
 }
 
-# Component registration
-CLASSES = {
-    'Python.RedditService': RedditService,
-    'Python.FileOperation': FileOperation,
-    'Python.EmailOperation': EmailOperation,
-    'Python.FilterRule': bp.FilterPostRoutingRule,
-}
-
-# Message schemas
+# Optional DTL schema registration
 SCHEMAS = [RedditPost]
 
-# Production configuration
-PRODUCTIONS = [
-    {
-        'Reddit.Production': {
-            "@Name": "Reddit Processing Pipeline",
-            "@TestingEnabled": "true",
-            "ActorPoolSize": "3",
-            "Item": [
-                {
-                    "@Name": "RedditFeed",
-                    "@ClassName": "Python.RedditService",
-                    "@Enabled": "true",
-                    "Setting": {
-                        "@Target": "Host",
-                        "@Name": "%settings", 
-                        "#text": f"limit={os.environ.get('REDDIT_LIMIT', '10')}"
-                    }
-                },
-                {
-                    "@Name": "PostFilter",
-                    "@ClassName": "Python.FilterRule",
-                    "@Enabled": "true"
-                },
-                {
-                    "@Name": "FileExporter", 
-                    "@ClassName": "Python.FileOperation",
-                    "@Enabled": "true"
-                }
-            ]
-        }
-    }
-]
+# Production graph
+prod = (
+    Production("Reddit.Production", testing_enabled=True)
+    .actor_pool(3)
+    .describe("Reddit processing pipeline")
+)
+
+feed = (
+    prod.service("RedditFeed", RedditService)
+    .host_setting("Limit", int(os.environ.get("REDDIT_LIMIT", "10")))
+)
+exporter = prod.operation("FileExporter", FileOperation)
+prod.connect(feed.Output, exporter)
+
+PRODUCTIONS = [prod]
 ```
 
 ## Best Practices

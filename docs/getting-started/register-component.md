@@ -1,421 +1,192 @@
 # Registering Components
 
-There are two main ways to register your Python components with IRIS Interoperability:
-
-- With a settings file
-    
-- With a Python script:
-    - Register a single component using `register_component`
-    - Register all components in a file using `register_file` 
-    - Register all components in a folder using `register_folder`
-
 Registering a Python component creates an IRIS proxy class that points to the
 Python implementation. The CLI calls this a binding. Removing that proxy class
 is called unbinding or unregistering; it does not delete Python source files or
 production items.
 
-## With a Settings File
+For new applications, author a Python `Production` graph and put it in
+`PRODUCTIONS`. IoP registers the Python component classes used by that graph
+during migration.
 
-Create a `settings.py` file in the root of your project. This file will be used to register your classes and productions.
+## Production Graph
 
-### Example of `settings.py`
+Create a migration file, usually named `settings.py`, in your project root:
 
 ```python
-import bo
-import msg
+from dataclasses import dataclass
 
-CLASSES = {
-    "Python.MyBusinessOperation": bo.MyBusinessOperation,
-    "Demo.Msg.OrderMessage": msg.OrderMessage,
-}
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class OrderRequest(Message):
+    order_id: str = ""
+
+
+class FileService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, OrderRequest(order_id="777"))
+
+
+class OrderOperation(BusinessOperation):
+    def on_message(self, request: OrderRequest):
+        self.log_info(f"Received order {request.order_id}")
+        return request
+
+
+prod = Production("Demo.Production", testing_enabled=True)
+file = prod.service("FileInput", FileService)
+orders = prod.operation("OrderOperation", OrderOperation)
+prod.connect(file.Output, orders)
+
+PRODUCTIONS = [prod]
 ```
 
-### Registering the Component
-
-Use the `iop` command line to register your component:
+Migrate it:
 
 ```bash
 iop --migrate /path/to/your/project/settings.py
 ```
 
-If the wrong IRIS class name was used, remove the generated proxy class:
+Migration registers the generated IRIS proxy classes for `FileService` and
+`OrderOperation`, then saves `Demo.Production`.
 
-```bash
-iop --unbind Python.MyBusinessOperation
-```
+`target()` declares a configurable outbound target setting on the component
+class. `prod.connect(file.Output, orders)` sets that setting to the destination
+component and records the production graph edge.
 
-If a production item still uses that class, unbind fails and reports the
-production item references. Remove or change those items before unbinding.
+## Settings File Sections
 
-## Using the Python Shell
+A migration file can define these sections:
 
-### Registering a Single Component
+| Section | Purpose |
+|---------|---------|
+| `PRODUCTIONS` | Preferred way to register Python-authored production graphs |
+| `CLASSES` | Standalone bindings and native `PersistentMessage` registrations |
+| `SCHEMAS` | JSON schemas for DTL support |
+| `REMOTE_SETTINGS` | Remote IRIS connection settings |
 
-Use `register_component` or `bind_component` to create an IRIS proxy class
-binding for a Python component.
+Regular `Message` and `PydanticMessage` classes do not go in `CLASSES`.
+Register them in `SCHEMAS` only when you need DTL schema support.
 
-```python
-from iop import bind_component, register_component
+## Native Persistent Messages
 
-register_component(<ModuleName>, <ClassName>, <PathToPyFile>, <OverWrite>, <NameOfTheComponent>)
-bind_component(<ModuleName>, <ClassName>, <PathToPyFile>, <OverWrite>, <NameOfTheComponent>)
-```
-
-Example:
-```python
-from iop import bind_component
-
-bind_component("MyCombinedBusinessOperation","MyCombinedBusinessOperation","/irisdev/app/src/python/demo/",1,"PEX.MyCombinedBusinessOperation")
-```
-
-### Unregistering a Component Binding
-
-Use `unregister_component` or `unbind_component` to remove an IOP-generated
-IRIS proxy class binding:
+For Python-authored productions, declare native persistent messages on the
+`Production` object:
 
 ```python
-from iop import unbind_component, unregister_component
+from iop import Field, PersistentMessage, Production
 
-unregister_component("PEX.MyCombinedBusinessOperation")
-unbind_component("PEX.MyCombinedBusinessOperation")
+
+class OrderMessage(PersistentMessage):
+    OrderId: str = Field(required=True)
+
+
+prod = Production("Demo.Production")
+prod.message("Demo.Msg.OrderMessage", OrderMessage)
+
+PRODUCTIONS = [prod]
 ```
 
-The Python source file is not changed. IRIS refuses the operation if the proxy
-class is still used by a production item.
-
-You can inspect generated proxy class bindings from the CLI:
-
-```bash
-iop --bindings
-iop --bindings --unused
-```
-
-### Registering All Components in a File
-
-Use the `register_file` method to add all components in a file to the component list for interoperability.
-
-```python
-from iop import Utils
-Utils.register_file(<File>,<OverWrite>,<PackageName>)
-```
-
-Example:
-```python
-from iop import Utils
-Utils.register_file("/irisdev/app/src/python/demo/bo.py",1,"PEX")
-```
-
-### Registering All Components in a Folder
-
-Use the `register_folder` method to add all components in a folder to the component list for interoperability.
-
-```python
-from iop import Utils
-Utils.register_folder(<Path>,<OverWrite>,<PackageName>)
-```
-
-Example:
-```python
-from iop import Utils
-Utils.register_folder("/irisdev/app/src/python/demo/",1,"PEX")
-```
-
-### Migrating Settings
-
-Use the `migrate` method to migrate the settings file to the IRIS framework.
-
-```python
-from iop import Utils
-Utils.migrate()
-```
-
-## The `settings.py` File
-
-This file is used to store the settings of the interoperability components. It has these sections:
-
-- `CLASSES`: Stores the classes of the interoperability components.
-- `PRODUCTIONS`: Stores the productions of the interoperability components.
-- `SCHEMAS`: Stores the schemas of the interoperability components.
-- `REMOTE_SETTINGS`: Stores the remote settings for migration.
-
-`CLASSES` can also register native `PersistentMessage` classes. For these entries, the dictionary key is the generated IRIS message body classname. The Python class fields define the schema, and migration syncs it with IRIS using `iris-persistence`.
+You can also register a native `PersistentMessage` in `CLASSES`. In this legacy
+form, the dictionary key is the generated IRIS message body class name:
 
 ```python
 from msg import OrderMessage
+
 
 CLASSES = {
     "Demo.Msg.OrderMessage": OrderMessage,
 }
 ```
 
-Regular `Message` and `PydanticMessage` classes only need migration when you
-want DTL schema support. In that case, place them in `SCHEMAS`.
+## Standalone Bindings
 
-Example:
+Use `CLASSES` when you need to create an IRIS proxy class without putting the
+component in a Python `Production` graph:
+
 ```python
-import bp
-from bo import *
-from bs import *
-from msg import RedditPost
+from bo import FileOperation
+from bs import RedditService
+
 
 CLASSES = {
-    'Python.RedditService': RedditService,
-    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
-    'Python.FileOperation': FileOperation,
-    'Python.FileOperationWithIrisAdapter': FileOperationWithIrisAdapter,
+    "Python.RedditService": RedditService,
+    "Python.FileOperation": FileOperation,
 }
+```
 
-SCHEMAS = [RedditPost]
+`CLASSES` values can be Python classes, imported modules, or dictionaries that
+point at source files:
 
+```python
+CLASSES = {
+    "Python.RedditService": {
+        "module": "bs",
+        "class": "RedditService",
+        "path": "/irisdev/app/src/python/demo/",
+    },
+    "Python.Package": {
+        "path": "/irisdev/app/src/python/demo/",
+    },
+}
+```
+
+## Legacy Production Dictionaries
+
+Raw production dictionaries are still accepted for compatibility and for JSON
+export round trips. Prefer `Production` objects for new Python-authored
+topology.
+
+Minimal legacy form:
+
+```python
 PRODUCTIONS = [
     {
-        'dc.Python.Production': {
-        "@Name": "dc.Demo.Production",
-        "@TestingEnabled": "true",
-        "@LogGeneralTraceEvents": "false",
-        "Description": "",
-        "ActorPoolSize": "2",
-        "Item": [
-            {
-                "@Name": "Python.FileOperation",
-                "@Category": "",
-                "@ClassName": "Python.FileOperation",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "true",
-                "@Schedule": "",
-                "Setting": {
-                    "@Target": "Host",
-                    "@Name": "%settings",
-                    "#text": "path=/tmp"
+        "Demo.Production": {
+            "Item": [
+                {
+                    "@Name": "FileOperation",
+                    "@ClassName": "Python.FileOperation",
                 }
-            },
-            {
-                "@Name": "Python.RedditService",
-                "@Category": "",
-                "@ClassName": "Python.RedditService",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": "",
-                "Setting": [
-                    {
-                        "@Target": "Host",
-                        "@Name": "%settings",
-                        "#text": "limit=10\nother<10"
-                    }
-                ]
-            },
-            {
-                "@Name": "Python.FilterPostRoutingRule",
-                "@Category": "",
-                "@ClassName": "Python.FilterPostRoutingRule",
-                "@PoolSize": "1",
-                "@Enabled": "true",
-                "@Foreground": "false",
-                "@Comment": "",
-                "@LogTraceEvents": "false",
-                "@Schedule": ""
-            }
-        ]
-    }
+            ]
+        }
     }
 ]
 ```
 
-### The `CLASSES` Section
+Legacy production dictionaries use the same keys as exported IRIS production
+XML, such as `@Name`, `@ClassName`, `@PoolSize`, `@Enabled`, and `Setting`.
 
-This section stores the classes of the interoperability components. It helps to register the components.
+## Schemas
 
-The dictionary has the following structure:
+Register JSON schemas for DTL transformations with `SCHEMAS`:
 
-- Key: The name of the component
-- Value: 
-  - The class of the component (you have to import it before)
-  - The module of the component (you have to import it before)
-  - Another dictionary with the following structure:
-    - `module`: Name of the module of the component (optional)
-    - `class`: Name of the class of the component (optional)
-    - `path`: The path of the component (mandatory)
-
-Example:
-
-When Value is a class or a module:
-```python
-import bo
-import bp
-from bs import RedditService
-
-CLASSES = {
-    'Python.RedditService': RedditService,
-    'Python.FilterPostRoutingRule': bp.FilterPostRoutingRule,
-    'Python.FileOperation': bo,
-}
-```
-
-When Value is a dictionary:
-```python
-CLASSES = {
-    'Python.RedditService': {
-        'module': 'bs',
-        'class': 'RedditService',
-        'path': '/irisdev/app/src/python/demo/'
-    },
-    'Python.Module': {
-        'module': 'bp',
-        'path': '/irisdev/app/src/python/demo/'
-    },
-    'Python.Package': {
-        'path': '/irisdev/app/src/python/demo/'
-    },
-}
-```
-
-### The `PRODUCTIONS` Section
-
-This section stores the productions of the interoperability components. It helps to register a production.
-
-The list has the following structure:
-
-- A list of dictionaries with the following structure:
-  - `dc.Python.Production`: The name of the production
-    - `@Name`: The name of the production
-    - `@TestingEnabled`: The testing enabled of the production
-    - `@LogGeneralTraceEvents`: The log general trace events of the production
-    - `Description`: The description of the production
-    - `ActorPoolSize`: The actor pool size of the production
-    - `Item`: The list of the items of the production
-      - `@Name`: The name of the item
-      - `@Category`: The category of the item
-      - `@ClassName`: The class name of the item
-      - `@PoolSize`: The pool size of the item
-      - `@Enabled`: The enabled of the item
-      - `@Foreground`: The foreground of the item
-      - `@Comment`: The comment of the item
-      - `@LogTraceEvents`: The log trace events of the item
-      - `@Schedule`: The schedule of the item
-      - `Setting`: The list of the settings of the item
-        - `@Target`: The target of the setting
-        - `@Name`: The name of the setting
-        - `#text`: The value of the setting
-
-The minimum structure of a production is:
-```python
-PRODUCTIONS = [
-        {
-            'UnitTest.Production': {
-                "Item": [
-                    {
-                        "@Name": "Python.FileOperation",
-                        "@ClassName": "Python.FileOperation",
-                    },
-                    {
-                        "@Name": "Python.EmailOperation",
-                        "@ClassName": "UnitTest.Package.EmailOperation"
-                    }
-                ]
-            }
-        } 
-    ]
-```
-
-You can also set in `@ClassName` an item from the `CLASSES` section.
-
-Example:
-```python
-from bo import FileOperation
-PRODUCTIONS = [
-        {
-            'UnitTest.Production': {
-                "Item": [
-                    {
-                        "@Name": "Python.FileOperation",
-                        "@ClassName": FileOperation,
-                    }
-                ]
-            }
-        } 
-    ]
-```
-
-As the production is a dictionary, you can add in the value of the production dictionary an environment variable.
-
-Example:
-```python
-import os
-
-PRODUCTIONS = [
-        {
-            'UnitTest.Production': {
-                "Item": [
-                    {
-                        "@Name": "Python.FileOperation",
-                        "@ClassName": "Python.FileOperation",
-                        "Setting": {
-                            "@Target": "Host",
-                            "@Name": "%settings",
-                            "#text": os.environ['SETTINGS']
-                        }
-                    }
-                ]
-            }
-        } 
-    ]
-```
-
-### The `SCHEMAS` Section
-
-This section stores the schemas of the interoperability components. It helps to register the schemas for DTL transformations.
-
-The list has the following structure:
-
-- A list of classes
-
-Example:
 ```python
 from msg import RedditPost
+
 
 SCHEMAS = [RedditPost]
 ```
 
-### The `REMOTE_SETTINGS` Section
+## Remote Migration
 
-This section stores the remote settings for migration. It is used to configure the connection to the remote IRIS instance for importing Python IOP modules.
+Add `REMOTE_SETTINGS` when migration should run against a remote IRIS instance:
 
-The dictionary has the following structure:
-- `url`: The URL of the remote IRIS instance (mandatory)
-- `username`: The username for authentication (optional, default is "")
-- `password`: The password for authentication (optional, default is "")
-- `namespace`: The namespace for the connection (optional, default is "USER")
-- `remote_folder`: The folder where the components are stored (optional, default is the routine database folder)
-- `package`: The package name for the components (optional, default is "python")
-- `verify_ssl`: Whether to verify SSL certificates (optional, default is True). Set to False for self-signed certificates
-
-Example:
 ```python
-from bo import FileOperation
-
 REMOTE_SETTINGS = {
     "url": "http://localhost:8080",
     "username": "admin",
     "password": "password",
     "namespace": "IRISAPP",
 }
-
-CLASSES = {
-    'Python.FileOperation': FileOperation,
-}
 ```
 
-This will import `FileOperation` from the `bo` module and register it under the key `'Python.FileOperation'` in the `CLASSES` dictionary.
-
-#### Using HTTPS with Self-Signed Certificates
-
-If your remote IRIS instance uses HTTPS with a self-signed certificate, you need to disable SSL verification:
+If the remote instance uses HTTPS with a self-signed certificate, disable SSL
+verification only in development or trusted environments:
 
 ```python
 REMOTE_SETTINGS = {
@@ -423,18 +194,76 @@ REMOTE_SETTINGS = {
     "username": "admin",
     "password": "password",
     "namespace": "IRISAPP",
-    "verify_ssl": False  # Disable SSL verification for self-signed certificates
+    "verify_ssl": False,
 }
 ```
 
-**Note:** Disabling SSL verification should only be used in development or trusted environments, as it makes the connection vulnerable to man-in-the-middle attacks.
-
-#### Force Local Migration
-
-You can force local migration (skip remote migration even if `REMOTE_SETTINGS` is present) by using the `--force-local` flag:
+Force local migration even when `REMOTE_SETTINGS` is present:
 
 ```bash
-iop -m /path/to/settings.py --force-local
+iop --migrate /path/to/settings.py --force-local
 ```
 
-This is useful when you want to test local migration while keeping your `REMOTE_SETTINGS` configuration in the settings file.
+## Unbinding
+
+If the wrong IRIS class name was used, remove the generated proxy class:
+
+```bash
+iop --unbind Python.WrongOperation
+```
+
+If a production item still uses that class, unbind fails and reports the
+production item references. Remove or change those items before unbinding.
+
+List generated proxy class bindings:
+
+```bash
+iop --bindings
+iop --bindings --unused
+```
+
+## Python Shell Utilities
+
+The Python utility functions remain available for scripting standalone
+bindings. The migration-file workflow is preferred for normal projects.
+
+```python
+from iop import bind_component, register_component
+
+
+register_component(
+    "bo",
+    "FileOperation",
+    "/irisdev/app/src/python/demo/",
+    1,
+    "Python.FileOperation",
+)
+
+bind_component(
+    "bo",
+    "FileOperation",
+    "/irisdev/app/src/python/demo/",
+    1,
+    "Python.FileOperation",
+)
+```
+
+Remove a binding from Python:
+
+```python
+from iop import unbind_component, unregister_component
+
+
+unregister_component("Python.FileOperation")
+unbind_component("Python.FileOperation")
+```
+
+Scan a file or folder for component classes:
+
+```python
+from iop import Utils
+
+
+Utils.register_file("/irisdev/app/src/python/demo/bo.py", 1, "Python")
+Utils.register_folder("/irisdev/app/src/python/demo/", 1, "Python")
+```

@@ -13,6 +13,10 @@ In production when you select a component, you can configure it by passing setti
 
 Those settings can be passed to your python code.
 
+IoP/IRIS applies production settings after allocating the Python component
+instance with `__new__()`. Read settings in `on_init()` or later; custom
+component `__init__()` methods are not called.
+
 ## Use the %settings parameter
 
 All the settings passed to **%settings** are available in string format into your class as a root attribute.
