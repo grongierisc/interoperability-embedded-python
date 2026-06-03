@@ -11,11 +11,16 @@ from .common import (
     _auto_proxy_class_name,
 )
 from .component import ComponentRef
+from .declarations import (
+    _ProductionItemDeclaration,
+    normalize_route_port_for_match,
+)
 from .diff import _diff_productions
 from .inspection import component_runtime_info, inspect_component
 from .reconstruction import production_from_dict
 from .rendering import (
     production_graph,
+    production_to_class,
     production_to_dict,
     production_to_python,
     production_to_xml,
@@ -30,6 +35,8 @@ from .types import (
     _edge_identity,
 )
 
+_MISSING = object()
+
 
 class Production:
     """Python authoring DSL for IRIS interoperability production topology.
@@ -41,42 +48,65 @@ class Production:
 
     def __init__(
         self,
-        name: str,
+        name: str | object = _MISSING,
         *,
-        testing_enabled: bool | str = False,
-        log_general_trace_events: bool | str = False,
-        actor_pool_size: int | str = 2,
-        description: str = "",
-        shutdown_timeout: int | str = PRODUCTION_SETTING_FIELDS["shutdown_timeout"][1],
-        update_timeout: int | str = PRODUCTION_SETTING_FIELDS["update_timeout"][1],
-        alert_notification_manager: str = PRODUCTION_SETTING_FIELDS[
-            "alert_notification_manager"
-        ][1],
-        alert_notification_operation: str = PRODUCTION_SETTING_FIELDS[
-            "alert_notification_operation"
-        ][1],
-        alert_notification_recipients: str = PRODUCTION_SETTING_FIELDS[
-            "alert_notification_recipients"
-        ][1],
-        alert_action_window: int | str = PRODUCTION_SETTING_FIELDS[
-            "alert_action_window"
-        ][1],
-        namespace: str | None = None,
-        director: _DirectorProtocol | None = None,
+        testing_enabled: bool | str | object = _MISSING,
+        log_general_trace_events: bool | str | object = _MISSING,
+        actor_pool_size: int | str | object = _MISSING,
+        description: str | object = _MISSING,
+        shutdown_timeout: int | str | object = _MISSING,
+        update_timeout: int | str | object = _MISSING,
+        alert_notification_manager: str | object = _MISSING,
+        alert_notification_operation: str | object = _MISSING,
+        alert_notification_recipients: str | object = _MISSING,
+        alert_action_window: int | str | object = _MISSING,
+        namespace: str | None | object = _MISSING,
+        director: _DirectorProtocol | None | object = _MISSING,
+        _hydrate_declarations: bool = True,
     ):
-        self.name = name
-        self.testing_enabled = testing_enabled
-        self.log_general_trace_events = log_general_trace_events
-        self.actor_pool_size = actor_pool_size
-        self.description = description
-        self.shutdown_timeout = shutdown_timeout
-        self.update_timeout = update_timeout
-        self.alert_notification_manager = alert_notification_manager
-        self.alert_notification_operation = alert_notification_operation
-        self.alert_notification_recipients = alert_notification_recipients
-        self.alert_action_window = alert_action_window
-        self.namespace = namespace
-        self._director = director
+        self.name = self._resolve_production_name(name)
+        self.testing_enabled = self._production_default(
+            "testing_enabled", testing_enabled, False
+        )
+        self.log_general_trace_events = self._production_default(
+            "log_general_trace_events", log_general_trace_events, False
+        )
+        self.actor_pool_size = self._production_default(
+            "actor_pool_size", actor_pool_size, 2
+        )
+        self.description = self._production_default("description", description, "")
+        self.shutdown_timeout = self._production_default(
+            "shutdown_timeout",
+            shutdown_timeout,
+            PRODUCTION_SETTING_FIELDS["shutdown_timeout"][1],
+        )
+        self.update_timeout = self._production_default(
+            "update_timeout",
+            update_timeout,
+            PRODUCTION_SETTING_FIELDS["update_timeout"][1],
+        )
+        self.alert_notification_manager = self._production_default(
+            "alert_notification_manager",
+            alert_notification_manager,
+            PRODUCTION_SETTING_FIELDS["alert_notification_manager"][1],
+        )
+        self.alert_notification_operation = self._production_default(
+            "alert_notification_operation",
+            alert_notification_operation,
+            PRODUCTION_SETTING_FIELDS["alert_notification_operation"][1],
+        )
+        self.alert_notification_recipients = self._production_default(
+            "alert_notification_recipients",
+            alert_notification_recipients,
+            PRODUCTION_SETTING_FIELDS["alert_notification_recipients"][1],
+        )
+        self.alert_action_window = self._production_default(
+            "alert_action_window",
+            alert_action_window,
+            PRODUCTION_SETTING_FIELDS["alert_action_window"][1],
+        )
+        self.namespace = self._production_default("namespace", namespace, None)
+        self._director = self._production_default("director", director, None)
         self._items: list[ComponentRef] = []
         self._items_by_name: dict[str, ComponentRef] = {}
         self._connections: dict[tuple[str, str], list[str]] = {}
@@ -84,6 +114,166 @@ class Production:
         self._graph_warnings: list[str] = []
         self._queue_info: dict[str, dict[str, Any]] = {}
         self._messages: list[PersistentMessageRegistration] = []
+        if _hydrate_declarations:
+            self._hydrate_declared_items()
+
+    def _resolve_production_name(self, name: str | object) -> str:
+        if name is not _MISSING:
+            return name  # type: ignore[return-value]
+        class_name = getattr(type(self), "name", _MISSING)
+        if class_name is not _MISSING:
+            return class_name
+        return f"{type(self).__module__}.{type(self).__name__}"
+
+    def _production_default(
+        self,
+        field_name: str,
+        explicit: Any,
+        default: Any,
+    ) -> Any:
+        if explicit is not _MISSING:
+            return explicit
+        class_value = getattr(type(self), field_name, _MISSING)
+        if class_value is not _MISSING:
+            return class_value
+        return default
+
+    def _hydrate_declared_items(self) -> None:
+        declarations: list[_ProductionItemDeclaration] = []
+        for attr_name, expected_kind in (
+            ("components", "component"),
+            ("services", "service"),
+            ("processes", "process"),
+            ("operations", "operation"),
+        ):
+            for declaration in self._declared_items(attr_name):
+                if declaration.kind != expected_kind:
+                    raise TypeError(
+                        f"{attr_name} must contain {expected_kind.title()}Item "
+                        f"declarations"
+                    )
+                self._raise_declared_route_conflicts(declaration)
+                self._add_declared_item(declaration)
+                declarations.append(declaration)
+
+        for declaration in declarations:
+            self._connect_declared_routes(declaration)
+
+    def _declared_items(self, attr_name: str) -> tuple[_ProductionItemDeclaration, ...]:
+        values = getattr(type(self), attr_name, ())
+        if values is None:
+            return ()
+        if isinstance(values, _ProductionItemDeclaration):
+            return (values,)
+        try:
+            declarations = tuple(values)
+        except TypeError as exc:
+            raise TypeError(f"{attr_name} must be an iterable of item declarations") from exc
+        for declaration in declarations:
+            if not isinstance(declaration, _ProductionItemDeclaration):
+                raise TypeError(f"{attr_name} must contain production item declarations")
+        return declarations
+
+    def _raise_declared_route_conflicts(
+        self,
+        declaration: _ProductionItemDeclaration,
+    ) -> None:
+        host_ports = {
+            normalize_route_port_for_match(name)
+            for name in declaration.host_setting_values
+        }
+        route_ports = {route.port_name for route in declaration.route_values}
+        conflicts = sorted(host_ports & route_ports)
+        if not conflicts:
+            return
+        names = ", ".join(repr(name) for name in conflicts)
+        raise ValueError(
+            f"{declaration.kind.title()} item {declaration.name!r} declares route "
+            f"port(s) in Host settings: {names}. Declare route ports with Route only."
+        )
+
+    def _add_declared_item(self, declaration: _ProductionItemDeclaration) -> None:
+        kwargs: dict[str, Any] = {
+            "enabled": declaration.enabled,
+            "pool_size": declaration.pool_size,
+            "category": declaration.category,
+            "foreground": declaration.foreground,
+            "comment": declaration.comment,
+            "log_trace_events": declaration.log_trace_events,
+            "schedule": declaration.schedule,
+            "settings": declaration.host_setting_values,
+            "adapter_settings": declaration.adapter_setting_values,
+        }
+        if declaration.adapter_class is not None:
+            kwargs["adapter_class"] = declaration.adapter_class
+        if declaration.adapter_class_name is not None:
+            kwargs["adapter_class_name"] = declaration.adapter_class_name
+
+        method = {
+            "component": self.component,
+            "service": self.service,
+            "process": self.process,
+            "operation": self.operation,
+        }[declaration.kind]
+
+        component = declaration.component
+        if isinstance(component, type):
+            if declaration.class_name is not None:
+                kwargs["class_name"] = declaration.class_name
+            ref = method(declaration.name, component, **kwargs)
+            ref.other_settings = declaration.other_setting_values
+            return
+
+        class_name = declaration.class_name
+        if component is not None:
+            component_class_name = str(component)
+            if class_name is not None and class_name != component_class_name:
+                raise ValueError(
+                    f"{declaration.kind.title()} item {declaration.name!r} "
+                    "declares conflicting component and class_name values"
+                )
+            class_name = component_class_name
+
+        if class_name is None:
+            raise ValueError(
+                f"{declaration.kind.title()} item {declaration.name!r} requires "
+                "a component class or class_name"
+            )
+        kwargs["class_name"] = class_name
+        ref = method(declaration.name, **kwargs)
+        ref.other_settings = declaration.other_setting_values
+
+    def _connect_declared_routes(self, declaration: _ProductionItemDeclaration) -> None:
+        source = self.item(declaration.name)
+        for route in declaration.route_values:
+            self._raise_if_route_port_owner_mismatch(source, route)
+            port = source.port(
+                route.port_name,
+                logical_name=route.route_logical_name,
+            )
+            targets = route.target_names
+            self.connect(port, targets[0])
+            for target in targets[1:]:
+                self.connect_add(port, target)
+
+    def _raise_if_route_port_owner_mismatch(
+        self,
+        source: ComponentRef,
+        route: Any,
+    ) -> None:
+        owner = route.port_owner
+        if (
+            owner is None
+            or source.component_class is None
+            or issubclass(source.component_class, owner)
+        ):
+            return
+        raise ValueError(
+            f"Route port {route.port_name!r} belongs to "
+            f"{owner.__module__}.{owner.__qualname__}, not "
+            f"{source.component_class.__module__}."
+            f"{source.component_class.__qualname__}"
+        )
 
     def testing(self, enabled: bool | str = True) -> Production:
         self.testing_enabled = enabled
@@ -147,7 +337,12 @@ class Production:
         namespace: str | None = None,
         director: _DirectorProtocol | None = None,
     ) -> Production:
-        seed = cls(name, namespace=namespace, director=director)
+        seed = cls(
+            name,
+            namespace=namespace,
+            director=director,
+            _hydrate_declarations=False,
+        )
         runtime_director = _ProductionRuntime(seed).director
         exported = runtime_director.export_production(name)
         connections = None
@@ -552,6 +747,9 @@ class Production:
 
     def to_python(self) -> str:
         return production_to_python(self)
+
+    def to_class(self) -> str:
+        return production_to_class(self)
 
     def graph(self) -> ProductionGraph:
         return production_graph(self)

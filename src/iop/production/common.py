@@ -22,6 +22,11 @@ PRODUCTION_SETTING_FIELDS_BY_IRIS: dict[str, str] = {
     for field_name, (iris_name, _default) in PRODUCTION_SETTING_FIELDS.items()
 }
 
+SETTING_NAME_ALIASES = {
+    "target_config_name": "TargetConfigName",
+    "target_config_names": "TargetConfigNames",
+}
+
 
 def _bool_text(value: bool | str) -> str:
     if isinstance(value, bool):

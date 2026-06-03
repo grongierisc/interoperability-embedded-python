@@ -48,6 +48,7 @@ def production_from_dict(
         alert_action_window=production_settings.get("alert_action_window", 60),
         namespace=namespace,
         director=director,
+        _hydrate_declarations=False,
     )
 
     _add_imported_items(production, production_data)
@@ -117,9 +118,7 @@ def _apply_runtime_item_metadata(production, connections: Any) -> None:
 def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], set[str]]:
     connection_map, runtime_sources, warnings = _normalize_connections(connections)
     production._graph_warnings.extend(warnings)
-    runtime_sources_with_targets = {
-        source_item for source_item, targets in connection_map.items() if targets
-    }
+    runtime_sources_with_targets: set[str] = set()
 
     for source_item, targets in connection_map.items():
         if source_item not in production._items_by_name:
@@ -144,6 +143,7 @@ def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], 
                     f"Runtime connection target does not exist: "
                     f"{source_item} -> {target_name}"
                 )
+            runtime_sources_with_targets.add(source_item)
             production._register_connection(
                 source_item,
                 source_port,

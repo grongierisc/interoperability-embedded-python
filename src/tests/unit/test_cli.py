@@ -290,6 +290,28 @@ class TestIOPCli(unittest.TestCase):
         production.to_python.assert_called_once_with()
         self.assertEqual(fake_out.getvalue(), "from iop import Production\n")
 
+    def test_export_class_format_uses_production_reconstruction(self):
+        production = MagicMock()
+        production.to_class.return_value = "from iop import Production, ServiceItem\n"
+        with patch(
+            "iop.cli.main.Production.from_iris",
+            return_value=production,
+        ) as mock_from_iris:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--export", "Demo.Production", "--format", "class"])
+                self.assertEqual(cm.exception.code, 0)
+
+        assert mock_from_iris.call_args.args[0] == "Demo.Production"
+        assert mock_from_iris.call_args.kwargs["director"].__class__.__name__ == (
+            "_LocalDirector"
+        )
+        production.to_class.assert_called_once_with()
+        self.assertEqual(
+            fake_out.getvalue(),
+            "from iop import Production, ServiceItem\n",
+        )
+
     def test_export_graph_format_prints_reconstructed_graph(self):
         production = MagicMock()
         production.graph.return_value = "Demo.Production\n  FileInput"

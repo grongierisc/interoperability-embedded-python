@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, overload
 
 from ..components.settings import Category, Setting, controls
 
@@ -16,6 +16,15 @@ class TargetSetting(Setting):
         kwargs.setdefault("control", controls.production_item())
         super().__init__("", **kwargs)
         self.logical_name = logical_name
+
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> TargetSetting: ...
+
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> str: ...
+
+    def __get__(self, instance, owner=None):
+        return super().__get__(instance, owner)
 
 
 def target(logical_name: str = "", **kwargs: Any) -> TargetSetting:

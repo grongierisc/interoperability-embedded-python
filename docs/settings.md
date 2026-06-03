@@ -150,6 +150,97 @@ PRODUCTIONS = [prod]
 sets that port to the destination component for the generated production and
 keeps graph metadata available to Python.
 
+You can also write the same production as a class declaration. The class is a
+template; put an instance in `PRODUCTIONS`.
+
+```python
+from dataclasses import dataclass
+from iop import (
+    BusinessOperation,
+    Message,
+    OperationItem,
+    PollingBusinessService,
+    Production,
+    Route,
+    ServiceItem,
+    target,
+)
+
+
+@dataclass
+class OrderRequest(Message):
+    order_id: str = ""
+
+
+class FileService(PollingBusinessService):
+    Output = target("orders")
+
+    def on_poll(self):
+        return self.send_request_sync(
+            self.Output,
+            OrderRequest(order_id="777"),
+        )
+
+
+class OrderOperation(BusinessOperation):
+    def on_message(self, request):
+        return request
+
+
+class DemoProduction(Production):
+    name = "Demo.Production"
+    testing_enabled = True
+
+    services = [
+        ServiceItem(
+            "FileInput",
+            FileService,
+            routes=[Route(FileService.Output, "OrderOperation")],
+        )
+    ]
+    operations = [
+        OperationItem("OrderOperation", OrderOperation)
+    ]
+
+
+PRODUCTIONS = [DemoProduction()]
+```
+
+For existing IRIS classes, use the IRIS class name string:
+
+```python
+class FileProduction(Production):
+    name = "Demo.FileProduction"
+
+    services = [
+        ServiceItem(
+            "FileIn",
+            "EnsLib.File.PassthroughService",
+            adapter_settings={"FilePath": "/tmp/in"},
+            routes=[Route("TargetConfigNames", "FileOut")],
+        )
+    ]
+    operations = [
+        OperationItem("FileOut", "EnsLib.File.PassthroughOperation")
+    ]
+
+
+PRODUCTIONS = [FileProduction()]
+```
+
+`target("orders")` declares the outbound port on the Python component class.
+`Route(FileService.Output, "OrderOperation")` wires that port to a production
+item. This is the class-style equivalent of `prod.connect(file.Output, orders)`.
+
+For Python component classes, prefer the descriptor form
+`Route(FileService.Output, ...)`. For existing IRIS classes, use the IRIS
+setting name string, for example `Route("TargetConfigNames", "FileOut")`.
+
+`Route(port, targets)` owns the route Host setting and records graph metadata.
+Use `settings` or `host_settings` only for non-route Host settings. If a route
+port is also present in Host settings, migration raises an error so the route
+stays explicit.
+
 You can also author the same topology progressively:
 
 ```python

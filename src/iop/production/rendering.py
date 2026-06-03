@@ -86,6 +86,280 @@ def production_to_python(production) -> str:
     return "\n".join(lines) + "\n"
 
 
+def production_to_class(production) -> str:
+    item_names = {item.name for item in production.items}
+    route_targets = _valid_route_targets(_route_targets(production, item_names), item_names)
+    item_groups = _class_item_groups(production.items)
+    used_items = {
+        _class_item_type(kind)
+        for kind, items in item_groups.items()
+        if items
+    }
+    has_routes = bool(route_targets)
+    imports = ["Production", *sorted(used_items)]
+    if has_routes:
+        imports.append("Route")
+
+    class_name = _production_class_name(production.name)
+    lines = [
+        "# Generated from IRIS production export.",
+        "# Review before using as source of truth; some runtime/dynamic routing intent",
+        "# cannot be fully reconstructed from deployed IRIS metadata.",
+        f"from iop import {', '.join(imports)}",
+        "",
+        "",
+        f"class {class_name}(Production):",
+        f"    name = {_literal(production.name)}",
+    ]
+    lines.extend(_class_production_setting_lines(production))
+    lines.append("")
+
+    for kind in ("component", "service", "process", "operation"):
+        items = item_groups.get(kind, [])
+        if not items:
+            continue
+        attr_name = _class_item_attr(kind)
+        lines.append(f"    {attr_name} = [")
+        for item in items:
+            lines.extend(_class_item_lines(item, kind, route_targets))
+        lines.append("    ]")
+        lines.append("")
+
+    unresolved = _unresolved_class_routes(production, item_names)
+    if unresolved:
+        lines.append("    # TODO: review unresolved or runtime-only routes:")
+        lines.extend(f"    # - {value}" for value in unresolved)
+        lines.append("")
+    if production.graph().warnings:
+        lines.append("    # Import warnings:")
+        lines.extend(f"    # - {warning}" for warning in production.graph().warnings)
+        lines.append("")
+
+    lines.append("")
+    lines.append(f"PRODUCTIONS = [{class_name}()]")
+    return "\n".join(lines) + "\n"
+
+
+def _class_production_setting_lines(production) -> list[str]:
+    settings = [
+        ("testing_enabled", _bool_literal(production.testing_enabled), False),
+        (
+            "log_general_trace_events",
+            _bool_literal(production.log_general_trace_events),
+            False,
+        ),
+        ("actor_pool_size", _int_literal(production.actor_pool_size), 2),
+        ("description", production.description, ""),
+        ("shutdown_timeout", _int_literal(production.shutdown_timeout), 120),
+        ("update_timeout", _int_literal(production.update_timeout), 10),
+        ("alert_notification_manager", production.alert_notification_manager, ""),
+        ("alert_notification_operation", production.alert_notification_operation, ""),
+        ("alert_notification_recipients", production.alert_notification_recipients, ""),
+        ("alert_action_window", _int_literal(production.alert_action_window), 60),
+    ]
+    return [
+        f"    {name} = {_literal(value)}"
+        for name, value, default in settings
+        if value != default
+    ]
+
+
+def _class_item_groups(items) -> dict[str, list[Any]]:
+    groups: dict[str, list[Any]] = {
+        "component": [],
+        "service": [],
+        "process": [],
+        "operation": [],
+    }
+    for item in items:
+        groups[_class_item_kind(item)].append(item)
+    return groups
+
+
+def _class_item_kind(item) -> str:
+    if item.kind in {"service", "process", "operation"}:
+        return item.kind
+    class_name = str(item.class_name or "").lower()
+    if "service" in class_name:
+        return "service"
+    if "process" in class_name:
+        return "process"
+    if "operation" in class_name:
+        return "operation"
+    return "component"
+
+
+def _class_item_type(kind: str) -> str:
+    return {
+        "component": "ComponentItem",
+        "service": "ServiceItem",
+        "process": "ProcessItem",
+        "operation": "OperationItem",
+    }[kind]
+
+
+def _class_item_attr(kind: str) -> str:
+    return {
+        "component": "components",
+        "service": "services",
+        "process": "processes",
+        "operation": "operations",
+    }[kind]
+
+
+def _class_item_lines(item, kind: str, route_targets) -> list[str]:
+    kwargs: list[tuple[str, Any]] = []
+    optional_fields = [
+        ("category", item.category, ""),
+        ("pool_size", _int_literal(item.pool_size), 1),
+        ("enabled", _bool_literal(item.enabled), True),
+        ("foreground", _bool_literal(item.foreground), False),
+        ("comment", item.comment, ""),
+        ("log_trace_events", _bool_literal(item.log_trace_events), False),
+        ("schedule", item.schedule, ""),
+    ]
+    kwargs.extend(
+        (name, value)
+        for name, value, default in optional_fields
+        if value != default
+    )
+    settings = {
+        name: value
+        for name, value in item.host_settings.items()
+        if (item.name, name) not in route_targets
+    }
+    if settings:
+        kwargs.append(("settings", settings))
+    if item.adapter_settings:
+        kwargs.append(("adapter_settings", dict(item.adapter_settings)))
+    if item.other_settings:
+        kwargs.append(("other_settings", [dict(value) for value in item.other_settings]))
+
+    routes = _class_item_route_values(item, route_targets)
+    if routes:
+        kwargs.append(("routes", routes))
+
+    lines = [
+        f"        {_class_item_type(kind)}(",
+        f"            {_literal(item.name)},",
+        f"            {_literal(item.class_name or '')},",
+    ]
+    for name, value in kwargs:
+        lines.extend(_class_keyword_lines(name, value))
+    lines.append("        ),")
+    return lines
+
+
+def _class_item_route_values(item, route_targets) -> list[tuple[str, list[str]]]:
+    values: list[tuple[str, list[str]]] = []
+    for source_item, source_port in sorted(route_targets):
+        if source_item != item.name:
+            continue
+        targets = route_targets[(source_item, source_port)]
+        values.append((source_port, list(targets)))
+    return values
+
+
+def _valid_route_targets(
+    route_targets: dict[tuple[str, str], list[str]],
+    item_names: set[str],
+) -> dict[tuple[str, str], list[str]]:
+    valid_routes: dict[tuple[str, str], list[str]] = {}
+    for source, targets in route_targets.items():
+        valid_targets = [target for target in targets if target in item_names]
+        if valid_targets:
+            valid_routes[source] = valid_targets
+    return valid_routes
+
+
+def _class_keyword_lines(name: str, value: Any) -> list[str]:
+    if isinstance(value, dict):
+        return _indented_dict_keyword_lines(name, value, indent=12)
+    if isinstance(value, list) and name == "routes":
+        return _class_route_keyword_lines(value)
+    if isinstance(value, list):
+        return _indented_list_keyword_lines(name, value, indent=12)
+    return [f"            {name}={_literal(value)},"]
+
+
+def _class_route_keyword_lines(routes: list[tuple[str, list[str]]]) -> list[str]:
+    if len(routes) == 1:
+        port, targets = routes[0]
+        target_literal = _literal(targets[0]) if len(targets) == 1 else _literal(targets)
+        return [f"            routes=[Route({_literal(port)}, {target_literal})],"]
+
+    lines = ["            routes=["]
+    for port, targets in routes:
+        target_literal = _literal(targets[0]) if len(targets) == 1 else _literal(targets)
+        lines.append(f"                Route({_literal(port)}, {target_literal}),")
+    lines.append("            ],")
+    return lines
+
+
+def _indented_dict_keyword_lines(
+    name: str,
+    value: dict[str, Any],
+    *,
+    indent: int,
+) -> list[str]:
+    prefix = " " * indent
+    item_prefix = " " * (indent + 4)
+    lines = [f"{prefix}{name}={{"]
+    for key, item in value.items():
+        lines.append(f"{item_prefix}{_literal(key)}: {_literal(item)},")
+    lines.append(f"{prefix}}},")
+    return lines
+
+
+def _indented_list_keyword_lines(
+    name: str,
+    value: list[Any],
+    *,
+    indent: int,
+) -> list[str]:
+    prefix = " " * indent
+    item_prefix = " " * (indent + 4)
+    lines = [f"{prefix}{name}=["]
+    for item in value:
+        lines.append(f"{item_prefix}{_literal(item)},")
+    lines.append(f"{prefix}],")
+    return lines
+
+
+def _unresolved_class_routes(production, item_names: set[str]) -> list[str]:
+    unresolved: list[str] = []
+    for edge in production.edges:
+        if not edge.source_port:
+            unresolved.append(f"{edge.source_item} -> {edge.target}")
+        elif edge.target not in item_names:
+            unresolved.append(f"{edge.source_item}.{edge.source_port} -> {edge.target}")
+    return sorted(set(unresolved))
+
+
+def _production_class_name(production_name: str) -> str:
+    parts = [
+        part
+        for part in re.split(r"\W+", production_name)
+        if part
+    ]
+    if not parts:
+        return "GeneratedProduction"
+    candidate = parts[-1]
+    if candidate == "Production" and len(parts) > 1:
+        candidate = "".join(parts[-2:])
+    else:
+        candidate = "".join(
+            part[:1].upper() + part[1:]
+            for part in re.split(r"[_\s]+", candidate)
+            if part
+        )
+    if not candidate or not candidate[0].isalpha():
+        candidate = f"Generated{candidate}"
+    if keyword.iskeyword(candidate) or candidate == "Production":
+        candidate = f"{candidate}Definition"
+    return candidate
+
+
 def _production_constructor_lines(production) -> list[str]:
     kwargs = [
         ("testing_enabled", _bool_literal(production.testing_enabled), False),

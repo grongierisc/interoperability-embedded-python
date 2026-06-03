@@ -507,6 +507,46 @@ class TestMigrationPlan:
         assert helper.CreateProductionFromJSON.call_args.args[0] == "Demo.Production"
         assert json.loads(helper.CreateProductionFromJSON.call_args.args[1]) == payload
 
+    def test_register_production_definition_falls_back_when_class_is_missing(self):
+        payload = {"Production": {"@Name": "Demo.NewProduction", "Item": []}}
+
+        with patch("iop.migration.utils._iris.get_iris") as mock_get_iris:
+            mock_iris = mock_get_iris.return_value
+            mock_iris.system.Status.IsError.return_value = True
+            mock_iris.system.Status.GetOneStatusText.return_value = (
+                "<CLASS DOES NOT EXIST>SaveToClass+18^Ens.Config.Production.1 "
+                "*Demo.NewProduction"
+            )
+            with patch.object(migration_utils, "register_production") as mock_register:
+                migration_utils.register_production_definition(
+                    "Demo.NewProduction",
+                    payload,
+                )
+
+        helper = mock_iris.cls.return_value
+        helper.CreateProductionFromJSON.assert_called_once()
+        mock_register.assert_called_once()
+        assert mock_register.call_args.args[0] == "Demo.NewProduction"
+        assert '<Production Name="Demo.NewProduction"' in mock_register.call_args.args[1]
+
+    def test_register_production_definition_does_not_fallback_for_other_errors(self):
+        payload = {"Production": {"@Name": "Demo.NewProduction", "Item": []}}
+
+        with patch("iop.migration.utils._iris.get_iris") as mock_get_iris:
+            mock_iris = mock_get_iris.return_value
+            mock_iris.system.Status.IsError.return_value = True
+            mock_iris.system.Status.GetOneStatusText.return_value = (
+                "<CLASS DOES NOT EXIST> *Python.MissingComponent"
+            )
+            with patch.object(migration_utils, "register_production") as mock_register:
+                with pytest.raises(RuntimeError, match="MissingComponent"):
+                    migration_utils.register_production_definition(
+                        "Demo.NewProduction",
+                        payload,
+                    )
+
+        mock_register.assert_not_called()
+
 
 class TestXmlToJson:
     def test_production_key_replaced_with_name(self):

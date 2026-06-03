@@ -595,6 +595,7 @@ ClassMethod CreateProductionFromJSON(
 	#dim tPayload As %DynamicObject
 	#dim tProductionData As %DynamicObject
 	#dim tProduction As Ens.Config.Production
+	#dim tProductionClass As %Dictionary.ClassDefinition
 	#dim tItems,tDeclaredName
 	Try {
 		Return:(""=pProductionName) $$$ERROR($$$EnsErrGeneral,"Production name is required.")
@@ -612,6 +613,15 @@ ClassMethod CreateProductionFromJSON(
 				Set tSC = $$$ERROR($$$EnsErrGeneral,"Production JSON name does not match target production name.")
 				Quit
 			}
+		}
+
+		If ('##class(%Dictionary.ClassDefinition).%ExistsId(pProductionName)) {
+			Set tProductionClass = ##class(%Dictionary.ClassDefinition).%New()
+			Set tProductionClass.Name = pProductionName
+			Set tProductionClass.Super = "Ens.Production"
+			Set tProductionClass.ClassVersion = 25
+			Set tSC = tProductionClass.%Save()
+			Quit:$$$ISERR(tSC)
 		}
 
 		Set tProduction = ##class(Ens.Config.Production).%New()

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any
+from typing import Any, overload
 
 _MISSING = object()
 
@@ -45,9 +47,17 @@ class Setting:
         self.control = control or ""
         self.exclude = exclude
         self.name = ""
+        self.owner = None
 
     def __set_name__(self, owner, name):
         self.name = name
+        self.owner = owner
+
+    @overload
+    def __get__(self, instance: None, owner: type | None = None) -> Setting: ...
+
+    @overload
+    def __get__(self, instance: object, owner: type | None = None) -> Any: ...
 
     def __get__(self, instance, owner=None):
         if instance is None:

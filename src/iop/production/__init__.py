@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 from .component import ComponentRef as ComponentRef
+from .declarations import ComponentItem as ComponentItem
+from .declarations import OperationItem as OperationItem
+from .declarations import ProcessItem as ProcessItem
+from .declarations import Route as Route
+from .declarations import ServiceItem as ServiceItem
 from .model import Production as Production
 from .runtime import resolve_target as resolve_target
 from .types import GraphEdge as GraphEdge
@@ -19,10 +24,13 @@ from .validation import ProductionValidationWarning as ProductionValidationWarni
 
 __all__ = [
     "ComponentRef",
+    "ComponentItem",
     "GraphEdge",
     "GraphNode",
+    "OperationItem",
     "PersistentMessageRegistration",
     "Port",
+    "ProcessItem",
     "Production",
     "ProductionDiff",
     "ProductionDiffEntry",
@@ -31,6 +39,8 @@ __all__ = [
     "ProductionValidationIssue",
     "ProductionValidationReport",
     "ProductionValidationWarning",
+    "Route",
+    "ServiceItem",
     "TargetSetting",
     "resolve_target",
     "target",

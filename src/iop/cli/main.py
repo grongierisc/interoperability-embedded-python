@@ -230,6 +230,9 @@ class Command:
         if export_format == "python":
             print(production.to_python(), end="")
             return
+        if export_format == "class":
+            print(production.to_class(), end="")
+            return
         if export_format == "graph":
             print(production.graph())
             return

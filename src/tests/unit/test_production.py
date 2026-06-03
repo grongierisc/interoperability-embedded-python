@@ -11,14 +11,19 @@ from iop import (
     BusinessOperation,
     BusinessProcess,
     BusinessService,
+    ComponentItem,
     Field,
     InboundAdapter,
     Message,
+    OperationItem,
     PersistentMessage,
     PollingBusinessService,
+    ProcessItem,
     Production,
     ProductionValidationError,
     ProductionValidationWarning,
+    Route,
+    ServiceItem,
     controls,
     target,
 )
@@ -229,6 +234,353 @@ def test_production_to_python_renders_brownfield_draft():
         in text
     )
     assert text.endswith("PRODUCTIONS = [prod]\n")
+
+
+def test_production_to_class_renders_declarative_draft():
+    prod = Production("Demo.DeclarativeProduction", testing_enabled=True)
+    file_input = prod.service(
+        "FileInput",
+        class_name="EnsLib.File.PassthroughService",
+        settings={"Limit": "10"},
+        adapter_settings={"FilePath": "/data/in"},
+    )
+    order_operation = prod.operation(
+        "OrderOperation",
+        class_name="EnsLib.File.PassthroughOperation",
+    )
+    prod.connect(file_input.port("TargetConfigNames"), order_operation)
+
+    text = prod.to_class()
+
+    ast.parse(text)
+    assert "from iop import Production, OperationItem, ServiceItem, Route" in text
+    assert "class DeclarativeProduction(Production):" in text
+    assert "name = 'Demo.DeclarativeProduction'" in text
+    assert "testing_enabled = True" in text
+    assert "services = [" in text
+    assert "ServiceItem(" in text
+    assert "'EnsLib.File.PassthroughService'" in text
+    assert "settings={" in text
+    assert "adapter_settings={" in text
+    assert "routes=[Route('TargetConfigNames', 'OrderOperation')]" in text
+    assert "operations = [" in text
+    assert "OperationItem(" in text
+    assert text.endswith("PRODUCTIONS = [DeclarativeProduction()]\n")
+
+
+def test_production_to_class_uses_component_item_for_unknown_roles():
+    prod = Production("Demo.GenericProduction")
+    prod.component("CustomHost", class_name="Demo.CustomHost")
+
+    text = prod.to_class()
+
+    ast.parse(text)
+    assert "ComponentItem" in text
+    assert "components = [" in text
+    assert "ComponentItem(" in text
+    assert "PRODUCTIONS = [GenericProduction()]" in text
+
+
+def test_declarative_production_string_class_names_match_instance_shape():
+    class MyProduction(Production):
+        name = "HelloWorld.Production"
+        testing_enabled = True
+        services = [
+            ServiceItem(
+                "MyServiceName",
+                "HelloWorld.MyService",
+                settings={"Limit": 10},
+                routes=[Route("TargetConfigNames", "MyProcessName")],
+            )
+        ]
+        processes = [
+            ProcessItem(
+                "MyProcessName",
+                "HelloWorld.MyProcess",
+                routes=[Route("TargetConfigNames", "MyOperationName")],
+            )
+        ]
+        operations = [
+            OperationItem("MyOperationName", "HelloWorld.MyOperation"),
+        ]
+
+    prod = MyProduction()
+
+    assert isinstance(prod, Production)
+    data = prod.to_dict()["HelloWorld.Production"]
+    assert data["@TestingEnabled"] == "true"
+    assert [item["@Name"] for item in data["Item"]] == [
+        "MyServiceName",
+        "MyProcessName",
+        "MyOperationName",
+    ]
+    assert [item["@ClassName"] for item in data["Item"]] == [
+        "HelloWorld.MyService",
+        "HelloWorld.MyProcess",
+        "HelloWorld.MyOperation",
+    ]
+
+    service_settings = {
+        (setting["@Target"], setting["@Name"]): setting["#text"]
+        for setting in data["Item"][0]["Setting"]
+    }
+    assert service_settings[("Host", "Limit")] == "10"
+    assert service_settings[("Host", "TargetConfigNames")] == "MyProcessName"
+
+    assert prod.graph().to_dict()["edges"] == [
+        {
+            "source": "MyServiceName.TargetConfigNames",
+            "source_item": "MyServiceName",
+            "source_port": "TargetConfigNames",
+            "logical_name": "",
+            "target": "MyProcessName",
+            "origin": "authored",
+            "interaction": "request",
+        },
+        {
+            "source": "MyProcessName.TargetConfigNames",
+            "source_item": "MyProcessName",
+            "source_port": "TargetConfigNames",
+            "logical_name": "",
+            "target": "MyOperationName",
+            "origin": "authored",
+            "interaction": "request",
+        },
+    ]
+
+
+def test_declarative_production_supports_generic_component_items():
+    class GenericProduction(Production):
+        name = "Demo.GenericProduction"
+        components = [
+            ComponentItem(
+                "CustomHost",
+                "Demo.CustomHost",
+                other_settings=[
+                    {"@Target": "Custom", "@Name": "Preserved", "#text": "yes"}
+                ],
+            )
+        ]
+
+    prod = GenericProduction()
+
+    assert prod.to_dict()["Demo.GenericProduction"]["Item"][0]["@ClassName"] == (
+        "Demo.CustomHost"
+    )
+    assert prod.item("CustomHost").other_settings == [
+        {"@Target": "Custom", "@Name": "Preserved", "#text": "yes"}
+    ]
+
+
+def test_declarative_production_python_classes_keep_target_metadata():
+    class DeclarativeProduction(Production):
+        name = "Demo.DeclarativeProduction"
+        services = [
+            ServiceItem(
+                "FileInput",
+                FileService,
+                routes=[Route(FileService.Output, "OrderOperation")],
+            )
+        ]
+        operations = [OperationItem("OrderOperation", OrderOperation)]
+
+    prod = DeclarativeProduction()
+    data = prod.to_dict()["Demo.DeclarativeProduction"]
+
+    assert data["Item"][0]["@ClassName"] == (
+        f"Python.{FileService.__module__}.{FileService.__name__}".replace("_", "")
+    )
+    assert data["Item"][1]["@ClassName"] == (
+        f"Python.{OrderOperation.__module__}.{OrderOperation.__name__}".replace(
+            "_", ""
+        )
+    )
+    assert prod.item("FileInput").Output.resolve() == "OrderOperation"
+    assert prod.graph().to_dict()["edges"][0]["logical_name"] == "orders"
+
+
+def test_declarative_route_rejects_descriptor_from_another_component():
+    class AlternateService(PollingBusinessService):
+        OtherOutput = target("other")
+
+    class InvalidProduction(Production):
+        services = [
+            ServiceItem(
+                "FileInput",
+                FileService,
+                routes=[Route(AlternateService.OtherOutput, "OrderOperation")],
+            )
+        ]
+        operations = [OperationItem("OrderOperation", OrderOperation)]
+
+    with pytest.raises(ValueError, match="belongs to"):
+        InvalidProduction()
+
+
+def test_declarative_production_name_defaults_and_constructor_overrides():
+    class DefaultNameProduction(Production):
+        operations = [OperationItem("OrderOperation", "Demo.OrderOperation")]
+
+    class NamedProduction(Production):
+        name = "Demo.NamedProduction"
+        testing_enabled = True
+        actor_pool_size = 4
+        shutdown_timeout = 30
+        operations = [OperationItem("OrderOperation", "Demo.OrderOperation")]
+
+    assert DefaultNameProduction().name == (
+        f"{DefaultNameProduction.__module__}.DefaultNameProduction"
+    )
+
+    prod = NamedProduction()
+    assert prod.name == "Demo.NamedProduction"
+    assert prod.testing_enabled is True
+    assert prod.actor_pool_size == 4
+    assert prod.shutdown_timeout == 30
+
+    override = NamedProduction("Demo.OverrideProduction", testing_enabled=False)
+    assert override.name == "Demo.OverrideProduction"
+    assert override.testing_enabled is False
+    assert override.actor_pool_size == 4
+
+
+def test_declarative_production_routes_support_fanout_and_port_aliases():
+    class FanoutProduction(Production):
+        name = "Demo.FanoutProduction"
+        services = [
+            ServiceItem(
+                "Router",
+                "Demo.Router",
+                routes=[Route("target_config_names", ["First", "Second"])],
+            )
+        ]
+        operations = [
+            OperationItem("First", "Demo.First"),
+            OperationItem("Second", "Demo.Second"),
+        ]
+
+    prod = FanoutProduction()
+
+    assert prod.item("Router").host_settings["TargetConfigNames"] == "First,Second"
+    assert [
+        (edge.source_port, edge.target)
+        for edge in prod.graph().edges
+    ] == [
+        ("TargetConfigNames", "First"),
+        ("TargetConfigNames", "Second"),
+    ]
+
+
+def test_declarative_production_migration_plan_registers_python_classes():
+    class ObjectProduction(Production):
+        name = "Object.Production"
+        operations = [OperationItem("OrderOperation", OrderOperation)]
+
+    class Settings:
+        CLASSES = {}
+        PRODUCTIONS = [ObjectProduction()]
+
+    plan = migration_utils._build_migration_plan(Settings, ".")
+
+    assert "Object.Production" in plan["productions"]
+    assert (
+        f"Python.{OrderOperation.__module__}.OrderOperation".replace("_", "")
+        + f" -> {OrderOperation.__module__}.OrderOperation (component)"
+        in plan["classes"]
+    )
+
+
+def test_declarative_production_from_dict_does_not_hydrate_class_items():
+    class DeclarativeProduction(Production):
+        name = "Demo.DeclarativeProduction"
+        operations = [OperationItem("DeclaredOperation", "Demo.DeclaredOperation")]
+
+    imported = DeclarativeProduction.from_dict(
+        {
+            "Imported.Production": {
+                "Item": [
+                    {
+                        "@Name": "ImportedOperation",
+                        "@ClassName": "Demo.ImportedOperation",
+                    }
+                ]
+            }
+        }
+    )
+
+    assert imported.name == "Imported.Production"
+    assert [item.name for item in imported.items] == ["ImportedOperation"]
+
+
+def test_declarative_production_rejects_invalid_declarations():
+    class DuplicateItemProduction(Production):
+        services = [ServiceItem("Duplicate", "Demo.Service")]
+        operations = [OperationItem("Duplicate", "Demo.Operation")]
+
+    with pytest.raises(ValueError, match="already exists"):
+        DuplicateItemProduction()
+
+    class MissingTargetProduction(Production):
+        services = [
+            ServiceItem(
+                "Router",
+                "Demo.Router",
+                routes=[Route("TargetConfigNames", "Missing")],
+            )
+        ]
+
+    with pytest.raises(ValueError, match="Production item does not exist: Missing"):
+        MissingTargetProduction()
+
+    class DuplicateSettingsProduction(Production):
+        operations = [
+            OperationItem(
+                "Operation",
+                "Demo.Operation",
+                settings={"Limit": 1},
+                host_settings={"Limit": 2},
+            )
+        ]
+
+    with pytest.raises(ValueError, match="duplicate Host setting keys"):
+        DuplicateSettingsProduction()
+
+    class RouteSettingConflictProduction(Production):
+        services = [
+            ServiceItem(
+                "Router",
+                "Demo.Router",
+                settings={"TargetConfigNames": "Operation"},
+                routes=[Route("target_config_names", "Operation")],
+            )
+        ]
+        operations = [OperationItem("Operation", "Demo.Operation")]
+
+    with pytest.raises(ValueError, match="Route only"):
+        RouteSettingConflictProduction()
+
+
+def test_declarative_production_to_python_keeps_existing_instance_style():
+    class DeclarativeProduction(Production):
+        name = "Demo.DeclarativeProduction"
+        services = [
+            ServiceItem(
+                "FileInput",
+                "EnsLib.File.PassthroughService",
+                routes=[Route("TargetConfigNames", "FileOut")],
+            )
+        ]
+        operations = [
+            OperationItem("FileOut", "EnsLib.File.PassthroughOperation"),
+        ]
+
+    text = DeclarativeProduction().to_python()
+
+    ast.parse(text)
+    assert "ServiceItem" not in text
+    assert "class DeclarativeProduction" not in text
+    assert "prod = Production('Demo.DeclarativeProduction')" in text
+    assert "prod.connect(fileinput.port('TargetConfigNames'), fileout)" in text
 
 
 def test_progressive_authoring_api_matches_deployable_shape():
@@ -844,6 +1196,53 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
     ]
     assert "FileInput [EnsLib.File.PassthroughService]" in str(graph)
     assert "TargetConfigNames -> OrderOperation" in str(graph)
+
+
+def test_production_from_dict_falls_back_when_runtime_has_only_internal_targets():
+    exported = {
+        "Demo.Production": {
+            "Item": [
+                {
+                    "@Name": "FileInput",
+                    "@ClassName": "Python.demo.FileService",
+                    "Setting": {
+                        "@Target": "Host",
+                        "@Name": "Output",
+                        "#text": "OrderOperation",
+                    },
+                },
+                {
+                    "@Name": "OrderOperation",
+                    "@ClassName": "Python.demo.OrderOperation",
+                },
+            ],
+        }
+    }
+    connections = {
+        "items": [
+            {"item": "FileInput", "connections": ["Ens.Alert"]},
+            {"item": "OrderOperation", "connections": ["Ens.ScheduleHandler"]},
+        ],
+    }
+
+    prod = Production.from_dict(exported, connections=connections)
+
+    assert prod.graph().to_dict()["edges"] == [
+        {
+            "source": "FileInput.Output",
+            "source_item": "FileInput",
+            "source_port": "Output",
+            "logical_name": "",
+            "target": "OrderOperation",
+            "origin": "inferred",
+            "interaction": "request",
+            "metadata": {
+                "source": "Host setting fallback",
+                "reason": "runtime discovery returned no targets",
+            },
+            "inferred": True,
+        }
+    ]
 
 
 def test_production_from_dict_uses_runtime_adapter_metadata():

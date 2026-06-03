@@ -1036,11 +1036,21 @@ def register_production_definition(production_name: str, production: dict):
     :param production_name: full IRIS production class name
     :param production: normalized {"Production": {...}} dictionary
     """
-    raise_on_error(
-        _iris.get_iris()
-        .cls("IOP.Utils")
-        .CreateProductionFromJSON(production_name, json.dumps(production))
-    )
+    try:
+        raise_on_error(
+            _iris.get_iris()
+            .cls("IOP.Utils")
+            .CreateProductionFromJSON(production_name, json.dumps(production))
+        )
+    except RuntimeError as exc:
+        if not _is_missing_production_class_error(exc, production_name):
+            raise
+        register_production(production_name, dict_to_xml(production))
+
+
+def _is_missing_production_class_error(exc: RuntimeError, production_name: str) -> bool:
+    message = str(exc)
+    return "CLASS DOES NOT EXIST" in message and production_name in message
 
 
 def export_production(production_name):

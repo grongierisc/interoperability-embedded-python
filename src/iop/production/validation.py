@@ -4,7 +4,11 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 
-from .common import PRODUCTION_SETTING_FIELDS_BY_IRIS, PRODUCTION_SETTING_NAMES
+from .common import (
+    PRODUCTION_SETTING_FIELDS_BY_IRIS,
+    PRODUCTION_SETTING_NAMES,
+    SETTING_NAME_ALIASES,
+)
 from .import_ import _as_list, _production_payload, _split_settings
 
 _PRODUCTION_PUBLIC_FIELDS = {
@@ -30,11 +34,6 @@ _PRODUCTION_DICT_KEYS = {
     "ActorPoolSize",
     "Setting",
     "Item",
-}
-
-_SETTING_NAME_ALIASES = {
-    "target_config_name": "TargetConfigName",
-    "target_config_names": "TargetConfigNames",
 }
 
 _PRODUCTION_SETTING_NAME_ALIASES = {
@@ -350,7 +349,7 @@ def _validate_names_with_known_set(
     for setting_name in sorted(settings):
         if setting_name.startswith("%") or setting_name in known_names:
             continue
-        alias = _SETTING_NAME_ALIASES.get(setting_name)
+        alias = SETTING_NAME_ALIASES.get(setting_name)
         if alias in known_names:
             issues.append(_setting_alias_issue(path_prefix, setting_name, alias))
             continue
@@ -372,7 +371,7 @@ def _validate_names_with_iris_dictionary(
     for setting_name in sorted(settings):
         if _iris_property_exists(iris, iris_class_name, setting_name):
             continue
-        alias = _SETTING_NAME_ALIASES.get(setting_name)
+        alias = SETTING_NAME_ALIASES.get(setting_name)
         if alias and _iris_property_exists(iris, iris_class_name, alias):
             issues.append(_setting_alias_issue(path_prefix, setting_name, alias))
             continue

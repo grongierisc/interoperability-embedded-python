@@ -105,7 +105,7 @@ def create_parser() -> argparse.ArgumentParser:
     export.add_argument(
         "--format",
         dest="export_format",
-        choices=("json", "python", "graph"),
+        choices=("json", "python", "class", "graph"),
         default="json",
         help="export format for -e/--export",
     )

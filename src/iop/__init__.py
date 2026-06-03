@@ -25,8 +25,11 @@ from iop.migration.utils import list_bindings as list_bindings
 from iop.migration.utils import register_component as register_component
 from iop.migration.utils import unbind_component as unbind_component
 from iop.migration.utils import unregister_component as unregister_component
+from iop.production import ComponentItem as ComponentItem
 from iop.production import ComponentRef as ComponentRef
+from iop.production import OperationItem as OperationItem
 from iop.production import Port as Port
+from iop.production import ProcessItem as ProcessItem
 from iop.production import Production as Production
 from iop.production import ProductionDiff as ProductionDiff
 from iop.production import ProductionDiffEntry as ProductionDiffEntry
@@ -35,6 +38,9 @@ from iop.production import ProductionValidationError as ProductionValidationErro
 from iop.production import ProductionValidationIssue as ProductionValidationIssue
 from iop.production import ProductionValidationReport as ProductionValidationReport
 from iop.production import ProductionValidationWarning as ProductionValidationWarning
+from iop.production import Route as Route
+from iop.production import ServiceItem as ServiceItem
+from iop.production import TargetSetting as TargetSetting
 from iop.production import target as target
 from iop.runtime.director import _Director
 from iop.runtime.protocol import DirectorProtocol as DirectorProtocol
@@ -44,6 +50,7 @@ __all__ = [
     "BusinessProcess",
     "BusinessService",
     "Category",
+    "ComponentItem",
     "ComponentRef",
     "Director",
     "DirectorProtocol",
@@ -54,11 +61,13 @@ __all__ = [
     "InboundAdapter",
     "Message",
     "Model",
+    "OperationItem",
     "OutboundAdapter",
     "PersistentMessage",
     "PickleMessage",
     "PollingBusinessService",
     "Port",
+    "ProcessItem",
     "Production",
     "ProductionDiff",
     "ProductionDiffEntry",
@@ -69,7 +78,10 @@ __all__ = [
     "ProductionValidationWarning",
     "PydanticMessage",
     "PydanticPickleMessage",
+    "Route",
+    "ServiceItem",
     "Setting",
+    "TargetSetting",
     "Utils",
     "bind_component",
     "controls",
