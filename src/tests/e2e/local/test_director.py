@@ -8,9 +8,13 @@ from iop.runtime.director import _Director
 
 
 @pytest.fixture
-def mock_dispatch():
+def mock_dispatch(monkeypatch):
     """Fixture to mock the dispatchTestComponent method"""
-    iris.cls("IOP.Utils").dispatchTestComponent = MagicMock(return_value="test")
+    monkeypatch.setattr(
+        iris.cls("IOP.Utils"),
+        "dispatchTestComponent",
+        MagicMock(return_value="test"),
+    )
 
 
 class TestDirectorProduction:
@@ -31,9 +35,13 @@ class TestDirectorProduction:
 
 class TestDirectorComponent:
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self, monkeypatch):
         """Setup mock for all tests in this class"""
-        iris.cls("IOP.Utils").dispatchTestComponent = MagicMock(return_value="test")
+        monkeypatch.setattr(
+            iris.cls("IOP.Utils"),
+            "dispatchTestComponent",
+            MagicMock(return_value="test"),
+        )
 
     def test_component_with_empty_params(self):
         result = runtime_director.test_component("test")
@@ -65,36 +73,44 @@ class TestDirectorComponent:
 
 
 class TestBusinessService:
-    def test_get_business_service(self):
+    def test_get_business_service(self, monkeypatch):
         director = _Director()
-        iris.cls("IOP.Director").dispatchCreateBusinessService = MagicMock(
-            return_value=MagicMock()
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "dispatchCreateBusinessService",
+            MagicMock(return_value=MagicMock()),
         )
         service = director.get_business_service("test")
         assert service is not None
 
-    def test_get_business_service_force_session(self):
+    def test_get_business_service_force_session(self, monkeypatch):
         director = _Director()
         mock_service = MagicMock()
         mock_service.iris_handle = MagicMock()
-        iris.cls("IOP.Director").dispatchCreateBusinessService = MagicMock(
-            return_value=mock_service
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "dispatchCreateBusinessService",
+            MagicMock(return_value=mock_service),
         )
         service = director.get_business_service("test", force_session_id=True)
         assert service.iris_handle.ForceSessionId.called
 
-    def test_create_business_service(self):
-        iris.cls("IOP.Director").dispatchCreateBusinessService = MagicMock(
-            return_value="test"
+    def test_create_business_service(self, monkeypatch):
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "dispatchCreateBusinessService",
+            MagicMock(return_value="test"),
         )
         result = runtime_director.create_business_service("test")
         assert result == "test"
 
-    def test_create_python_business_service(self):
+    def test_create_python_business_service(self, monkeypatch):
         mock_obj = MagicMock()
         mock_obj.GetClass = MagicMock(return_value="test_class")
-        iris.cls("IOP.Director").dispatchCreateBusinessService = MagicMock(
-            return_value=mock_obj
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "dispatchCreateBusinessService",
+            MagicMock(return_value=mock_obj),
         )
         result = runtime_director.create_python_business_service("test")
         assert result == "test_class"
@@ -102,17 +118,22 @@ class TestBusinessService:
 
 class TestProductionManagement:
     @pytest.fixture(autouse=True)
-    def setup_mocks(self):
+    def setup_mocks(self, monkeypatch):
         self.start_mock = MagicMock(return_value=iris.system.Status.OK())
         self.stop_mock = MagicMock()
         self.restart_mock = MagicMock()
         self.update_mock = MagicMock()
         self.enable_config_item_mock = MagicMock(return_value=iris.system.Status.OK())
-        iris.cls("Ens.Director").StartProduction = self.start_mock
-        iris.cls("Ens.Director").StopProduction = self.stop_mock
-        iris.cls("Ens.Director").RestartProduction = self.restart_mock
-        iris.cls("Ens.Director").UpdateProduction = self.update_mock
-        iris.cls("Ens.Director").EnableConfigItem = self.enable_config_item_mock
+        ens_director = iris.cls("Ens.Director")
+        monkeypatch.setattr(ens_director, "StartProduction", self.start_mock)
+        monkeypatch.setattr(ens_director, "StopProduction", self.stop_mock)
+        monkeypatch.setattr(ens_director, "RestartProduction", self.restart_mock)
+        monkeypatch.setattr(ens_director, "UpdateProduction", self.update_mock)
+        monkeypatch.setattr(
+            ens_director,
+            "EnableConfigItem",
+            self.enable_config_item_mock,
+        )
 
     def test_start_production(self):
         runtime_director.start_production("test_prod")
@@ -165,27 +186,37 @@ class TestProductionManagement:
             call("Python.Operation", 1, 1),
         ]
 
-    def test_list_productions(self):
-        iris.cls("IOP.Director").dispatchListProductions = MagicMock(
-            return_value=["prod1", "prod2"]
+    def test_list_productions(self, monkeypatch):
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "dispatchListProductions",
+            MagicMock(return_value=["prod1", "prod2"]),
         )
         result = runtime_director.list_productions()
         assert result == ["prod1", "prod2"]
 
-    def test_status_production(self):
+    def test_status_production(self, monkeypatch):
         mock_status = {"Production": "test_prod", "Status": "running"}
-        iris.cls("IOP.Director").StatusProduction = MagicMock(return_value=mock_status)
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "StatusProduction",
+            MagicMock(return_value=mock_status),
+        )
         result = runtime_director.status_production()
         assert result == mock_status
 
-    def test_status_production_needs_update(self):
+    def test_status_production_needs_update(self, monkeypatch):
         mock_status = {
             "Production": "test_prod",
             "Status": "running",
             "NeedsUpdate": True,
             "UpdateMessage": "Update available",
         }
-        iris.cls("IOP.Director").StatusProduction = MagicMock(return_value=mock_status)
+        monkeypatch.setattr(
+            iris.cls("IOP.Director"),
+            "StatusProduction",
+            MagicMock(return_value=mock_status),
+        )
         result = runtime_director.status_production()
         assert result == mock_status
 
