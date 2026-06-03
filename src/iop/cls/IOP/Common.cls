@@ -313,7 +313,7 @@ ClassMethod OnGetConnections(
     do pItem.GetModifiedSetting("%classname", .tClassname)
     do pItem.GetModifiedSetting("%module", .tModule)
 
-    // try to instantiate class
+    // Prepare the Python import path for connection discovery.
     if tClasspaths '="" {
             set sys = ##class(%SYS.Python).Import("sys")
             set delimiter = $s($system.Version.GetOS()="Windows":";",1:":")
@@ -329,7 +329,14 @@ ClassMethod OnGetConnections(
     set builtins = ##class(%SYS.Python).Import("builtins")
     set module = ##class(%SYS.Python).Import(tModule)
     set class = builtins.getattr(module, tClassname)
+    // Allocate without calling Python __init__. Connection discovery must not
+    // run user startup code; IoP uses on_init() as the lifecycle hook.
     set tClass = class."__new__"(class)
+    Try {
+        do tClass."_warn_if_custom_init"()
+    }
+    Catch ex {
+    }
 
     set tPythonList = tClass."on_get_connections"()
     set tPythonListLen = tPythonList."__len__"()
@@ -535,6 +542,8 @@ Method CreateClassInstance(module As %SYS.Python) As %SYS.Python [ Private ]
 {
     set builtins = ##class(%SYS.Python).Import("builtins")
     set class = builtins.getattr(module, ..%classname)
+    // Intentionally bypass Python __init__. IRIS applies handles/settings and
+    // then calls on_init() through _dispatch_on_init().
     quit class."__new__"(class)
 }
 

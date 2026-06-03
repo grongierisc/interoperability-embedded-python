@@ -36,6 +36,7 @@ class _BusinessService(_BusinessHost):
 
     def _dispatch_on_init(self, host_object) -> None:
         """For internal use only."""
+        self._log_custom_init_warning()
         self.on_init()
 
         return

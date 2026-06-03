@@ -281,7 +281,14 @@ ClassMethod GetRemoteClassInfo(
 
 		// Get the class
 		set class = builtins.getattr(module, pRemoteClassname)
+		// Allocate without calling Python __init__. Registration only reads
+		// metadata; runtime startup belongs in on_init().
 		set tClass = class."__new__"(class)
+		Try {
+			Do tClass."_warn_if_custom_init"()
+		}
+		Catch ex {
+		}
 
 		If $IsObject(tClass) {
 			#; List of information about the class as a whole - $lb(SuperClass, Description, InfoURL, IconURL, Adapter)

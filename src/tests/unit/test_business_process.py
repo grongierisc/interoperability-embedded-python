@@ -1,8 +1,10 @@
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
+from fixtures.message import SimpleMessage
+
 from iop.components.business_process import _BusinessProcess
-from iop.messages.dispatch import dispatch_serializer
-from fixtures.message import SimpleMessage, PickledMessage, FullMessage
+
 
 @pytest.fixture
 def process():
@@ -95,9 +97,7 @@ def test_persistent_properties():
     # Test persistent property handling
     class ProcessWithProperties(_BusinessProcess):
         PERSISTENT_PROPERTY_LIST = ["test_prop"]
-        def __init__(self):
-            super().__init__()
-            self.test_prop = "test_value"
+        test_prop = "test_value"
 
     process = ProcessWithProperties()
     mock_host = MagicMock()

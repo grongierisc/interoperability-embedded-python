@@ -167,6 +167,7 @@ class _BusinessProcess(_BusinessHost):
 
     def _dispatch_on_init(self, host_object: Any) -> None:
         """For internal use only."""
+        self._log_custom_init_warning()
         self._restore_persistent_properties(host_object)
         create_dispatch(self)
         self.on_init()

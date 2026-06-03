@@ -1,5 +1,6 @@
 import inspect
 import traceback
+import warnings
 from enum import Enum
 from types import UnionType
 from typing import (
@@ -135,6 +136,15 @@ def _is_setting_member(name: str, value: Any) -> bool:
     )
 
 
+def _custom_init_owner(cls: type) -> type | None:
+    for base in inspect.getmro(cls):
+        init = base.__dict__.get("__init__", _NO_VALUE)
+        if init is _NO_VALUE or init is object.__init__:
+            continue
+        return base
+    return None
+
+
 class _Common:
     """Base class that defines common methods for all component types.
 
@@ -147,6 +157,45 @@ class _Common:
     iris_handle: Any = None
     _log_to_console: bool = False
     _logger: logging.Logger | None = None
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        cls._warn_if_custom_init_defined(stacklevel=2)
+
+    @classmethod
+    def _custom_init_warning_message(cls) -> str | None:
+        if _custom_init_owner(cls) is None:
+            return None
+        classname = f"{cls.__module__}.{cls.__qualname__}"
+        return (
+            f"{classname} defines or inherits __init__(), but IoP/IRIS "
+            "instantiates components with __new__() and does not call "
+            "__init__(). Move startup logic to on_init(); use class attributes "
+            "or iop.Setting for configurable defaults."
+        )
+
+    @classmethod
+    def _warn_if_custom_init_defined(cls, stacklevel: int = 2) -> None:
+        message = cls._custom_init_warning_message()
+        if message is None:
+            return
+        warnings.warn(message, RuntimeWarning, stacklevel=stacklevel)
+
+    def _log_custom_init_warning(self) -> None:
+        message = self.__class__._custom_init_warning_message()
+        if message is None:
+            return
+        try:
+            self.log_warning(message)
+        except Exception:
+            try:
+                warnings.warn(message, RuntimeWarning, stacklevel=2)
+            except Exception:
+                pass
+
+    def _warn_if_custom_init(self) -> None:
+        """Metadata-safe warning hook for ObjectScript __new__ allocations."""
+        self._log_custom_init_warning()
 
     @staticmethod
     def get_adapter_type() -> str | None:
@@ -193,6 +242,7 @@ class _Common:
 
     def _dispatch_on_init(self, host_object: Any) -> None:
         """Initialize component when started."""
+        self._log_custom_init_warning()
         self.on_init()
 
     def _dispatch_on_tear_down(self, host_object: Any) -> None:

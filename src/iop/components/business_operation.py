@@ -57,6 +57,7 @@ class _BusinessOperation(_BusinessHost):
 
     def _dispatch_on_init(self, host_object: Any) -> None:
         """For internal use only."""
+        self._log_custom_init_warning()
         create_dispatch(self)
         self.on_init()
         return
