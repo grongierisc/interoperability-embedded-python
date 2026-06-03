@@ -66,6 +66,8 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#persistentmessage">PersistentMessage 📦</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#message-dispatch">Message Dispatch</a>
+    </li>
     <li class="toctree-l3"><a class="reference internal" href="#businessservice">BusinessService 🔄</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#component-settings">Component Settings</a>
@@ -218,6 +220,43 @@ CLASSES = {
 }
 </code></pre>
 <p>When <code>CLASSES</code> is used, migration writes message metadata parameters (<code>IOP_MESSAGE_KIND</code>, <code>IOP_PYTHON_CLASS</code>, and <code>IOP_PYTHON_CLASSPATH</code>) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If <code>Meta.classname</code> conflicts with the <code>CLASSES</code> key, migration fails.</p>
+<h3 id="message-dispatch">Message Dispatch</h3>
+<p>Business operations and business processes can route different message classes to different methods. Use <code>@handler(MessageType)</code> when you want the mapping to be explicit.</p>
+<pre><code class="language-python">from dataclasses import dataclass
+from iop import BusinessOperation, Message, handler
+
+@dataclass
+class CreateOrder(Message):
+    order_id: str = None
+
+@dataclass
+class CancelOrder(Message):
+    order_id: str = None
+
+class OrderOperation(BusinessOperation):
+    @handler(CreateOrder)
+    def create_order(self, request):
+        return None
+
+    @handler(CancelOrder)
+    def cancel_order(self, request):
+        return None
+</code></pre>
+<p><code>MessageType</code> can be a Python message class or a fully-qualified class name string:</p>
+<pre><code class="language-python">class OrderOperation(BusinessOperation):
+    @handler(&quot;orders.messages.CreateOrder&quot;)
+    def create_order(self, request):
+        return None
+</code></pre>
+<p>The decorated method should accept the incoming request as its only argument after <code>self</code>. A type annotation on the decorated method is optional because the decorator supplies the dispatch mapping.</p>
+<p>If no <code>@handler</code> is declared for a message, IOP keeps the legacy behavior: public callable methods with one typed argument are added to the dispatch table automatically.</p>
+<p>Dispatch priority is:</p>
+<ol>
+<li><code>@handler(MessageType)</code></li>
+<li>Explicit <code>DISPATCH</code> entries</li>
+<li>Legacy typed-method discovery</li>
+</ol>
+<p>When more than one mapping targets the same message type, IOP keeps the highest-priority mapping and logs a warning through the component warning logger, so the discarded handler appears in the IRIS logs. Duplicate mappings at the same priority keep the later entry for backward compatibility and log which earlier handler was discarded.</p>
 <h3 id="businessservice">BusinessService 🔄</h3>
 <p>Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.</p>
 <p><strong>Key Methods:</strong></p>
@@ -526,8 +565,8 @@ Framing = setting(
 </li>
 </ul>
 <p><strong>Example:</strong></p>
-<pre><code class="language-python">from iop import BusinessOperation, Message
-from dataclasses import dataclass
+<pre><code class="language-python">from dataclasses import dataclass
+from iop import BusinessOperation, Message, handler
 
 @dataclass
 class MyRequest(Message):
@@ -538,7 +577,8 @@ class MyResponse(Message):
     my_string: str = None
 
 class MyOperation(BusinessOperation):
-    def on_message(self, request):
+    @handler(MyRequest)
+    def handle_my_request(self, request):
         self.log_info(f&quot;Received: {request}&quot;)
         return MyResponse(my_string=&quot;Hello World&quot;)
 </code></pre>
@@ -670,6 +710,12 @@ class MyProcess(BusinessProcess):
 </li>
 </ul>
 <p><strong>Lifecycle Methods:</strong></p>
+<blockquote>
+<p><strong>Warning:</strong> Component constructors are not lifecycle hooks. IoP/IRIS
+allocates component instances with <code>__new__()</code> and does not call custom
+<code>__init__()</code> methods. Put startup logic in <code>on_init()</code>, and use class
+attributes or <code>iop.Setting</code> for configurable defaults.</p>
+</blockquote>
 <ul>
 <li>
 <p><code>on_init(self) -&gt; None</code></p>
@@ -698,7 +744,7 @@ class MyProcess(BusinessProcess):
 <pre><code class="language-python">from iop import BusinessOperation, PollingBusinessService, Production, target
 
 class FileService(PollingBusinessService):
-    Output = target(&quot;orders&quot;)
+    Output = target()
 
     def on_poll(self):
         pass
@@ -757,8 +803,8 @@ class FileProduction(Production):
     )
     operations = (FILE_OUT,)
 </code></pre>
-<p><code>target("orders")</code> declares a configurable outbound port on <code>FileService</code>.
-<code>Route(FileService.Output, ORDER_OPERATION)</code> wires that port to a production
+<p><code>target()</code> declares a configurable outbound target setting on <code>FileService</code>.
+<code>Route(FileService.Output, ORDER_OPERATION)</code> wires that setting to a production
 item. This separation mirrors the instance-style form:
 <code>prod.connect(file.Output, orders)</code>.</p>
 <p>For Python component classes, prefer passing the descriptor

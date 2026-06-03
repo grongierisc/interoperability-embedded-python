@@ -155,7 +155,7 @@ provide operational import and compatibility.</p>
 <li><code>Production.item(name)</code></li>
 <li><code>Production.component_ref(target)</code></li>
 <li><code>Production.get_component(target)</code></li>
-<li><code>ComponentRef.port(name, logical_name="")</code></li>
+<li><code>ComponentRef.port(name)</code></li>
 <li><code>Production.graph()</code></li>
 <li><code>Production.diff(other=None)</code></li>
 <li><code>Production.graph_diff(other=None)</code></li>
@@ -275,7 +275,6 @@ prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
 <p>Persist IOP-owned metadata so Python-to-IRIS-to-Python round trips lose less
 intent:</p>
 <ul>
-<li>logical <code>target("orders")</code> names</li>
 <li>declared port names and types</li>
 <li>richer route intent beyond the current origin/interaction metadata</li>
 <li>Python source module and class origin</li>
@@ -318,7 +317,6 @@ production XML becomes one generated output.</p>
 <h3 id="metadata-gaps">Metadata Gaps</h3>
 <ul>
 <li>IRIS export does not preserve Python class objects.</li>
-<li>IRIS export does not preserve logical names from <code>target("orders")</code>.</li>
 <li>IRIS export does not preserve the Python module/class origin unless stored as
   explicit metadata.</li>
 <li><code>OnGetConnections</code> usually returns target names, not always source port names.</li>

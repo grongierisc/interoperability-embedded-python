@@ -59,9 +59,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#hello-world">Hello World</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#create-a-business-operation">Create a Business Operation</a>
+    <li class="toctree-l3"><a class="reference internal" href="#create-the-python-components">Create the Python Components</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#import-this-business-operation-in-the-framework">Import this Business Operation in the framework</a>
+    <li class="toctree-l3"><a class="reference internal" href="#declare-the-production">Declare the Production</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#migrate-the-production">Migrate the Production</a>
     </li>
         </ul>
     </li>
@@ -174,58 +176,82 @@
 <p>This will install the package and any dependencies it requires.</p>
 <h2 id="hello-world">Hello World</h2>
 <p>Now that you have set up your virtual environment and installed the required packages, you are ready to create your first Interoperability production using Python.</p>
-<h3 id="create-a-business-operation">Create a Business Operation</h3>
-<p>For this, we will create an <code>BusinessOperation</code> that will take a message as input and will return a message as output. In between, it will just print "Hello World" in the logs.</p>
-<p>To do this, let's create a new folder named <code>hello_world</code>.</p>
-<pre><code class="language-bash">mkdir hello_world
-</code></pre>
-<p>In this folder, create a new file named <code>bo.py</code>.</p>
-<p>This file will contain the code of our business operation.</p>
-<pre><code class="language-python">from iop import BusinessOperation
-
-class MyBo(BusinessOperation):
-    def on_message(self, request):
-        self.log_info(&quot;Hello World&quot;)
-</code></pre>
-<p>Let's explain this code.</p>
-<p>First, we import the <code>BusinessOperation</code> class from the <code>iop</code> module.</p>
-<p>Then, we create a class named <code>MyBo</code> that inherits from <code>BusinessOperation</code>.</p>
-<p>Finally, we override the <code>on_message</code> method. This method will be called when a message is received by the business operation.</p>
-<h3 id="import-this-business-operation-in-the-framework">Import this Business Operation in the framework</h3>
-<p>Now, we need to add this business operation to what we call a production.</p>
-<p>To do this, we will create a new file in the <code>hello_world</code> folder, named <code>settings.py</code>.</p>
-<p>Every project starts at it's root folder by a file named <code>settings.py</code>. </p>
-<p>This file contains two main settings:</p>
+<h3 id="create-the-python-components">Create the Python Components</h3>
+<p>For this first production, we will create two Python components:</p>
 <ul>
-<li><code>CLASSES</code> : it contains the classes that will be used in the project.</li>
-<li><code>PRODUCTIONS</code> : it contains the name of the production that will be used in the project.</li>
+<li>a <code>PollingBusinessService</code> that sends a request</li>
+<li>a <code>BusinessOperation</code> that receives the request and writes "Hello World" to the logs</li>
 </ul>
-<pre><code class="language-python">from hello_world.bo import MyBo
-
-CLASSES = {
-    &quot;MyIRIS.MyBo&quot;: MyBo
-}
-
-PRODUCTIONS = [
-        {
-            'MyIRIS.Production': {
-                &quot;@TestingEnabled&quot;: &quot;true&quot;,
-                &quot;Item&quot;: [
-                    {
-                        &quot;@Name&quot;: &quot;Instance.Of.MyBo&quot;,
-                        &quot;@ClassName&quot;: &quot;MyIRIS.MyBo&quot;,
-                    }
-                ]
-            }
-        } 
-    ]
+<p>Create a project folder:</p>
+<pre><code class="language-bash">mkdir -p hello_world
+touch hello_world/__init__.py
 </code></pre>
-<p>In this file, we import our <code>MyBo</code> class named in iris <code>MyIRIS.MyBo</code>, and we add it to the <code>CLASSES</code> dictionary.</p>
-<p>Then, we add a new production to the <code>PRODUCTIONS</code> list. This production will contain our <code>MyBo</code> class instance named <code>Instance.Of.MyBo</code>.</p>
-<p>With the <code>iop</code> command, we can now create the production in IRIS.</p>
-<pre><code class="language-bash">iop --migrate /path/to/hello_world/settings.py
+<p>In this folder, create a new file named <code>components.py</code>.</p>
+<p>This file contains the message, service, and operation classes.</p>
+<pre><code class="language-python">from dataclasses import dataclass
+
+from iop import BusinessOperation, Message, PollingBusinessService, target
+
+
+@dataclass
+class HelloRequest(Message):
+    text: str = &quot;Hello World&quot;
+
+
+class HelloService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, HelloRequest())
+
+
+class HelloOperation(BusinessOperation):
+    def on_message(self, request: HelloRequest):
+        self.log_info(request.text)
+        return request
 </code></pre>
-<p>This command will create the production in IRIS and add the <code>MyBo</code> class to it.</p>
+<p>Let's explain this code:</p>
+<ul>
+<li><code>HelloRequest</code> is the message sent between components.</li>
+<li><code>HelloService</code> inherits from <code>PollingBusinessService</code>, so IRIS calls <code>on_poll()</code> on its schedule.</li>
+<li><code>Output = target()</code> declares an outbound target setting on the service.</li>
+<li><code>HelloOperation</code> inherits from <code>BusinessOperation</code> and handles the incoming message in <code>on_message()</code>.</li>
+</ul>
+<blockquote>
+<p><strong>Warning:</strong> Do not put component startup code in <code>__init__()</code>. IoP/IRIS
+allocates components with <code>__new__()</code> and calls <code>on_init()</code> as the startup
+lifecycle hook.</p>
+</blockquote>
+<h3 id="declare-the-production">Declare the Production</h3>
+<p>Now, create <code>settings.py</code> at the root of your project.</p>
+<p>This file is the migration entrypoint. It creates a <code>Production</code> object, adds the Python components, connects the service target to the operation, and exports the production through <code>PRODUCTIONS</code>.</p>
+<pre><code class="language-python">from iop import Production
+
+from hello_world.components import HelloOperation, HelloService
+
+
+prod = Production(&quot;HelloWorld.Production&quot;, testing_enabled=True)
+
+service = prod.service(&quot;HelloService&quot;, HelloService)
+operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
+prod.connect(service.Output, operation)
+
+PRODUCTIONS = [prod]
+</code></pre>
+<p>In this production:</p>
+<ul>
+<li><code>Production("HelloWorld.Production")</code> declares the IRIS production class.</li>
+<li><code>prod.service("HelloService", HelloService)</code> adds one service item.</li>
+<li><code>prod.operation("HelloOperation", HelloOperation)</code> adds one operation item.</li>
+<li><code>prod.connect(service.Output, operation)</code> sets the service <code>Output</code> target to <code>HelloOperation</code> and records the production graph edge.</li>
+<li><code>PRODUCTIONS = [prod]</code> tells IoP what to migrate.</li>
+</ul>
+<p>You do not need a separate <code>CLASSES</code> dictionary for these production components. IoP registers Python component classes from the <code>Production</code> graph during migration.</p>
+<h3 id="migrate-the-production">Migrate the Production</h3>
+<p>Run the migration command from the project root:</p>
+<pre><code class="language-bash">iop --migrate settings.py
+</code></pre>
+<p>This command creates the IRIS proxy classes for the Python components and registers <code>HelloWorld.Production</code>.</p>
 <p>More information about registering components can be found <a href="../register-component/">here</a>.</p>
               
             </div>
