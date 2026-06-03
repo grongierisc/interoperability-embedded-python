@@ -743,7 +743,8 @@ inp = (
 )
 </code></pre>
 <p>Progressive production methods include <code>testing()</code>, <code>tracing()</code>,
-<code>actor_pool()</code>, <code>describe()</code>, <code>in_namespace()</code>, and <code>with_director()</code>.
+<code>actor_pool()</code>, <code>describe()</code>, <code>timeouts()</code>, <code>alerting()</code>, <code>in_namespace()</code>,
+and <code>with_director()</code>.
 Progressive component methods include <code>pool()</code>, <code>enable()</code>, <code>disable()</code>,
 <code>run_foreground()</code>, <code>trace()</code>, <code>schedule_on()</code>, <code>comment_as()</code>,
 <code>category_as()</code>, <code>host_setting()</code>, <code>host_settings_update()</code>, <code>setting()</code>,
@@ -776,8 +777,27 @@ items, not a DAG execution dependency.</p>
   another production or the deployed IRIS reconstruction</li>
 <li><code>graph_diff(other=None)</code>: compare graph topology including edge origin and
   route metadata</li>
+<li><code>validate(strict=False)</code>: report unknown production fields and invalid
+  locally discoverable host/adapter settings. By default it emits warnings;
+  strict mode raises <code>ProductionValidationError</code>.</li>
 <li><code>sync()</code>: register the current Python graph with local IRIS through the existing migration path</li>
 </ul>
+<p>Production-level <code>Ens.Production</code> settings can be declared directly:</p>
+<pre><code class="language-python">prod = (
+    Production(&quot;Demo.Production&quot;)
+    .timeouts(shutdown=120, update=10)
+    .alerting(
+        manager=&quot;Alerts.Manager&quot;,
+        operation=&quot;Alerts.Operation&quot;,
+        recipients=&quot;ops@example.com&quot;,
+        action_window=60,
+    )
+)
+</code></pre>
+<p>These values are serialized as production-level settings:
+<code>ShutdownTimeout</code>, <code>UpdateTimeout</code>, <code>AlertNotificationManager</code>,
+<code>AlertNotificationOperation</code>, <code>AlertNotificationRecipients</code>, and
+<code>AlertActionWindow</code>.</p>
 <p><code>str(port)</code> returns the stable authoring identity, for example
 <code>FileInput.Output</code>. Use <code>port.resolve()</code> when you explicitly need the current
 IRIS dispatch target string.</p>

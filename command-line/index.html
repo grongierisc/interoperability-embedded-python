@@ -296,9 +296,13 @@ migration plan without writing to IRIS:</p>
 <pre><code class="language-bash">iop -M /tmp/settings.py --dry-run
 </code></pre>
 <p>The plan uses the same sections as the migration file: <code>CLASSES</code>, <code>SCHEMAS</code>,
-and <code>PRODUCTIONS</code>. Entries in <code>CLASSES</code> are annotated as components or
-<code>PersistentMessage</code> classes. Migration output includes the mode, namespace, and
-a final <code>Migration succeeded</code> line when the migration completes.</p>
+<code>PRODUCTIONS</code>. Entries in <code>CLASSES</code> are annotated as
+components or <code>PersistentMessage</code> classes. Migration output includes the mode,
+namespace, and a final <code>Migration succeeded</code> line when the migration completes.</p>
+<p>Production validation warns by default. Pass <code>--strict-production-validation</code>
+to fail the dry-run or migration when validation reports an issue:</p>
+<pre><code class="language-bash">iop -M /tmp/settings.py --strict-production-validation
+</code></pre>
 <p>More details about the settings file can be found <a href="../getting-started/register-component/">here</a>.</p>
 <h3 id="remote-migrate">Remote migrate</h3>
 <p>If the migration file contains a <code>REMOTE_SETTINGS</code> dict, the migration is performed against the remote IRIS instance automatically — no environment variables needed:</p>
