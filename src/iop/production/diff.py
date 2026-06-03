@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from .common import _bool_text, _text_value
+from .common import PRODUCTION_SETTING_FIELDS, _bool_text, _text_value
 from .types import (
     GraphEdge,
     ProductionDiff,
@@ -66,12 +66,19 @@ def _diff_warnings(desired: Production, current: Production) -> list[str]:
 
 
 def _production_signature(production: Production) -> dict[str, Any]:
-    return {
+    signature = {
         "testing_enabled": _bool_text(production.testing_enabled),
         "log_general_trace_events": _bool_text(production.log_general_trace_events),
         "actor_pool_size": _text_value(production.actor_pool_size),
         "description": production.description,
     }
+    signature.update(
+        {
+            field_name: _text_value(getattr(production, field_name))
+            for field_name in PRODUCTION_SETTING_FIELDS
+        }
+    )
+    return signature
 
 
 def _item_signatures(production: Production) -> dict[str, dict[str, Any]]:

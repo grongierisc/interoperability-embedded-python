@@ -499,6 +499,7 @@ ClassMethod PutMigrate() As %DynamicObject
 		set targetDirectory = dyna.%Get("remote_folder")
 		set packageName = dyna.%Get("package")
 		set settingsFile = dyna.%Get("settings_file")
+		set strictProductionValidation = dyna.%Get("strict_production_validation")
 		If settingsFile = "" { Set settingsFile = "settings.py" }
 		// check for namespace existence and user permissions against namespace
 		If '..NamespaceCheck(namespace) {
@@ -551,7 +552,7 @@ ClassMethod PutMigrate() As %DynamicObject
 		set iopUtils = ##class(IOP.Wrapper).Import("iop.migration.utils")
 		set builtins = ##class(%SYS.Python).Import("builtins")
 		If builtins.hasattr(iopUtils, "migrate") {
-			do builtins.getattr(iopUtils, "migrate")."__call__"(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
+			do builtins.getattr(iopUtils, "migrate")."__call__"(##class(%Library.File).NormalizeFilename(settingsFile, packagePath),"REMOTE",namespace,strictProductionValidation)
 		} Else {
 			do iopUtils."_Utils".migrate(##class(%Library.File).NormalizeFilename(settingsFile, packagePath))
 		}

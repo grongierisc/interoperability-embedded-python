@@ -201,9 +201,16 @@ iop -M /tmp/settings.py --dry-run
 ```
 
 The plan uses the same sections as the migration file: `CLASSES`, `SCHEMAS`,
-and `PRODUCTIONS`. Entries in `CLASSES` are annotated as components or
-`PersistentMessage` classes. Migration output includes the mode, namespace, and
-a final `Migration succeeded` line when the migration completes.
+`PRODUCTIONS`. Entries in `CLASSES` are annotated as
+components or `PersistentMessage` classes. Migration output includes the mode,
+namespace, and a final `Migration succeeded` line when the migration completes.
+
+Production validation warns by default. Pass `--strict-production-validation`
+to fail the dry-run or migration when validation reports an issue:
+
+```bash
+iop -M /tmp/settings.py --strict-production-validation
+```
 
 More details about the settings file can be found [here](getting-started/register-component.md).
 

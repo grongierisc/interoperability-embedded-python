@@ -244,17 +244,33 @@ class Command:
             if self.args.migration_plan:
                 print(
                     migration_utils.explain_migration(
-                        migrate_path, mode=mode, namespace=self.director.namespace
+                        migrate_path,
+                        mode=mode,
+                        namespace=self.director.namespace,
+                        strict_production_validation=(
+                            self.args.strict_production_validation
+                        ),
                     )
                 )
                 return
             if self._is_remote:
                 print(
                     migration_utils.explain_migration(
-                        migrate_path, mode=mode, namespace=self.director.namespace
+                        migrate_path,
+                        mode=mode,
+                        namespace=self.director.namespace,
+                        strict_production_validation=(
+                            self.args.strict_production_validation
+                        ),
                     )
                 )
-            self.director.migrate(migrate_path)
+            if self.args.strict_production_validation:
+                self.director.migrate(
+                    migrate_path,
+                    strict_production_validation=True,
+                )
+            else:
+                self.director.migrate(migrate_path)
             if self._is_remote:
                 print(
                     migration_utils.format_migration_success(

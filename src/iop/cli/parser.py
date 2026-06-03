@@ -95,6 +95,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="show the migration plan and validation messages without writing to IRIS",
         action="store_true",
     )
+    migrate.add_argument(
+        "--strict-production-validation",
+        help="fail migration when production validation reports issues",
+        action="store_true",
+    )
 
     export = main_parser.add_argument_group("export arguments")
     export.add_argument(

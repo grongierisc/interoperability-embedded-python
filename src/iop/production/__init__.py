@@ -12,6 +12,10 @@ from .types import ProductionDiffEntry as ProductionDiffEntry
 from .types import ProductionGraph as ProductionGraph
 from .types import TargetSetting as TargetSetting
 from .types import target as target
+from .validation import ProductionValidationError as ProductionValidationError
+from .validation import ProductionValidationIssue as ProductionValidationIssue
+from .validation import ProductionValidationReport as ProductionValidationReport
+from .validation import ProductionValidationWarning as ProductionValidationWarning
 
 __all__ = [
     "ComponentRef",
@@ -23,6 +27,10 @@ __all__ = [
     "ProductionDiff",
     "ProductionDiffEntry",
     "ProductionGraph",
+    "ProductionValidationError",
+    "ProductionValidationIssue",
+    "ProductionValidationReport",
+    "ProductionValidationWarning",
     "TargetSetting",
     "resolve_target",
     "target",

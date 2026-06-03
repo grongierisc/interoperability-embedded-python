@@ -471,7 +471,8 @@ inp = (
 ```
 
 Progressive production methods include `testing()`, `tracing()`,
-`actor_pool()`, `describe()`, `in_namespace()`, and `with_director()`.
+`actor_pool()`, `describe()`, `timeouts()`, `alerting()`, `in_namespace()`,
+and `with_director()`.
 Progressive component methods include `pool()`, `enable()`, `disable()`,
 `run_foreground()`, `trace()`, `schedule_on()`, `comment_as()`,
 `category_as()`, `host_setting()`, `host_settings_update()`, `setting()`,
@@ -508,7 +509,30 @@ Key methods:
   another production or the deployed IRIS reconstruction
 - `graph_diff(other=None)`: compare graph topology including edge origin and
   route metadata
+- `validate(strict=False)`: report unknown production fields and invalid
+  locally discoverable host/adapter settings. By default it emits warnings;
+  strict mode raises `ProductionValidationError`.
 - `sync()`: register the current Python graph with local IRIS through the existing migration path
+
+Production-level `Ens.Production` settings can be declared directly:
+
+```python
+prod = (
+    Production("Demo.Production")
+    .timeouts(shutdown=120, update=10)
+    .alerting(
+        manager="Alerts.Manager",
+        operation="Alerts.Operation",
+        recipients="ops@example.com",
+        action_window=60,
+    )
+)
+```
+
+These values are serialized as production-level settings:
+`ShutdownTimeout`, `UpdateTimeout`, `AlertNotificationManager`,
+`AlertNotificationOperation`, `AlertNotificationRecipients`, and
+`AlertActionWindow`.
 
 `str(port)` returns the stable authoring identity, for example
 `FileInput.Output`. Use `port.resolve()` when you explicitly need the current

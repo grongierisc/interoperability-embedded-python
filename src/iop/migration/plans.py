@@ -4,6 +4,8 @@ import inspect
 import os
 from typing import Any
 
+from ..production.validation import validate_production_entry
+
 
 def format_migration_success(filename: str, namespace: str | None = None) -> str:
     suffix = f" in namespace {namespace}" if namespace else ""
@@ -21,6 +23,7 @@ def format_migration_plan(plan: dict[str, Any]) -> str:
     lines.extend(format_plan_section("CLASSES", plan["classes"]))
     lines.extend(format_plan_section("SCHEMAS", plan["schemas"]))
     lines.extend(format_plan_section("PRODUCTIONS", plan["productions"]))
+    lines.extend(format_plan_section("VALIDATION", plan.get("validation", [])))
     return "\n".join(lines)
 
 
@@ -47,6 +50,7 @@ class MigrationPlanner:
         filename=None,
         mode: str | None = None,
         namespace: str | None = None,
+        strict_production_validation: bool = False,
     ) -> dict[str, Any]:
         """Build and validate a migration plan from a settings module."""
         if not path:
@@ -59,11 +63,16 @@ class MigrationPlanner:
             "classes": [],
             "schemas": [],
             "productions": [],
+            "validation": [],
         }
 
         self._add_class_entries(plan, getattr(settings, "CLASSES", {}), path)
         self._add_schema_entries(plan, getattr(settings, "SCHEMAS", None))
-        self._add_production_entries(plan, getattr(settings, "PRODUCTIONS", None))
+        self._add_production_entries(
+            plan,
+            getattr(settings, "PRODUCTIONS", None),
+            strict_production_validation=strict_production_validation,
+        )
         return plan
 
     @staticmethod
@@ -102,7 +111,11 @@ class MigrationPlanner:
             plan["schemas"].append(self._utils._python_classname(cls))
 
     def _add_production_entries(
-        self, plan: dict[str, Any], productions: list[Any] | None
+        self,
+        plan: dict[str, Any],
+        productions: list[Any] | None,
+        *,
+        strict_production_validation: bool = False,
     ) -> None:
         if productions is None:
             return
@@ -110,6 +123,16 @@ class MigrationPlanner:
             raise ValueError("PRODUCTIONS must be a list.")
         auto_class_entries = set()
         for production in productions:
+            report = validate_production_entry(
+                production,
+                strict=strict_production_validation,
+                warn=False,
+            )
+            if report.has_issues:
+                plan["validation"].extend(
+                    f"{report.production_name}: {issue.to_text()}"
+                    for issue in report.issues
+                )
             if self._utils._is_production_object(production):
                 plan["productions"].append(production.name)
                 self._add_production_component_entries(

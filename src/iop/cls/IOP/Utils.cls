@@ -719,8 +719,10 @@ ClassMethod InsertSetting(
 	pSettingData) As %Status [ Internal, Private ]
 {
 	#dim tSetting As Ens.Config.Setting
+	#dim tDefaultTarget As %String
+	Set tDefaultTarget = $Select(pOwner.%IsA("Ens.Config.Production"):"",1:"Host")
 	Set tSetting = ##class(Ens.Config.Setting).%New()
-	Set tSetting.Target = ..DynamicGet(pSettingData,"@Target","Host")
+	Set tSetting.Target = ..DynamicGet(pSettingData,"@Target",tDefaultTarget)
 	Set tSetting.Name = ..DynamicGet(pSettingData,"@Name","")
 	Set tSetting.Value = ..DynamicGet(pSettingData,"#text","")
 	Do pOwner.Settings.Insert(tSetting)

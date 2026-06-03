@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .common import _text_value
+from .common import PRODUCTION_SETTING_FIELDS_BY_IRIS, _text_value
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -52,6 +52,21 @@ def _split_settings(
         else:
             other_settings.append(dict(setting))
     return host_settings, adapter_settings, other_settings
+
+
+def _split_production_settings(settings: Any) -> dict[str, Any]:
+    values: dict[str, Any] = {}
+    for setting in _as_list(settings):
+        if not isinstance(setting, dict):
+            continue
+        target = setting.get("@Target", "")
+        if target not in ("", "Production"):
+            continue
+        iris_name = str(setting.get("@Name", ""))
+        field_name = PRODUCTION_SETTING_FIELDS_BY_IRIS.get(iris_name)
+        if field_name:
+            values[field_name] = setting.get("#text", "")
+    return values
 
 
 def _normalize_connections(

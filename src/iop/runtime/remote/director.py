@@ -227,8 +227,16 @@ class _RemoteDirector(_RemoteClient, _DirectorProtocol):
     # Migrate
     # ------------------------------------------------------------------
 
-    def migrate(self, path: str) -> None:
-        upload_migration(self, path)
+    def migrate(
+        self,
+        path: str,
+        strict_production_validation: bool = False,
+    ) -> None:
+        upload_migration(
+            self,
+            path,
+            strict_production_validation=strict_production_validation,
+        )
 
     # ------------------------------------------------------------------
     # Init / setup — uploads .cls files via the Atelier API

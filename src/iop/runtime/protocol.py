@@ -75,7 +75,11 @@ class DirectorProtocol(Protocol):
     # Migrate
     # ------------------------------------------------------------------
 
-    def migrate(self, path: str) -> None: ...
+    def migrate(
+        self,
+        path: str,
+        strict_production_validation: bool = False,
+    ) -> None: ...
 
     # ------------------------------------------------------------------
     # Metadata

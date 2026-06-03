@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from .common import _bool_text, _text_value
+from .common import PRODUCTION_SETTING_FIELDS, _bool_text, _text_value
 from .types import GraphNode, ProductionGraph
 
 
@@ -21,9 +21,27 @@ def production_to_dict(production) -> dict[str, Any]:
         "Description": production.description,
         "ActorPoolSize": _text_value(production.actor_pool_size),
     }
+    production_settings = _production_settings_to_iris(production)
+    if production_settings:
+        data["Setting"] = production_settings
     if production._items:
         data["Item"] = [item.to_dict() for item in production._items]
     return {production.name: data}
+
+
+def _production_settings_to_iris(production) -> list[dict[str, str]]:
+    settings: list[dict[str, str]] = []
+    for field_name, (iris_name, default) in PRODUCTION_SETTING_FIELDS.items():
+        value = getattr(production, field_name)
+        if _text_value(value) == _text_value(default):
+            continue
+        settings.append(
+            {
+                "@Name": iris_name,
+                "#text": _text_value(value),
+            }
+        )
+    return settings
 
 
 def production_to_xml(production) -> str:
@@ -78,6 +96,24 @@ def _production_constructor_lines(production) -> list[str]:
         ),
         ("actor_pool_size", _int_literal(production.actor_pool_size), 2),
         ("description", production.description, ""),
+        ("shutdown_timeout", _int_literal(production.shutdown_timeout), 120),
+        ("update_timeout", _int_literal(production.update_timeout), 10),
+        (
+            "alert_notification_manager",
+            production.alert_notification_manager,
+            "",
+        ),
+        (
+            "alert_notification_operation",
+            production.alert_notification_operation,
+            "",
+        ),
+        (
+            "alert_notification_recipients",
+            production.alert_notification_recipients,
+            "",
+        ),
+        ("alert_action_window", _int_literal(production.alert_action_window), 60),
     ]
     rendered = [
         (name, value)

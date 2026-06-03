@@ -18,6 +18,7 @@ from ..messages.persistent import (
     is_persistent_message_class,
     register_persistent_message_class,
 )
+from ..production.validation import validate_production_entry
 from ..runtime import iris as _iris
 from ..runtime.environment import remove_sys_path, temporary_sys_path
 from .io import (
@@ -425,7 +426,12 @@ def filename_to_module(filename) -> str:
     return module
 
 
-def migrate(filename=None, mode: str | None = None, namespace: str | None = None):
+def migrate(
+    filename=None,
+    mode: str | None = None,
+    namespace: str | None = None,
+    strict_production_validation: bool = False,
+):
     """
     Read the settings.py file and register all the components
     settings.py file has two dictionaries:
@@ -443,10 +449,19 @@ def migrate(filename=None, mode: str | None = None, namespace: str | None = None
 
     try:
         plan = _build_migration_plan(
-            settings, path, filename, mode=mode, namespace=namespace
+            settings,
+            path,
+            filename,
+            mode=mode,
+            namespace=namespace,
+            strict_production_validation=strict_production_validation,
         )
         print(format_migration_plan(plan))
-        _register_settings_components(settings, path)
+        _register_settings_components(
+            settings,
+            path,
+            strict_production_validation=strict_production_validation,
+        )
         print(
             format_migration_success(
                 filename or inspect.getfile(settings), namespace=namespace
@@ -457,13 +472,21 @@ def migrate(filename=None, mode: str | None = None, namespace: str | None = None
 
 
 def explain_migration(
-    filename=None, mode: str | None = None, namespace: str | None = None
+    filename=None,
+    mode: str | None = None,
+    namespace: str | None = None,
+    strict_production_validation: bool = False,
 ):
     """Return a human-readable migration plan without writing to IRIS."""
     settings, path = _load_settings(filename)
     try:
         plan = _build_migration_plan(
-            settings, path, filename, mode=mode, namespace=namespace
+            settings,
+            path,
+            filename,
+            mode=mode,
+            namespace=namespace,
+            strict_production_validation=strict_production_validation,
         )
         return _format_migration_plan(plan)
     finally:
@@ -488,6 +511,7 @@ def _build_migration_plan(
     filename=None,
     mode: str | None = None,
     namespace: str | None = None,
+    strict_production_validation: bool = False,
 ):
     return MigrationPlanner(sys.modules[__name__]).build(
         settings,
@@ -495,6 +519,7 @@ def _build_migration_plan(
         filename=filename,
         mode=mode,
         namespace=namespace,
+        strict_production_validation=strict_production_validation,
     )
 
 
@@ -589,7 +614,12 @@ def _validate_dtl_schema_class(cls, setting_name):
         )
 
 
-def _register_settings_components(settings, path):
+def _register_settings_components(
+    settings,
+    path,
+    *,
+    strict_production_validation: bool = False,
+):
     """Register all components from settings (classes, productions, schemas).
 
     Args:
@@ -616,6 +646,7 @@ def _register_settings_components(settings, path):
             settings.PRODUCTIONS,
             path,
             persistent_registry=persistent_registry,
+            strict_production_validation=strict_production_validation,
         )
     except AttributeError:
         pass
@@ -835,18 +866,25 @@ def set_productions_settings(
     production_list,
     root_path=None,
     persistent_registry=None,
+    strict_production_validation: bool = False,
 ):
     """
     It takes a list of dictionaries and registers the productions
     """
     # for each production in the list
     for production in production_list:
-        if _is_production_object(production):
+        production_is_object = _is_production_object(production)
+        if production_is_object:
             _register_production_object_messages(
                 production,
                 persistent_registry=persistent_registry,
             )
             _register_production_object_components(production, root_path)
+            validate_production_entry(
+                production,
+                strict=strict_production_validation,
+                warn=True,
+            )
             production = production.to_dict()
         else:
             production = copy.deepcopy(production)
@@ -860,6 +898,12 @@ def set_productions_settings(
         production["Production"] = production.pop(production_name)
         # handle Items
         production = handle_items(production, root_path)
+        if not production_is_object:
+            validate_production_entry(
+                production,
+                strict=strict_production_validation,
+                warn=True,
+            )
         # register the production
         register_production_definition(production_name, production)
 

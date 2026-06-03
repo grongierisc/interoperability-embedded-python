@@ -5,6 +5,7 @@ from typing import Any
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
 from . import actions as _actions
 from .common import (
+    PRODUCTION_SETTING_FIELDS,
     _adapter_type_from_component_class,
     _apply_settings_update,
     _auto_proxy_class_name,
@@ -46,6 +47,20 @@ class Production:
         log_general_trace_events: bool | str = False,
         actor_pool_size: int | str = 2,
         description: str = "",
+        shutdown_timeout: int | str = PRODUCTION_SETTING_FIELDS["shutdown_timeout"][1],
+        update_timeout: int | str = PRODUCTION_SETTING_FIELDS["update_timeout"][1],
+        alert_notification_manager: str = PRODUCTION_SETTING_FIELDS[
+            "alert_notification_manager"
+        ][1],
+        alert_notification_operation: str = PRODUCTION_SETTING_FIELDS[
+            "alert_notification_operation"
+        ][1],
+        alert_notification_recipients: str = PRODUCTION_SETTING_FIELDS[
+            "alert_notification_recipients"
+        ][1],
+        alert_action_window: int | str = PRODUCTION_SETTING_FIELDS[
+            "alert_action_window"
+        ][1],
         namespace: str | None = None,
         director: _DirectorProtocol | None = None,
     ):
@@ -54,6 +69,12 @@ class Production:
         self.log_general_trace_events = log_general_trace_events
         self.actor_pool_size = actor_pool_size
         self.description = description
+        self.shutdown_timeout = shutdown_timeout
+        self.update_timeout = update_timeout
+        self.alert_notification_manager = alert_notification_manager
+        self.alert_notification_operation = alert_notification_operation
+        self.alert_notification_recipients = alert_notification_recipients
+        self.alert_action_window = alert_action_window
         self.namespace = namespace
         self._director = director
         self._items: list[ComponentRef] = []
@@ -78,6 +99,36 @@ class Production:
 
     def describe(self, text: str) -> Production:
         self.description = text
+        return self
+
+    def timeouts(
+        self,
+        *,
+        shutdown: int | str | None = None,
+        update: int | str | None = None,
+    ) -> Production:
+        if shutdown is not None:
+            self.shutdown_timeout = shutdown
+        if update is not None:
+            self.update_timeout = update
+        return self
+
+    def alerting(
+        self,
+        *,
+        manager: str | None = None,
+        operation: str | None = None,
+        recipients: str | None = None,
+        action_window: int | str | None = None,
+    ) -> Production:
+        if manager is not None:
+            self.alert_notification_manager = manager
+        if operation is not None:
+            self.alert_notification_operation = operation
+        if recipients is not None:
+            self.alert_notification_recipients = recipients
+        if action_window is not None:
+            self.alert_action_window = action_window
         return self
 
     def in_namespace(self, namespace: str | None) -> Production:
@@ -554,6 +605,11 @@ class Production:
 
     def message_registrations(self) -> tuple[PersistentMessageRegistration, ...]:
         return tuple(self._messages)
+
+    def validate(self, *, strict: bool = False):
+        from .validation import validate_production
+
+        return validate_production(self, strict=strict, warn=not strict)
 
     def start(self, detach: bool = True) -> None:
         _actions.start(self, detach=detach)

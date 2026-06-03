@@ -3,6 +3,25 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+PRODUCTION_SETTING_FIELDS: dict[str, tuple[str, Any]] = {
+    "shutdown_timeout": ("ShutdownTimeout", 120),
+    "update_timeout": ("UpdateTimeout", 10),
+    "alert_notification_manager": ("AlertNotificationManager", ""),
+    "alert_notification_operation": ("AlertNotificationOperation", ""),
+    "alert_notification_recipients": ("AlertNotificationRecipients", ""),
+    "alert_action_window": ("AlertActionWindow", 60),
+}
+
+PRODUCTION_SETTING_NAMES: dict[str, str] = {
+    field_name: iris_name
+    for field_name, (iris_name, _default) in PRODUCTION_SETTING_FIELDS.items()
+}
+
+PRODUCTION_SETTING_FIELDS_BY_IRIS: dict[str, str] = {
+    iris_name: field_name
+    for field_name, (iris_name, _default) in PRODUCTION_SETTING_FIELDS.items()
+}
+
 
 def _bool_text(value: bool | str) -> str:
     if isinstance(value, bool):

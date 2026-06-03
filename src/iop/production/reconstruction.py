@@ -12,6 +12,7 @@ from .import_ import (
     _normalize_runtime_item_metadata,
     _production_payload,
     _setting_targets,
+    _split_production_settings,
     _split_settings,
 )
 
@@ -26,12 +27,25 @@ def production_from_dict(
     director: Any = None,
 ):
     production_name, production_data = _production_payload(data)
+    production_settings = _split_production_settings(production_data.get("Setting"))
     production = production_cls(
         production_name,
         testing_enabled=production_data.get("@TestingEnabled", False),
         log_general_trace_events=production_data.get("@LogGeneralTraceEvents", False),
         actor_pool_size=production_data.get("ActorPoolSize", 2),
         description=production_data.get("Description", ""),
+        shutdown_timeout=production_settings.get("shutdown_timeout", 120),
+        update_timeout=production_settings.get("update_timeout", 10),
+        alert_notification_manager=production_settings.get(
+            "alert_notification_manager", ""
+        ),
+        alert_notification_operation=production_settings.get(
+            "alert_notification_operation", ""
+        ),
+        alert_notification_recipients=production_settings.get(
+            "alert_notification_recipients", ""
+        ),
+        alert_action_window=production_settings.get("alert_action_window", 60),
         namespace=namespace,
         director=director,
     )

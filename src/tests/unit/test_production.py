@@ -17,6 +17,8 @@ from iop import (
     PersistentMessage,
     PollingBusinessService,
     Production,
+    ProductionValidationError,
+    ProductionValidationWarning,
     controls,
     target,
 )
@@ -115,6 +117,44 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "interaction": "request",
         },
     ]
+
+
+def test_production_level_settings_round_trip_and_render_to_python():
+    prod = Production(
+        "Demo.Production",
+        shutdown_timeout=30,
+        update_timeout=7,
+        alert_notification_manager="Alerts.Manager",
+        alert_notification_operation="Alerts.Operation",
+        alert_notification_recipients="ops@example.com",
+        alert_action_window=15,
+    )
+
+    data = prod.to_dict()["Demo.Production"]
+    settings = {setting["@Name"]: setting["#text"] for setting in data["Setting"]}
+
+    assert settings == {
+        "ShutdownTimeout": "30",
+        "UpdateTimeout": "7",
+        "AlertNotificationManager": "Alerts.Manager",
+        "AlertNotificationOperation": "Alerts.Operation",
+        "AlertNotificationRecipients": "ops@example.com",
+        "AlertActionWindow": "15",
+    }
+    assert "Setting" not in Production("Default.Production").to_dict()[
+        "Default.Production"
+    ]
+
+    imported = Production.from_dict(prod.to_dict())
+    assert imported.shutdown_timeout == "30"
+    assert imported.update_timeout == "7"
+    assert imported.alert_notification_manager == "Alerts.Manager"
+    assert prod.diff(imported).has_changes is False
+
+    text = prod.to_python()
+    assert "shutdown_timeout=30" in text
+    assert "update_timeout=7" in text
+    assert "alert_notification_manager='Alerts.Manager'" in text
 
 
 def test_production_message_registration_api_deduplicates_identical_entries():
@@ -282,6 +322,105 @@ def test_progressive_component_connect_add_appends_fanout_targets():
     ]
     with pytest.raises(ValueError, match="ambiguous"):
         file.Output.resolve()
+
+
+def test_production_validate_warns_and_strict_raises_for_unknown_public_attr():
+    prod = Production("Demo.Production")
+    prod.unexpected = "value"
+
+    with pytest.warns(ProductionValidationWarning, match="Unknown public"):
+        report = prod.validate()
+
+    assert report.has_issues is True
+    assert report.issues[0].path == "production.unexpected"
+    with pytest.raises(ProductionValidationError, match="production.unexpected"):
+        prod.validate(strict=True)
+
+
+def test_production_validate_warns_unknown_python_host_setting():
+    prod = Production("Demo.Production")
+    prod.service("FileInput", FileService, settings={"MissingSetting": "value"})
+
+    with pytest.warns(ProductionValidationWarning, match="MissingSetting"):
+        report = prod.validate()
+
+    assert report.issues[0].path == "items.FileInput.settings.Host.MissingSetting"
+
+
+def test_production_validate_reports_known_setting_alias_suggestion():
+    class RoutingService(BusinessService):
+        TargetConfigName = target("target")
+
+    prod = Production("Demo.Production")
+    prod.service(
+        "FileInput",
+        RoutingService,
+        settings={"target_config_name": "OrderOperation"},
+    )
+
+    with pytest.warns(ProductionValidationWarning, match="Use 'TargetConfigName'"):
+        report = prod.validate()
+
+    assert report.issues[0].suggestion == "Use 'TargetConfigName'."
+
+
+def test_production_validate_does_not_infer_arbitrary_snake_case_setting():
+    class CustomSettingService(BusinessService):
+        MySetting = "default"
+
+    prod = Production("Demo.Production")
+    prod.service(
+        "FileInput",
+        CustomSettingService,
+        settings={"my_setting": "value"},
+    )
+
+    with pytest.warns(ProductionValidationWarning, match="Unknown setting"):
+        report = prod.validate()
+
+    assert report.issues[0].suggestion == ""
+
+
+def test_production_validate_warns_unknown_python_adapter_setting():
+    class ConfiguredAdapter(InboundAdapter):
+        Port: int = 0
+
+    class ConfiguredAdapterService(BusinessService):
+        @staticmethod
+        def get_adapter_type():
+            return (
+                f"Python.{ConfiguredAdapter.__module__}."
+                "ConfiguredAdapter"
+            ).replace("_", "")
+
+    prod = Production("Demo.Production")
+    prod.service(
+        "Input",
+        ConfiguredAdapterService,
+        adapter_class=ConfiguredAdapter,
+        adapter_settings={"MissingAdapterSetting": "value"},
+    )
+
+    with pytest.warns(ProductionValidationWarning, match="MissingAdapterSetting"):
+        report = prod.validate()
+
+    assert (
+        report.issues[0].path
+        == "items.Input.settings.Adapter.MissingAdapterSetting"
+    )
+
+
+def test_production_validate_warns_process_adapter_settings():
+    class DemoProcess(BusinessProcess):
+        pass
+
+    prod = Production("Demo.Production")
+    prod.process("Process", DemoProcess, adapter_settings={"Port": 1972})
+
+    with pytest.warns(ProductionValidationWarning, match="do not support"):
+        report = prod.validate()
+
+    assert report.issues[0].path == "items.Process.settings.Adapter"
 
 
 def test_component_ref_exposes_adapter_class_name_without_serializing_it():
@@ -1243,6 +1382,22 @@ def test_set_productions_settings_supports_mixed_legacy_and_objects(tmp_path):
     assert mock_prod.call_count == 2
 
 
+def test_set_productions_settings_strict_validation_fails_before_registration(tmp_path):
+    prod = Production("Object.Production")
+    prod.operation(OrderOperation, settings={"MissingSetting": "value"})
+
+    with patch.object(migration_utils, "register_component"):
+        with patch.object(migration_utils, "register_production_definition") as mock_prod:
+            with pytest.raises(ProductionValidationError, match="MissingSetting"):
+                migration_utils.set_productions_settings(
+                    [prod],
+                    str(tmp_path),
+                    strict_production_validation=True,
+                )
+
+    mock_prod.assert_not_called()
+
+
 def test_migration_plan_lists_production_objects_and_auto_components():
     prod = Production("Object.Production")
     prod.operation(OrderOperation)
@@ -1259,6 +1414,35 @@ def test_migration_plan_lists_production_objects_and_auto_components():
         + f" -> {OrderOperation.__module__}.OrderOperation (component)"
         in plan["classes"]
     )
+
+
+def test_migration_plan_reports_production_validation_issues():
+    prod = Production("Object.Production")
+    prod.operation(OrderOperation, settings={"MissingSetting": "value"})
+
+    class Settings:
+        CLASSES = {}
+        PRODUCTIONS = [prod]
+
+    plan = migration_utils._build_migration_plan(Settings, ".")
+
+    assert any("MissingSetting" in issue for issue in plan["validation"])
+    with pytest.raises(ProductionValidationError, match="MissingSetting"):
+        migration_utils._build_migration_plan(
+            Settings,
+            ".",
+            strict_production_validation=True,
+        )
+
+
+def test_migration_plan_reports_unknown_legacy_production_keys():
+    class Settings:
+        CLASSES = {}
+        PRODUCTIONS = [{"Legacy.Production": {"Unexpected": "value"}}]
+
+    plan = migration_utils._build_migration_plan(Settings, ".")
+
+    assert any("Unexpected" in issue for issue in plan["validation"])
 
 
 def test_migration_plan_lists_production_persistent_messages():

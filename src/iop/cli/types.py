@@ -55,3 +55,4 @@ class CommandArgs:
     remote_settings: str | None = None
     update: bool = False
     migration_plan: bool = False
+    strict_production_validation: bool = False

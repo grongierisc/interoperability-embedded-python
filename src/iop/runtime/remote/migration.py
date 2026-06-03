@@ -6,7 +6,12 @@ import os
 import requests
 
 
-def upload_migration(client, path: str) -> None:
+def upload_migration(
+    client,
+    path: str,
+    *,
+    strict_production_validation: bool = False,
+) -> None:
     """Upload .py and .cls files from *path*'s folder to remote IRIS."""
     folder = os.path.dirname(path)
 
@@ -38,6 +43,7 @@ def upload_migration(client, path: str) -> None:
         "package": package,
         "remote_folder": remote_folder,
         "settings_file": settings_file,
+        "strict_production_validation": bool(strict_production_validation),
         "body": body,
     }
     resp = requests.put(

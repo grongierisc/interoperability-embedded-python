@@ -817,12 +817,13 @@ class TestRemoteMigrate(unittest.TestCase):
             with open(helper_path, "w", encoding="utf-8") as f:
                 f.write("VALUE = 1\n")
 
-            self.d.migrate(demo_path)
+            self.d.migrate(demo_path, strict_production_validation=True)
 
         _, kwargs = mock_put.call_args
         payload = kwargs["json"]
         self.assertEqual(payload["settings_file"], "demo.py")
         self.assertEqual(payload["package"], "custompkg")
+        self.assertTrue(payload["strict_production_validation"])
         uploaded_names = {entry["name"] for entry in payload["body"]}
         self.assertIn("demo.py", uploaded_names)
         self.assertIn("helper.py", uploaded_names)

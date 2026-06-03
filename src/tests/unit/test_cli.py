@@ -158,6 +158,21 @@ class TestIOPCli(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
             mock_migrate.assert_called_once_with("/tmp/settings.json")
 
+        with patch("iop.runtime.local._LocalDirector.migrate") as mock_migrate:
+            with self.assertRaises(SystemExit) as cm:
+                main(
+                    [
+                        "-m",
+                        "/tmp/settings.json",
+                        "--strict-production-validation",
+                    ]
+                )
+            self.assertEqual(cm.exception.code, 0)
+            mock_migrate.assert_called_once_with(
+                "/tmp/settings.json",
+                strict_production_validation=True,
+            )
+
     def test_migration_dry_run_prints_plan_without_migrating(self):
         """--dry-run prints the migration plan and does not call migrate."""
         content = "CLASSES = {}\nSCHEMAS = []\n"

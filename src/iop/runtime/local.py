@@ -114,8 +114,17 @@ class _LocalDirector(_DirectorProtocol):
     # Migrate
     # ------------------------------------------------------------------
 
-    def migrate(self, path: str) -> None:
-        _migration_utils.migrate(path, mode="LOCAL", namespace=self.namespace)
+    def migrate(
+        self,
+        path: str,
+        strict_production_validation: bool = False,
+    ) -> None:
+        _migration_utils.migrate(
+            path,
+            mode="LOCAL",
+            namespace=self.namespace,
+            strict_production_validation=strict_production_validation,
+        )
 
     # ------------------------------------------------------------------
     # Metadata

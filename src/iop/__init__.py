@@ -31,6 +31,10 @@ from iop.production import Production as Production
 from iop.production import ProductionDiff as ProductionDiff
 from iop.production import ProductionDiffEntry as ProductionDiffEntry
 from iop.production import ProductionGraph as ProductionGraph
+from iop.production import ProductionValidationError as ProductionValidationError
+from iop.production import ProductionValidationIssue as ProductionValidationIssue
+from iop.production import ProductionValidationReport as ProductionValidationReport
+from iop.production import ProductionValidationWarning as ProductionValidationWarning
 from iop.production import target as target
 from iop.runtime.director import _Director
 from iop.runtime.protocol import DirectorProtocol as DirectorProtocol
@@ -59,6 +63,10 @@ __all__ = [
     "ProductionDiff",
     "ProductionDiffEntry",
     "ProductionGraph",
+    "ProductionValidationError",
+    "ProductionValidationIssue",
+    "ProductionValidationReport",
+    "ProductionValidationWarning",
     "PydanticMessage",
     "PydanticPickleMessage",
     "Setting",
