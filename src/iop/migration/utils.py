@@ -1,5 +1,4 @@
 import ast
-import copy
 import importlib
 import importlib.resources
 import importlib.util
@@ -35,6 +34,11 @@ from .io import (
 )
 from .io import (
     xml_to_json as _xml_to_json,
+)
+from .manifest import (
+    ClassRegistration,
+    MigrationManifest,
+    MigrationManifestBuilder,
 )
 from .plans import (
     MigrationPlanner,
@@ -523,6 +527,24 @@ def _build_migration_plan(
     )
 
 
+def _build_migration_manifest(
+    settings,
+    path,
+    filename=None,
+    mode: str | None = None,
+    namespace: str | None = None,
+    strict_production_validation: bool = False,
+) -> MigrationManifest:
+    return MigrationManifestBuilder(sys.modules[__name__]).build(
+        settings,
+        path,
+        filename=filename,
+        mode=mode,
+        namespace=namespace,
+        strict_production_validation=strict_production_validation,
+    )
+
+
 def _load_settings(filename):
     """Load settings module from file or default location.
 
@@ -571,34 +593,10 @@ def _get_folder_path(filename, path_added_to_sys):
 
 
 def _classify_class_setting(value, root_path=None):
-    if inspect.isclass(value):
-        if is_persistent_message_class(value):
-            return "persistent_message", _python_classname(value)
-        if _is_message_schema_class(value):
-            return "message_schema", _python_classname(value)
-        return "component", _python_classname(value)
-
-    if inspect.ismodule(value):
-        return "component", f"{value.__name__}.*"
-
-    if isinstance(value, dict):
-        if "path" in value and "module" in value and "class" in value:
-            cls = _try_import_class(value["module"], value["class"], value["path"])
-            target = f"{value['module']}.{value['class']}"
-            if cls is not None:
-                if is_persistent_message_class(cls):
-                    return "persistent_message", target
-                if _is_message_schema_class(cls):
-                    return "message_schema", target
-            return "component", target
-        if "path" in value and "package" in value:
-            return "component", f"{value['package']} package"
-        if "path" in value and "file" in value:
-            return "component", value["file"]
-        if "path" in value:
-            return "component", value["path"]
-
-    raise ValueError(f"Invalid migration class entry: {value!r}.")
+    return MigrationManifestBuilder(sys.modules[__name__]).classify_class_setting(
+        value,
+        root_path,
+    )
 
 
 def _validate_dtl_schema_class(cls, setting_name):
@@ -631,33 +629,88 @@ def _register_settings_components(
         path = os.path.dirname(inspect.getfile(settings))
 
     persistent_registry: dict[str, tuple[type, bool]] = {}
+    manifest = _build_migration_manifest(settings, path)
+    _execute_migration_manifest(
+        manifest,
+        persistent_registry=persistent_registry,
+        strict_production_validation=strict_production_validation,
+    )
 
-    class_items = getattr(settings, "CLASSES", None)
-    if class_items is not None:
-        set_classes_settings(
-            class_items,
-            path,
+
+def _execute_migration_manifest(
+    manifest: MigrationManifest,
+    *,
+    persistent_registry: dict[str, tuple[type, bool]] | None = None,
+    strict_production_validation: bool = False,
+) -> None:
+    for registration in manifest.class_registrations:
+        _execute_class_registration(
+            registration,
             persistent_registry=persistent_registry,
         )
 
-    try:
-        # set the productions settings
-        set_productions_settings(
-            settings.PRODUCTIONS,
-            path,
-            persistent_registry=persistent_registry,
-            strict_production_validation=strict_production_validation,
+    for production in manifest.production_registrations:
+        for registration in production.class_registrations:
+            _execute_class_registration(
+                registration,
+                persistent_registry=persistent_registry,
+            )
+        validate_production_entry(
+            production.validation_subject,
+            strict=strict_production_validation,
+            warn=True,
         )
-    except AttributeError:
-        pass
+        register_production_definition(production.name, production.definition)
 
-    schemas = getattr(settings, "SCHEMAS", None)
-    if schemas is not None:
-        if not isinstance(schemas, list):
-            raise ValueError("SCHEMAS must be a list of message classes.")
-        for cls in schemas:
-            _validate_dtl_schema_class(cls, "SCHEMAS")
-            register_message_schema(cls)
+    for registration in manifest.schema_registrations:
+        register_message_schema(registration.schema_class)
+
+
+def _execute_class_registration(
+    registration: ClassRegistration,
+    *,
+    persistent_registry: dict[str, tuple[type, bool]] | None = None,
+) -> None:
+    if registration.action == "persistent_message":
+        _register_persistent_message_once(
+            registration.cls,
+            registration.iris_classname,
+            sync_schema=registration.sync_schema,
+            persistent_registry=persistent_registry,
+        )
+    elif registration.action in {"component_class", "component_descriptor"}:
+        register_component(
+            registration.module,
+            registration.classname,
+            registration.path,
+            1,
+            registration.iris_classname,
+        )
+    elif registration.action == "module_file":
+        _register_file(
+            registration.file,
+            registration.path,
+            1,
+            registration.iris_classname,
+        )
+    elif registration.action == "package":
+        register_package(
+            registration.package,
+            registration.path,
+            1,
+            registration.iris_classname,
+        )
+    elif registration.action == "file":
+        _register_file(
+            registration.file,
+            registration.path,
+            1,
+            registration.iris_classname,
+        )
+    elif registration.action == "folder":
+        register_folder(registration.path, 1, registration.iris_classname)
+    else:
+        raise ValueError(f"Invalid migration class action: {registration.action}.")
 
 
 def _cleanup_sys_path(path):
@@ -694,78 +747,16 @@ def set_classes_settings(class_items, root_path=None, persistent_registry=None):
     :param class_items: a dictionary of classes
     :return: a dictionary of settings for each class
     """
-    if not isinstance(class_items, dict):
-        raise ValueError("CLASSES must be a dictionary.")
-    for key, value in class_items.items():
-        if inspect.isclass(value):
-            if is_persistent_message_class(value):
-                _register_persistent_message_once(
-                    value,
-                    key,
-                    persistent_registry=persistent_registry,
-                )
-                continue
-            if _is_message_schema_class(value):
-                raise ValueError(
-                    f"{_python_classname(value)} is a Message/"
-                    "PydanticMessage and cannot be registered in CLASSES. "
-                    f"Use SCHEMAS = [{value.__name__}] if you need DTL "
-                    "support. Otherwise, no migration is required for this "
-                    "message."
-                )
-            path = None
-            if root_path:
-                path = root_path
-            else:
-                path = os.path.dirname(inspect.getfile(value))
-            register_component(value.__module__, value.__name__, path, 1, key)
-        elif inspect.ismodule(value):
-            path = None
-            if root_path:
-                path = root_path
-            else:
-                path = os.path.dirname(inspect.getfile(value))
-            _register_file(value.__name__ + ".py", path, 1, key)
-        # if the value is a dict
-        elif isinstance(value, dict):
-            # if the dict has a key 'path' and a key 'module' and a key 'class'
-            if "path" in value and "module" in value and "class" in value:
-                msg_cls = _try_import_class(
-                    value["module"], value["class"], value["path"]
-                )
-                if msg_cls is not None and is_persistent_message_class(msg_cls):
-                    _register_persistent_message_once(
-                        msg_cls,
-                        key,
-                        persistent_registry=persistent_registry,
-                    )
-                    continue
-                if msg_cls is not None and _is_message_schema_class(msg_cls):
-                    raise ValueError(
-                        f"{value['module']}.{value['class']} is a Message/"
-                        "PydanticMessage and cannot be registered in CLASSES. "
-                        "Use SCHEMAS if you need DTL "
-                        "support. Otherwise, no migration is required for this "
-                        "message."
-                    )
-                # register the component
-                register_component(
-                    value["module"], value["class"], value["path"], 1, key
-                )
-            # if the dict has a key 'path' and a key 'package'
-            elif "path" in value and "package" in value:
-                # register the package
-                register_package(value["package"], value["path"], 1, key)
-            # if the dict has a key 'path' and a key 'file'
-            elif "path" in value and "file" in value:
-                # register the file
-                _register_file(value["file"], value["path"], 1, key)
-            # if the dict has a key 'path'
-            elif "path" in value:
-                # register folder
-                register_folder(value["path"], 1, key)
-            else:
-                raise ValueError(f"Invalid value for {key}.")
+    registrations = MigrationManifestBuilder(sys.modules[__name__]).build_class_registrations(
+        class_items,
+        root_path,
+        source="classes",
+    )
+    for registration in registrations:
+        _execute_class_registration(
+            registration,
+            persistent_registry=persistent_registry,
+        )
 
 
 def _try_import_class(module_name: str, class_name: str, path: str):
@@ -871,41 +862,17 @@ def set_productions_settings(
     """
     It takes a list of dictionaries and registers the productions
     """
-    # for each production in the list
-    for production in production_list:
-        production_is_object = _is_production_object(production)
-        if production_is_object:
-            _register_production_object_messages(
-                production,
-                persistent_registry=persistent_registry,
-            )
-            _register_production_object_components(production, root_path)
-            validate_production_entry(
-                production,
-                strict=strict_production_validation,
-                warn=True,
-            )
-            production = production.to_dict()
-        else:
-            production = copy.deepcopy(production)
-
-        if not isinstance(production, dict) or not production:
-            raise ValueError("Each PRODUCTION entry must be a non-empty dict.")
-
-        # get the production name (first key in the dictionary)
-        production_name = list(production.keys())[0]
-        # set the first key to 'production'
-        production["Production"] = production.pop(production_name)
-        # handle Items
-        production = handle_items(production, root_path)
-        if not production_is_object:
-            validate_production_entry(
-                production,
-                strict=strict_production_validation,
-                warn=True,
-            )
-        # register the production
-        register_production_definition(production_name, production)
+    manifest = MigrationManifest(
+        settings="PRODUCTIONS",
+        production_registrations=MigrationManifestBuilder(
+            sys.modules[__name__]
+        ).build_production_registrations(production_list, root_path),
+    )
+    _execute_migration_manifest(
+        manifest,
+        persistent_registry=persistent_registry,
+        strict_production_validation=strict_production_validation,
+    )
 
 
 def _is_production_object(value) -> bool:
@@ -921,85 +888,34 @@ def _register_production_object_messages(
     *,
     persistent_registry=None,
 ):
-    for registration in getattr(production, "message_registrations", lambda: ())():
-        _register_persistent_message_once(
-            registration.message_class,
-            registration.iris_classname,
-            sync_schema=registration.sync_schema,
+    registrations = MigrationManifestBuilder(
+        sys.modules[__name__]
+    ).production_object_class_registrations(production)
+    for registration in registrations:
+        if registration.action != "persistent_message":
+            continue
+        _execute_class_registration(
+            registration,
             persistent_registry=persistent_registry,
         )
 
 
 def _register_production_object_components(production, root_path=None):
-    registered = set()
-    for item in production.component_registrations():
-        cls = item.component_class
-        if not inspect.isclass(cls):
+    registrations = MigrationManifestBuilder(
+        sys.modules[__name__]
+    ).production_object_class_registrations(production, root_path)
+    for registration in registrations:
+        if registration.action == "persistent_message":
             continue
-        key = (item.class_name, cls.__module__, cls.__name__)
-        if key in registered:
-            continue
-        registered.add(key)
-        path = root_path or os.path.dirname(inspect.getfile(cls))
-        register_component(
-            cls.__module__,
-            cls.__name__,
-            path,
-            1,
-            item.class_name,
-        )
-    for item in getattr(production, "adapter_registrations", lambda: ())():
-        cls = item.adapter_class
-        if not inspect.isclass(cls):
-            continue
-        key = (item.adapter_class_name, cls.__module__, cls.__name__)
-        if key in registered:
-            continue
-        registered.add(key)
-        path = root_path or os.path.dirname(inspect.getfile(cls))
-        register_component(
-            cls.__module__,
-            cls.__name__,
-            path,
-            1,
-            item.adapter_class_name,
-        )
+        _execute_class_registration(registration)
 
 
 def handle_items(production, root_path=None):
-    # if an item is a class, register it and replace it with the name of the class
-    if "Item" in production["Production"]:
-        # for each item in the list
-        for i, item in enumerate(production["Production"]["Item"]):
-            if "@ClassName" not in item:
-                raise ValueError(f"Missing @ClassName for {item.get('@Name')}.")
-            # if the attribute "@ClassName" is a class, register it and replace it with the name of the class
-            if inspect.isclass(item["@ClassName"]):
-                path = None
-                if root_path:
-                    path = root_path
-                else:
-                    path = os.path.dirname(inspect.getfile(item["@ClassName"]))
-                register_component(
-                    item["@ClassName"].__module__,
-                    item["@ClassName"].__name__,
-                    path,
-                    1,
-                    item["@Name"],
-                )
-                # replace the class with the name of the class
-                production["Production"]["Item"][i]["@ClassName"] = item["@Name"]
-            # if the attribute "@ClassName" is a dict
-            elif isinstance(item["@ClassName"], dict):
-                # create a new dict where the key is the name of the class and the value is the dict
-                class_dict = {item["@Name"]: item["@ClassName"]}
-                # pass the new dict to set_classes_settings
-                set_classes_settings(class_dict)
-                # replace the class with the name of the class
-                production["Production"]["Item"][i]["@ClassName"] = item["@Name"]
-            elif not isinstance(item["@ClassName"], str):
-                raise ValueError(f"Invalid value for {item['@Name']}.")
-
+    registrations = MigrationManifestBuilder(
+        sys.modules[__name__]
+    ).normalize_production_items(production, root_path)
+    for registration in registrations:
+        _execute_class_registration(registration)
     return production
 
 

@@ -9,7 +9,9 @@ import pytest
 
 from iop import (
     BusinessOperation,
+    BusinessService,
     Field,
+    InboundAdapter,
     PersistentMessage,
     Production,
     bind_component,
@@ -21,6 +23,7 @@ from iop import (
 from iop.messages.base import _Message as Message
 from iop.messages.base import _PydanticMessage as PydanticMessage
 from iop.migration import utils as migration_utils
+from iop.migration.manifest import MigrationManifestBuilder
 
 
 @pytest.fixture
@@ -306,6 +309,152 @@ class TestMigrationPlan:
 
         with pytest.raises(ValueError, match="cannot be registered in CLASSES"):
             migration_utils._build_migration_plan(Settings, os.getcwd())
+
+    def test_manifest_drives_plan_and_execution_for_production_object(self, tmp_path):
+        class ManifestOperation(BusinessOperation):
+            pass
+
+        class ManifestAdapter(InboundAdapter):
+            pass
+
+        class ManifestService(BusinessService):
+            pass
+
+        class NativeOrder(PersistentMessage):
+            OrderId: str = Field(required=True)
+
+        @dataclass
+        class DtlOrder(Message):
+            value: str = ""
+
+        prod = Production("Demo.ManifestProduction")
+        prod.message("Demo.Msg.NativeOrder", NativeOrder)
+        prod.operation(ManifestOperation)
+        prod.service("Input", ManifestService, adapter_class=ManifestAdapter)
+
+        class Settings:
+            CLASSES = {}
+            PRODUCTIONS = [prod]
+            SCHEMAS = [DtlOrder]
+
+        builder = MigrationManifestBuilder(migration_utils)
+        manifest = builder.build(Settings, str(tmp_path))
+        plan = migration_utils._build_migration_plan(Settings, str(tmp_path))
+
+        assert plan["classes"] == manifest.plan_class_entries()
+        assert plan["schemas"] == manifest.plan_schema_entries()
+        assert plan["productions"] == manifest.plan_production_entries()
+        assert (
+            "Demo.Msg.NativeOrder"
+            + f" -> {NativeOrder.__module__}.NativeOrder "
+            "(PersistentMessage)" in plan["classes"]
+        )
+        assert (
+            f"Python.{ManifestAdapter.__module__}.ManifestAdapter".replace("_", "")
+            + f" -> {ManifestAdapter.__module__}.ManifestAdapter (component)"
+            in plan["classes"]
+        )
+
+        calls = []
+
+        def record_message(*args, **kwargs):
+            calls.append(("message", args))
+
+        def record_component(*args, **kwargs):
+            calls.append(("component", args))
+
+        def record_schema(*args, **kwargs):
+            calls.append(("schema", args))
+
+        def record_production(*args, **kwargs):
+            calls.append(("production", args))
+
+        with patch.object(
+            migration_utils,
+            "register_persistent_message",
+            side_effect=record_message,
+        ):
+            with patch.object(
+                migration_utils,
+                "register_component",
+                side_effect=record_component,
+            ):
+                with patch.object(
+                    migration_utils,
+                    "register_message_schema",
+                    side_effect=record_schema,
+                ):
+                    with patch.object(
+                        migration_utils,
+                        "register_production_definition",
+                        side_effect=record_production,
+                    ):
+                        migration_utils._register_settings_components(
+                            Settings,
+                            str(tmp_path),
+                        )
+
+        assert [kind for kind, _args in calls] == [
+            "message",
+            "component",
+            "component",
+            "component",
+            "production",
+            "schema",
+        ]
+
+    def test_manifest_normalizes_legacy_item_class_registrations(self, tmp_path):
+        class LegacyComponent:
+            pass
+
+        descriptor = {
+            "path": str(tmp_path),
+            "module": "legacy_module",
+            "class": "LegacyFromDescriptor",
+        }
+        legacy = {
+            "Demo.LegacyProduction": {
+                "Item": [
+                    {"@Name": "ClassItem", "@ClassName": LegacyComponent},
+                    {"@Name": "DictItem", "@ClassName": descriptor},
+                ]
+            }
+        }
+
+        manifest = MigrationManifestBuilder(
+            migration_utils
+        ).build_production_registrations([legacy], str(tmp_path))[0]
+
+        assert legacy["Demo.LegacyProduction"]["Item"][0]["@ClassName"] is (
+            LegacyComponent
+        )
+        assert manifest.definition["Production"]["Item"] == [
+            {"@Name": "ClassItem", "@ClassName": "ClassItem"},
+            {"@Name": "DictItem", "@ClassName": "DictItem"},
+        ]
+        assert [entry.iris_classname for entry in manifest.class_registrations] == [
+            "ClassItem",
+            "DictItem",
+        ]
+
+        with patch.object(migration_utils, "register_component") as mock_register:
+            with patch.object(migration_utils, "register_production_definition"):
+                migration_utils.set_productions_settings([legacy], str(tmp_path))
+
+        assert mock_register.call_args_list[0].args == (
+            LegacyComponent.__module__,
+            "LegacyComponent",
+            str(tmp_path),
+            1,
+            "ClassItem",
+        )
+        assert mock_register.call_args_list[1].args == (
+            "legacy_module",
+            "LegacyFromDescriptor",
+            str(tmp_path),
+            1,
+            "DictItem",
+        )
 
     def test_register_settings_components_and_schemas(self, tmp_path):
         class MyOperation(BusinessOperation):

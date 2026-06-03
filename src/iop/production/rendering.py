@@ -45,11 +45,9 @@ def _production_settings_to_iris(production) -> list[dict[str, str]]:
 
 
 def production_to_xml(production) -> str:
-    from ..migration import utils as migration_utils
+    from ..migration.io import dict_to_xml
 
-    return migration_utils.dict_to_xml(
-        {"Production": production_to_dict(production)[production.name]}
-    )
+    return dict_to_xml({"Production": production_to_dict(production)[production.name]})
 
 
 def production_to_python(production) -> str:
