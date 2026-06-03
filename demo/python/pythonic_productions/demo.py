@@ -9,7 +9,7 @@ class OrderRequest(Message):
 
 
 class FileService(PollingBusinessService):
-    Output = target("orders")
+    Output = target()
 
     def on_poll(self):
         self.send_request_sync(self.Output, OrderRequest(order_id="777"))

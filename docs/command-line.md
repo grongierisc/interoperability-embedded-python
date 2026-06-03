@@ -406,8 +406,7 @@ iop -e IoP.Production --format python > production_settings.py
 The generated file uses the `Production` DSL with `component(...)`,
 `connect(...)`, and `connect_add(...)` calls. Review it before migration because
 IRIS export cannot fully recover original Python classes, variable names,
-logical `target(...)` names, persistent message declarations, or every dynamic
-runtime route.
+persistent message declarations, or every dynamic runtime route.
 
 To generate a class-style declarative draft, use:
 

@@ -125,10 +125,7 @@ class _DeclarativeProductionMixin:
         source = self.item(declaration.name)
         for route in declaration.route_values:
             self._raise_if_route_port_owner_mismatch(source, route)
-            port = source.port(
-                route.port_name,
-                logical_name=route.route_logical_name,
-            )
+            port = source.port(route.port_name)
             targets = route.target_names
             self.connect(port, targets[0])
             for target in targets[1:]:

@@ -60,23 +60,17 @@ class ComponentRef:
                     production=self.production,
                     component=self,
                     name=name,
-                    logical_name=descriptor.logical_name,
                 )
         if name in self.port_names:
             return self.port(name)
         raise AttributeError(name)
 
-    def port(self, name: str, logical_name: str = "") -> Port:
-        if not logical_name and self.component_class is not None:
-            descriptor = getattr(self.component_class, name, None)
-            if isinstance(descriptor, TargetSetting):
-                logical_name = descriptor.logical_name
+    def port(self, name: str) -> Port:
         self.port_names.add(name)
         return Port(
             production=self.production,
             component=self,
             name=name,
-            logical_name=logical_name,
         )
 
     def set_host_setting(self, name: str, value: Any) -> None:

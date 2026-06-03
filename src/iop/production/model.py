@@ -595,7 +595,6 @@ class Production(_DeclarativeProductionMixin):
             source.item_name,
             source.name,
             target_name,
-            logical_name=source.logical_name,
             replace_port=True,
         )
 
@@ -622,7 +621,6 @@ class Production(_DeclarativeProductionMixin):
             source.item_name,
             source.name,
             target_name,
-            logical_name=source.logical_name,
             replace_port=False,
         )
 
@@ -919,7 +917,6 @@ class Production(_DeclarativeProductionMixin):
         source_port: str,
         target_name: str,
         *,
-        logical_name: str = "",
         origin: str = "authored",
         interaction: str = "request",
         metadata: dict[str, Any] | None = None,
@@ -942,7 +939,6 @@ class Production(_DeclarativeProductionMixin):
         edge = GraphEdge(
             source_item=source_item,
             source_port=source_port,
-            logical_name=logical_name,
             target=target_name,
             origin=origin,
             interaction=interaction,

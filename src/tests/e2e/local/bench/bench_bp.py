@@ -1,7 +1,9 @@
-from iop import BusinessProcess, target as iop_target
+from iop import BusinessProcess
+from iop import target as iop_target
+
 
 class BenchIoPProcess(BusinessProcess):
-    target = iop_target("operation")
+    target = iop_target()
 
     def on_init(self):
         if not hasattr(self, 'size'):
@@ -11,4 +13,4 @@ class BenchIoPProcess(BusinessProcess):
 
     def on_message(self, request):
         for _ in range(self.size):
-            rsp = self.send_request_sync(self.target,request)
+            self.send_request_sync(self.target, request)

@@ -37,7 +37,7 @@ Implemented graph import and display:
 - `Production.item(name)`
 - `Production.component_ref(target)`
 - `Production.get_component(target)`
-- `ComponentRef.port(name, logical_name="")`
+- `ComponentRef.port(name)`
 - `Production.graph()`
 - `Production.diff(other=None)`
 - `Production.graph_diff(other=None)`
@@ -173,7 +173,6 @@ Rules:
 Persist IOP-owned metadata so Python-to-IRIS-to-Python round trips lose less
 intent:
 
-- logical `target("orders")` names
 - declared port names and types
 - richer route intent beyond the current origin/interaction metadata
 - Python source module and class origin
@@ -223,7 +222,6 @@ production XML becomes one generated output.
 ### Metadata Gaps
 
 - IRIS export does not preserve Python class objects.
-- IRIS export does not preserve logical names from `target("orders")`.
 - IRIS export does not preserve the Python module/class origin unless stored as
   explicit metadata.
 - `OnGetConnections` usually returns target names, not always source port names.

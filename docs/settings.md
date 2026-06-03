@@ -124,7 +124,7 @@ class OrderRequest(Message):
 
 
 class FileService(PollingBusinessService):
-    Output = target("orders")
+    Output = target()
 
     def on_poll(self):
         return self.send_request_sync(
@@ -146,9 +146,9 @@ prod.connect(file.Output, orders)
 PRODUCTIONS = [prod]
 ```
 
-`target()` declares an outbound port on the component class. `prod.connect()`
-sets that port to the destination component for the generated production and
-keeps graph metadata available to Python.
+`target()` declares an outbound target setting on the component class.
+`prod.connect()` sets that setting to the destination component and
+records graph edges available to Python.
 
 You can also write the same production as a class declaration. The class is a
 template; put an instance in `PRODUCTIONS`.
@@ -173,7 +173,7 @@ class OrderRequest(Message):
 
 
 class FileService(PollingBusinessService):
-    Output = target("orders")
+    Output = target()
 
     def on_poll(self):
         return self.send_request_sync(
@@ -230,15 +230,15 @@ class FileProduction(Production):
 PRODUCTIONS = [FileProduction()]
 ```
 
-`target("orders")` declares the outbound port on the Python component class.
-`Route(FileService.Output, ORDER_OPERATION)` wires that port to a production
+`target()` declares the outbound target setting on the Python component class.
+`Route(FileService.Output, ORDER_OPERATION)` wires that setting to a production
 item. This is the class-style equivalent of `prod.connect(file.Output, orders)`.
 
 For Python component classes, prefer the descriptor form
 `Route(FileService.Output, ...)`. For existing IRIS classes, use the IRIS
 setting name string, for example `Route("TargetConfigNames", "FileOut")`.
 
-`Route(port, targets)` owns the route Host setting and records graph metadata.
+`Route(port, targets)` owns the route Host setting and records graph edges.
 `targets` can be an item declaration, a string item name, or a sequence for
 fan-out.
 Use `settings` or `host_settings` only for non-route Host settings. If a route
@@ -309,8 +309,8 @@ When available, runtime connection export also supplies adapter metadata such
 as `adapter_class_name`; for loaded Python host classes this can also be
 inferred from `get_adapter_type()`.
 The fetched graph is an operational reconstruction, not a replacement for the
-Python source. Logical `target("orders")` names and Python class objects are not
-recoverable from IRIS unless they are also present in the Python source.
+Python source. Python class objects are not recoverable from IRIS unless they
+are also present in the Python source.
 
 Runtime queue counters are separate from the authoring graph:
 

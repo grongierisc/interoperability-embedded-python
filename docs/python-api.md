@@ -419,7 +419,7 @@ Available in all component classes:
 from iop import BusinessOperation, PollingBusinessService, Production, target
 
 class FileService(PollingBusinessService):
-    Output = target("orders")
+    Output = target()
 
     def on_poll(self):
         pass
@@ -485,8 +485,8 @@ class FileProduction(Production):
     operations = (FILE_OUT,)
 ```
 
-`target("orders")` declares a configurable outbound port on `FileService`.
-`Route(FileService.Output, ORDER_OPERATION)` wires that port to a production
+`target()` declares a configurable outbound target setting on `FileService`.
+`Route(FileService.Output, ORDER_OPERATION)` wires that setting to a production
 item. This separation mirrors the instance-style form:
 `prod.connect(file.Output, orders)`.
 

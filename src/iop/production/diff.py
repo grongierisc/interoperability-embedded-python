@@ -314,7 +314,6 @@ def _edge_diff_value(edge: GraphEdge) -> dict[str, Any]:
         "target": edge.target,
         "origin": edge.origin,
         "interaction": edge.interaction,
-        "logical_name": edge.logical_name,
     }
     if edge.metadata:
         data["metadata"] = _canonical_value(edge.metadata)

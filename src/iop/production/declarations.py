@@ -19,7 +19,6 @@ class Route:
 
     port: str | TargetSetting
     targets: str | _NamedRouteTarget | Iterable[str | _NamedRouteTarget]
-    logical_name: str = ""
 
     @property
     def port_name(self) -> str:
@@ -30,14 +29,6 @@ class Route:
         if isinstance(self.port, TargetSetting):
             return self.port.owner
         return None
-
-    @property
-    def route_logical_name(self) -> str:
-        if self.logical_name:
-            return self.logical_name
-        if isinstance(self.port, TargetSetting):
-            return self.port.logical_name
-        return ""
 
     @property
     def target_names(self) -> tuple[str, ...]:

@@ -192,6 +192,7 @@ def _normalize_connection_target(value: Any) -> dict[str, Any] | None:
         "port",
         "interaction",
         "metadata",
+        "logical_name",
     }
     for key, item in value.items():
         if key not in known_keys and item is not None:

@@ -10,12 +10,11 @@ from ..components.settings import Category, Setting, controls
 class TargetSetting(Setting):
     """Production target setting descriptor created by target()."""
 
-    def __init__(self, logical_name: str = "", **kwargs: Any):
+    def __init__(self, **kwargs: Any):
         kwargs.setdefault("iris_type", "Ens.DataType.ConfigName")
         kwargs.setdefault("category", Category.BASIC)
         kwargs.setdefault("control", controls.production_item())
         super().__init__("", **kwargs)
-        self.logical_name = logical_name
 
     @overload
     def __get__(self, instance: None, owner: type | None = None) -> TargetSetting: ...
@@ -27,9 +26,9 @@ class TargetSetting(Setting):
         return super().__get__(instance, owner)
 
 
-def target(logical_name: str = "", **kwargs: Any) -> TargetSetting:
-    """Declare an outbound target port on a component class."""
-    return TargetSetting(logical_name, **kwargs)
+def target(**kwargs: Any) -> TargetSetting:
+    """Declare an outbound target setting on a component class."""
+    return TargetSetting(**kwargs)
 
 
 @dataclass
@@ -39,7 +38,6 @@ class Port:
     production: Any
     component: Any
     name: str
-    logical_name: str = ""
 
     @property
     def item_name(self) -> str:
@@ -97,7 +95,6 @@ class GraphEdge:
     source_item: str
     target: str
     source_port: str = ""
-    logical_name: str = ""
     origin: str = "authored"
     interaction: str = "request"
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -129,7 +126,6 @@ class GraphEdge:
             "source": self.source,
             "source_item": self.source_item,
             "source_port": self.source_port,
-            "logical_name": self.logical_name,
             "target": self.target,
             "origin": self.origin,
             "interaction": self.interaction,
@@ -274,7 +270,6 @@ def _edge_identity(edge: GraphEdge) -> tuple[Any, ...]:
         edge.target,
         edge.origin,
         edge.interaction,
-        edge.logical_name,
         tuple(
             sorted(
                 (str(key), _canonical_value(value))

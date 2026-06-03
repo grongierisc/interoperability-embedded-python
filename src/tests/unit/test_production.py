@@ -42,7 +42,7 @@ class NativeOrderMessage(PersistentMessage):
 
 
 class FileService(PollingBusinessService):
-    Output = target("orders")
+    Output = target()
 
 
 class OrderOperation(BusinessOperation):
@@ -117,7 +117,6 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
             "source": "FileInput.Output",
             "source_item": "FileInput",
             "source_port": "Output",
-            "logical_name": "orders",
             "target": "OrderOperation",
             "origin": "authored",
             "interaction": "request",
@@ -356,7 +355,6 @@ def test_declarative_production_string_class_names_match_instance_shape():
             "source": "MyServiceName.TargetConfigNames",
             "source_item": "MyServiceName",
             "source_port": "TargetConfigNames",
-            "logical_name": "",
             "target": "MyProcessName",
             "origin": "authored",
             "interaction": "request",
@@ -365,7 +363,6 @@ def test_declarative_production_string_class_names_match_instance_shape():
             "source": "MyProcessName.TargetConfigNames",
             "source_item": "MyProcessName",
             "source_port": "TargetConfigNames",
-            "logical_name": "",
             "target": "MyOperationName",
             "origin": "authored",
             "interaction": "request",
@@ -396,7 +393,7 @@ def test_declarative_production_supports_generic_component_items():
     ]
 
 
-def test_declarative_production_python_classes_keep_target_metadata():
+def test_declarative_production_python_classes_keep_target_routes():
     class DeclarativeProduction(Production):
         name = "Demo.DeclarativeProduction"
         services = [
@@ -420,12 +417,12 @@ def test_declarative_production_python_classes_keep_target_metadata():
         )
     )
     assert prod.item("FileInput").Output.resolve() == "OrderOperation"
-    assert prod.graph().to_dict()["edges"][0]["logical_name"] == "orders"
+    assert prod.graph().to_dict()["edges"][0]["source_port"] == "Output"
 
 
 def test_declarative_route_rejects_descriptor_from_another_component():
     class AlternateService(PollingBusinessService):
-        OtherOutput = target("other")
+        OtherOutput = target()
 
     class InvalidProduction(Production):
         services = [
@@ -704,7 +701,6 @@ def test_progressive_authoring_api_matches_deployable_shape():
 
     graph_edge = prod.graph().to_dict()["edges"][0]
     assert graph_edge["source"] == "FileInput.Output"
-    assert graph_edge["logical_name"] == "orders"
     assert graph_edge["target"] == "OrderOperation"
 
 
@@ -753,7 +749,7 @@ def test_production_validate_warns_unknown_python_host_setting():
 
 def test_production_validate_reports_known_setting_alias_suggestion():
     class RoutingService(BusinessService):
-        TargetConfigName = target("target")
+        TargetConfigName = target()
 
     prod = Production("Demo.Production")
     prod.service(
@@ -1239,7 +1235,6 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
             "source": "FileInput.TargetConfigNames",
             "source_item": "FileInput",
             "source_port": "TargetConfigNames",
-            "logical_name": "",
             "target": "OrderOperation",
             "origin": "runtime",
             "interaction": "request",
@@ -1284,7 +1279,6 @@ def test_production_from_dict_falls_back_when_runtime_has_only_internal_targets(
             "source": "FileInput.Output",
             "source_item": "FileInput",
             "source_port": "Output",
-            "logical_name": "",
             "target": "OrderOperation",
             "origin": "inferred",
             "interaction": "request",
@@ -1419,7 +1413,6 @@ def test_production_graph_diff_includes_edge_origin_metadata():
                 "target": "OrderOperation",
                 "origin": "inferred",
                 "interaction": "request",
-                "logical_name": "",
                 "metadata": {"source": "Host setting fallback"},
             }
         ],
@@ -1428,7 +1421,6 @@ def test_production_graph_diff_includes_edge_origin_metadata():
                 "target": "OrderOperation",
                 "origin": "authored",
                 "interaction": "request",
-                "logical_name": "orders",
             }
         ],
     } in graph_diff.to_dict()["changes"]
@@ -1585,7 +1577,6 @@ def test_production_from_dict_infers_when_runtime_discovery_returns_no_targets()
             "source": "Router.TargetConfigNames",
             "source_item": "Router",
             "source_port": "TargetConfigNames",
-            "logical_name": "",
             "target": "OrderOperation",
             "origin": "inferred",
             "interaction": "request",
@@ -1647,7 +1638,6 @@ def test_production_from_dict_keeps_runtime_edge_without_matching_port():
             "source": "Router",
             "source_item": "Router",
             "source_port": "",
-            "logical_name": "",
             "target": "OrderOperation",
             "origin": "runtime",
             "interaction": "request",
