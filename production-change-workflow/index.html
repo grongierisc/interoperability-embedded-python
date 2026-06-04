@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/production-change-workflow/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Production Change Workflow - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Production Change Workflow";
+        var mkdocs_page_input_path = "production-change-workflow.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/production-change-workflow/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Production Change Workflow</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#why-use-this-instead-of-sync">Why Use This Instead Of sync()</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#risk-policy">Risk Policy</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#python-api">Python API</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-workflow">CLI Workflow</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#backup-files">Backup Files</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#brownfield-guidance">Brownfield Guidance</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../settings/">Settings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-graph/">Production Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">API documentation</li>
+      <li class="breadcrumb-item active">Production Change Workflow</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="production-change-workflow">Production Change Workflow</h1>
+<p>The production change workflow is the conservative path for changing an
+existing IRIS production from a Python <code>Production</code> definition:</p>
+<ol>
+<li>Build a change plan.</li>
+<li>Review the plan.</li>
+<li>Apply only supported safe operations by default.</li>
+<li>Verify that applied operations converged.</li>
+<li>Roll back from the backup export when needed.</li>
+</ol>
+<p>This workflow is intended for real IRIS productions where the deployed state
+may contain ObjectScript components, BPL, DTL, routing rules, dynamic targets,
+custom settings, and runtime-only behavior that cannot be fully reconstructed
+from Python.</p>
+<h2 id="why-use-this-instead-of-sync">Why Use This Instead Of <code>sync()</code></h2>
+<p><code>prod.sync()</code> remains the explicit full-registration path. It writes the full
+Python production definition to local IRIS through the migration machinery.</p>
+<p><code>prod.apply()</code> uses a saved <code>ProductionChangePlan</code>. It compares the current IRIS
+production with the desired Python production and applies granular operations
+only when they are supported and allowed by policy.</p>
+<p>Use <code>sync()</code> for Python-authored productions where the Python definition is the
+complete source of truth. Use <code>plan()</code> and <code>apply()</code> for brownfield or shared
+IRIS productions where preserving unmodeled deployed behavior matters.</p>
+<h2 id="risk-policy">Risk Policy</h2>
+<p>The plan classifies each operation before mutation.</p>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Default behavior</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>safe</code></td>
+<td>Applied by default</td>
+<td>Add item, change production setting, change item scalar field, set Host/Adapter setting, change an explicit route setting</td>
+</tr>
+<tr>
+<td><code>destructive</code></td>
+<td>Skipped unless <code>allow_destructive=True</code> or <code>--allow-destructive</code></td>
+<td>Delete item, remove setting, remove route, replace component class</td>
+</tr>
+<tr>
+<td><code>unsupported</code></td>
+<td>Always skipped</td>
+<td>Runtime-only route with no source setting, dynamic route that cannot be mapped to a static setting</td>
+</tr>
+</tbody>
+</table>
+<p>Unknown existing items, settings, and routes are not removed just because the
+desired Python production omits them. They appear as blocked operations in the
+plan so an operator can review the gap.</p>
+<h2 id="python-api">Python API</h2>
+<p>Create a plan from the desired production:</p>
+<pre><code class="language-python">from pathlib import Path
+
+from settings import prod
+
+
+plan = prod.plan()
+print(plan)
+plan.save(&quot;plan.json&quot;)
+</code></pre>
+<p>Apply the safe operations:</p>
+<pre><code class="language-python">from iop import ProductionChangePlan
+from settings import prod
+
+
+plan = ProductionChangePlan.load(&quot;plan.json&quot;)
+result = prod.apply(plan, backup_dir=&quot;.iop/backups&quot;)
+print(result)
+</code></pre>
+<p>Verify after apply:</p>
+<pre><code class="language-python">from iop import ProductionChangePlan
+from settings import prod
+
+
+plan = ProductionChangePlan.load(&quot;plan.json&quot;)
+result = prod.verify(plan)
+print(result)
+</code></pre>
+<p>Allow destructive operations only when the plan has been reviewed:</p>
+<pre><code class="language-python">result = prod.apply(
+    plan,
+    allow_destructive=True,
+    backup_dir=&quot;.iop/backups&quot;,
+)
+</code></pre>
+<p>Rollback restores the full production export saved before apply:</p>
+<pre><code class="language-python">from iop import Production
+
+
+result = Production.rollback_backup(
+    &quot;.iop/backups/20260604T120000Z-abc123def456&quot;,
+    allow_destructive=True,
+)
+print(result)
+</code></pre>
+<h2 id="cli-workflow">CLI Workflow</h2>
+<p>Build a plan from a <code>settings.py</code> file:</p>
+<pre><code class="language-bash">iop --plan demo/python/production_change_workflow/settings.py \
+    --production Demo.ChangeWorkflowProduction \
+    --out plan.json
+</code></pre>
+<p>Review it:</p>
+<pre><code class="language-bash">iop --review-plan plan.json
+</code></pre>
+<p>Apply safe operations locally:</p>
+<pre><code class="language-bash">iop --apply-plan plan.json \
+    --settings demo/python/production_change_workflow/settings.py \
+    --backup-dir .iop/backups
+</code></pre>
+<p>Verify:</p>
+<pre><code class="language-bash">iop --verify-plan plan.json
+</code></pre>
+<p>Rollback from a backup directory:</p>
+<pre><code class="language-bash">iop --rollback-backup .iop/backups/20260604T120000Z-abc123def456 \
+    --allow-destructive
+</code></pre>
+<p><code>--apply-plan</code> and <code>--rollback-backup</code> require local IRIS access in this v1
+workflow. Remote REST apply and rollback are deliberately blocked. Planning and
+verification can use the existing export, connections, and queue inspection
+paths.</p>
+<h2 id="backup-files">Backup Files</h2>
+<p>Before any apply mutation, IoP writes a backup directory containing:</p>
+<ul>
+<li><code>production.json</code>: exported production definition</li>
+<li><code>production.xml</code>: XML representation of the current production</li>
+<li><code>connections.json</code>: runtime connection export</li>
+<li><code>queues.json</code>: queue counter export</li>
+<li><code>plan.json</code>: the plan that was applied</li>
+<li><code>metadata.json</code>: backup id, timestamp, user, host, namespace, production, and
+  plan fingerprints</li>
+</ul>
+<p>If the plan has no applicable operations, no backup is written because no IRIS
+mutation is attempted.</p>
+<h2 id="brownfield-guidance">Brownfield Guidance</h2>
+<p>Start with inspection:</p>
+<pre><code class="language-bash">iop -e Demo.Production --format graph
+iop -e Demo.Production --format python &gt; imported_production.py
+</code></pre>
+<p>Review the generated Python before using it as desired state. IRIS export cannot
+fully reconstruct Python class objects, original variable names, BPL/DTL/rule
+intent, conditional routing, or all dynamic targets.</p>
+<p>When working with built-in or ObjectScript components, declare route settings
+manually:</p>
+<pre><code class="language-python">from iop import Production
+
+
+prod = Production(&quot;Demo.Production&quot;)
+file_in = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
+file_out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
+
+prod.connect(file_in.port(&quot;TargetConfigNames&quot;), file_out)
+</code></pre>
+<p>Runtime-only routes that cannot be mapped to a Host setting are reported as
+unsupported plan operations and are not mutated.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../python-api/" class="btn btn-neutral float-left" title="Python API"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../rest-api/" class="btn btn-neutral float-right" title="REST API (/api/iop)">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../python-api/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../rest-api/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

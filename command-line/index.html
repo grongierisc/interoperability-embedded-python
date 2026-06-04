@@ -80,6 +80,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#bindings-and-unbind">bindings and unbind</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#plan-review-apply-verify-rollback">plan, review, apply, verify, rollback</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#init">init</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#remote-init-python-package-prerequisite">Remote init: Python package prerequisite</a>
@@ -89,6 +91,8 @@
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-change-workflow/">Production Change Workflow</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
                   </li>
@@ -119,6 +123,8 @@
               <p class="caption"><span class="caption-text">Reference</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-graph/">Production Graph</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
@@ -213,6 +219,10 @@ default production: IoP.Production
 <ul>
 <li><code>migrate</code>: apply a Python migration file to IRIS. This can register classes,
   schemas, and productions.</li>
+<li><code>plan</code>: compare a desired Python <code>Production</code> with the current IRIS
+  production and write a reviewable change plan.</li>
+<li><code>apply plan</code>: apply supported safe plan operations. Destructive operations
+  are skipped unless explicitly allowed.</li>
 <li><code>bind</code> or <code>register</code>: create an IRIS proxy class that points to a Python
   component class.</li>
 <li><code>unbind</code> or <code>unregister</code>: remove an IOP-generated IRIS proxy class binding.
@@ -340,6 +350,43 @@ PRODUCTIONS = [prod]
 files and it does not remove production items. If any production item still uses
 the proxy class, the command fails and reports the production item references.
 Remove or change those production items first, then run <code>--unbind</code> again.</p>
+<h2 id="plan-review-apply-verify-rollback">plan, review, apply, verify, rollback</h2>
+<p>The plan workflow is the conservative way to change an existing IRIS production
+from a Python <code>Production</code> definition. It is useful when the deployed
+production may contain ObjectScript classes, BPL, DTL, routing rules, dynamic
+targets, or settings that Python cannot fully reconstruct yet.</p>
+<p>Build a plan:</p>
+<pre><code class="language-bash">iop --plan /path/to/settings.py \
+    --production Demo.Production \
+    --out plan.json
+</code></pre>
+<p>Review the saved plan:</p>
+<pre><code class="language-bash">iop --review-plan plan.json
+</code></pre>
+<p>Apply supported safe operations locally:</p>
+<pre><code class="language-bash">iop --apply-plan plan.json \
+    --settings /path/to/settings.py \
+    --backup-dir .iop/backups
+</code></pre>
+<p>Verify after apply:</p>
+<pre><code class="language-bash">iop --verify-plan plan.json
+</code></pre>
+<p>Rollback restores the full production export saved before apply and therefore
+requires explicit destructive approval:</p>
+<pre><code class="language-bash">iop --rollback-backup .iop/backups/20260604T120000Z-abc123def456 \
+    --allow-destructive
+</code></pre>
+<p>Default apply behavior:</p>
+<ul>
+<li>Safe operations are applied.</li>
+<li>Deletes, removals, and class replacements are skipped unless
+  <code>--allow-destructive</code> is passed.</li>
+<li>Runtime-only or dynamic routes with no source setting are always skipped.</li>
+<li>A backup directory is written before any mutation.</li>
+<li>Remote REST apply and rollback are blocked in v1.</li>
+</ul>
+<p>See <a href="../production-change-workflow/">Production Change Workflow</a> for the full
+policy and Python API.</p>
 <h2 id="init">init</h2>
 <p>The init command initializes the IoP module in IRIS by loading and compiling the bundled <code>.cls</code> files.</p>
 <pre><code class="language-bash">iop -i

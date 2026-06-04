@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/production-graph-roadmap/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/production-graph/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Production Graph Roadmap And Gaps - IoP (Interoperability On Python)</title>
+    <title>Production Graph - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Production Graph Roadmap And Gaps";
-        var mkdocs_page_input_path = "production-graph-roadmap.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/production-graph-roadmap/";
+        var mkdocs_page_name = "Production Graph";
+        var mkdocs_page_input_path = "production-graph.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/production-graph/";
       </script>
     
     <!--[if lt IE 9]>
@@ -58,6 +58,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-change-workflow/">Production Change Workflow</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
@@ -85,8 +87,48 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Production Graph</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#current-state">Current State</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#iris-graph-import">IRIS Graph Import</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#python-and-objectscript-components">Python And ObjectScript Components</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#roadmap-and-gaps">Roadmap And Gaps</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#phase-1-solidify-graph-import">Phase 1: Solidify Graph Import</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#phase-2-persist-iop-graph-metadata">Phase 2: Persist IOP Graph Metadata</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#phase-3-graph-apply">Phase 3: Graph Apply</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#phase-4-improve-objectscript-introspection">Phase 4: Improve ObjectScript Introspection</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#phase-5-extend-the-graph-backbone">Phase 5: Extend The Graph Backbone</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#gaps">Gaps</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#metadata-gaps">Metadata Gaps</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#runtime-graph-gaps">Runtime Graph Gaps</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#sync-gaps">Sync Gaps</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#objectscript-gaps">ObjectScript Gaps</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#source-of-truth-decision">Source Of Truth Decision</a>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
@@ -114,7 +156,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Production Graph Roadmap And Gaps</li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">Production Graph</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -123,7 +166,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="production-graph-roadmap-and-gaps">Production Graph Roadmap And Gaps</h1>
+                <h1 id="production-graph">Production Graph</h1>
 <h2 id="summary">Summary</h2>
 <p><code>Production</code> is the Python authoring DSL for interoperability production
 topology. It owns the Python-authored graph: items, ports, settings, and
@@ -133,9 +176,9 @@ remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.</p>
 <p>An IRIS production topology can be modeled as a directed multigraph of possible
 communication routes. These route edges are not DAG execution dependencies.</p>
-<p>The long-term direction is for the Python <code>Production</code> graph to generate the
-IRIS production definition, while IRIS runtime export and <code>OnGetConnections</code>
-provide operational import and compatibility.</p>
+<p>The Python <code>Production</code> graph generates the IRIS production definition for
+Python-authored productions. IRIS runtime export and <code>OnGetConnections</code> provide
+operational import and brownfield compatibility.</p>
 <h2 id="current-state">Current State</h2>
 <p>Implemented graph authoring:</p>
 <ul>
@@ -201,7 +244,9 @@ instance.</p>
 <li><code>prod.update_component(...)</code></li>
 <li><code>prod.delete_component(...)</code></li>
 <li><code>prod.disconnect(...)</code></li>
-<li><code>prod.sync()</code> / <code>prod.apply()</code> for explicit local IRIS registration</li>
+<li><code>prod.sync()</code> for explicit full local IRIS registration</li>
+<li><code>prod.plan(...)</code>, <code>prod.apply(...)</code>, <code>prod.verify(...)</code>, and
+  <code>Production.rollback_backup(...)</code> for conservative granular change workflows</li>
 </ul>
 <p>Implemented diffing:</p>
 <ul>
@@ -262,7 +307,7 @@ prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
   <code>.cls</code> migration support.</li>
 <li>Manual ports are required when Python has no <code>target()</code> descriptor.</li>
 </ul>
-<h2 id="roadmap">Roadmap</h2>
+<h2 id="roadmap-and-gaps">Roadmap And Gaps</h2>
 <h3 id="phase-1-solidify-graph-import">Phase 1: Solidify Graph Import</h3>
 <ul>
 <li>Add more e2e coverage for <code>Production.from_iris(...)</code>.</li>
@@ -283,15 +328,22 @@ intent:</p>
 </ul>
 <p>Without this metadata, IRIS can reconstruct operational topology but not the
 original Python authoring intent.</p>
-<h3 id="phase-3-add-graph-apply">Phase 3: Add Graph Apply</h3>
+<h3 id="phase-3-graph-apply">Phase 3: Graph Apply</h3>
 <p>Graph diff exists in two forms today: deployable <code>prod.diff(...)</code> and metadata-
-aware <code>prod.graph_diff(...)</code>. The missing piece is explicit graph apply:</p>
+aware <code>prod.graph_diff(...)</code>. A conservative v1 graph apply workflow now exists:</p>
 <ul>
 <li>show additions, updates, removals, and changed settings</li>
-<li>apply changes only when explicitly requested</li>
+<li>classify each operation as safe, destructive, or unsupported</li>
+<li>apply supported safe changes only when explicitly requested</li>
+<li>require <code>allow_destructive=True</code> for deletes, removals, and class replacement</li>
+<li>write file-based backup artifacts before mutation</li>
+<li>verify applied safe operations after re-exporting IRIS</li>
 <li>avoid hidden runtime mutation from simple Python object edits</li>
 </ul>
-<p>This should become the safe path for component-level CRUD.</p>
+<p>This is the safe path for component-level CRUD. Remaining work is richer IRIS
+setting introspection, REST mutation endpoints, stronger e2e coverage, and
+metadata persistence for routes that cannot be reconstructed from current IRIS
+exports.</p>
 <h3 id="phase-4-improve-objectscript-introspection">Phase 4: Improve ObjectScript Introspection</h3>
 <p>Use IRIS class metadata to improve non-Python support:</p>
 <ul>
@@ -300,7 +352,7 @@ aware <code>prod.graph_diff(...)</code>. The missing piece is explicit graph app
 <li>expose setting metadata in <code>ProductionGraph</code></li>
 <li>distinguish static, dynamic, and conditional runtime connections</li>
 </ul>
-<h3 id="phase-5-make-graph-the-orchestration-backbone">Phase 5: Make Graph The Orchestration Backbone</h3>
+<h3 id="phase-5-extend-the-graph-backbone">Phase 5: Extend The Graph Backbone</h3>
 <p>Use <code>ProductionGraph</code> as the backbone for:</p>
 <ul>
 <li>visual graph display</li>
@@ -311,8 +363,8 @@ aware <code>prod.graph_diff(...)</code>. The missing piece is explicit graph app
 <li>IRIS XML generation</li>
 <li>future non-IRIS execution backends</li>
 </ul>
-<p>At this stage, the graph becomes the canonical design artifact and IRIS
-production XML becomes one generated output.</p>
+<p>At this stage, the graph can become the canonical design artifact for more
+workflows, with IRIS production XML as one generated output.</p>
 <h2 id="gaps">Gaps</h2>
 <h3 id="metadata-gaps">Metadata Gaps</h3>
 <ul>
@@ -339,13 +391,15 @@ production XML becomes one generated output.</p>
 </ul>
 <h3 id="sync-gaps">Sync Gaps</h3>
 <ul>
-<li><code>prod.sync()</code> currently registers the full current production definition
-  locally; it is not yet a fine-grained graph diff.</li>
+<li><code>prod.sync()</code> intentionally registers the full current production definition
+  locally. Use <code>prod.plan()</code> and <code>prod.apply()</code> for conservative granular
+  changes.</li>
 <li>Remote sync still belongs to migration because remote registration also needs
   source upload.</li>
-<li>Component add/update/delete are graph-local edits until explicitly applied.</li>
-<li>Delete safety needs policy for running productions, queued messages, and
-  dependent routing.</li>
+<li>Component add/update/delete are graph-local edits until explicitly applied
+  with a plan.</li>
+<li>Delete safety still needs deeper policy for running productions, queued
+  messages, and dependent routing beyond the current explicit destructive gate.</li>
 </ul>
 <h3 id="objectscript-gaps">ObjectScript Gaps</h3>
 <ul>
@@ -356,8 +410,8 @@ production XML becomes one generated output.</p>
   behavior that reports runtime targets without exposing source setting names.</li>
 </ul>
 <h2 id="source-of-truth-decision">Source Of Truth Decision</h2>
-<p>Python <code>Production</code> graph is the intended future source of truth for
-Python-authored design-time topology.</p>
+<p>Python <code>Production</code> graph is the source of truth for Python-authored
+design-time topology.</p>
 <p>IRIS remains authoritative for:</p>
 <ul>
 <li>runtime state</li>
@@ -373,6 +427,10 @@ important design intent.</p>
               
             </div>
           </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../example/" class="btn btn-neutral float-left" title="Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../useful-links/" class="btn btn-neutral float-right" title="Useful Links">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
 
   <hr/>
 
@@ -394,6 +452,10 @@ important design intent.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
+      <span><a href="../example/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../useful-links/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

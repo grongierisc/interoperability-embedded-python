@@ -102,6 +102,8 @@
     </li>
     </ul>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-change-workflow/">Production Change Workflow</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
@@ -131,6 +133,8 @@
               <p class="caption"><span class="caption-text">Reference</span></p>
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-graph/">Production Graph</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
@@ -895,7 +899,16 @@ items, not a DAG execution dependency.</p>
 <li><code>validate(strict=False)</code>: report unknown production fields and invalid
   locally discoverable host/adapter settings. By default it emits warnings;
   strict mode raises <code>ProductionValidationError</code>.</li>
-<li><code>sync()</code>: register the current Python graph with local IRIS through the existing migration path</li>
+<li><code>plan(other=None)</code>: build a conservative granular change plan against another
+  production or the deployed IRIS reconstruction</li>
+<li><code>apply(plan=None)</code>: apply supported safe plan operations with a backup and
+  fingerprint check. Destructive operations require <code>allow_destructive=True</code>.</li>
+<li><code>verify(plan)</code>: re-export IRIS and report whether applied safe operations
+  converged</li>
+<li><code>rollback_backup(path, allow_destructive=True)</code>: restore a production from an
+  apply backup directory</li>
+<li><code>sync()</code>: register the current Python graph with local IRIS through the
+  existing full-registration migration path</li>
 </ul>
 <p>Production-level <code>Ens.Production</code> settings can be declared directly:</p>
 <pre><code class="language-python">prod = (
@@ -931,6 +944,39 @@ and manual ports:</p>
 out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
 prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
 </code></pre>
+<p>For existing IRIS productions, use the conservative plan workflow instead of
+assuming the Python object is a complete source of truth:</p>
+<pre><code class="language-python">from iop import ProductionChangePlan
+
+
+plan = prod.plan()
+print(plan)
+plan.save(&quot;plan.json&quot;)
+
+reviewed = ProductionChangePlan.load(&quot;plan.json&quot;)
+apply_result = prod.apply(reviewed, backup_dir=&quot;.iop/backups&quot;)
+print(apply_result)
+
+verify_result = prod.verify(reviewed)
+print(verify_result)
+</code></pre>
+<p><code>apply()</code> writes a backup before mutation and skips destructive operations by
+default. Pass <code>allow_destructive=True</code> only after reviewing deletes, removals,
+or class replacements:</p>
+<pre><code class="language-python">prod.apply(reviewed, allow_destructive=True, backup_dir=&quot;.iop/backups&quot;)
+</code></pre>
+<p>Rollback restores the full exported production saved in the backup directory:</p>
+<pre><code class="language-python">from iop import Production
+
+
+Production.rollback_backup(
+    &quot;.iop/backups/20260604T120000Z-abc123def456&quot;,
+    allow_destructive=True,
+)
+</code></pre>
+<p>Remote REST apply and rollback are blocked in v1. See
+<a href="../production-change-workflow/">Production Change Workflow</a> for the full
+policy, CLI workflow, and backup file layout.</p>
 <p><code>ComponentRef.component_class</code> is the Python business host implementation class.
 It is not the adapter. Adapter metadata is exposed separately:</p>
 <pre><code class="language-python">file.adapter_class_name
@@ -1156,7 +1202,7 @@ def hello_world():
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../command-line/" class="btn btn-neutral float-left" title="Command Line Interface"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../rest-api/" class="btn btn-neutral float-right" title="REST API (/api/iop)">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../production-change-workflow/" class="btn btn-neutral float-right" title="Production Change Workflow">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -1182,7 +1228,7 @@ def hello_world():
       <span><a href="../command-line/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../rest-api/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../production-change-workflow/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

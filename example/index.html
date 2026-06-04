@@ -58,6 +58,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-change-workflow/">Production Change Workflow</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
@@ -102,6 +104,8 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#conservative-production-changes">Conservative Production Changes</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#business-service">Business Service</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#business-service_1">Business Service</a>
@@ -127,6 +131,8 @@
         </ul>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-graph/">Production Graph</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
                   </li>
@@ -233,6 +239,20 @@ PRODUCTIONS = [prod]
 </code></pre>
 <p>Use a standalone <code>CLASSES</code> entry only when you need to bind a Python component
 without adding it to a Python <code>Production</code> graph.</p>
+<h2 id="conservative-production-changes">Conservative Production Changes</h2>
+<p>For existing IRIS productions, prefer the plan workflow over full registration:</p>
+<pre><code class="language-bash">iop --plan demo/python/production_change_workflow/settings.py \
+    --production Demo.ChangeWorkflowProduction \
+    --out plan.json
+iop --review-plan plan.json
+iop --apply-plan plan.json \
+    --settings demo/python/production_change_workflow/settings.py
+iop --verify-plan plan.json
+</code></pre>
+<p>The full example is in
+<code>demo/python/production_change_workflow</code>. See
+<a href="../production-change-workflow/">Production Change Workflow</a> for the risk policy,
+backup files, and rollback command.</p>
 <h2 id="business-service">Business Service</h2>
 <p>Two kinds of business services can be created in Python:</p>
 <ul>
@@ -372,7 +392,7 @@ class MyMultiBP(BusinessProcess):
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../code-of-conduct/" class="btn btn-neutral float-left" title="Code of Conduct"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../useful-links/" class="btn btn-neutral float-right" title="Useful Links">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../production-graph/" class="btn btn-neutral float-right" title="Production Graph">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -398,7 +418,7 @@ class MyMultiBP(BusinessProcess):
       <span><a href="../code-of-conduct/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../useful-links/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../production-graph/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
