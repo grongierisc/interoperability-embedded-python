@@ -12,6 +12,7 @@ nav:
   - API documentation:
     - Command Line Interface: command-line.md
     - Python API: python-api.md
+    - Production Change Workflow: production-change-workflow.md
     - REST API (/api/iop): rest-api.md
     - Component Interaction: component-interaction.md
     - DTL Support: dtl.md
@@ -26,6 +27,7 @@ nav:
     - Code of Conduct: code-of-conduct.md
   - Reference:
     - Examples: example.md
+    - Production Graph: production-graph.md
     - Useful Links: useful-links.md
   - About:
     - Changelog: changelog.md

@@ -45,8 +45,9 @@ zpm "install pex-embbeded-python"
 
 ## Getting Started
 
-If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation). Then, follow the [first steps](getting-started/first-steps) to create your first Python-authored production.
+If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation.md). Then, follow the [first steps](getting-started/first-steps.md) to create your first Python-authored production.
 
-For the Pythonic production graph direction, see the [production graph roadmap](production-graph-roadmap).
+For the Pythonic production graph model, see [Production Graph](production-graph.md).
+For safe changes to existing IRIS productions, see the [production change workflow](production-change-workflow.md).
 
 Happy coding!

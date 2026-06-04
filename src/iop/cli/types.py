@@ -23,6 +23,11 @@ class CommandType(Enum):
     UNBIND = auto()
     HELP = auto()
     UPDATE = auto()
+    PLAN = auto()
+    REVIEW_PLAN = auto()
+    APPLY_PLAN = auto()
+    VERIFY_PLAN = auto()
+    ROLLBACK_BACKUP = auto()
 
 
 @dataclass
@@ -56,3 +61,13 @@ class CommandArgs:
     update: bool = False
     migration_plan: bool = False
     strict_production_validation: bool = False
+    plan: str | None = None
+    production: str | None = None
+    out: str | None = None
+    review_plan: str | None = None
+    apply_plan: str | None = None
+    verify_plan: str | None = None
+    rollback_backup: str | None = None
+    settings: str | None = None
+    backup_dir: str = ".iop/backups"
+    allow_destructive: bool = False

@@ -62,6 +62,10 @@ The CLI uses these terms consistently:
 
 - `migrate`: apply a Python migration file to IRIS. This can register classes,
   schemas, and productions.
+- `plan`: compare a desired Python `Production` with the current IRIS
+  production and write a reviewable change plan.
+- `apply plan`: apply supported safe plan operations. Destructive operations
+  are skipped unless explicitly allowed.
 - `bind` or `register`: create an IRIS proxy class that points to a Python
   component class.
 - `unbind` or `unregister`: remove an IOP-generated IRIS proxy class binding.
@@ -268,6 +272,61 @@ Unbind only removes the generated IRIS class. It does not delete Python source
 files and it does not remove production items. If any production item still uses
 the proxy class, the command fails and reports the production item references.
 Remove or change those production items first, then run `--unbind` again.
+
+## plan, review, apply, verify, rollback
+
+The plan workflow is the conservative way to change an existing IRIS production
+from a Python `Production` definition. It is useful when the deployed
+production may contain ObjectScript classes, BPL, DTL, routing rules, dynamic
+targets, or settings that Python cannot fully reconstruct yet.
+
+Build a plan:
+
+```bash
+iop --plan /path/to/settings.py \
+    --production Demo.Production \
+    --out plan.json
+```
+
+Review the saved plan:
+
+```bash
+iop --review-plan plan.json
+```
+
+Apply supported safe operations locally:
+
+```bash
+iop --apply-plan plan.json \
+    --settings /path/to/settings.py \
+    --backup-dir .iop/backups
+```
+
+Verify after apply:
+
+```bash
+iop --verify-plan plan.json
+```
+
+Rollback restores the full production export saved before apply and therefore
+requires explicit destructive approval:
+
+```bash
+iop --rollback-backup .iop/backups/20260604T120000Z-abc123def456 \
+    --allow-destructive
+```
+
+Default apply behavior:
+
+- Safe operations are applied.
+- Deletes, removals, and class replacements are skipped unless
+  `--allow-destructive` is passed.
+- Runtime-only or dynamic routes with no source setting are always skipped.
+- A backup directory is written before any mutation.
+- Remote REST apply and rollback are blocked in v1.
+
+See [Production Change Workflow](production-change-workflow.md) for the full
+policy and Python API.
 
 ## init
 

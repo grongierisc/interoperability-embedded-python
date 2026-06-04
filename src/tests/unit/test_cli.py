@@ -1,3 +1,4 @@
+import json
 import os
 import runpy
 import tempfile
@@ -384,6 +385,77 @@ class TestIOPCli(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 1)
         self.assertIn("--unused can only be used with --bindings", fake_err.getvalue())
+
+    def test_plan_command_writes_change_plan(self):
+        content = (
+            "from iop import Production\n"
+            "prod = Production('Demo.Production')\n"
+            "PRODUCTIONS = [prod]\n"
+        )
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(content)
+            settings_path = f.name
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            out_path = f.name
+        try:
+            from iop import Production
+
+            current = Production("Demo.Production")
+            with patch(
+                "iop.runtime.local._LocalDirector.export_production",
+                return_value=current.to_dict(),
+            ):
+                with patch(
+                    "iop.runtime.local._LocalDirector.export_production_connections",
+                    return_value={"items": []},
+                ):
+                    with patch("sys.stdout", new=StringIO()) as fake_out:
+                        with self.assertRaises(SystemExit) as cm:
+                            main(["--plan", settings_path, "--out", out_path])
+                        self.assertEqual(cm.exception.code, 0)
+
+            data = json.loads(open(out_path, encoding="utf-8").read())
+            self.assertEqual(data["production"], "Demo.Production")
+            self.assertIn("written", fake_out.getvalue())
+        finally:
+            os.unlink(settings_path)
+            os.unlink(out_path)
+
+    def test_review_plan_prints_saved_plan(self):
+        payload = {
+            "id": "abc",
+            "production": "Demo.Production",
+            "operations": [],
+        }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(payload, f)
+            path = f.name
+        try:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--review-plan", path])
+                self.assertEqual(cm.exception.code, 0)
+            self.assertIn("Production change plan: Demo.Production", fake_out.getvalue())
+        finally:
+            os.unlink(path)
+
+    def test_apply_plan_requires_settings(self):
+        payload = {
+            "id": "abc",
+            "production": "Demo.Production",
+            "operations": [],
+        }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(payload, f)
+            path = f.name
+        try:
+            with patch("sys.stderr", new=StringIO()) as fake_err:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--apply-plan", path])
+            self.assertEqual(cm.exception.code, 1)
+            self.assertIn("--apply-plan requires --settings", fake_err.getvalue())
+        finally:
+            os.unlink(path)
 
     def test_component_testing(self):
         """Test component testing functionality."""
@@ -817,3 +889,37 @@ class TestCLIRemoteMode(unittest.TestCase):
                     mock_get.assert_not_called()
         finally:
             os.unlink(path)
+
+    def test_apply_plan_rejects_remote_mode(self):
+        plan_payload = {
+            "id": "abc",
+            "production": "Demo.Production",
+            "operations": [],
+        }
+        settings_content = (
+            "from iop import Production\n"
+            "PRODUCTIONS = [Production('Demo.Production')]\n"
+        )
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(plan_payload, f)
+            plan_path = f.name
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(settings_content)
+            settings_path = f.name
+        try:
+            with patch.dict(os.environ, self._BASE_ENV, clear=True):
+                with patch("sys.stderr", new=StringIO()) as fake_err:
+                    with self.assertRaises(SystemExit) as cm:
+                        main(
+                            [
+                                "--apply-plan",
+                                plan_path,
+                                "--settings",
+                                settings_path,
+                            ]
+                        )
+            self.assertEqual(cm.exception.code, 1)
+            self.assertIn("Remote production plan apply", fake_err.getvalue())
+        finally:
+            os.unlink(plan_path)
+            os.unlink(settings_path)

@@ -878,6 +878,333 @@ ClassMethod ExportProductionQueueInfo(pProductionName As %String) As %String
 	Return result.%ToJSON()
 }
 
+/// Apply a conservative granular production change plan.
+ClassMethod ApplyProductionPlan(
+	pProductionName As %String,
+	pPlan As %String,
+	pAllowDestructive As %Boolean = 0) As %String
+{
+	Set result = {}
+	Set result.production = pProductionName
+	Set result.operations = []
+	Try {
+		Set plan = {}.%FromJSON(pPlan)
+		Set operations = plan.%Get("operations")
+		Set production = ##class(Ens.Config.Production).%OpenId(pProductionName)
+		If '$IsObject(production) {
+			Set loaded = ##class(Ens.Config.Production).LoadFromClass(pProductionName)
+			If $IsObject(loaded) {
+				Set production = loaded
+			} Else {
+				$$$ThrowStatus($$$ERROR($$$EnsErrGeneral,"Production could not be loaded: "_pProductionName))
+			}
+		}
+		If $IsObject(operations) {
+			For i=0:1:operations.%Size()-1 {
+				Set operation = operations.%Get(i)
+				Set opResult = {}
+				Set opResult.id = operation.%Get("id")
+				Set opResult."op_type" = operation.%Get("op_type")
+				Set opResult.path = operation.%Get("path")
+				Set risk = operation.%Get("risk")
+				If risk = "unsupported" {
+					Set opResult.status = "skipped"
+					Set opResult.message = $Select(operation.%Get("reason")'="":operation.%Get("reason"),1:"unsupported operation")
+				} ElseIf (risk = "destructive") && ('pAllowDestructive) {
+					Set opResult.status = "skipped"
+					Set opResult.message = "requires allow_destructive"
+				} Else {
+					Try {
+						$$$ThrowOnError(..ApplyProductionPlanOperation(production, operation))
+						Set opResult.status = "applied"
+					} Catch opEx {
+						Set opResult.status = "failed"
+						Set opResult.message = opEx.DisplayString()
+					}
+				}
+				Do result.operations.%Push(opResult)
+			}
+		}
+		$$$ThrowOnError(production.SaveToClass())
+		$$$ThrowOnError($System.OBJ.Compile(pProductionName,"k-d"))
+	} Catch ex {
+		Set result.error = ex.DisplayString()
+	}
+	Return result.%ToJSON()
+}
+
+ClassMethod ApplyProductionPlanOperation(
+	pProduction As Ens.Config.Production,
+	pOperation) As %Status [ Internal, Private ]
+{
+	Set opType = pOperation.%Get("op_type")
+	If opType = "add_item" {
+		Return ..ApplyPlanAddItem(pProduction,pOperation)
+	}
+	If opType = "delete_item" {
+		Return ..ApplyPlanDeleteItem(pProduction,pOperation.%Get("item"))
+	}
+	If opType = "set_item_field" {
+		Return ..ApplyPlanSetItemField(pProduction,pOperation)
+	}
+	If opType = "replace_item_class" {
+		Return ..ApplyPlanSetItemField(pProduction,pOperation)
+	}
+	If opType = "set_production_field" {
+		Return ..ApplyPlanSetProductionField(pProduction,pOperation)
+	}
+	If opType = "set_setting" {
+		If pOperation.%Get("target") = "Other" {
+			Return ..ReplaceOtherSettings(..FindProductionItem(pProduction,pOperation.%Get("item")),pOperation.%Get("after"))
+		}
+		Return ..SetConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("item")),pOperation.%Get("target"),pOperation.%Get("setting"),pOperation.%Get("after"))
+	}
+	If opType = "remove_setting" {
+		Return ..RemoveConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("item")),pOperation.%Get("target"),pOperation.%Get("setting"))
+	}
+	If opType = "set_route_setting" {
+		Return ..SetConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_port"),..DynamicArrayToCSV(pOperation.%Get("after")))
+	}
+	If opType = "remove_route" {
+		Return ..RemoveConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_port"))
+	}
+	Quit $$$ERROR($$$EnsErrGeneral,"Unsupported production plan operation: "_opType)
+}
+
+ClassMethod ApplyPlanAddItem(
+	pProduction As Ens.Config.Production,
+	pOperation) As %Status [ Internal, Private ]
+{
+	Set itemName = pOperation.%Get("item")
+	If itemName = "" {
+		Quit $$$ERROR($$$EnsErrGeneral,"Plan item name is required.")
+	}
+	If $IsObject(..FindProductionItem(pProduction,itemName,0)) {
+		Quit $$$ERROR($$$EnsErrGeneral,"Production item already exists: "_itemName)
+	}
+	Set data = pOperation.%Get("after")
+	Set item = ##class(Ens.Config.Item).%New()
+	Set item.Name = itemName
+	Set item.ClassName = data.%Get("class_name")
+	Set item.Category = data.%Get("category")
+	Set item.PoolSize = +data.%Get("pool_size")
+	Set item.Enabled = ..BooleanValue(data.%Get("enabled"))
+	Set item.Foreground = ..BooleanValue(data.%Get("foreground"))
+	Set item.Comment = data.%Get("comment")
+	Set item.LogTraceEvents = ..BooleanValue(data.%Get("log_trace_events"))
+	Set item.Schedule = data.%Get("schedule")
+	Set item.Production = pProduction
+	$$$ThrowOnError(..SetSettingsFromMap(item,"Host",data.%Get("host_settings")))
+	$$$ThrowOnError(..SetSettingsFromMap(item,"Adapter",data.%Get("adapter_settings")))
+	$$$ThrowOnError(..ReplaceOtherSettings(item,data.%Get("other_settings")))
+	Do pProduction.Items.Insert(item)
+	Quit $$$OK
+}
+
+ClassMethod ApplyPlanDeleteItem(
+	pProduction As Ens.Config.Production,
+	pItemName As %String) As %Status [ Internal, Private ]
+{
+	Set index = ..FindProductionItemIndex(pProduction,pItemName)
+	If index < 1 {
+		Quit $$$OK
+	}
+	Do pProduction.Items.RemoveAt(index)
+	Quit $$$OK
+}
+
+ClassMethod ApplyPlanSetItemField(
+	pProduction As Ens.Config.Production,
+	pOperation) As %Status [ Internal, Private ]
+{
+	Set item = ..FindProductionItem(pProduction,pOperation.%Get("item"))
+	Set field = pOperation.%Get("field")
+	Set value = pOperation.%Get("after")
+	If field = "class_name" {
+		Set item.ClassName = value
+	} ElseIf field = "category" {
+		Set item.Category = value
+	} ElseIf field = "pool_size" {
+		Set item.PoolSize = +value
+	} ElseIf field = "enabled" {
+		Set item.Enabled = ..BooleanValue(value)
+	} ElseIf field = "foreground" {
+		Set item.Foreground = ..BooleanValue(value)
+	} ElseIf field = "comment" {
+		Set item.Comment = value
+	} ElseIf field = "log_trace_events" {
+		Set item.LogTraceEvents = ..BooleanValue(value)
+	} ElseIf field = "schedule" {
+		Set item.Schedule = value
+	} Else {
+		Quit $$$ERROR($$$EnsErrGeneral,"Unsupported item field: "_field)
+	}
+	Quit $$$OK
+}
+
+ClassMethod ApplyPlanSetProductionField(
+	pProduction As Ens.Config.Production,
+	pOperation) As %Status [ Internal, Private ]
+{
+	Set field = pOperation.%Get("field")
+	Set value = pOperation.%Get("after")
+	If field = "testing_enabled" {
+		Set pProduction.TestingEnabled = ..BooleanValue(value)
+	} ElseIf field = "log_general_trace_events" {
+		Set pProduction.LogGeneralTraceEvents = ..BooleanValue(value)
+	} ElseIf field = "actor_pool_size" {
+		Set pProduction.ActorPoolSize = +value
+	} ElseIf field = "description" {
+		Set pProduction.Description = value
+	} Else {
+		Set settingName = ..ProductionSettingName(field)
+		If settingName = "" {
+			Quit $$$ERROR($$$EnsErrGeneral,"Unsupported production field: "_field)
+		}
+		$$$ThrowOnError(..SetConfigSetting(pProduction,"",settingName,value))
+	}
+	Quit $$$OK
+}
+
+ClassMethod ProductionSettingName(pField As %String) As %String [ Internal, Private ]
+{
+	Quit $Select(
+		pField="shutdown_timeout":"ShutdownTimeout",
+		pField="update_timeout":"UpdateTimeout",
+		pField="alert_notification_manager":"AlertNotificationManager",
+		pField="alert_notification_operation":"AlertNotificationOperation",
+		pField="alert_notification_recipients":"AlertNotificationRecipients",
+		pField="alert_action_window":"AlertActionWindow",
+		1:"")
+}
+
+ClassMethod FindProductionItem(
+	pProduction As Ens.Config.Production,
+	pItemName As %String,
+	pThrow As %Boolean = 1) [ Internal, Private ]
+{
+	Set index = ..FindProductionItemIndex(pProduction,pItemName)
+	If index > 0 {
+		Quit pProduction.Items.GetAt(index)
+	}
+	If pThrow {
+		$$$ThrowStatus($$$ERROR($$$EnsErrGeneral,"Production item does not exist: "_pItemName))
+	}
+	Quit ""
+}
+
+ClassMethod FindProductionItemIndex(
+	pProduction As Ens.Config.Production,
+	pItemName As %String) As %Integer [ Internal, Private ]
+{
+	For i=1:1:pProduction.Items.Count() {
+		Set item = pProduction.Items.GetAt(i)
+		If $IsObject(item), item.Name = pItemName {
+			Return i
+		}
+	}
+	Quit 0
+}
+
+ClassMethod SetSettingsFromMap(
+	pOwner,
+	pTarget As %String,
+	pMap) As %Status [ Internal, Private ]
+{
+	If '$IsObject(pMap) {
+		Quit $$$OK
+	}
+	Set iterator = pMap.%GetIterator()
+	While iterator.%GetNext(.key,.value) {
+		$$$ThrowOnError(..SetConfigSetting(pOwner,pTarget,key,value))
+	}
+	Quit $$$OK
+}
+
+ClassMethod SetConfigSetting(
+	pOwner,
+	pTarget As %String,
+	pName As %String,
+	pValue) As %Status [ Internal, Private ]
+{
+	Set index = ..FindConfigSettingIndex(pOwner,pTarget,pName)
+	If index > 0 {
+		Set setting = pOwner.Settings.GetAt(index)
+	} Else {
+		Set setting = ##class(Ens.Config.Setting).%New()
+		Set setting.Target = pTarget
+		Set setting.Name = pName
+		Do pOwner.Settings.Insert(setting)
+	}
+	Set setting.Value = pValue
+	Quit $$$OK
+}
+
+ClassMethod RemoveConfigSetting(
+	pOwner,
+	pTarget As %String,
+	pName As %String) As %Status [ Internal, Private ]
+{
+	Set index = ..FindConfigSettingIndex(pOwner,pTarget,pName)
+	If index > 0 {
+		Do pOwner.Settings.RemoveAt(index)
+	}
+	Quit $$$OK
+}
+
+ClassMethod ReplaceOtherSettings(
+	pOwner,
+	pSettings) As %Status [ Internal, Private ]
+{
+	For i=pOwner.Settings.Count():-1:1 {
+		Set setting = pOwner.Settings.GetAt(i)
+		If $IsObject(setting), setting.Target '= "Host", setting.Target '= "Adapter" {
+			Do pOwner.Settings.RemoveAt(i)
+		}
+	}
+	If '$IsObject(pSettings) {
+		Quit $$$OK
+	}
+	For i=0:1:pSettings.%Size()-1 {
+		Set data = pSettings.%Get(i)
+		Set setting = ##class(Ens.Config.Setting).%New()
+		Set setting.Target = ..DynamicGet(data,"@Target","")
+		Set setting.Name = ..DynamicGet(data,"@Name","")
+		Set setting.Value = ..DynamicGet(data,"#text","")
+		Do pOwner.Settings.Insert(setting)
+	}
+	Quit $$$OK
+}
+
+ClassMethod FindConfigSettingIndex(
+	pOwner,
+	pTarget As %String,
+	pName As %String) As %Integer [ Internal, Private ]
+{
+	For i=1:1:pOwner.Settings.Count() {
+		Set setting = pOwner.Settings.GetAt(i)
+		If $IsObject(setting), setting.Target = pTarget, setting.Name = pName {
+			Return i
+		}
+	}
+	Quit 0
+}
+
+ClassMethod DynamicArrayToCSV(pArray) As %String [ Internal, Private ]
+{
+	If '$IsObject(pArray) {
+		Quit pArray
+	}
+	Set value = ""
+	For i=0:1:pArray.%Size()-1 {
+		If value '= "" {
+			Set value = value_","
+		}
+		Set value = value_pArray.%Get(i)
+	}
+	Quit value
+}
+
 ClassMethod dispatchTestComponent(
 	pTargetName As %String,
 	pInput As Ens.Request) As Ens.Response

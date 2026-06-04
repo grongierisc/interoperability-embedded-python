@@ -82,6 +82,25 @@ iop --migrate /path/to/your/project/settings.py
 Use a standalone `CLASSES` entry only when you need to bind a Python component
 without adding it to a Python `Production` graph.
 
+## Conservative Production Changes
+
+For existing IRIS productions, prefer the plan workflow over full registration:
+
+```bash
+iop --plan demo/python/production_change_workflow/settings.py \
+    --production Demo.ChangeWorkflowProduction \
+    --out plan.json
+iop --review-plan plan.json
+iop --apply-plan plan.json \
+    --settings demo/python/production_change_workflow/settings.py
+iop --verify-plan plan.json
+```
+
+The full example is in
+`demo/python/production_change_workflow`. See
+[Production Change Workflow](production-change-workflow.md) for the risk policy,
+backup files, and rollback command.
+
 ## Business Service
 
 Two kinds of business services can be created in Python:

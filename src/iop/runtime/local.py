@@ -103,6 +103,16 @@ class _LocalDirector(_DirectorProtocol):
     def export_production_queue_info(self, production_name: str) -> dict:
         return _migration_utils.export_production_queue_info(production_name)
 
+    def apply_production_plan(
+        self,
+        plan: dict,
+        allow_destructive: bool = False,
+    ) -> dict:
+        return _migration_utils.apply_production_plan(
+            plan,
+            allow_destructive=allow_destructive,
+        )
+
     # ------------------------------------------------------------------
     # Init / setup
     # ------------------------------------------------------------------

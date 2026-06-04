@@ -32,9 +32,13 @@ from iop.production import OperationItem as OperationItem
 from iop.production import Port as Port
 from iop.production import ProcessItem as ProcessItem
 from iop.production import Production as Production
+from iop.production import ProductionApplyResult as ProductionApplyResult
+from iop.production import ProductionChangePlan as ProductionChangePlan
 from iop.production import ProductionDiff as ProductionDiff
 from iop.production import ProductionDiffEntry as ProductionDiffEntry
 from iop.production import ProductionGraph as ProductionGraph
+from iop.production import ProductionPlanOperation as ProductionPlanOperation
+from iop.production import ProductionVerifyResult as ProductionVerifyResult
 from iop.production import ProductionValidationError as ProductionValidationError
 from iop.production import ProductionValidationIssue as ProductionValidationIssue
 from iop.production import ProductionValidationReport as ProductionValidationReport
@@ -70,9 +74,13 @@ __all__ = [
     "Port",
     "ProcessItem",
     "Production",
+    "ProductionApplyResult",
+    "ProductionChangePlan",
     "ProductionDiff",
     "ProductionDiffEntry",
     "ProductionGraph",
+    "ProductionPlanOperation",
+    "ProductionVerifyResult",
     "ProductionValidationError",
     "ProductionValidationIssue",
     "ProductionValidationReport",

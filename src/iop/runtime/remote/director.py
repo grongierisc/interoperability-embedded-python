@@ -223,6 +223,16 @@ class _RemoteDirector(_RemoteClient, _DirectorProtocol):
     def export_production_queue_info(self, production_name: str) -> dict:
         return self._check_error(self._get("/queues", {"production": production_name}))
 
+    def apply_production_plan(
+        self,
+        plan: dict,
+        allow_destructive: bool = False,
+    ) -> dict:
+        raise RuntimeError(
+            "Remote production plan apply is not supported in v1. "
+            "Run apply from a local IRIS environment."
+        )
+
     # ------------------------------------------------------------------
     # Migrate
     # ------------------------------------------------------------------

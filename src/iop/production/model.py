@@ -14,6 +14,12 @@ from .component import ComponentRef
 from .declarative import _DeclarativeProductionMixin
 from .diff import _diff_productions
 from .inspection import component_runtime_info, inspect_component
+from .planning import (
+    ProductionApplyResult,
+    ProductionChangePlan,
+    ProductionVerifyResult,
+    build_change_plan,
+)
 from .reconstruction import production_from_dict
 from .rendering import (
     production_graph,
@@ -720,6 +726,14 @@ class Production(_DeclarativeProductionMixin):
             include_graph_metadata=True,
         )
 
+    def plan(
+        self,
+        other: Production | dict[str, Any] | None = None,
+    ) -> ProductionChangePlan:
+        """Build a conservative granular change plan against current/imported state."""
+        current = self._diff_current(other)
+        return build_change_plan(self, current)
+
     def component_registrations(self) -> tuple[ComponentRef, ...]:
         return tuple(
             item for item in self._items if item.component_class is not None
@@ -788,8 +802,43 @@ class Production(_DeclarativeProductionMixin):
     def sync(self, *, root_path: str | None = None, update: bool = True) -> None:
         _actions.sync(self, root_path=root_path, update_runtime=update)
 
-    def apply(self, *, root_path: str | None = None, update: bool = True) -> None:
-        self.sync(root_path=root_path, update=update)
+    def apply(
+        self,
+        plan: ProductionChangePlan | None = None,
+        *,
+        allow_destructive: bool = False,
+        backup_dir: str = ".iop/backups",
+        root_path: str | None = None,
+        update: bool = True,
+    ) -> ProductionApplyResult:
+        return _actions.apply(
+            self,
+            plan=plan,
+            allow_destructive=allow_destructive,
+            backup_dir=backup_dir,
+            root_path=root_path,
+            update_runtime=update,
+        )
+
+    def verify(self, plan: ProductionChangePlan) -> ProductionVerifyResult:
+        return _actions.verify(self, plan)
+
+    @staticmethod
+    def rollback_backup(
+        backup_path: str,
+        *,
+        director: _DirectorProtocol | None = None,
+        namespace: str | None = None,
+        allow_destructive: bool = False,
+        update: bool = True,
+    ) -> ProductionVerifyResult:
+        return _actions.rollback_backup(
+            backup_path,
+            director=director,
+            namespace=namespace,
+            allow_destructive=allow_destructive,
+            update_runtime=update,
+        )
 
     def log(self, top: int | None = None) -> None:
         _actions.log(self, top)

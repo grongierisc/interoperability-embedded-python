@@ -1513,6 +1513,178 @@ def test_production_diff_without_argument_compares_with_iris_reconstruction():
     )
 
 
+def test_production_plan_classifies_safe_and_blocked_operations():
+    current = Production("Demo.Production")
+    current_file = current.service(
+        "FileInput",
+        class_name="Demo.OldFileService",
+        settings={"Limit": 5},
+    )
+    old_orders = current.operation("OldOrderOperation", class_name="Demo.OldOrders")
+    current.connect(current_file.port("Output"), old_orders)
+
+    desired = Production("Demo.Production")
+    desired_file = desired.service("FileInput", FileService, settings={"Limit": 10})
+    orders = desired.operation(OrderOperation)
+    desired.connect(desired_file.Output, orders)
+
+    plan = desired.plan(current)
+    by_path = {operation.path: operation for operation in plan.operations}
+
+    assert by_path["items.OrderOperation"].op_type == "add_item"
+    assert by_path["items.OrderOperation"].allowed_by_default is True
+    assert by_path["items.FileInput.settings.Host.Limit"].op_type == "set_setting"
+    assert by_path["items.FileInput.settings.Host.Limit"].risk == "safe"
+    assert by_path["connections.FileInput.Output"].op_type == "set_route_setting"
+    assert by_path["connections.FileInput.Output"].risk == "safe"
+    assert by_path["items.OldOrderOperation"].op_type == "delete_item"
+    assert by_path["items.OldOrderOperation"].requires_allow_destructive is True
+    assert by_path["items.FileInput.class_name"].op_type == "replace_item_class"
+    assert by_path["items.FileInput.class_name"].requires_allow_destructive is True
+
+
+def test_production_plan_blocks_runtime_only_route_mutation():
+    current = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "Router", "@ClassName": "Demo.Router"},
+                    {"@Name": "OrderOperation", "@ClassName": "Demo.OrderOperation"},
+                ]
+            }
+        },
+        connections={"items": [{"item": "Router", "connections": ["OrderOperation"]}]},
+    )
+    desired = Production("Demo.Production")
+    desired.component("Router", class_name="Demo.Router")
+    desired.operation("OrderOperation", class_name="Demo.OrderOperation")
+
+    plan = desired.plan(current)
+    operation = next(op for op in plan.operations if op.kind == "connection")
+
+    assert operation.op_type == "set_route_setting"
+    assert operation.risk == "unsupported"
+    assert "no source setting" in operation.reason
+
+
+def test_production_apply_uses_plan_not_full_sync(tmp_path):
+    director = MagicMock()
+    current = Production("Demo.Production")
+    current.service("FileInput", FileService, settings={"Limit": 5})
+    desired = Production("Demo.Production", director=director)
+    desired.service("FileInput", FileService, settings={"Limit": 10})
+    plan = desired.plan(current)
+    safe_operation = next(op for op in plan.operations if op.allowed_by_default)
+    director.export_production.return_value = current.to_dict()
+    director.export_production_connections.return_value = {"items": []}
+    director.export_production_queue_info.return_value = {"items": []}
+    director.apply_production_plan.return_value = {
+        "operations": [
+            {
+                "id": safe_operation.id,
+                "op_type": safe_operation.op_type,
+                "status": "applied",
+            }
+        ]
+    }
+
+    with patch.object(migration_utils, "set_productions_settings") as mock_sync:
+        with patch.object(migration_utils, "_register_production_object_messages"):
+            with patch.object(migration_utils, "_register_production_object_components"):
+                result = desired.apply(plan, backup_dir=str(tmp_path), update=False)
+
+    mock_sync.assert_not_called()
+    director.apply_production_plan.assert_called_once()
+    assert result.applied == 1
+    assert (tmp_path / os.path.basename(result.backup_path) / "production.json").exists()
+    assert (tmp_path / os.path.basename(result.backup_path) / "plan.json").exists()
+
+
+def test_production_apply_fails_when_plan_fingerprint_is_stale(tmp_path):
+    director = MagicMock()
+    current = Production("Demo.Production")
+    current.service("FileInput", FileService, settings={"Limit": 5})
+    changed_current = Production("Demo.Production")
+    changed_current.service("FileInput", FileService, settings={"Limit": 7})
+    desired = Production("Demo.Production", director=director)
+    desired.service("FileInput", FileService, settings={"Limit": 10})
+    plan = desired.plan(current)
+    director.export_production.return_value = changed_current.to_dict()
+    director.export_production_connections.return_value = {"items": []}
+    director.export_production_queue_info.return_value = {"items": []}
+
+    with pytest.raises(RuntimeError, match="changed since the plan was created"):
+        desired.apply(plan, backup_dir=str(tmp_path), update=False)
+
+    director.apply_production_plan.assert_not_called()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_production_verify_reports_safe_convergence_and_residual_blocked_ops():
+    current = Production("Demo.Production")
+    current.service("FileInput", class_name="Demo.Old", settings={"Limit": 5})
+    desired = Production("Demo.Production")
+    desired.service("FileInput", class_name="Demo.Old", settings={"Limit": 10})
+    desired.operation("NewOperation", class_name="Demo.NewOperation")
+    plan = desired.plan(current)
+    director = MagicMock()
+    desired.with_director(director)
+    director.export_production.return_value = desired.to_dict()
+    director.export_production_connections.return_value = {"items": []}
+
+    result = desired.verify(plan)
+
+    assert result.success is True
+    assert len(result.converged_operations) == len(plan.safe_operations)
+    assert result.residual_operations == ()
+
+
+def test_production_rollback_requires_destructive_approval(tmp_path):
+    with pytest.raises(RuntimeError, match="requires allow_destructive"):
+        Production.rollback_backup(str(tmp_path), allow_destructive=False)
+
+
+def test_production_rollback_normalizes_named_backup_export(tmp_path):
+    backup = tmp_path / "backup"
+    backup.mkdir()
+    production_data = Production("Demo.Production").to_dict()
+    (backup / "production.json").write_text(json.dumps(production_data), encoding="utf-8")
+    (backup / "metadata.json").write_text(
+        json.dumps(
+            {
+                "production": "Demo.Production",
+                "namespace": "USER",
+                "plan_id": "plan-1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    director = MagicMock()
+    director.status_production.return_value = {
+        "Production": "Other.Production",
+        "Status": "stopped",
+    }
+    director.export_production.return_value = production_data
+    director.export_production_connections.return_value = {"items": []}
+
+    with patch.object(
+        migration_utils,
+        "register_production_definition",
+    ) as mock_register:
+        result = Production.rollback_backup(
+            str(backup),
+            director=director,
+            allow_destructive=True,
+            update=False,
+        )
+
+    mock_register.assert_called_once_with(
+        "Demo.Production",
+        {"Production": production_data["Demo.Production"]},
+    )
+    assert result.converged_operations == ("rollback",)
+
+
 def test_production_from_dict_falls_back_to_host_setting_inference():
     exported = {
         "Demo.Production": {

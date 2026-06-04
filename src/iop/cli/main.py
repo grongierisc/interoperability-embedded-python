@@ -9,7 +9,7 @@ from importlib.metadata import version
 import requests
 
 from ..migration import utils as migration_utils
-from ..production import Production
+from ..production import Production, ProductionChangePlan
 from ..runtime.local import _LocalDirector
 from ..runtime.protocol import DirectorProtocol
 from ..runtime.remote import _RemoteDirector, get_remote_settings
@@ -78,6 +78,11 @@ class Command:
                 self.args.bindings,
                 self.args.unbind is not None,
                 self.args.update,
+                self.args.plan,
+                self.args.review_plan,
+                self.args.apply_plan,
+                self.args.verify_plan,
+                self.args.rollback_backup,
             ]
         )
 
@@ -109,6 +114,11 @@ class Command:
             CommandType.UNBIND: self._handle_unbind,
             CommandType.HELP: self._handle_help,
             CommandType.UPDATE: self._handle_update,
+            CommandType.PLAN: self._handle_plan,
+            CommandType.REVIEW_PLAN: self._handle_review_plan,
+            CommandType.APPLY_PLAN: self._handle_apply_plan,
+            CommandType.VERIFY_PLAN: self._handle_verify_plan,
+            CommandType.ROLLBACK_BACKUP: self._handle_rollback_backup,
         }
         handler = command_handlers.get(command_type)
         if handler:
@@ -149,6 +159,16 @@ class Command:
             return CommandType.UNBIND
         if self.args.update:
             return CommandType.UPDATE
+        if self.args.plan:
+            return CommandType.PLAN
+        if self.args.review_plan:
+            return CommandType.REVIEW_PLAN
+        if self.args.apply_plan:
+            return CommandType.APPLY_PLAN
+        if self.args.verify_plan:
+            return CommandType.VERIFY_PLAN
+        if self.args.rollback_backup:
+            return CommandType.ROLLBACK_BACKUP
         return CommandType.HELP
 
     def _handle_default(self) -> None:
@@ -324,6 +344,55 @@ class Command:
         self.director.unbind_component(self.args.unbind)
         print(f"Removed binding {self.args.unbind}.")
 
+    def _handle_plan(self) -> None:
+        production = self._load_production_from_settings(
+            self.args.plan,
+            self.args.production,
+        )
+        plan = production.plan()
+        if self.args.out:
+            plan.save(self._absolute_path(self.args.out))
+            print(f"Production change plan written to {self.args.out}")
+        else:
+            print(plan)
+
+    def _handle_review_plan(self) -> None:
+        plan = ProductionChangePlan.load(self._absolute_path(self.args.review_plan))
+        print(plan)
+
+    def _handle_apply_plan(self) -> None:
+        if not self.args.settings:
+            raise ValueError("--apply-plan requires --settings.")
+        plan = ProductionChangePlan.load(self._absolute_path(self.args.apply_plan))
+        production = self._load_production_from_settings(
+            self.args.settings,
+            self.args.production or plan.production_name,
+        )
+        result = production.apply(
+            plan,
+            allow_destructive=self.args.allow_destructive,
+            backup_dir=self.args.backup_dir,
+        )
+        print(result)
+
+    def _handle_verify_plan(self) -> None:
+        plan = ProductionChangePlan.load(self._absolute_path(self.args.verify_plan))
+        production = Production(
+            self.args.production or plan.production_name,
+            namespace=self.director.namespace,
+            director=self.director,
+        )
+        print(production.verify(plan))
+
+    def _handle_rollback_backup(self) -> None:
+        result = Production.rollback_backup(
+            self._absolute_path(self.args.rollback_backup),
+            director=self.director,
+            namespace=self.director.namespace,
+            allow_destructive=self.args.allow_destructive,
+        )
+        print(result)
+
     def _handle_help(self) -> None:
         create_parser().print_help()
         if self._is_remote:
@@ -333,6 +402,73 @@ class Command:
             print(f"\nNamespace: {self.director.namespace}")
         except Exception:
             logging.warning("Could not retrieve default production.")
+
+    def _load_production_from_settings(
+        self,
+        settings_file: str | None,
+        production_name: str | None,
+    ) -> Production:
+        if not settings_file:
+            raise ValueError("A settings.py file is required.")
+        settings_path = self._absolute_path(settings_file)
+        settings, path_added = migration_utils._load_settings(settings_path)
+        try:
+            production = _select_production(
+                getattr(settings, "PRODUCTIONS", None),
+                production_name,
+                director=self.director,
+                namespace=self.director.namespace,
+            )
+            production.with_director(self.director)
+            if not production.namespace:
+                production.in_namespace(self.director.namespace)
+            return production
+        finally:
+            migration_utils._cleanup_sys_path(path_added)
+
+    @staticmethod
+    def _absolute_path(path: str | None) -> str:
+        if not path:
+            raise ValueError("Path is required.")
+        if os.path.isabs(path):
+            return path
+        return os.path.join(os.getcwd(), path)
+
+
+def _select_production(
+    productions,
+    production_name: str | None,
+    *,
+    director: DirectorProtocol,
+    namespace: str | None,
+) -> Production:
+    if not isinstance(productions, list):
+        raise ValueError("settings.py must define PRODUCTIONS as a list.")
+    candidates: list[Production] = []
+    for entry in productions:
+        if isinstance(entry, Production):
+            candidate = entry
+        elif isinstance(entry, dict):
+            candidate = Production.from_dict(
+                entry,
+                director=director,
+                namespace=namespace,
+            )
+        else:
+            continue
+        candidates.append(candidate)
+    if production_name:
+        for candidate in candidates:
+            if candidate.name == production_name:
+                return candidate
+        raise ValueError(f"Production {production_name!r} not found in settings.")
+    if len(candidates) == 1:
+        return candidates[0]
+    names = ", ".join(candidate.name for candidate in candidates) or "none"
+    raise ValueError(
+        "Production name is required when settings.py contains multiple "
+        f"productions ({names})."
+    )
 
 
 def main(argv=None) -> None:

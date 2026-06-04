@@ -1009,6 +1009,27 @@ def export_production_queue_info(production_name):
     return json.loads(data)
 
 
+def apply_production_plan(plan: dict, allow_destructive: bool = False) -> dict:
+    """
+    Apply a conservative granular production change plan locally in IRIS.
+    """
+    production_name = plan.get("production") or plan.get("production_name")
+    if not production_name:
+        raise ValueError("Production plan is missing the production name.")
+    data = (
+        _iris.get_iris()
+        .cls("IOP.Utils")
+        .ApplyProductionPlan(
+            production_name,
+            json.dumps(plan),
+            1 if allow_destructive else 0,
+        )
+    )
+    if isinstance(data, dict):
+        return data
+    return json.loads(data)
+
+
 def xml_to_json(xml_string: str) -> str:
     return _xml_to_json(xml_string)
 

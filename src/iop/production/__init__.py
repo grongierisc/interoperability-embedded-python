@@ -7,6 +7,10 @@ from .declarations import ProcessItem as ProcessItem
 from .declarations import Route as Route
 from .declarations import ServiceItem as ServiceItem
 from .model import Production as Production
+from .planning import ProductionApplyResult as ProductionApplyResult
+from .planning import ProductionChangePlan as ProductionChangePlan
+from .planning import ProductionPlanOperation as ProductionPlanOperation
+from .planning import ProductionVerifyResult as ProductionVerifyResult
 from .runtime import resolve_target as resolve_target
 from .types import GraphEdge as GraphEdge
 from .types import GraphNode as GraphNode
@@ -32,9 +36,13 @@ __all__ = [
     "Port",
     "ProcessItem",
     "Production",
+    "ProductionApplyResult",
+    "ProductionChangePlan",
     "ProductionDiff",
     "ProductionDiffEntry",
     "ProductionGraph",
+    "ProductionPlanOperation",
+    "ProductionVerifyResult",
     "ProductionValidationError",
     "ProductionValidationIssue",
     "ProductionValidationReport",

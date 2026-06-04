@@ -647,7 +647,16 @@ Key methods:
 - `validate(strict=False)`: report unknown production fields and invalid
   locally discoverable host/adapter settings. By default it emits warnings;
   strict mode raises `ProductionValidationError`.
-- `sync()`: register the current Python graph with local IRIS through the existing migration path
+- `plan(other=None)`: build a conservative granular change plan against another
+  production or the deployed IRIS reconstruction
+- `apply(plan=None)`: apply supported safe plan operations with a backup and
+  fingerprint check. Destructive operations require `allow_destructive=True`.
+- `verify(plan)`: re-export IRIS and report whether applied safe operations
+  converged
+- `rollback_backup(path, allow_destructive=True)`: restore a production from an
+  apply backup directory
+- `sync()`: register the current Python graph with local IRIS through the
+  existing full-registration migration path
 
 Production-level `Ens.Production` settings can be declared directly:
 
@@ -693,6 +702,49 @@ file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
 out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 prod.connect(file.port("TargetConfigNames"), out)
 ```
+
+For existing IRIS productions, use the conservative plan workflow instead of
+assuming the Python object is a complete source of truth:
+
+```python
+from iop import ProductionChangePlan
+
+
+plan = prod.plan()
+print(plan)
+plan.save("plan.json")
+
+reviewed = ProductionChangePlan.load("plan.json")
+apply_result = prod.apply(reviewed, backup_dir=".iop/backups")
+print(apply_result)
+
+verify_result = prod.verify(reviewed)
+print(verify_result)
+```
+
+`apply()` writes a backup before mutation and skips destructive operations by
+default. Pass `allow_destructive=True` only after reviewing deletes, removals,
+or class replacements:
+
+```python
+prod.apply(reviewed, allow_destructive=True, backup_dir=".iop/backups")
+```
+
+Rollback restores the full exported production saved in the backup directory:
+
+```python
+from iop import Production
+
+
+Production.rollback_backup(
+    ".iop/backups/20260604T120000Z-abc123def456",
+    allow_destructive=True,
+)
+```
+
+Remote REST apply and rollback are blocked in v1. See
+[Production Change Workflow](production-change-workflow.md) for the full
+policy, CLI workflow, and backup file layout.
 
 `ComponentRef.component_class` is the Python business host implementation class.
 It is not the adapter. Adapter metadata is exposed separately:

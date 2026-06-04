@@ -64,6 +64,17 @@ def create_parser() -> argparse.ArgumentParser:
         "-t", "--test", help="test the iop module in iris", nargs="?", const="not_set"
     )
     parser.add_argument("-u", "--update", help="update a production", action="store_true")
+    parser.add_argument(
+        "--plan",
+        help="build a conservative production change plan from a Python settings file",
+    )
+    parser.add_argument("--review-plan", help="print a saved production change plan")
+    parser.add_argument("--apply-plan", help="apply a saved production change plan")
+    parser.add_argument("--verify-plan", help="verify a saved production change plan")
+    parser.add_argument(
+        "--rollback-backup",
+        help="restore a production from a plan/apply backup directory",
+    )
 
     start = main_parser.add_argument_group("start arguments")
     start.add_argument(
@@ -114,6 +125,27 @@ def create_parser() -> argparse.ArgumentParser:
     bindings.add_argument(
         "--unused",
         help="with --bindings, show only proxy classes unused by productions",
+        action="store_true",
+    )
+
+    plan = main_parser.add_argument_group("production plan arguments")
+    plan.add_argument(
+        "--production",
+        help="target production name for --plan, or override the plan production",
+    )
+    plan.add_argument("--out", help="write --plan JSON to this path")
+    plan.add_argument(
+        "--settings",
+        help="settings.py file containing the desired Production for --apply-plan",
+    )
+    plan.add_argument(
+        "--backup-dir",
+        default=".iop/backups",
+        help="directory for apply backup artifacts",
+    )
+    plan.add_argument(
+        "--allow-destructive",
+        help="allow destructive plan operations or rollback",
         action="store_true",
     )
 

@@ -1,4 +1,4 @@
-# Production Graph Roadmap And Gaps
+# Production Graph
 
 ## Summary
 
@@ -13,9 +13,9 @@ reconstructions until metadata persistence makes round-trip fidelity possible.
 An IRIS production topology can be modeled as a directed multigraph of possible
 communication routes. These route edges are not DAG execution dependencies.
 
-The long-term direction is for the Python `Production` graph to generate the
-IRIS production definition, while IRIS runtime export and `OnGetConnections`
-provide operational import and compatibility.
+The Python `Production` graph generates the IRIS production definition for
+Python-authored productions. IRIS runtime export and `OnGetConnections` provide
+operational import and brownfield compatibility.
 
 ## Current State
 
@@ -87,7 +87,9 @@ Implemented graph-local editing:
 - `prod.update_component(...)`
 - `prod.delete_component(...)`
 - `prod.disconnect(...)`
-- `prod.sync()` / `prod.apply()` for explicit local IRIS registration
+- `prod.sync()` for explicit full local IRIS registration
+- `prod.plan(...)`, `prod.apply(...)`, `prod.verify(...)`, and
+  `Production.rollback_backup(...)` for conservative granular change workflows
 
 Implemented diffing:
 
@@ -158,7 +160,7 @@ Rules:
   `.cls` migration support.
 - Manual ports are required when Python has no `target()` descriptor.
 
-## Roadmap
+## Roadmap And Gaps
 
 ### Phase 1: Solidify Graph Import
 
@@ -182,16 +184,23 @@ intent:
 Without this metadata, IRIS can reconstruct operational topology but not the
 original Python authoring intent.
 
-### Phase 3: Add Graph Apply
+### Phase 3: Graph Apply
 
 Graph diff exists in two forms today: deployable `prod.diff(...)` and metadata-
-aware `prod.graph_diff(...)`. The missing piece is explicit graph apply:
+aware `prod.graph_diff(...)`. A conservative v1 graph apply workflow now exists:
 
 - show additions, updates, removals, and changed settings
-- apply changes only when explicitly requested
+- classify each operation as safe, destructive, or unsupported
+- apply supported safe changes only when explicitly requested
+- require `allow_destructive=True` for deletes, removals, and class replacement
+- write file-based backup artifacts before mutation
+- verify applied safe operations after re-exporting IRIS
 - avoid hidden runtime mutation from simple Python object edits
 
-This should become the safe path for component-level CRUD.
+This is the safe path for component-level CRUD. Remaining work is richer IRIS
+setting introspection, REST mutation endpoints, stronger e2e coverage, and
+metadata persistence for routes that cannot be reconstructed from current IRIS
+exports.
 
 ### Phase 4: Improve ObjectScript Introspection
 
@@ -202,7 +211,7 @@ Use IRIS class metadata to improve non-Python support:
 - expose setting metadata in `ProductionGraph`
 - distinguish static, dynamic, and conditional runtime connections
 
-### Phase 5: Make Graph The Orchestration Backbone
+### Phase 5: Extend The Graph Backbone
 
 Use `ProductionGraph` as the backbone for:
 
@@ -214,8 +223,8 @@ Use `ProductionGraph` as the backbone for:
 - IRIS XML generation
 - future non-IRIS execution backends
 
-At this stage, the graph becomes the canonical design artifact and IRIS
-production XML becomes one generated output.
+At this stage, the graph can become the canonical design artifact for more
+workflows, with IRIS production XML as one generated output.
 
 ## Gaps
 
@@ -244,13 +253,15 @@ production XML becomes one generated output.
 
 ### Sync Gaps
 
-- `prod.sync()` currently registers the full current production definition
-  locally; it is not yet a fine-grained graph diff.
+- `prod.sync()` intentionally registers the full current production definition
+  locally. Use `prod.plan()` and `prod.apply()` for conservative granular
+  changes.
 - Remote sync still belongs to migration because remote registration also needs
   source upload.
-- Component add/update/delete are graph-local edits until explicitly applied.
-- Delete safety needs policy for running productions, queued messages, and
-  dependent routing.
+- Component add/update/delete are graph-local edits until explicitly applied
+  with a plan.
+- Delete safety still needs deeper policy for running productions, queued
+  messages, and dependent routing beyond the current explicit destructive gate.
 
 ### ObjectScript Gaps
 
@@ -262,8 +273,8 @@ production XML becomes one generated output.
 
 ## Source Of Truth Decision
 
-Python `Production` graph is the intended future source of truth for
-Python-authored design-time topology.
+Python `Production` graph is the source of truth for Python-authored
+design-time topology.
 
 IRIS remains authoritative for:
 

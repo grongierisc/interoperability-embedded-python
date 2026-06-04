@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from .component import ComponentRef
 from .import_ import _normalize_queue_info
+from .planning import (
+    ProductionApplyResult,
+    ProductionChangePlan,
+    ProductionVerifyResult,
+    create_backup,
+    production_fingerprint,
+    skipped_operation_results,
+    verify_change_plan,
+)
 from .rendering import message_to_classname_body
 from .runtime import _has_remote_director, _ProductionRuntime, _temporary_env
 from .types import Port
@@ -113,6 +124,170 @@ def sync(
             from ..runtime.local import _LocalDirector
 
             _LocalDirector().update_production()
+
+
+def apply(
+    production,
+    *,
+    plan: ProductionChangePlan | None = None,
+    allow_destructive: bool = False,
+    backup_dir: str = ".iop/backups",
+    root_path: str | None = None,
+    update_runtime: bool = True,
+) -> ProductionApplyResult:
+    director = _ProductionRuntime(production).director
+    if _director_is_remote(director) or _has_remote_director(production):
+        raise RuntimeError(
+            "Remote production plan apply is not supported in v1. "
+            "Run apply from a local IRIS environment."
+        )
+
+    if plan is None:
+        plan = production.plan()
+    if plan.production_name != production.name:
+        raise ValueError(
+            f"Plan targets {plan.production_name!r}, not {production.name!r}."
+        )
+
+    apply_operations = plan.operations_for_apply(
+        allow_destructive=allow_destructive,
+    )
+    skipped = skipped_operation_results(
+        plan,
+        allow_destructive=allow_destructive,
+    )
+    if not apply_operations:
+        return ProductionApplyResult(
+            plan_id=plan.id,
+            production_name=plan.production_name,
+            operations=tuple(skipped),
+        )
+
+    current, exported, connections, queues = _read_current_snapshot(production, director)
+    current_fingerprint = production_fingerprint(current)
+    if current_fingerprint != plan.source_fingerprint:
+        raise RuntimeError(
+            "Cannot apply production plan: current IRIS production changed since "
+            "the plan was created."
+        )
+
+    backup_path = create_backup(
+        backup_dir=backup_dir,
+        plan=plan,
+        current=current,
+        current_export=exported,
+        connections=connections,
+        queues=queues,
+    )
+
+    _register_plan_classes(production, root_path=root_path)
+    raw_result = director.apply_production_plan(
+        plan.to_dict(),
+        allow_destructive=allow_destructive,
+    )
+    if isinstance(raw_result, dict) and raw_result.get("error"):
+        raise RuntimeError(str(raw_result["error"]))
+    operation_results = _apply_operation_results(raw_result)
+    operation_results.extend(skipped)
+    updated_runtime = _update_runtime_if_current(
+        production,
+        director,
+        update_runtime=update_runtime,
+    )
+    return ProductionApplyResult(
+        plan_id=plan.id,
+        production_name=plan.production_name,
+        backup_path=str(backup_path),
+        operations=tuple(operation_results),
+        updated_runtime=updated_runtime,
+    )
+
+
+def verify(production, plan: ProductionChangePlan) -> ProductionVerifyResult:
+    director = _ProductionRuntime(production).director
+    current = production.from_iris(
+        plan.production_name,
+        namespace=production.namespace,
+        director=director,
+    )
+    return verify_change_plan(plan, current)
+
+
+def rollback_backup(
+    backup_path: str,
+    *,
+    director: Any = None,
+    namespace: str | None = None,
+    allow_destructive: bool = False,
+    update_runtime: bool = True,
+) -> ProductionVerifyResult:
+    if not allow_destructive:
+        raise RuntimeError(
+            "Rollback restores a full production export and requires "
+            "allow_destructive=True."
+        )
+    if director is None:
+        from ..runtime.local import _LocalDirector
+
+        director = _LocalDirector()
+    if _director_is_remote(director):
+        raise RuntimeError(
+            "Remote production rollback is not supported in v1. "
+            "Run rollback from a local IRIS environment."
+        )
+
+    path = Path(backup_path)
+    production_data = json.loads((path / "production.json").read_text(encoding="utf-8"))
+    metadata = json.loads((path / "metadata.json").read_text(encoding="utf-8"))
+    production_name = metadata.get("production") or next(iter(production_data))
+
+    from ..migration import utils as migration_utils
+
+    with _temporary_env("IRISNAMESPACE", namespace or metadata.get("namespace") or None):
+        migration_utils.register_production_definition(
+            production_name,
+            _normalized_production_definition(production_name, production_data),
+        )
+        if update_runtime:
+            _update_runtime_if_current_name(
+                production_name,
+                director,
+                update_runtime=True,
+            )
+
+    from .model import Production
+
+    restored = Production.from_iris(
+        production_name,
+        director=director,
+        namespace=namespace or metadata.get("namespace") or None,
+    )
+    expected = _production_from_export(
+        production_name,
+        production_data,
+        director=director,
+        namespace=namespace or metadata.get("namespace") or None,
+    )
+    result_plan = ProductionChangePlan(
+        id=str(metadata.get("plan_id") or ""),
+        production_name=production_name,
+        namespace=str(namespace or metadata.get("namespace") or ""),
+        source_fingerprint=production_fingerprint(expected),
+        desired_fingerprint=production_fingerprint(expected),
+    )
+    if production_fingerprint(restored) != production_fingerprint(expected):
+        return ProductionVerifyResult(
+            plan_id=result_plan.id,
+            production_name=production_name,
+            failed_operations=(
+                {"id": "rollback", "path": production_name, "status": "failed"},
+            ),
+        )
+    return ProductionVerifyResult(
+        plan_id=result_plan.id,
+        production_name=production_name,
+        converged_operations=("rollback",),
+    )
 
 
 def log(production, top: int | None = None) -> None:
@@ -226,3 +401,116 @@ def switch_running_production_message(production, current_production: str) -> st
         f"`iop --start {production.name} --detach`; or call `prod.stop()` and "
         "`prod.start()` explicitly."
     )
+
+
+def _read_current_snapshot(production, director: Any):
+    exported = director.export_production(production.name)
+    try:
+        connections = director.export_production_connections(production.name)
+    except Exception as exc:
+        connections = {"warnings": [f"Could not export runtime connections: {exc}"]}
+    try:
+        queues = director.export_production_queue_info(production.name)
+    except Exception as exc:
+        queues = {"warnings": [f"Could not export queue info: {exc}"]}
+    current = production.from_dict(
+        exported,
+        connections=connections,
+        queue_info=queues,
+        namespace=production.namespace,
+        director=director,
+    )
+    return current, exported, connections, queues
+
+
+def _register_plan_classes(production, *, root_path: str | None = None) -> None:
+    from ..migration import utils as migration_utils
+
+    with _temporary_env("IRISNAMESPACE", production.namespace):
+        migration_utils._register_production_object_messages(production)
+        migration_utils._register_production_object_components(production, root_path)
+
+
+def _apply_operation_results(raw_result: Any) -> list[dict[str, Any]]:
+    if raw_result is None:
+        return []
+    if isinstance(raw_result, str):
+        raw_result = json.loads(raw_result)
+    if isinstance(raw_result, dict):
+        return [dict(item) for item in raw_result.get("operations", ())]
+    if isinstance(raw_result, list):
+        return [dict(item) for item in raw_result]
+    return []
+
+
+def _update_runtime_if_current(
+    production,
+    director: Any,
+    *,
+    update_runtime: bool,
+) -> bool:
+    return _update_runtime_if_current_name(
+        production.name,
+        director,
+        update_runtime=update_runtime,
+    )
+
+
+def _update_runtime_if_current_name(
+    production_name: str,
+    director: Any,
+    *,
+    update_runtime: bool,
+) -> bool:
+    if not update_runtime:
+        return False
+    try:
+        status = director.status_production()
+    except Exception:
+        return False
+    current = status.get("Production") or status.get("production") or ""
+    if current != production_name:
+        return False
+    director.update_production()
+    return True
+
+
+def _director_is_remote(director: Any) -> bool:
+    try:
+        from ..runtime.remote import _RemoteDirector
+    except Exception:
+        return False
+    return isinstance(director, _RemoteDirector)
+
+
+def _production_from_export(
+    production_name: str,
+    production_data: dict[str, Any],
+    *,
+    director: Any,
+    namespace: str | None,
+):
+    from .model import Production
+
+    return Production.from_dict(
+        production_data,
+        namespace=namespace,
+        director=director,
+    )
+
+
+def _normalized_production_definition(
+    production_name: str,
+    production_data: dict[str, Any],
+) -> dict[str, Any]:
+    if "Production" in production_data:
+        definition = production_data["Production"]
+    else:
+        definition = production_data.get(production_name)
+        if definition is None and production_data:
+            definition = production_data[next(iter(production_data))]
+    if not isinstance(definition, dict):
+        raise ValueError("Production backup must contain a production definition.")
+    normalized = dict(definition)
+    normalized.setdefault("@Name", production_name)
+    return {"Production": normalized}
