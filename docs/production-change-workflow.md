@@ -184,7 +184,7 @@ prod = Production("Demo.Production")
 file_in = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
 file_out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 
-prod.connect(file_in.port("TargetConfigNames"), file_out)
+prod.connect(file_in.target_setting("TargetConfigNames"), file_out)
 ```
 
 Runtime-only routes that cannot be mapped to a Host setting are reported as

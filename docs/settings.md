@@ -122,7 +122,7 @@ reconstructions until metadata persistence makes round-trip fidelity possible.
 
 The topology is modeled as a directed multigraph of possible communication
 routes. A route edge is not a DAG execution dependency; it says that a component
-may communicate with another component through a port or runtime route.
+may communicate with another component through a target setting or runtime route.
 
 ```python
 from dataclasses import dataclass
@@ -249,12 +249,12 @@ For Python component classes, prefer the descriptor form
 `Route(FileService.Output, ...)`. For existing IRIS classes, use the IRIS
 setting name string, for example `Route("TargetConfigNames", "FileOut")`.
 
-`Route(port, targets)` owns the route Host setting and records graph edges.
+`Route(target_setting, targets)` owns the route Host setting and records graph edges.
 `targets` can be an item declaration, a string item name, or a sequence for
 fan-out.
 Use `settings` or `host_settings` only for non-route Host settings. If a route
-port is also present in Host settings, migration raises an error so the route
-stays explicit.
+target setting is also present in Host settings, migration raises an error so
+the route stays explicit.
 
 Use tuples for class-level `services`, `processes`, `operations`, and route
 lists. Lists still work, but tuples avoid accidental mutation of shared class
@@ -294,7 +294,7 @@ prod = Production("Demo.Production")
 file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
 out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 
-prod.connect(file.port("TargetConfigNames"), out)
+prod.connect(file.target_setting("TargetConfigNames"), out)
 ```
 
 `ComponentRef.component_class` is the Python business host implementation class.
@@ -351,7 +351,7 @@ metadata when the IRIS settings are equivalent. Use `prod.graph_diff(...)` to
 compare graph metadata such as whether a route was authored in Python, imported
 from runtime `OnGetConnections`, or inferred from Host settings.
 
-`prod.test_component("Item.Port", message)` resolves from the current
+`prod.test_component("Item.TargetSetting", message)` resolves from the current
 `Production` object graph only. If you want to test a production that already
 exists in IRIS, use `Production.from_iris(...)` first and call
 `test_component()` on the imported operational reconstruction. `prod.test(...)`

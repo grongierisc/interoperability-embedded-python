@@ -270,11 +270,11 @@ def _class_item_lines(item, kind: str, route_targets) -> list[str]:
 
 def _class_item_route_values(item, route_targets) -> list[tuple[str, list[str]]]:
     values: list[tuple[str, list[str]]] = []
-    for source_item, source_port in sorted(route_targets):
+    for source_item, source_target_setting in sorted(route_targets):
         if source_item != item.name:
             continue
-        targets = route_targets[(source_item, source_port)]
-        values.append((source_port, list(targets)))
+        targets = route_targets[(source_item, source_target_setting)]
+        values.append((source_target_setting, list(targets)))
     return values
 
 
@@ -302,14 +302,16 @@ def _class_keyword_lines(name: str, value: Any) -> list[str]:
 
 def _class_route_keyword_lines(routes: list[tuple[str, list[str]]]) -> list[str]:
     if len(routes) == 1:
-        port, targets = routes[0]
+        target_setting, targets = routes[0]
         target_literal = _class_route_targets_literal(targets)
-        return [f"            routes=(Route({_literal(port)}, {target_literal}),),"]
+        return [
+            f"            routes=(Route({_literal(target_setting)}, {target_literal}),),"
+        ]
 
     lines = ["            routes=("]
-    for port, targets in routes:
+    for target_setting, targets in routes:
         target_literal = _class_route_targets_literal(targets)
-        lines.append(f"                Route({_literal(port)}, {target_literal}),")
+        lines.append(f"                Route({_literal(target_setting)}, {target_literal}),")
     lines.append("            ),")
     return lines
 
@@ -359,10 +361,12 @@ def _indented_list_keyword_lines(
 def _unresolved_class_routes(production, item_names: set[str]) -> list[str]:
     unresolved: list[str] = []
     for edge in production.edges:
-        if not edge.source_port:
+        if not edge.source_target_setting:
             unresolved.append(f"{edge.source_item} -> {edge.target}")
         elif edge.target not in item_names:
-            unresolved.append(f"{edge.source_item}.{edge.source_port} -> {edge.target}")
+            unresolved.append(
+                f"{edge.source_item}.{edge.source_target_setting} -> {edge.target}"
+            )
     return sorted(set(unresolved))
 
 
@@ -458,14 +462,16 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
     lines: list[str] = []
     unresolved: list[str] = []
 
-    for source_item, source_port in sorted(grouped):
-        targets = grouped[(source_item, source_port)]
+    for source_item, source_target_setting in sorted(grouped):
+        targets = grouped[(source_item, source_target_setting)]
         source_var = variables[source_item]
-        source_expr = f"{source_var}.port({_literal(source_port)})"
+        source_expr = (
+            f"{source_var}.target_setting({_literal(source_target_setting)})"
+        )
         valid_targets = [target for target in targets if target in variables]
         invalid_targets = [target for target in targets if target not in variables]
         for target in invalid_targets:
-            unresolved.append(f"{source_item}.{source_port} -> {target}")
+            unresolved.append(f"{source_item}.{source_target_setting} -> {target}")
         if not valid_targets:
             continue
         if len(valid_targets) == 1:
@@ -479,7 +485,7 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
                 )
 
     for edge in production.edges:
-        if not edge.source_port:
+        if not edge.source_target_setting:
             unresolved.append(f"{edge.source_item} -> {edge.target}")
 
     if unresolved:
@@ -491,11 +497,11 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
 def _route_targets(production, item_names: set[str]) -> dict[tuple[str, str], list[str]]:
     grouped: dict[tuple[str, str], list[str]] = {}
     for edge in production.edges:
-        if not edge.source_port:
+        if not edge.source_target_setting:
             continue
         if edge.source_item not in item_names:
             continue
-        key = (edge.source_item, edge.source_port)
+        key = (edge.source_item, edge.source_target_setting)
         grouped.setdefault(key, [])
         if edge.target not in grouped[key]:
             grouped[key].append(edge.target)

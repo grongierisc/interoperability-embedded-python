@@ -289,7 +289,7 @@ def _connection_signature(
     if include_graph_metadata:
         detailed_connections: dict[tuple[str, str], list[dict[str, Any]]] = {}
         for edge in production.graph().edges:
-            source = (edge.source_item, edge.source_port)
+            source = (edge.source_item, edge.source_target_setting)
             detailed_connections.setdefault(source, []).append(_edge_diff_value(edge))
         return {
             source: sorted(
@@ -301,7 +301,7 @@ def _connection_signature(
 
     connections: dict[tuple[str, str], set[str]] = {}
     for edge in production.graph().edges:
-        source = (edge.source_item, edge.source_port)
+        source = (edge.source_item, edge.source_target_setting)
         connections.setdefault(source, set()).add(edge.target)
     return {
         source: list(sorted(targets))
@@ -321,7 +321,7 @@ def _edge_diff_value(edge: GraphEdge) -> dict[str, Any]:
 
 
 def _connection_source_path(source: tuple[str, str]) -> str:
-    source_item, source_port = source
-    if source_port:
-        return f"{source_item}.{source_port}"
+    source_item, source_target_setting = source
+    if source_target_setting:
+        return f"{source_item}.{source_target_setting}"
     return source_item

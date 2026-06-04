@@ -32,7 +32,7 @@ def target(**kwargs: Any) -> TargetSetting:
 
 
 @dataclass
-class Port:
+class TargetSettingRef:
     """Bound reference to a component target setting inside a Production."""
 
     production: Any
@@ -48,7 +48,7 @@ class Port:
         return f"{self.item_name}.{self.name}"
 
     def resolve(self) -> str:
-        return self.production.resolve_port(self)
+        return self.production.resolve_target_setting_ref(self)
 
     def __str__(self) -> str:
         return self.path
@@ -94,7 +94,7 @@ class GraphEdge:
 
     source_item: str
     target: str
-    source_port: str = ""
+    source_target_setting: str = ""
     origin: str = "authored"
     interaction: str = "request"
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -117,15 +117,15 @@ class GraphEdge:
 
     @property
     def source(self) -> str:
-        if self.source_port:
-            return f"{self.source_item}.{self.source_port}"
+        if self.source_target_setting:
+            return f"{self.source_item}.{self.source_target_setting}"
         return self.source_item
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {
             "source": self.source,
             "source_item": self.source_item,
-            "source_port": self.source_port,
+            "source_target_setting": self.source_target_setting,
             "target": self.target,
             "origin": self.origin,
             "interaction": self.interaction,
@@ -168,9 +168,9 @@ class ProductionGraph:
             lines.append(f"  {node.name}{label}")
             for edge in sorted(
                 outgoing.get(node.name, ()),
-                key=lambda item: (item.source_port, item.target),
+                key=lambda item: (item.source_target_setting, item.target),
             ):
-                source_port = edge.source_port or "(runtime)"
+                source_target_setting = edge.source_target_setting or "(runtime)"
                 suffix = "" if edge.target in node_names else " (unresolved)"
                 labels = []
                 if edge.origin != "authored":
@@ -178,7 +178,9 @@ class ProductionGraph:
                 if edge.interaction not in ("", "request"):
                     labels.append(edge.interaction)
                 label = f" [{', '.join(labels)}]" if labels else ""
-                lines.append(f"    {source_port} -> {edge.target}{suffix}{label}")
+                lines.append(
+                    f"    {source_target_setting} -> {edge.target}{suffix}{label}"
+                )
         if self.warnings:
             lines.append("  warnings:")
             lines.extend(f"    {warning}" for warning in self.warnings)
@@ -266,7 +268,7 @@ class ProductionDiff:
 def _edge_identity(edge: GraphEdge) -> tuple[Any, ...]:
     return (
         edge.source_item,
-        edge.source_port,
+        edge.source_target_setting,
         edge.target,
         edge.origin,
         edge.interaction,

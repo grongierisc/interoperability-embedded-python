@@ -15,7 +15,7 @@ from ..messages.dispatch import (
     dispatch_message,
     dispatch_serializer,
 )
-from ..production import Port, resolve_target
+from ..production import TargetSettingRef, resolve_target
 from ..runtime import iris as _iris
 from .async_request import AsyncRequest
 from .common import _Common
@@ -95,7 +95,7 @@ class _BusinessHost(_Common):
     @output_deserializer
     def send_request_sync(
         self,
-        target: str | Port,
+        target: str | TargetSettingRef,
         request: Message | Any,
         timeout: int = -1,
         description: str | None = None,
@@ -122,7 +122,7 @@ class _BusinessHost(_Common):
     @input_serializer_param(1, "request")
     def send_request_async(
         self,
-        target: str | Port,
+        target: str | TargetSettingRef,
         request: Message | Any,
         description: str | None = None,
     ) -> None:
@@ -141,7 +141,7 @@ class _BusinessHost(_Common):
 
     async def send_request_async_ng(
         self,
-        target: str | Port,
+        target: str | TargetSettingRef,
         request: Message | Any,
         timeout: int = -1,
         description: str | None = None,
@@ -162,7 +162,7 @@ class _BusinessHost(_Common):
 
     def send_generator_request(
         self,
-        target: str | Port,
+        target: str | TargetSettingRef,
         request: Message | Any,
         timeout: int = -1,
         description: str | None = None,
@@ -183,7 +183,7 @@ class _BusinessHost(_Common):
 
     def send_multi_request_sync(
         self,
-        target_request: list[tuple[str | Port, Message | Any]],
+        target_request: list[tuple[str | TargetSettingRef, Message | Any]],
         timeout: int = -1,
         description: str | None = None,
     ) -> list[tuple[str, Message | Any, Any, int]]:
@@ -226,7 +226,7 @@ class _BusinessHost(_Common):
         ]
 
     def _validate_target_request(
-        self, target_request: list[tuple[str | Port, Message | Any]]
+        self, target_request: list[tuple[str | TargetSettingRef, Message | Any]]
     ) -> None:
         """Validate the target_request parameter structure."""
         if not isinstance(target_request, list):
@@ -239,7 +239,7 @@ class _BusinessHost(_Common):
             raise TypeError("target_request must contain tuples of (target, request)")
 
     def _create_call_structure(
-        self, target: str | Port, request: Message | Any
+        self, target: str | TargetSettingRef, request: Message | Any
     ) -> Any:
         """Create an Ens.CallStructure object for the request."""
         iris = _iris.get_iris()

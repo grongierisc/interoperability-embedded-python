@@ -6,7 +6,7 @@ from ..messages.decorators import (
     output_serializer,
 )
 from ..messages.dispatch import create_dispatch, dispatch_message
-from ..production import Port, resolve_target
+from ..production import TargetSettingRef, resolve_target
 from .business_host import _BusinessHost
 
 
@@ -88,7 +88,7 @@ class _BusinessProcess(_BusinessHost):
     @input_serializer_param(1, "request")
     def send_request_async(
         self,
-        target: str | Port,
+        target: str | TargetSettingRef,
         request: Any,
         description: str | None = None,
         completion_key: str | None = None,

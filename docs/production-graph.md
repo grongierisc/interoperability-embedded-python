@@ -23,12 +23,12 @@ Implemented graph authoring:
 
 - `Production`
 - `ComponentRef`
-- `Port`
+- `TargetSettingRef`
 - `target()`
 - `prod.service(...)`
 - `prod.process(...)`
 - `prod.operation(...)`
-- `prod.connect(source_port, target_component)`
+- `prod.connect(source_target_setting, target_component)`
 
 Implemented graph import and display:
 
@@ -37,15 +37,15 @@ Implemented graph import and display:
 - `Production.item(name)`
 - `Production.component_ref(target)`
 - `Production.get_component(target)`
-- `ComponentRef.port(name)`
+- `ComponentRef.target_setting(name)`
 - `Production.graph()`
 - `Production.diff(other=None)`
 - `Production.graph_diff(other=None)`
 - `ProductionGraph.to_dict()`
 - printable graph text through `str(prod.graph())`
 
-`str(port)` returns the stable authoring identity, such as `FileInput.Output`.
-Runtime dispatch uses explicit port resolution.
+`str(target_setting_ref)` returns the stable authoring identity, such as
+`FileInput.Output`. Runtime dispatch uses explicit target setting resolution.
 
 Implemented production lifecycle:
 
@@ -70,11 +70,12 @@ Lifecycle methods that mutate the current runtime production verify that IRIS
 currently points at the same production object before calling the underlying
 IRIS operation.
 
-`prod.test_component("Item.Port", message)` resolves from the current Python
+`prod.test_component("Item.TargetSetting", message)` resolves from the current Python
 object graph. It does not silently fall back to IRIS export. Existing deployed
 productions should be reconstructed explicitly with `Production.from_iris(...)`
-before testing by port path. Runtime status checks fail closed when the current
-production cannot be verified. `prod.test(...)` remains a compatibility alias.
+before testing by target setting path. Runtime status checks fail closed when the
+current production cannot be verified. `prod.test(...)` remains a compatibility
+alias.
 
 `ComponentRef` exposes convenience methods that delegate to its owning
 production: `inspect()`, `start()`, `stop()`, `restart()`, and `test(...)`.
@@ -143,7 +144,7 @@ ObjectScript and built-in IRIS components use `class_name`:
 prod = Production("Demo.Production")
 file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
 out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
-prod.connect(file.port("TargetConfigNames"), out)
+prod.connect(file.target_setting("TargetConfigNames"), out)
 ```
 
 Rules:
@@ -158,7 +159,8 @@ Rules:
 - `class_name` string components are not registered as Python components.
 - ObjectScript classes must already exist in IRIS or be loaded through existing
   `.cls` migration support.
-- Manual ports are required when Python has no `target()` descriptor.
+- Manual target setting names are required when Python has no `target()`
+  descriptor.
 
 ## Roadmap And Gaps
 
@@ -175,7 +177,7 @@ Rules:
 Persist IOP-owned metadata so Python-to-IRIS-to-Python round trips lose less
 intent:
 
-- declared port names and types
+- declared target setting names and types
 - richer route intent beyond the current origin/interaction metadata
 - Python source module and class origin
 - runtime-only edges
@@ -233,8 +235,9 @@ workflows, with IRIS production XML as one generated output.
 - IRIS export does not preserve Python class objects.
 - IRIS export does not preserve the Python module/class origin unless stored as
   explicit metadata.
-- `OnGetConnections` usually returns target names, not always source port names.
-- Runtime-discovered edges may not map cleanly to a specific `Port`.
+- `OnGetConnections` usually returns target names, not always source target
+  setting names.
+- Runtime-discovered edges may not map cleanly to a specific `TargetSettingRef`.
 
 ### Runtime Graph Gaps
 
@@ -266,8 +269,8 @@ workflows, with IRIS production XML as one generated output.
 ### ObjectScript Gaps
 
 - ObjectScript source code is not reconstructed from production export.
-- Built-in and ObjectScript classes need manual ports unless IRIS setting
-  introspection is added.
+- Built-in and ObjectScript classes need manual target setting names unless IRIS
+  setting introspection is added.
 - Existing ObjectScript classes may implement custom `OnGetConnections`
   behavior that reports runtime targets without exposing source setting names.
 

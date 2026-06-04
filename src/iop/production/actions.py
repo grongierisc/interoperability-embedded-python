@@ -17,7 +17,7 @@ from .planning import (
 )
 from .rendering import message_to_classname_body
 from .runtime import _has_remote_director, _ProductionRuntime, _temporary_env
-from .types import Port
+from .types import TargetSettingRef
 
 
 def start(production, detach: bool = True) -> None:
@@ -67,7 +67,10 @@ def update(production) -> None:
     director.update_production()
 
 
-def start_component(production, component: ComponentRef | Port | str) -> None:
+def start_component(
+    production,
+    component: ComponentRef | TargetSettingRef | str,
+) -> None:
     component_name = production._runtime_component_name(component)
     director = _ProductionRuntime(production).director
     require_current_runtime(
@@ -78,7 +81,10 @@ def start_component(production, component: ComponentRef | Port | str) -> None:
     director.start_component(component_name)
 
 
-def stop_component(production, component: ComponentRef | Port | str) -> None:
+def stop_component(
+    production,
+    component: ComponentRef | TargetSettingRef | str,
+) -> None:
     component_name = production._runtime_component_name(component)
     director = _ProductionRuntime(production).director
     require_current_runtime(
@@ -89,7 +95,10 @@ def stop_component(production, component: ComponentRef | Port | str) -> None:
     director.stop_component(component_name)
 
 
-def restart_component(production, component: ComponentRef | Port | str) -> None:
+def restart_component(
+    production,
+    component: ComponentRef | TargetSettingRef | str,
+) -> None:
     component_name = production._runtime_component_name(component)
     director = _ProductionRuntime(production).director
     require_current_runtime(
@@ -300,13 +309,13 @@ def log(production, top: int | None = None) -> None:
 
 def test_component(
     production,
-    target_or_port: str | Port | ComponentRef,
+    target_or_ref: str | TargetSettingRef | ComponentRef,
     message: Any = None,
     classname: str | None = None,
     body: str | dict | None = None,
 ) -> Any:
     director = _ProductionRuntime(production).director
-    target_name = production.resolve_target(target_or_port)
+    target_name = production.resolve_target(target_or_ref)
 
     raise_if_existing_production_not_running(production, director)
 

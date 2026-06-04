@@ -39,7 +39,7 @@ def inspect_component(production, component, *, refresh: bool = True) -> dict[st
             "Adapter": dict(ref.adapter_settings),
             "Other": [dict(setting) for setting in ref.other_settings],
         },
-        "ports": sorted(ref.port_names),
+        "target_settings": sorted(ref.target_setting_names),
         "outgoing": outgoing,
         "incoming": incoming,
     }

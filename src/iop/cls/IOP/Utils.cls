@@ -963,10 +963,10 @@ ClassMethod ApplyProductionPlanOperation(
 		Return ..RemoveConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("item")),pOperation.%Get("target"),pOperation.%Get("setting"))
 	}
 	If opType = "set_route_setting" {
-		Return ..SetConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_port"),..DynamicArrayToCSV(pOperation.%Get("after")))
+		Return ..SetConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_target_setting"),..DynamicArrayToCSV(pOperation.%Get("after")))
 	}
 	If opType = "remove_route" {
-		Return ..RemoveConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_port"))
+		Return ..RemoveConfigSetting(..FindProductionItem(pProduction,pOperation.%Get("source_item")),"Host",pOperation.%Get("source_target_setting"))
 	}
 	Quit $$$ERROR($$$EnsErrGeneral,"Unsupported production plan operation: "_opType)
 }

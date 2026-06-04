@@ -15,19 +15,19 @@ class _NamedRouteTarget(Protocol):
 
 @dataclass(frozen=True)
 class Route:
-    """Declarative route from a production item port to one or more targets."""
+    """Declarative route from a target setting to one or more targets."""
 
-    port: str | TargetSetting
+    target_setting: str | TargetSetting
     targets: str | _NamedRouteTarget | Iterable[str | _NamedRouteTarget]
 
     @property
-    def port_name(self) -> str:
-        return normalize_route_port(self.port)
+    def target_setting_name(self) -> str:
+        return normalize_route_target_setting(self.target_setting)
 
     @property
-    def port_owner(self) -> type | None:
-        if isinstance(self.port, TargetSetting):
-            return self.port.owner
+    def target_setting_owner(self) -> type | None:
+        if isinstance(self.target_setting, TargetSetting):
+            return self.target_setting.owner
         return None
 
     @property
@@ -39,12 +39,17 @@ class Route:
                 targets = tuple(self.targets)
             except TypeError as exc:
                 raise TypeError(
-                    f"Route {self.port_name!r} targets must be an item name, "
+                    f"Route {self.target_setting_name!r} targets must be an item name, "
                     "a production item declaration, or an iterable of either"
                 ) from exc
         if not targets:
-            raise ValueError(f"Route {self.port_name!r} requires at least one target")
-        return tuple(_route_target_name(target, self.port_name) for target in targets)
+            raise ValueError(
+                f"Route {self.target_setting_name!r} requires at least one target"
+            )
+        return tuple(
+            _route_target_name(target, self.target_setting_name)
+            for target in targets
+        )
 
 
 @dataclass(frozen=True)
@@ -128,7 +133,7 @@ class OperationItem(_ProductionItemDeclaration):
     kind: ClassVar[str] = "operation"
 
 
-def normalize_route_port(name: str | TargetSetting) -> str:
+def normalize_route_target_setting(name: str | TargetSetting) -> str:
     """Normalize known Pythonic route aliases without changing other settings."""
 
     if isinstance(name, TargetSetting):
@@ -137,19 +142,19 @@ def normalize_route_port(name: str | TargetSetting) -> str:
                 "Route target setting must be declared on a component class"
             )
         return name.name
-    port_name = str(name)
-    return SETTING_NAME_ALIASES.get(port_name, port_name)
+    target_setting_name = str(name)
+    return SETTING_NAME_ALIASES.get(target_setting_name, target_setting_name)
 
 
-def normalize_route_port_for_match(name: str | TargetSetting) -> str:
-    return normalize_route_port(name)
+def normalize_route_target_setting_for_match(name: str | TargetSetting) -> str:
+    return normalize_route_target_setting(name)
 
 
 def _is_route_target(value: Any) -> bool:
     return isinstance(value, str) or isinstance(value, _ProductionItemDeclaration)
 
 
-def _route_target_name(value: Any, port_name: str) -> str:
+def _route_target_name(value: Any, target_setting_name: str) -> str:
     if isinstance(value, str):
         if value:
             return value
@@ -158,7 +163,7 @@ def _route_target_name(value: Any, port_name: str) -> str:
             return value.name
 
     raise TypeError(
-        f"Route {port_name!r} targets must be item names or production item "
+        f"Route {target_setting_name!r} targets must be item names or production item "
         "declarations"
     )
 

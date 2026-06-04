@@ -12,7 +12,7 @@ from .common import (
     _settings_to_iris,
     _text_value,
 )
-from .types import Port, TargetSetting
+from .types import TargetSetting, TargetSettingRef
 
 
 @dataclass
@@ -36,7 +36,7 @@ class ComponentRef:
     host_settings: dict[str, Any] = field(default_factory=dict)
     adapter_settings: dict[str, Any] = field(default_factory=dict)
     other_settings: list[dict[str, Any]] = field(default_factory=list)
-    port_names: set[str] = field(default_factory=set)
+    target_setting_names: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         if self.class_name is None:
@@ -52,22 +52,22 @@ class ComponentRef:
         if not self.adapter_class_name:
             self.adapter_class_name = _adapter_type_from_class_name(self.class_name)
 
-    def __getattr__(self, name: str) -> Port:
+    def __getattr__(self, name: str) -> TargetSettingRef:
         if self.component_class is not None:
             descriptor = getattr(self.component_class, name, None)
             if isinstance(descriptor, TargetSetting):
-                return Port(
+                return TargetSettingRef(
                     production=self.production,
                     component=self,
                     name=name,
                 )
-        if name in self.port_names:
-            return self.port(name)
+        if name in self.target_setting_names:
+            return self.target_setting(name)
         raise AttributeError(name)
 
-    def port(self, name: str) -> Port:
-        self.port_names.add(name)
-        return Port(
+    def target_setting(self, name: str) -> TargetSettingRef:
+        self.target_setting_names.add(name)
+        return TargetSettingRef(
             production=self.production,
             component=self,
             name=name,
@@ -160,30 +160,37 @@ class ComponentRef:
 
     def connect(
         self,
-        port_name: str | Port,
+        target_setting: str | TargetSettingRef,
         target_component: ComponentRef | str,
     ) -> ComponentRef:
-        port = self._coerce_port(port_name)
-        self.production.connect(port, target_component)
+        target_setting_ref = self._coerce_target_setting_ref(target_setting)
+        self.production.connect(target_setting_ref, target_component)
         return self
 
     def connect_add(
         self,
-        port_name: str | Port,
+        target_setting: str | TargetSettingRef,
         target_component: ComponentRef | str,
     ) -> ComponentRef:
-        port = self._coerce_port(port_name)
-        self.production.connect_add(port, target_component)
+        target_setting_ref = self._coerce_target_setting_ref(target_setting)
+        self.production.connect_add(target_setting_ref, target_component)
         return self
 
-    def _coerce_port(self, port_name: str | Port) -> Port:
-        if isinstance(port_name, Port):
-            if port_name.production is not self.production:
-                raise ValueError("source port belongs to a different Production")
-            if port_name.component is not self:
-                raise ValueError("source port belongs to a different component")
-            return port_name
-        return self.port(str(port_name))
+    def _coerce_target_setting_ref(
+        self,
+        target_setting: str | TargetSettingRef,
+    ) -> TargetSettingRef:
+        if isinstance(target_setting, TargetSettingRef):
+            if target_setting.production is not self.production:
+                raise ValueError(
+                    "source target setting belongs to a different Production"
+                )
+            if target_setting.component is not self:
+                raise ValueError(
+                    "source target setting belongs to a different component"
+                )
+            return target_setting
+        return self.target_setting(str(target_setting))
 
     def inspect(self, *, refresh: bool = True) -> dict[str, Any]:
         return self.production.inspect_component(self, refresh=refresh)

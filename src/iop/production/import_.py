@@ -129,8 +129,8 @@ def _normalize_connections(
                 continue
             source = edge.get("source_item") or edge.get("item") or ""
             if not source and "." in str(edge.get("source", "")):
-                source, _, source_port = str(edge["source"]).rpartition(".")
-                edge = {**edge, "source_port": source_port}
+                source, _, source_target_setting = str(edge["source"]).rpartition(".")
+                edge = {**edge, "source_target_setting": source_target_setting}
             if not source:
                 continue
             runtime_sources.add(str(source))
@@ -176,18 +176,24 @@ def _normalize_connection_target(value: Any) -> dict[str, Any] | None:
     if isinstance(value, str):
         if not value:
             return None
-        return {"target": value, "source_port": ""}
+        return {"target": value, "source_target_setting": ""}
     if not isinstance(value, dict):
         return None
     target = value.get("target") or value.get("name") or value.get("to") or ""
     if not target:
         return None
-    source_port = value.get("source_port") or value.get("port") or ""
+    source_target_setting = (
+        value.get("source_target_setting")
+        or value.get("source_port")
+        or value.get("port")
+        or ""
+    )
     metadata = dict(value.get("metadata") or {})
     known_keys = {
         "target",
         "name",
         "to",
+        "source_target_setting",
         "source_port",
         "port",
         "interaction",
@@ -199,7 +205,7 @@ def _normalize_connection_target(value: Any) -> dict[str, Any] | None:
             metadata.setdefault(str(key), item)
     normalized: dict[str, Any] = {
         "target": str(target),
-        "source_port": str(source_port),
+        "source_target_setting": str(source_target_setting),
     }
     if value.get("interaction"):
         normalized["interaction"] = str(value["interaction"])

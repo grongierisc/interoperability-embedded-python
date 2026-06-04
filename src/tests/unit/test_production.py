@@ -116,7 +116,7 @@ def test_production_to_dict_with_auto_names_settings_and_connection():
         {
             "source": "FileInput.Output",
             "source_item": "FileInput",
-            "source_port": "Output",
+            "source_target_setting": "Output",
             "target": "OrderOperation",
             "origin": "authored",
             "interaction": "request",
@@ -214,7 +214,7 @@ def test_production_to_python_renders_brownfield_draft():
         "Order Operation",
         class_name="Demo.OrderOperation",
     )
-    prod.connect(file_input.port("TargetConfigNames"), order_operation)
+    prod.connect(file_input.target_setting("TargetConfigNames"), order_operation)
 
     text = prod.to_python()
 
@@ -230,7 +230,7 @@ def test_production_to_python_renders_brownfield_draft():
     assert "'TargetConfigNames':" not in text
     assert "adapter_settings={" in text
     assert (
-        "prod.connect(file_input.port('TargetConfigNames'), order_operation)"
+        "prod.connect(file_input.target_setting('TargetConfigNames'), order_operation)"
         in text
     )
     assert text.endswith("PRODUCTIONS = [prod]\n")
@@ -248,7 +248,7 @@ def test_production_to_class_renders_declarative_draft():
         "OrderOperation",
         class_name="EnsLib.File.PassthroughOperation",
     )
-    prod.connect(file_input.port("TargetConfigNames"), order_operation)
+    prod.connect(file_input.target_setting("TargetConfigNames"), order_operation)
 
     text = prod.to_class()
 
@@ -354,7 +354,7 @@ def test_declarative_production_string_class_names_match_instance_shape():
         {
             "source": "MyServiceName.TargetConfigNames",
             "source_item": "MyServiceName",
-            "source_port": "TargetConfigNames",
+            "source_target_setting": "TargetConfigNames",
             "target": "MyProcessName",
             "origin": "authored",
             "interaction": "request",
@@ -362,7 +362,7 @@ def test_declarative_production_string_class_names_match_instance_shape():
         {
             "source": "MyProcessName.TargetConfigNames",
             "source_item": "MyProcessName",
-            "source_port": "TargetConfigNames",
+            "source_target_setting": "TargetConfigNames",
             "target": "MyOperationName",
             "origin": "authored",
             "interaction": "request",
@@ -417,7 +417,7 @@ def test_declarative_production_python_classes_keep_target_routes():
         )
     )
     assert prod.item("FileInput").Output.resolve() == "OrderOperation"
-    assert prod.graph().to_dict()["edges"][0]["source_port"] == "Output"
+    assert prod.graph().to_dict()["edges"][0]["source_target_setting"] == "Output"
 
 
 def test_declarative_route_rejects_descriptor_from_another_component():
@@ -488,7 +488,7 @@ def test_declarative_production_routes_support_fanout_and_port_aliases():
 
     assert prod.item("Router").host_settings["TargetConfigNames"] == "First,Second"
     assert [
-        (edge.source_port, edge.target)
+        (edge.source_target_setting, edge.target)
         for edge in prod.graph().edges
     ] == [
         ("TargetConfigNames", "First"),
@@ -514,7 +514,7 @@ def test_declarative_routes_accept_item_declarations_as_targets():
     prod = ItemReferenceProduction()
 
     assert prod.item("Router").host_settings["TargetConfigNames"] == "First,Second"
-    assert [(edge.source_port, edge.target) for edge in prod.graph().edges] == [
+    assert [(edge.source_target_setting, edge.target) for edge in prod.graph().edges] == [
         ("TargetConfigNames", "First"),
         ("TargetConfigNames", "Second"),
     ]
@@ -629,7 +629,7 @@ def test_declarative_production_to_python_keeps_existing_instance_style():
     assert "ServiceItem" not in text
     assert "class DeclarativeProduction" not in text
     assert "prod = Production('Demo.DeclarativeProduction')" in text
-    assert "prod.connect(fileinput.port('TargetConfigNames'), fileout)" in text
+    assert "prod.connect(fileinput.target_setting('TargetConfigNames'), fileout)" in text
 
 
 def test_progressive_authoring_api_matches_deployable_shape():
@@ -1234,7 +1234,7 @@ def test_production_from_dict_rebuilds_graph_from_runtime_connections():
         {
             "source": "FileInput.TargetConfigNames",
             "source_item": "FileInput",
-            "source_port": "TargetConfigNames",
+            "source_target_setting": "TargetConfigNames",
             "target": "OrderOperation",
             "origin": "runtime",
             "interaction": "request",
@@ -1278,7 +1278,7 @@ def test_production_from_dict_falls_back_when_runtime_has_only_internal_targets(
         {
             "source": "FileInput.Output",
             "source_item": "FileInput",
-            "source_port": "Output",
+            "source_target_setting": "Output",
             "target": "OrderOperation",
             "origin": "inferred",
             "interaction": "request",
@@ -1434,7 +1434,7 @@ def test_production_diff_reports_items_settings_and_connections():
         settings={"Limit": 5},
     )
     old_orders = current.operation("OldOrderOperation", class_name="Demo.OldOrders")
-    current.connect(current_file.port("Output"), old_orders)
+    current.connect(current_file.target_setting("Output"), old_orders)
 
     desired = Production("Demo.Production")
     desired_file = desired.service(
@@ -1521,7 +1521,7 @@ def test_production_plan_classifies_safe_and_blocked_operations():
         settings={"Limit": 5},
     )
     old_orders = current.operation("OldOrderOperation", class_name="Demo.OldOrders")
-    current.connect(current_file.port("Output"), old_orders)
+    current.connect(current_file.target_setting("Output"), old_orders)
 
     desired = Production("Demo.Production")
     desired_file = desired.service("FileInput", FileService, settings={"Limit": 10})
@@ -1748,7 +1748,7 @@ def test_production_from_dict_infers_when_runtime_discovery_returns_no_targets()
         {
             "source": "Router.TargetConfigNames",
             "source_item": "Router",
-            "source_port": "TargetConfigNames",
+            "source_target_setting": "TargetConfigNames",
             "target": "OrderOperation",
             "origin": "inferred",
             "interaction": "request",
@@ -1809,7 +1809,7 @@ def test_production_from_dict_keeps_runtime_edge_without_matching_port():
         {
             "source": "Router",
             "source_item": "Router",
-            "source_port": "",
+            "source_target_setting": "",
             "target": "OrderOperation",
             "origin": "runtime",
             "interaction": "request",
@@ -1863,7 +1863,7 @@ def test_objectscript_component_uses_class_name_and_manual_port():
     file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
     output = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
 
-    prod.connect(file.port("TargetConfigNames"), output)
+    prod.connect(file.target_setting("TargetConfigNames"), output)
 
     assert prod.to_dict()["Demo.Production"]["Item"][0]["@ClassName"] == (
         "EnsLib.File.PassthroughService"
@@ -1876,7 +1876,7 @@ def test_component_crud_edits_python_graph_only():
     prod = Production("Demo.Production")
     file = prod.add_component("FileIn", class_name="EnsLib.File.PassthroughService")
     op = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
-    prod.connect(file.port("TargetConfigNames"), op)
+    prod.connect(file.target_setting("TargetConfigNames"), op)
 
     prod.update_component("FileIn", settings={"Limit": 10}, enabled=False)
     assert prod.item("FileIn").host_settings["Limit"] == 10
@@ -1886,7 +1886,7 @@ def test_component_crud_edits_python_graph_only():
     assert "TargetConfigNames" not in prod.item("FileIn").host_settings
     assert prod.graph().to_dict()["edges"] == []
 
-    prod.connect(file.port("TargetConfigNames"), op)
+    prod.connect(file.target_setting("TargetConfigNames"), op)
     prod.delete_component("FileOut")
 
     assert prod.graph().to_dict()["edges"] == []
@@ -2115,7 +2115,7 @@ def test_production_object_auto_registration_deduplicates_shared_classes(tmp_pat
     )
 
 
-def test_business_host_request_helpers_resolve_port_targets():
+def test_business_host_request_helpers_resolve_target_setting_refs():
     prod = Production("Demo.Production")
     file = prod.service("FileInput", FileService)
     orders = prod.operation(OrderOperation)
@@ -2144,7 +2144,7 @@ def test_business_host_request_helpers_reject_unresolved_ports_before_dispatch()
     host.iris_handle.dispatchSendRequestSync.assert_not_called()
 
 
-def test_business_process_send_request_async_resolves_port_targets():
+def test_business_process_send_request_async_resolves_target_setting_refs():
     prod = Production("Demo.Production")
     file = prod.service("FileInput", FileService)
     orders = prod.operation(OrderOperation)

@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from .component import ComponentRef
 from .declarations import (
     _ProductionItemDeclaration,
-    normalize_route_port_for_match,
+    normalize_route_target_setting_for_match,
 )
 
 
@@ -56,18 +56,21 @@ class _DeclarativeProductionMixin:
         self,
         declaration: _ProductionItemDeclaration,
     ) -> None:
-        host_ports = {
-            normalize_route_port_for_match(name)
+        host_target_settings = {
+            normalize_route_target_setting_for_match(name)
             for name in declaration.host_setting_values
         }
-        route_ports = {route.port_name for route in declaration.route_values}
-        conflicts = sorted(host_ports & route_ports)
+        route_target_settings = {
+            route.target_setting_name for route in declaration.route_values
+        }
+        conflicts = sorted(host_target_settings & route_target_settings)
         if not conflicts:
             return
         names = ", ".join(repr(name) for name in conflicts)
         raise ValueError(
             f"{declaration.kind.title()} item {declaration.name!r} declares route "
-            f"port(s) in Host settings: {names}. Declare route ports with Route only."
+            "target setting(s) in Host settings: "
+            f"{names}. Declare route target settings with Route only."
         )
 
     def _add_declared_item(self, declaration: _ProductionItemDeclaration) -> None:
@@ -124,19 +127,19 @@ class _DeclarativeProductionMixin:
     def _connect_declared_routes(self, declaration: _ProductionItemDeclaration) -> None:
         source = self.item(declaration.name)
         for route in declaration.route_values:
-            self._raise_if_route_port_owner_mismatch(source, route)
-            port = source.port(route.port_name)
+            self._raise_if_route_target_setting_owner_mismatch(source, route)
+            target_setting_ref = source.target_setting(route.target_setting_name)
             targets = route.target_names
-            self.connect(port, targets[0])
+            self.connect(target_setting_ref, targets[0])
             for target in targets[1:]:
-                self.connect_add(port, target)
+                self.connect_add(target_setting_ref, target)
 
-    def _raise_if_route_port_owner_mismatch(
+    def _raise_if_route_target_setting_owner_mismatch(
         self,
         source: ComponentRef,
         route: Any,
     ) -> None:
-        owner = route.port_owner
+        owner = route.target_setting_owner
         if (
             owner is None
             or source.component_class is None
@@ -144,7 +147,7 @@ class _DeclarativeProductionMixin:
         ):
             return
         raise ValueError(
-            f"Route port {route.port_name!r} belongs to "
+            f"Route target setting {route.target_setting_name!r} belongs to "
             f"{owner.__module__}.{owner.__qualname__}, not "
             f"{source.component_class.__module__}."
             f"{source.component_class.__qualname__}"

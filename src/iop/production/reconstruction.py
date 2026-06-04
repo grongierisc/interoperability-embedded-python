@@ -130,11 +130,12 @@ def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], 
             target_name = target.get("target", "")
             if not target_name:
                 continue
-            source_port = target.get("source_port", "") or _matching_host_setting(
-                ref, target_name
-            )
-            if source_port:
-                ref.port_names.add(source_port)
+            source_target_setting = target.get(
+                "source_target_setting",
+                "",
+            ) or _matching_host_setting(ref, target_name)
+            if source_target_setting:
+                ref.target_setting_names.add(source_target_setting)
             if target_name not in production._items_by_name:
                 if _is_internal_runtime_target(target_name):
                     continue
@@ -145,7 +146,7 @@ def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], 
             runtime_sources_with_targets.add(source_item)
             production._register_connection(
                 source_item,
-                source_port,
+                source_target_setting,
                 target_name,
                 origin="runtime",
                 interaction=target.get("interaction", "request"),
@@ -168,7 +169,7 @@ def _infer_connections_from_host_settings(
             for target_name in _setting_targets(value):
                 if target_name not in production._items_by_name:
                     continue
-                ref.port_names.add(setting_name)
+                ref.target_setting_names.add(setting_name)
                 metadata = {"source": "Host setting fallback"}
                 if ref.name in runtime_sources:
                     metadata["reason"] = "runtime discovery returned no targets"

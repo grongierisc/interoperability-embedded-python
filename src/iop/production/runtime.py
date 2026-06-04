@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from ..runtime.environment import temporary_env as _temporary_env
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
-from .types import Port
+from .types import TargetSettingRef
 
 if TYPE_CHECKING:
     from .model import Production
@@ -21,8 +21,8 @@ def _has_remote_director(production: Production) -> bool:
 
 
 def resolve_target(target_value: Any) -> Any:
-    """Resolve Port values to the current IRIS dispatch string."""
-    if isinstance(target_value, Port):
+    """Resolve TargetSettingRef values to the current IRIS dispatch string."""
+    if isinstance(target_value, TargetSettingRef):
         return target_value.resolve()
     return target_value
 

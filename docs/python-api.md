@@ -548,8 +548,9 @@ For Python component classes, prefer passing the descriptor
 there is no Python descriptor, so pass the IRIS setting name string such as
 `"TargetConfigNames"`.
 
-`Route(port, targets)` writes the Host setting for the port and records graph
-edges by calling the same connection API used by instance-style authoring.
+`Route(target_setting, targets)` writes the Host setting for the target setting
+and records graph edges by calling the same connection API used by
+instance-style authoring.
 `targets` can be an item declaration, a string item name, or a sequence for
 fan-out:
 
@@ -559,8 +560,9 @@ ORDERS = OperationItem("OrderOperation", "Demo.OrderOperation")
 Route("TargetConfigNames", (AUDIT, ORDERS))
 ```
 
-Use `settings` or `host_settings` for non-route Host settings. Route ports
-belong in `Route`; declaring the same port in Host settings raises an error.
+Use `settings` or `host_settings` for non-route Host settings. Route target
+settings belong in `Route`; declaring the same target setting in Host settings
+raises an error.
 Only known route aliases such as `target_config_names` are normalized to IRIS
 names such as `TargetConfigNames`. Other Host and Adapter setting keys are
 emitted exactly as supplied.
@@ -593,7 +595,7 @@ file = (
 )
 ```
 
-For ObjectScript or built-in IRIS components, use manual port names:
+For ObjectScript or built-in IRIS components, use manual target setting names:
 
 ```python
 out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
@@ -629,10 +631,12 @@ items, not a DAG execution dependency.
 Key methods:
 
 - `service()`, `process()`, `operation()`: add components to the Python graph
-- `connect(port, component)`: connect a source `Port` to a target component
+- `connect(target_setting_ref, component)`: connect a source `TargetSettingRef`
+  to a target component
 - `item(name)`: return a component reference by production item name
 - `component_ref(target)`, `get_component(target)`: return a `ComponentRef`
-  from an item name, component reference, port, or `"Item.Port"` path
+  from an item name, component reference, target setting ref, or
+  `"Item.TargetSetting"` path
 - `graph()`: return a printable `ProductionGraph`
 - `inspect_component(item)`: return component settings, routes, queue, and
   current runtime production status
@@ -678,9 +682,9 @@ These values are serialized as production-level settings:
 `AlertNotificationOperation`, `AlertNotificationRecipients`, and
 `AlertActionWindow`.
 
-`str(port)` returns the stable authoring identity, for example
-`FileInput.Output`. Use `port.resolve()` when you explicitly need the current
-IRIS dispatch target string.
+`str(target_setting_ref)` returns the stable authoring identity, for example
+`FileInput.Output`. Use `target_setting_ref.resolve()` when you explicitly need
+the current IRIS dispatch target string.
 
 `diff()` is directional: it reports changes needed to make the current/imported
 state match the Python `Production` object.
@@ -695,12 +699,12 @@ if delta.has_changes:
 ```
 
 ObjectScript and built-in IRIS components can be represented with `class_name`
-and manual ports:
+and manual target setting names:
 
 ```python
 file = prod.service("FileIn", class_name="EnsLib.File.PassthroughService")
 out = prod.operation("FileOut", class_name="EnsLib.File.PassthroughOperation")
-prod.connect(file.port("TargetConfigNames"), out)
+prod.connect(file.target_setting("TargetConfigNames"), out)
 ```
 
 For existing IRIS productions, use the conservative plan workflow instead of
@@ -786,7 +790,7 @@ Graph edges expose route metadata such as `origin` (`authored`, `runtime`, or
 deployable IRIS shape is equivalent; use `graph_diff()` when you need to compare
 the reconstruction quality or route origin.
 
-`prod.test_component("Item.Port", message)` resolves from the current
+`prod.test_component("Item.TargetSetting", message)` resolves from the current
 `Production` object graph only. For an already deployed production, first build
 an operational reconstruction with `Production.from_iris(...)`, then call
 `test_component()` on that object. `prod.test(...)` remains as a compatibility
@@ -812,8 +816,9 @@ prod.start_component("OrderOperation")
 prod.restart_component(file.Output)
 ```
 
-`inspect_component(...)` can take a component reference, item name, `Port`, or
-`"Item.Port"` path. A port resolves to its configured target component.
+`inspect_component(...)` can take a component reference, item name,
+`TargetSettingRef`, or `"Item.TargetSetting"` path. A target setting ref resolves
+to its configured target component.
 `ComponentRef` is a Python handle to the production item, not the live IRIS host
 instance.
 

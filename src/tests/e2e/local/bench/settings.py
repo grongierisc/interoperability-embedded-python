@@ -63,7 +63,7 @@ bench_process_to_cls = BENCH_PRODUCTION.process(
 
 BENCH_PRODUCTION.connect(python_process.target, python_operation)
 BENCH_PRODUCTION.connect(python_process_to_cls.target, bench_operation)
-BENCH_PRODUCTION.connect(bench_process.port("TargetConfigName"), python_operation)
-BENCH_PRODUCTION.connect(bench_process_to_cls.port("TargetConfigName"), bench_operation)
+BENCH_PRODUCTION.connect(bench_process.target_setting("TargetConfigName"), python_operation)
+BENCH_PRODUCTION.connect(bench_process_to_cls.target_setting("TargetConfigName"), bench_operation)
 
 PRODUCTIONS = [BENCH_PRODUCTION]

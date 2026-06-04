@@ -32,9 +32,9 @@ from .runtime import _ProductionRuntime
 from .types import (
     GraphEdge,
     PersistentMessageRegistration,
-    Port,
     ProductionDiff,
     ProductionGraph,
+    TargetSettingRef,
     _edge_identity,
 )
 
@@ -332,11 +332,17 @@ class Production(_DeclarativeProductionMixin):
         except KeyError as exc:
             raise ValueError(f"Production item does not exist: {name}") from exc
 
-    def component_ref(self, component: ComponentRef | Port | str) -> ComponentRef:
+    def component_ref(
+        self,
+        component: ComponentRef | TargetSettingRef | str,
+    ) -> ComponentRef:
         component_name = self._runtime_component_name(component)
         return self.item(component_name)
 
-    def get_component(self, component: ComponentRef | Port | str) -> ComponentRef:
+    def get_component(
+        self,
+        component: ComponentRef | TargetSettingRef | str,
+    ) -> ComponentRef:
         return self.component_ref(component)
 
     def component(
@@ -465,8 +471,10 @@ class Production(_DeclarativeProductionMixin):
             _apply_settings_update(ref.adapter_settings, kwargs.pop("adapter_settings"))
         if "other_settings" in kwargs:
             ref.other_settings = [dict(value) for value in kwargs.pop("other_settings")]
-        if "ports" in kwargs:
-            ref.port_names.update(str(value) for value in kwargs.pop("ports"))
+        if "target_settings" in kwargs:
+            ref.target_setting_names.update(
+                str(value) for value in kwargs.pop("target_settings")
+            )
 
         if kwargs:
             names = ", ".join(sorted(kwargs))
@@ -482,11 +490,11 @@ class Production(_DeclarativeProductionMixin):
             if edge.target != ref.name:
                 continue
             source_item = edge.source_item
-            source_port = edge.source_port
+            source_target_setting = edge.source_target_setting
             source_ref = self._items_by_name.get(source_item)
-            if source_ref is not None and source_port:
-                if source_ref.host_settings.get(source_port) == ref.name:
-                    source_ref.host_settings.pop(source_port, None)
+            if source_ref is not None and source_target_setting:
+                if source_ref.host_settings.get(source_target_setting) == ref.name:
+                    source_ref.host_settings.pop(source_target_setting, None)
 
         self._connections = {
             key: targets
@@ -503,29 +511,37 @@ class Production(_DeclarativeProductionMixin):
             if edge.source_item != ref.name and edge.target != ref.name
         ]
 
-    def disconnect(self, source: Port | str) -> None:
-        if isinstance(source, Port):
+    def disconnect(self, source: TargetSettingRef | str) -> None:
+        if isinstance(source, TargetSettingRef):
             if source.production is not self:
-                raise ValueError("source port belongs to a different Production")
+                raise ValueError(
+                    "source target setting belongs to a different Production"
+                )
             item_name = source.item_name
-            port_name = source.name
+            target_setting_name = source.name
         else:
-            item_name, separator, port_name = str(source).rpartition(".")
+            item_name, separator, target_setting_name = str(source).rpartition(".")
             if not separator:
-                raise ValueError("source must be a Port or an Item.Port string")
+                raise ValueError(
+                    "source must be a TargetSettingRef or an "
+                    "Item.TargetSetting string"
+                )
 
-        key = (item_name, port_name)
+        key = (item_name, target_setting_name)
         if key not in self._connections:
-            raise ValueError(f"Production port is not connected: {item_name}.{port_name}")
+            raise ValueError(
+                "Production target setting is not connected: "
+                f"{item_name}.{target_setting_name}"
+            )
         self._connections.pop(key, None)
         ref = self.item(item_name)
-        ref.host_settings.pop(port_name, None)
+        ref.host_settings.pop(target_setting_name, None)
         self._edges = [
             edge
             for edge in self._edges
             if not (
                 edge.source_item == item_name
-                and edge.source_port == port_name
+                and edge.source_target_setting == target_setting_name
             )
         ]
 
@@ -588,33 +604,45 @@ class Production(_DeclarativeProductionMixin):
         )
         return self
 
-    def connect(self, source: Port, target_component: ComponentRef | str) -> None:
-        if not isinstance(source, Port):
-            raise TypeError("source must be a Port returned from a ComponentRef")
+    def connect(
+        self,
+        source: TargetSettingRef,
+        target_component: ComponentRef | str,
+    ) -> None:
+        if not isinstance(source, TargetSettingRef):
+            raise TypeError(
+                "source must be a TargetSettingRef returned from a ComponentRef"
+            )
         if source.production is not self:
-            raise ValueError("source port belongs to a different Production")
+            raise ValueError("source target setting belongs to a different Production")
 
         target_name = self._component_name(target_component)
         source.component.set_host_setting(source.name, target_name)
-        source.component.port_names.add(source.name)
+        source.component.target_setting_names.add(source.name)
         self._register_connection(
             source.item_name,
             source.name,
             target_name,
-            replace_port=True,
+            replace_target_setting=True,
         )
 
-    def connect_add(self, source: Port, target_component: ComponentRef | str) -> None:
-        """Append a fan-out target to a source port without replacing existing targets.
+    def connect_add(
+        self,
+        source: TargetSettingRef,
+        target_component: ComponentRef | str,
+    ) -> None:
+        """Append a fan-out target without replacing existing targets.
 
         The IRIS host setting value becomes a comma-separated list of target names.
-        Use instead of ``connect()`` when a single port should route to multiple
-        components.
+        Use instead of ``connect()`` when a single target setting should route to
+        multiple components.
         """
-        if not isinstance(source, Port):
-            raise TypeError("source must be a Port returned from a ComponentRef")
+        if not isinstance(source, TargetSettingRef):
+            raise TypeError(
+                "source must be a TargetSettingRef returned from a ComponentRef"
+            )
         if source.production is not self:
-            raise ValueError("source port belongs to a different Production")
+            raise ValueError("source target setting belongs to a different Production")
         target_name = self._component_name(target_component)
         existing = source.component.host_settings.get(source.name, "")
         existing_targets = [t.strip() for t in existing.split(",") if t.strip()]
@@ -622,55 +650,70 @@ class Production(_DeclarativeProductionMixin):
             source.component.host_settings[source.name] = ",".join(
                 existing_targets + [target_name]
             )
-        source.component.port_names.add(source.name)
+        source.component.target_setting_names.add(source.name)
         self._register_connection(
             source.item_name,
             source.name,
             target_name,
-            replace_port=False,
+            replace_target_setting=False,
         )
 
-    def resolve_port(self, port: Port) -> str:
-        if port.production is not self:
-            raise ValueError("port belongs to a different Production")
-        return self._resolve_connection_target(port.item_name, port.name, port.path)
+    def resolve_target_setting_ref(self, target_setting_ref: TargetSettingRef) -> str:
+        if target_setting_ref.production is not self:
+            raise ValueError(
+                "target setting ref belongs to a different Production"
+            )
+        return self._resolve_connection_target(
+            target_setting_ref.item_name,
+            target_setting_ref.name,
+            target_setting_ref.path,
+        )
 
     def _resolve_connection_target(
         self,
         item_name: str,
-        port_name: str,
+        target_setting_name: str,
         path: str,
     ) -> str:
-        key = (item_name, port_name)
+        key = (item_name, target_setting_name)
         targets = self._connections.get(key)
         if not targets:
-            raise ValueError(f"Production port is not connected: {path}")
+            raise ValueError(f"Production target setting is not connected: {path}")
         if len(targets) > 1:
             target_list = ", ".join(repr(target) for target in targets)
             raise ValueError(
-                f"Production port is ambiguous: {path} resolves to "
+                f"Production target setting is ambiguous: {path} resolves to "
                 f"multiple targets ({target_list})"
             )
         return targets[0]
 
-    def resolve_target(self, target_or_port: str | Port | ComponentRef) -> str:
-        if isinstance(target_or_port, Port):
-            return self.resolve_port(target_or_port)
-        if isinstance(target_or_port, ComponentRef):
-            return self._component_name(target_or_port)
+    def resolve_target(
+        self,
+        target_or_ref: str | TargetSettingRef | ComponentRef,
+    ) -> str:
+        if isinstance(target_or_ref, TargetSettingRef):
+            return self.resolve_target_setting_ref(target_or_ref)
+        if isinstance(target_or_ref, ComponentRef):
+            return self._component_name(target_or_ref)
 
-        target_name = str(target_or_port)
+        target_name = str(target_or_ref)
         if target_name in self._items_by_name:
             return target_name
 
         if "." in target_name:
-            item_name, _, port_name = target_name.rpartition(".")
+            item_name, _, target_setting_name = target_name.rpartition(".")
             if item_name not in self._items_by_name:
                 raise ValueError(f"Production item does not exist: {item_name}")
-            key = (item_name, port_name)
+            key = (item_name, target_setting_name)
             if key not in self._connections:
-                raise ValueError(f"Production port is not connected: {target_name}")
-            return self._resolve_connection_target(item_name, port_name, target_name)
+                raise ValueError(
+                    f"Production target setting is not connected: {target_name}"
+                )
+            return self._resolve_connection_target(
+                item_name,
+                target_setting_name,
+                target_name,
+            )
 
         raise ValueError(f"Production item does not exist: {target_name}")
 
@@ -778,19 +821,22 @@ class Production(_DeclarativeProductionMixin):
 
     def inspect_component(
         self,
-        component: ComponentRef | Port | str,
+        component: ComponentRef | TargetSettingRef | str,
         *,
         refresh: bool = True,
     ) -> dict[str, Any]:
         return inspect_component(self, component, refresh=refresh)
 
-    def start_component(self, component: ComponentRef | Port | str) -> None:
+    def start_component(self, component: ComponentRef | TargetSettingRef | str) -> None:
         _actions.start_component(self, component)
 
-    def stop_component(self, component: ComponentRef | Port | str) -> None:
+    def stop_component(self, component: ComponentRef | TargetSettingRef | str) -> None:
         _actions.stop_component(self, component)
 
-    def restart_component(self, component: ComponentRef | Port | str) -> None:
+    def restart_component(
+        self,
+        component: ComponentRef | TargetSettingRef | str,
+    ) -> None:
         _actions.restart_component(self, component)
 
     def export(self) -> dict:
@@ -845,14 +891,14 @@ class Production(_DeclarativeProductionMixin):
 
     def test_component(
         self,
-        target_or_port: str | Port | ComponentRef,
+        target_or_ref: str | TargetSettingRef | ComponentRef,
         message: Any = None,
         classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
         return _actions.test_component(
             self,
-            target_or_port,
+            target_or_ref,
             message=message,
             classname=classname,
             body=body,
@@ -860,13 +906,13 @@ class Production(_DeclarativeProductionMixin):
 
     def test(
         self,
-        target_or_port: str | Port | ComponentRef,
+        target_or_ref: str | TargetSettingRef | ComponentRef,
         message: Any = None,
         classname: str | None = None,
         body: str | dict | None = None,
     ) -> Any:
         return self.test_component(
-            target_or_port,
+            target_or_ref,
             message=message,
             classname=classname,
             body=body,
@@ -900,9 +946,12 @@ class Production(_DeclarativeProductionMixin):
             raise ValueError(f"Production item does not exist: {target_name}")
         return target_name
 
-    def _runtime_component_name(self, component: ComponentRef | Port | str) -> str:
-        if isinstance(component, Port):
-            component_name = self.resolve_port(component)
+    def _runtime_component_name(
+        self,
+        component: ComponentRef | TargetSettingRef | str,
+    ) -> str:
+        if isinstance(component, TargetSettingRef):
+            component_name = self.resolve_target_setting_ref(component)
         elif isinstance(component, ComponentRef):
             component_name = self._component_name(component)
         else:
@@ -963,22 +1012,22 @@ class Production(_DeclarativeProductionMixin):
     def _register_connection(
         self,
         source_item: str,
-        source_port: str,
+        source_target_setting: str,
         target_name: str,
         *,
         origin: str = "authored",
         interaction: str = "request",
         metadata: dict[str, Any] | None = None,
-        replace_port: bool = False,
+        replace_target_setting: bool = False,
         validate_target: bool = True,
     ) -> None:
         if source_item not in self._items_by_name:
             raise ValueError(f"Production item does not exist: {source_item}")
         if validate_target and target_name not in self._items_by_name:
             raise ValueError(f"Production item does not exist: {target_name}")
-        if source_port:
-            key = (source_item, source_port)
-            if replace_port:
+        if source_target_setting:
+            key = (source_item, source_target_setting)
+            if replace_target_setting:
                 self._connections[key] = [target_name]
             else:
                 self._connections.setdefault(key, [])
@@ -987,20 +1036,20 @@ class Production(_DeclarativeProductionMixin):
 
         edge = GraphEdge(
             source_item=source_item,
-            source_port=source_port,
+            source_target_setting=source_target_setting,
             target=target_name,
             origin=origin,
             interaction=interaction,
             metadata=dict(metadata or {}),
         )
 
-        if replace_port and source_port:
+        if replace_target_setting and source_target_setting:
             self._edges = [
                 existing
                 for existing in self._edges
                 if not (
                     existing.source_item == source_item
-                    and existing.source_port == source_port
+                    and existing.source_target_setting == source_target_setting
                 )
             ]
 

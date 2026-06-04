@@ -496,8 +496,8 @@ def _classify_change(change: ProductionDiffEntry) -> tuple[str, str, str]:
         return "set_setting", SAFE, ""
 
     if change.kind == "connection":
-        source_item, source_port = _connection_source(change.path)
-        if not source_item or not source_port:
+        source_item, source_target_setting = _connection_source(change.path)
+        if not source_item or not source_target_setting:
             return (
                 "set_route_setting",
                 UNSUPPORTED,
@@ -558,15 +558,18 @@ def _operation_converged(operation: ProductionPlanOperation, current) -> bool:
             return setting_name not in ref.adapter_settings
         return False
     if operation.op_type == "set_route_setting":
-        source_item, source_port = _connection_source(operation.path)
-        if not source_item or not source_port:
+        source_item, source_target_setting = _connection_source(operation.path)
+        if not source_item or not source_target_setting:
             return False
         connections = _connection_signature(current)
-        return connections.get((source_item, source_port), []) == operation.after
+        return (
+            connections.get((source_item, source_target_setting), [])
+            == operation.after
+        )
     if operation.op_type == "remove_route":
-        source_item, source_port = _connection_source(operation.path)
+        source_item, source_target_setting = _connection_source(operation.path)
         connections = _connection_signature(current)
-        return (source_item, source_port) not in connections
+        return (source_item, source_target_setting) not in connections
     return False
 
 
@@ -608,10 +611,10 @@ def _setting_path(path: str) -> tuple[str, str, str] | None:
 
 def _connection_source(path: str) -> tuple[str, str]:
     source = path.removeprefix("connections.")
-    source_item, separator, source_port = source.rpartition(".")
+    source_item, separator, source_target_setting = source.rpartition(".")
     if not separator:
         return source, ""
-    return source_item, source_port
+    return source_item, source_target_setting
 
 
 def _string_value(value: Any) -> str:
@@ -639,13 +642,13 @@ def _operation_target_data(operation: ProductionPlanOperation) -> dict[str, Any]
             "setting": setting_name,
         }
     if operation.op_type in {"set_route_setting", "remove_route"}:
-        source_item, source_port = _connection_source(operation.path)
+        source_item, source_target_setting = _connection_source(operation.path)
         return {
             "source_item": source_item,
-            "source_port": source_port,
+            "source_target_setting": source_target_setting,
             "item": source_item,
             "target": "Host",
-            "setting": source_port,
+            "setting": source_target_setting,
         }
     if operation.op_type == "set_production_field":
         return {"field": operation.path.removeprefix("production.")}
