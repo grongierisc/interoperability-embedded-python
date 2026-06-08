@@ -16,3 +16,4 @@ pymdown-extensions
 debugpy
 build
 ruff
+pyright

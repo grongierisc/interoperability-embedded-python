@@ -1,7 +1,7 @@
 import ast
 import textwrap
 from inspect import getsource
-from typing import Any
+from typing import Any, cast
 
 from ..messages.base import _Message as Message
 from ..messages.decorators import (
@@ -21,7 +21,12 @@ from .async_request import AsyncRequest
 from .common import _Common
 from .generator_request import _GeneratorRequest
 
-_CONNECTION_METHODS = {"send_request_sync", "send_request_async"}
+_CONNECTION_METHODS = {
+    "send_request_sync",
+    "send_request_async",
+    "send_request_async_ng",
+    "send_generator_request",
+}
 _UNRESOLVED = object()
 
 
@@ -157,7 +162,7 @@ class _BusinessHost(_Common):
         Returns:
             Response from target component
         """
-        target = resolve_target(target)
+        target = cast(str, resolve_target(target))
         return await AsyncRequest(target, request, timeout, description, self)
 
     def send_generator_request(
@@ -178,7 +183,7 @@ class _BusinessHost(_Common):
         Raises:
             TypeError: If request is not of type Message
         """
-        target = resolve_target(target)
+        target = cast(str, resolve_target(target))
         return _GeneratorRequest(self, target, request, timeout, description)
 
     def send_multi_request_sync(
@@ -202,13 +207,13 @@ class _BusinessHost(_Common):
             ValueError: If target_request is empty
         """
         self._validate_target_request(target_request)
-        target_request = [
+        resolved_target_request: list[tuple[str, Message | Any]] = [
             (resolve_target(target), request) for target, request in target_request
         ]
 
         call_list = [
             self._create_call_structure(target, request)
-            for target, request in target_request
+            for target, request in resolved_target_request
         ]
 
         response_list = self.iris_handle.dispatchSendRequestSyncMultiple(
@@ -217,12 +222,12 @@ class _BusinessHost(_Common):
 
         return [
             (
-                target_request[i][0],
-                target_request[i][1],
+                resolved_target_request[i][0],
+                resolved_target_request[i][1],
                 dispatch_deserializer(response_list[i].Response),
-                response_list[i].ResponseCode,
+                int(response_list[i].ResponseCode),
             )
-            for i in range(len(target_request))
+            for i in range(len(resolved_target_request))
         ]
 
     def _validate_target_request(

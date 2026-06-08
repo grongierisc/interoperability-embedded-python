@@ -15,6 +15,8 @@ from .import_ import (
     _split_production_settings,
     _split_settings,
 )
+from .source_inference import infer_source_connections
+from .types import GraphEdge
 
 
 def production_from_dict(
@@ -61,6 +63,7 @@ def production_from_dict(
         runtime_sources=runtime_sources,
         runtime_sources_with_targets=runtime_sources_with_targets,
     )
+    _infer_connections_from_source(production)
     return production
 
 
@@ -78,7 +81,7 @@ def _add_imported_items(production, production_data: dict[str, Any]) -> None:
             adapter_class_name=(
                 item_data.get("@AdapterClassName") or item_data.get("@Adapter") or ""
             ),
-            kind="component",
+            kind=_component_kind(item_data),
             category=item_data.get("@Category", ""),
             pool_size=item_data.get("@PoolSize", 1),
             enabled=item_data.get("@Enabled", True),
@@ -112,6 +115,13 @@ def _apply_runtime_item_metadata(production, connections: Any) -> None:
         adapter_class_name = metadata.get("adapter_class_name", "")
         if adapter_class_name and not ref.adapter_class_name:
             ref.adapter_class_name = adapter_class_name
+        kind = _normalize_component_kind(metadata.get("kind", ""))
+        if kind:
+            ref.kind = kind
+        for setting_name in ("%module", "%classname", "%classpaths"):
+            setting_value = metadata.get(setting_name, "")
+            if setting_value and setting_name not in ref.host_settings:
+                ref.host_settings[setting_name] = setting_value
 
 
 def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], set[str]]:
@@ -156,6 +166,49 @@ def _apply_runtime_connections(production, connections: Any) -> tuple[set[str], 
     return runtime_sources, runtime_sources_with_targets
 
 
+def _component_kind(item_data: dict[str, Any]) -> str:
+    explicit_kind = _normalize_component_kind(
+        item_data.get("@Kind")
+        or item_data.get("@kind")
+        or item_data.get("kind")
+        or item_data.get("type")
+        or item_data.get("role")
+        or ""
+    )
+    if explicit_kind:
+        return explicit_kind
+    return _component_kind_from_class_name(str(item_data.get("@ClassName", "")))
+
+
+def _component_kind_from_class_name(class_name: str) -> str:
+    class_name = str(class_name or "")
+    if not class_name.startswith(("Python.", "Ens.", "EnsLib.", "IOP.")):
+        return "component"
+    last_part = class_name.rpartition(".")[2].lower()
+    if not last_part:
+        return "component"
+    if last_part.endswith("service"):
+        return "service"
+    if last_part.endswith("process"):
+        return "process"
+    if last_part.endswith("operation"):
+        return "operation"
+    return "component"
+
+
+def _normalize_component_kind(kind: Any) -> str:
+    normalized = str(kind or "").strip().lower()
+    if normalized in {"service", "businessservice"}:
+        return "service"
+    if normalized in {"process", "businessprocess"}:
+        return "process"
+    if normalized in {"operation", "businessoperation"}:
+        return "operation"
+    if normalized in {"component", "host", "businesshost"}:
+        return "component"
+    return ""
+
+
 def _infer_connections_from_host_settings(
     production,
     *,
@@ -166,6 +219,8 @@ def _infer_connections_from_host_settings(
         if ref.name in runtime_sources_with_targets:
             continue
         for setting_name, value in ref.host_settings.items():
+            if str(setting_name).startswith("%"):
+                continue
             for target_name in _setting_targets(value):
                 if target_name not in production._items_by_name:
                     continue
@@ -181,3 +236,66 @@ def _infer_connections_from_host_settings(
                     metadata=metadata,
                     validate_target=False,
                 )
+
+
+def _infer_connections_from_source(production) -> None:
+    existing = {
+        (edge.source_item, edge.target): edge
+        for edge in production._edges
+    }
+    for ref in production._items:
+        for connection in infer_source_connections(ref.class_name, ref.host_settings):
+            target_name = connection.target
+            if target_name not in production._items_by_name:
+                continue
+            key = (ref.name, target_name)
+            if key in existing:
+                existing[key] = _apply_source_connection_interaction(
+                    production,
+                    existing[key],
+                    connection,
+                )
+                continue
+            metadata = {"source": connection.source}
+            if connection.detail:
+                metadata["detail"] = connection.detail
+            production._register_connection(
+                ref.name,
+                "",
+                target_name,
+                origin="inferred",
+                interaction=connection.interaction,
+                metadata=metadata,
+                validate_target=False,
+            )
+            existing[key] = production._edges[-1]
+
+
+def _apply_source_connection_interaction(
+    production,
+    edge: GraphEdge,
+    connection,
+) -> GraphEdge:
+    if connection.interaction in ("", "request"):
+        return edge
+    if edge.interaction not in ("", "request", "unknown"):
+        return edge
+
+    metadata = dict(edge.metadata)
+    metadata.setdefault("source", connection.source)
+    if connection.detail:
+        metadata.setdefault("detail", connection.detail)
+
+    updated = GraphEdge(
+        source_item=edge.source_item,
+        source_target_setting=edge.source_target_setting,
+        target=edge.target,
+        origin=edge.origin,
+        interaction=connection.interaction,
+        metadata=metadata,
+    )
+    production._edges = [
+        updated if existing is edge else existing
+        for existing in production._edges
+    ]
+    return updated

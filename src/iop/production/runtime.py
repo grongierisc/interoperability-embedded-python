@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from ..runtime.environment import temporary_env as _temporary_env
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
@@ -18,6 +18,18 @@ def _has_remote_director(production: Production) -> bool:
         return False
 
     return isinstance(production._director, _RemoteDirector)
+
+
+@overload
+def resolve_target(target_value: TargetSettingRef) -> str: ...
+
+
+@overload
+def resolve_target(target_value: str) -> str: ...
+
+
+@overload
+def resolve_target(target_value: Any) -> Any: ...
 
 
 def resolve_target(target_value: Any) -> Any:
@@ -69,8 +81,11 @@ class _ProductionRuntime:
             return _RemoteDirector(remote_settings)
 
         if self.production.namespace:
-            return _NamespaceDirectorProxy(
-                _LocalDirector(),
-                self.production.namespace,
+            return cast(
+                _DirectorProtocol,
+                _NamespaceDirectorProxy(
+                    _LocalDirector(),
+                    self.production.namespace,
+                ),
             )
         return _LocalDirector()

@@ -1,13 +1,64 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Protocol, cast
 
 from .component import ComponentRef
 from .declarations import (
+    Route,
     _ProductionItemDeclaration,
     normalize_route_target_setting_for_match,
 )
+from .types import TargetSettingRef
+
+
+class _ComponentFactory(Protocol):
+    def __call__(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef: ...
+
+
+class _DeclarativeProductionHost(Protocol):
+    def component(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef: ...
+
+    def service(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef: ...
+
+    def process(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef: ...
+
+    def operation(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef: ...
+
+    def item(self, name: str) -> ComponentRef: ...
+
+    def connect(
+        self,
+        source: TargetSettingRef,
+        target_component: ComponentRef | str | None = None,
+        *,
+        mode: str = "replace",
+    ) -> None: ...
 
 
 class _DeclarativeProductionMixin:
@@ -38,19 +89,21 @@ class _DeclarativeProductionMixin:
             self._connect_declared_routes(declaration)
 
     def _declared_items(self, attr_name: str) -> tuple[_ProductionItemDeclaration, ...]:
-        values = getattr(type(self), attr_name, ())
+        values: object = getattr(type(self), attr_name, ())
         if values is None:
             return ()
         if isinstance(values, _ProductionItemDeclaration):
             return (values,)
         try:
-            declarations = tuple(values)
+            declarations = tuple(cast(Iterable[object], values))
         except TypeError as exc:
             raise TypeError(f"{attr_name} must be an iterable of item declarations") from exc
+        items: list[_ProductionItemDeclaration] = []
         for declaration in declarations:
             if not isinstance(declaration, _ProductionItemDeclaration):
                 raise TypeError(f"{attr_name} must contain production item declarations")
-        return declarations
+            items.append(declaration)
+        return tuple(items)
 
     def _raise_declared_route_conflicts(
         self,
@@ -90,12 +143,14 @@ class _DeclarativeProductionMixin:
         if declaration.adapter_class_name is not None:
             kwargs["adapter_class_name"] = declaration.adapter_class_name
 
-        method = {
-            "component": self.component,
-            "service": self.service,
-            "process": self.process,
-            "operation": self.operation,
-        }[declaration.kind]
+        host = cast(_DeclarativeProductionHost, self)
+        methods: dict[str, _ComponentFactory] = {
+            "component": host.component,
+            "service": host.service,
+            "process": host.process,
+            "operation": host.operation,
+        }
+        method = methods[declaration.kind]
 
         component = declaration.component
         if isinstance(component, type):
@@ -125,19 +180,24 @@ class _DeclarativeProductionMixin:
         ref.other_settings = declaration.other_setting_values
 
     def _connect_declared_routes(self, declaration: _ProductionItemDeclaration) -> None:
-        source = self.item(declaration.name)
+        host = cast(_DeclarativeProductionHost, self)
+        source = host.item(declaration.name)
         for route in declaration.route_values:
             self._raise_if_route_target_setting_owner_mismatch(source, route)
             target_setting_ref = source.target_setting(route.target_setting_name)
             targets = route.target_names
-            self.connect(target_setting_ref, targets[0])
+            host.connect(target_setting_ref, targets[0])
             for target in targets[1:]:
-                self.connect_add(target_setting_ref, target)
+                host.connect(
+                    target_setting_ref,
+                    target,
+                    mode="add",
+                )
 
     def _raise_if_route_target_setting_owner_mismatch(
         self,
         source: ComponentRef,
-        route: Any,
+        route: Route,
     ) -> None:
         owner = route.target_setting_owner
         if (

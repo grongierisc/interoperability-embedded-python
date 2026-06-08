@@ -24,7 +24,13 @@ class TargetSetting(Setting):
     @overload
     def __get__(self, instance: object, owner: type | None = None) -> str: ...
 
-    def __get__(self, instance, owner=None):
+    def __get__(
+        self,
+        instance: object | None,
+        owner: type | None = None,
+    ) -> TargetSetting | str:
+        if instance is None:
+            return self
         return super().__get__(instance, owner)
 
 
@@ -198,10 +204,7 @@ class ProductionGraph:
             f"flowchart {direction}",
             f"  %% Production: {_mermaid_comment(self.production_name)}",
         ]
-        for node in self.nodes:
-            lines.append(
-                f"  {node_ids[node.name]}[\"{_mermaid_node_label(node)}\"]"
-            )
+        lines.extend(_mermaid_production_layout_node_lines(self.nodes, node_ids))
 
         unresolved_names = sorted({
             name
@@ -214,6 +217,8 @@ class ProductionGraph:
                 f"  {node_ids[name]}[\"{_mermaid_text(name)}<br/>(unresolved)\"]"
             )
 
+        lines.extend(_mermaid_production_layout_hint_lines(self.nodes, node_ids))
+
         for edge in sorted(
             self.edges,
             key=lambda item: (
@@ -224,11 +229,13 @@ class ProductionGraph:
                 item.interaction,
             ),
         ):
+            edge_line = _mermaid_edge_line(
+                node_ids[edge.source_item],
+                node_ids[edge.target],
+                edge,
+            )
             lines.append(
-                "  "
-                f"{node_ids[edge.source_item]} "
-                f"-- \"{_mermaid_edge_label(edge)}\" --> "
-                f"{node_ids[edge.target]}"
+                f"  {edge_line}"
             )
 
         if self.warnings:
@@ -394,6 +401,64 @@ def _mermaid_node_ids(
     return node_ids
 
 
+def _mermaid_production_layout_node_lines(
+    nodes: tuple[GraphNode, ...],
+    node_ids: dict[str, str],
+) -> list[str]:
+    lines: list[str] = []
+    for kind, title in _MERMAID_PRODUCTION_GROUPS:
+        group_nodes = [
+            node
+            for node in nodes
+            if _mermaid_production_group_kind(node.kind) == kind
+        ]
+        if not group_nodes:
+            continue
+        lines.append(f"  subgraph group_{kind}[\"{title}\"]")
+        lines.append("    direction TB")
+        lines.extend(
+            f"    {node_ids[node.name]}[\"{_mermaid_node_label(node)}\"]"
+            for node in group_nodes
+        )
+        lines.append("  end")
+    return lines
+
+
+def _mermaid_production_layout_hint_lines(
+    nodes: tuple[GraphNode, ...],
+    node_ids: dict[str, str],
+) -> list[str]:
+    first_node_by_kind: dict[str, GraphNode] = {}
+    for node in nodes:
+        kind = _mermaid_production_group_kind(node.kind)
+        first_node_by_kind.setdefault(kind, node)
+
+    ordered_ids = [
+        node_ids[first_node_by_kind[kind].name]
+        for kind, _title in _MERMAID_PRODUCTION_GROUPS
+        if kind in first_node_by_kind
+    ]
+    return [
+        f"  {left} ~~~ {right}"
+        for left, right in zip(ordered_ids, ordered_ids[1:], strict=False)
+    ]
+
+
+_MERMAID_PRODUCTION_GROUPS = (
+    ("service", "Services"),
+    ("process", "Processes"),
+    ("operation", "Operations"),
+    ("component", "Other Components"),
+)
+
+
+def _mermaid_production_group_kind(kind: str) -> str:
+    normalized = str(kind or "").strip().lower()
+    if normalized in {"service", "process", "operation"}:
+        return normalized
+    return "component"
+
+
 def _mermaid_node_label(node: GraphNode) -> str:
     label = _mermaid_text(node.name)
     if node.class_name:
@@ -403,11 +468,45 @@ def _mermaid_node_label(node: GraphNode) -> str:
 
 def _mermaid_edge_label(edge: GraphEdge) -> str:
     parts = [edge.source_target_setting or "(runtime)"]
+    message = _mermaid_message_label(edge.metadata)
+    if message:
+        parts.append(message)
     if edge.origin != "authored":
         parts.append(edge.origin)
     if edge.interaction not in ("", "request"):
         parts.append(edge.interaction)
     return _mermaid_text(" | ".join(parts))
+
+
+def _mermaid_edge_line(source_id: str, target_id: str, edge: GraphEdge) -> str:
+    label = _mermaid_edge_label(edge)
+    if _mermaid_edge_is_sync(edge):
+        return f"{source_id} <-- \"{label}\" --> {target_id}"
+    return (
+        f"{source_id} -- "
+        f"\"{label}\" "
+        f"--> {target_id}"
+    )
+
+
+def _mermaid_edge_is_sync(edge: GraphEdge) -> bool:
+    return str(edge.interaction or "").strip().lower() == "sync"
+
+
+def _mermaid_message_label(metadata: dict[str, Any]) -> str:
+    messages = (
+        metadata.get("messages")
+        or metadata.get("message_types")
+        or metadata.get("accepted_messages")
+    )
+    if isinstance(messages, (list, tuple)):
+        return ", ".join(str(message) for message in messages if message)
+    if messages:
+        return str(messages)
+    message = metadata.get("message") or metadata.get("request")
+    if message:
+        return str(message)
+    return ""
 
 
 def _mermaid_text(value: Any) -> str:

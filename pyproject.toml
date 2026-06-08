@@ -63,6 +63,9 @@ markers = [
     "e2e_remote: end-to-end test requiring a remote IRIS instance via REST API",
 ]
 
+[tool.pyright]
+pythonVersion = "3.10"
+
 [tool.ruff]
 target-version = "py310"
 line-length = 88

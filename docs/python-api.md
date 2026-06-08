@@ -614,7 +614,7 @@ Progressive component methods include `pool()`, `enable()`, `disable()`,
 `run_foreground()`, `trace()`, `schedule_on()`, `comment_as()`,
 `category_as()`, `host_setting()`, `host_settings_update()`, `setting()`,
 `settings_update()`, `adapter_setting()`, `adapter_settings_update()`,
-`other_setting()`, `connect()`, and `connect_add()`.
+`other_setting()`, and `connect()`.
 
 `host_settings`, `adapter_settings`, and `foreground` are public data
 attributes on `ComponentRef`, so their fluent update methods use distinct names
@@ -631,14 +631,17 @@ items, not a DAG execution dependency.
 Key methods:
 
 - `service()`, `process()`, `operation()`: add components to the Python graph
-- `connect(target_setting_ref, component)`: connect a source `TargetSettingRef`
-  to a target component
+- `connect(target_setting_ref, component, mode="replace")`: connect a source
+  `TargetSettingRef` to a target component. Use `mode="add"` for fan-out and
+  `mode="remove"` to remove one target, or omit the component with
+  `mode="remove"` to remove the whole target setting.
 - `item(name)`: return a component reference by production item name
 - `component_ref(target)`, `get_component(target)`: return a `ComponentRef`
   from an item name, component reference, target setting ref, or
   `"Item.TargetSetting"` path
 - `graph()`: return a printable `ProductionGraph`
-- `to_mermaid()`: export the production graph as Mermaid flowchart text
+- `to_mermaid()`: export the production graph as Mermaid flowchart text grouped
+  by known service/process/operation roles
 - `inspect_component(item)`: return component settings, routes, queue, and
   current runtime production status
 - `start_component(item)`, `stop_component(item)`, `restart_component(item)`:

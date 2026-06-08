@@ -798,6 +798,7 @@ ClassMethod ExportProductionConnections(pProductionName As %String) As %String
 			Set itemResult = {}
 			Set itemResult.item = item.Name
 			Set itemResult."class_name" = item.ClassName
+			Set itemResult.kind = ..ProductionItemKind(item.ClassName)
 			Set adapterClass = ""
 			Try {
 				Set adapterClass = $Parameter(item.ClassName, "ADAPTER")
@@ -805,6 +806,21 @@ ClassMethod ExportProductionConnections(pProductionName As %String) As %String
 			}
 			If adapterClass '= "" {
 				Set itemResult."adapter_class_name" = adapterClass
+			}
+			If ..ProductionItemIsIOP(item.ClassName) {
+				Set itemResult.iop = 1
+				Set module = ..ProductionItemSettingOrProxyDefault(item,item.ClassName,"%module")
+				Set classname = ..ProductionItemSettingOrProxyDefault(item,item.ClassName,"%classname")
+				Set classpaths = ..ProductionItemSettingOrProxyDefault(item,item.ClassName,"%classpaths")
+				If module '= "" {
+					Set itemResult.module = module
+				}
+				If classname '= "" {
+					Set itemResult.classname = classname
+				}
+				If classpaths '= "" {
+					Set itemResult.classpaths = classpaths
+				}
 			}
 			Set itemResult.connections = []
 			Set itemResult.warnings = []
@@ -826,6 +842,54 @@ ClassMethod ExportProductionConnections(pProductionName As %String) As %String
 		Do result.warnings.%Push(ex.DisplayString())
 	}
 	Return result.%ToJSON()
+}
+
+ClassMethod ProductionItemKind(pClassName As %String) As %String [ Internal, Private ]
+{
+	Try {
+		If $ClassMethod(pClassName,"%Extends","Ens.BusinessService") {
+			Return "service"
+		}
+		If $ClassMethod(pClassName,"%Extends","Ens.BusinessProcess") {
+			Return "process"
+		}
+		If $ClassMethod(pClassName,"%Extends","Ens.BusinessOperation") {
+			Return "operation"
+		}
+	} Catch ex {
+	}
+	Quit "component"
+}
+
+ClassMethod ProductionItemIsIOP(pClassName As %String) As %Boolean [ Internal, Private ]
+{
+	Try {
+		If $ClassMethod(pClassName,"%Extends","IOP.Common") {
+			Return 1
+		}
+	} Catch ex {
+	}
+	Quit 0
+}
+
+ClassMethod ProductionItemSettingOrProxyDefault(
+	pItem As Ens.Config.Item,
+	pClassName As %String,
+	pSettingName As %String) As %String [ Internal, Private ]
+{
+	Set value = ""
+	Try {
+		Do pItem.GetModifiedSetting(pSettingName,.value)
+	} Catch exSetting {
+	}
+	If value '= "" {
+		Quit value
+	}
+	Try {
+		Set value = ..ProxyPropertyInitialValue(pClassName,pSettingName)
+	} Catch exProxy {
+	}
+	Quit value
 }
 
 /// Export queue counters for production items.

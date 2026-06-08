@@ -1,13 +1,17 @@
 """Unit tests for _BusinessHost — no live IRIS instance required."""
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from fixtures.bs import RedditService
+from fixtures.message import (
+    MyResponse,
+    SimpleMessage,
+    SimpleMessageNotDataclass,
+    SimpleMessageNotMessage,
+)
 
 from iop.components.business_host import _BusinessHost
 from iop.messages.dispatch import dispatch_serializer
-from fixtures.message import (
-    SimpleMessage, SimpleMessageNotMessage, SimpleMessageNotDataclass, MyResponse
-)
-from fixtures.bs import RedditService
 
 
 @pytest.fixture
@@ -87,3 +91,17 @@ class TestBusinessService:
                 return self.send_request_sync(self.target, request)
 
         assert Service().on_get_connections() == ["Python.Target"]
+
+    def test_connection_discovery_includes_async_ng_and_generator_requests(self):
+        class Process(_BusinessHost):
+            target = "Python.Target"
+            generator_target = "Python.GeneratorTarget"
+
+            async def on_message(self, request):
+                await self.send_request_async_ng(self.target, request)
+                self.send_generator_request(self.generator_target, request)
+
+        assert set(Process().on_get_connections()) == {
+            "Python.Target",
+            "Python.GeneratorTarget",
+        }

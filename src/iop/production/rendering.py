@@ -479,9 +479,12 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
                 f"prod.connect({source_expr}, {variables[valid_targets[0]]})"
             )
         else:
-            for target in valid_targets:
+            lines.append(
+                f"prod.connect({source_expr}, {variables[valid_targets[0]]})"
+            )
+            for target in valid_targets[1:]:
                 lines.append(
-                    f"prod.connect_add({source_expr}, {variables[target]})"
+                    f"prod.connect({source_expr}, {variables[target]}, mode='add')"
                 )
 
     for edge in production.edges:

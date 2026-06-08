@@ -45,6 +45,8 @@ Implemented graph import and display:
 - `ProductionGraph.to_mermaid()`
 - printable graph text through `str(prod.graph())`
 - Mermaid graph text through `prod.to_mermaid()` or `prod.graph().to_mermaid()`
+- Mermaid output groups known services, processes, and operations from left to
+  right
 
 `str(target_setting_ref)` returns the stable authoring identity, such as
 `FileInput.Output`. Runtime dispatch uses explicit target setting resolution.
@@ -89,7 +91,7 @@ Implemented graph-local editing:
 - `prod.add_component(...)`
 - `prod.update_component(...)`
 - `prod.delete_component(...)`
-- `prod.disconnect(...)`
+- `prod.connect(..., mode="remove")`
 - `prod.sync()` for explicit full local IRIS registration
 - `prod.plan(...)`, `prod.apply(...)`, `prod.verify(...)`, and
   `Production.rollback_backup(...)` for conservative granular change workflows
@@ -163,6 +165,32 @@ Rules:
   `.cls` migration support.
 - Manual target setting names are required when Python has no `target()`
   descriptor.
+
+## Mermaid Graphs
+
+`Production.to_mermaid()` renders the current object graph as Mermaid flowchart
+text:
+
+```python
+print(prod.to_mermaid())
+```
+
+Mermaid export groups known `service`, `process`, and `operation` items into
+left-to-right Mermaid subgraphs. Items whose role is unknown remain in
+`Other Components`; this can happen with brownfield IRIS exports where the role
+cannot be reconstructed from the exported production metadata.
+
+IRIS topology export does not reliably contain the message class exchanged on a
+route. Future message labels should be inferred from the deployed component
+definitions: ObjectScript classes can expose accepted message types through
+`XData MessageMap`, and IOP Python components can be inspected through their
+Python source and dispatch declarations.
+
+For a larger runnable example:
+
+```bash
+python demo/python/pythonic_productions/mermaid_showcase.py
+```
 
 ## Roadmap And Gaps
 

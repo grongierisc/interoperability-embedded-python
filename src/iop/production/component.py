@@ -161,19 +161,11 @@ class ComponentRef:
     def connect(
         self,
         target_setting: str | TargetSettingRef,
-        target_component: ComponentRef | str,
+        target_component: ComponentRef | str | None = None,
+        **kwargs: Any,
     ) -> ComponentRef:
         target_setting_ref = self._coerce_target_setting_ref(target_setting)
-        self.production.connect(target_setting_ref, target_component)
-        return self
-
-    def connect_add(
-        self,
-        target_setting: str | TargetSettingRef,
-        target_component: ComponentRef | str,
-    ) -> ComponentRef:
-        target_setting_ref = self._coerce_target_setting_ref(target_setting)
-        self.production.connect_add(target_setting_ref, target_component)
+        self.production.connect(target_setting_ref, target_component, **kwargs)
         return self
 
     def _coerce_target_setting_ref(

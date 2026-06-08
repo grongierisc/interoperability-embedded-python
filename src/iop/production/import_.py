@@ -165,10 +165,25 @@ def _normalize_runtime_item_metadata(connections: Any) -> dict[str, dict[str, st
             or item.get("Adapter")
             or ""
         )
+        item_metadata: dict[str, str] = {}
         if adapter_class_name:
-            metadata[str(item_name)] = {
-                "adapter_class_name": str(adapter_class_name)
-            }
+            item_metadata["adapter_class_name"] = str(adapter_class_name)
+        kind = item.get("kind") or item.get("type") or item.get("role") or ""
+        if kind:
+            item_metadata["kind"] = str(kind)
+        if item.get("iop") is not None:
+            item_metadata["iop"] = str(item.get("iop"))
+        module = item.get("module") or item.get("%module") or ""
+        if module:
+            item_metadata["%module"] = str(module)
+        classname = item.get("classname") or item.get("%classname") or ""
+        if classname:
+            item_metadata["%classname"] = str(classname)
+        classpaths = item.get("classpaths") or item.get("%classpaths") or ""
+        if classpaths:
+            item_metadata["%classpaths"] = str(classpaths)
+        if item_metadata:
+            metadata[str(item_name)] = item_metadata
     return metadata
 
 

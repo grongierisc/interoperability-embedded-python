@@ -45,6 +45,10 @@ class FileService(PollingBusinessService):
     Output = target()
 
 
+class OrderProcess(BusinessProcess):
+    Output = target()
+
+
 class OrderOperation(BusinessOperation):
     pass
 
@@ -268,6 +272,426 @@ def test_production_to_mermaid_renders_draft_graph():
     )
 
 
+def test_production_connect_rejects_message_metadata():
+    prod = Production("Demo.Production")
+    file_input = prod.service("FileInput", FileService)
+    order_operation = prod.operation("OrderOperation", OrderOperation)
+
+    with pytest.raises(TypeError, match="message"):
+        prod.connect(file_input.Output, order_operation, message=OrderRequest)
+
+
+def test_production_to_mermaid_can_group_by_production_role():
+    prod = Production("Demo.Production")
+    file_input = prod.service("FileInput", FileService)
+    order_process = prod.process("OrderProcess", OrderProcess)
+    order_operation = prod.operation("OrderOperation", OrderOperation)
+    prod.connect(file_input.Output, order_process)
+    prod.connect(order_process.Output, order_operation)
+
+    text = prod.to_mermaid()
+
+    assert 'subgraph group_service["Services"]' in text
+    assert 'subgraph group_process["Processes"]' in text
+    assert 'subgraph group_operation["Operations"]' in text
+    assert "    direction TB" in text
+    assert "  node_FileInput ~~~ node_OrderProcess" in text
+    assert "  node_OrderProcess ~~~ node_OrderOperation" in text
+    assert 'node_FileInput -- "Output" --> node_OrderProcess' in text
+
+
+def test_production_to_mermaid_groups_imported_python_proxy_roles():
+    prod = Production.from_dict(
+        {
+            "Demo.MermaidShowcaseProduction": {
+                "Item": [
+                    {
+                        "@Name": "Claim API",
+                        "@ClassName": "Python.main.ClaimApiService",
+                    },
+                    {
+                        "@Name": "Validate Claim",
+                        "@ClassName": "Python.main.ClaimValidationProcess",
+                    },
+                    {
+                        "@Name": "Fraud Score",
+                        "@ClassName": "Python.main.FraudScoreOperation",
+                    },
+                ]
+            }
+        }
+    )
+
+    text = prod.to_mermaid()
+
+    assert 'subgraph group_service["Services"]' in text
+    assert 'node_Claim_API["Claim API<br/>Python.main.ClaimApiService"]' in text
+    assert 'subgraph group_process["Processes"]' in text
+    assert (
+        'node_Validate_Claim["Validate Claim<br/>'
+        'Python.main.ClaimValidationProcess"]' in text
+    )
+    assert 'subgraph group_operation["Operations"]' in text
+    assert (
+        'node_Fraud_Score["Fraud Score<br/>Python.main.FraudScoreOperation"]'
+        in text
+    )
+
+
+def test_production_from_dict_uses_runtime_kind_metadata():
+    prod = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "CustomInput", "@ClassName": "Demo.CustomInput"},
+                    {"@Name": "CustomWorker", "@ClassName": "Demo.CustomWorker"},
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {
+                    "item": "CustomInput",
+                    "kind": "service",
+                    "connections": ["CustomWorker"],
+                },
+                {
+                    "item": "CustomWorker",
+                    "kind": "operation",
+                    "connections": [],
+                },
+            ]
+        },
+    )
+
+    nodes = {node["name"]: node for node in prod.graph().to_dict()["nodes"]}
+    assert nodes["CustomInput"]["kind"] == "service"
+    assert nodes["CustomWorker"]["kind"] == "operation"
+
+
+def test_production_from_dict_infers_python_send_request_targets_from_source(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "reddit.py").write_text(
+        """
+class RedditService:
+    def on_init(self):
+        if not hasattr(self, "target"):
+            self.target = "Python.FilterPostRoutingRule"
+
+    def on_poll(self):
+        self.send_request_sync(self.target, object())
+
+
+class FilterPostRoutingRule:
+    def on_init(self):
+        if not hasattr(self, "target"):
+            self.target = "Python.FileOperation"
+
+    def on_message(self, request):
+        return self.send_request_sync(target=self.target, request=request)
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "PEX.Production": {
+                "Item": [
+                    {
+                        "@Name": "RedditService",
+                        "@ClassName": "Demo.RedditServiceProxy",
+                        "Setting": [
+                            {
+                                "@Target": "Host",
+                                "@Name": "%module",
+                                "#text": "reddit",
+                            },
+                            {
+                                "@Target": "Host",
+                                "@Name": "%classname",
+                                "#text": "RedditService",
+                            },
+                        ],
+                    },
+                    {
+                        "@Name": "Python.FilterPostRoutingRule",
+                        "@ClassName": "Demo.FilterPostRoutingRuleProxy",
+                        "Setting": [
+                            {
+                                "@Target": "Host",
+                                "@Name": "%module",
+                                "#text": "reddit",
+                            },
+                            {
+                                "@Target": "Host",
+                                "@Name": "%classname",
+                                "#text": "FilterPostRoutingRule",
+                            },
+                        ],
+                    },
+                    {
+                        "@Name": "Python.FileOperation",
+                        "@ClassName": "Demo.FileOperationProxy",
+                    },
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {"item": "RedditService", "connections": []},
+                {"item": "Python.FilterPostRoutingRule", "connections": []},
+                {"item": "Python.FileOperation", "connections": []},
+            ]
+        },
+    )
+
+    edges = {
+        (edge["source_item"], edge["target"]): edge
+        for edge in prod.graph().to_dict()["edges"]
+    }
+
+    assert edges[
+        ("RedditService", "Python.FilterPostRoutingRule")
+    ]["origin"] == "inferred"
+    assert edges[
+        ("Python.FilterPostRoutingRule", "Python.FileOperation")
+    ]["metadata"] == {
+        "source": "Python source",
+        "detail": "send_request_sync self.target",
+    }
+    assert edges[
+        ("Python.FilterPostRoutingRule", "Python.FileOperation")
+    ]["interaction"] == "sync"
+
+
+def test_production_from_dict_does_not_treat_python_prefix_as_python_source(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "source.py").write_text(
+        """
+class PretendSource:
+    def on_message(self, request):
+        return self.send_request_sync("PythonTarget", request)
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "PretendSource.cls").write_text(
+        """
+Class Python.PretendSource Extends Ens.BusinessProcess
+{
+
+Method OnRequest(request As Ens.Request) As %Status
+{
+    Do ..SendRequestSync("ObjectScriptTarget", request)
+    Quit $$$OK
+}
+
+}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "Source", "@ClassName": "Python.PretendSource"},
+                    {"@Name": "PythonTarget", "@ClassName": "Demo.PythonTarget"},
+                    {
+                        "@Name": "ObjectScriptTarget",
+                        "@ClassName": "Demo.ObjectScriptTarget",
+                    },
+                ]
+            }
+        }
+    )
+
+    edges = {
+        (edge["source_item"], edge["target"]): edge
+        for edge in prod.graph().to_dict()["edges"]
+    }
+
+    assert ("Source", "PythonTarget") not in edges
+    assert edges[("Source", "ObjectScriptTarget")]["metadata"] == {
+        "source": "ObjectScript source",
+        "detail": "SendRequestSync literal",
+    }
+    assert edges[("Source", "ObjectScriptTarget")]["interaction"] == "sync"
+
+
+def test_production_from_dict_uses_runtime_iop_metadata_for_python_source(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "worker.py").write_text(
+        """
+class SourceProcess:
+    def on_message(self, request):
+        return self.send_request_sync("TargetOperation", request)
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "SourceProcess", "@ClassName": "Demo.SourceProxy"},
+                    {"@Name": "TargetOperation", "@ClassName": "Demo.TargetProxy"},
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {
+                    "item": "SourceProcess",
+                    "iop": True,
+                    "module": "worker",
+                    "classname": "SourceProcess",
+                    "connections": [],
+                },
+                {"item": "TargetOperation", "connections": []},
+            ]
+        },
+    )
+
+    edges = prod.graph().to_dict()["edges"]
+
+    assert edges == [
+        {
+            "source": "SourceProcess",
+            "source_item": "SourceProcess",
+            "source_target_setting": "",
+            "target": "TargetOperation",
+            "origin": "inferred",
+            "interaction": "sync",
+            "metadata": {
+                "source": "Python source",
+                "detail": "send_request_sync literal",
+            },
+            "inferred": True,
+        }
+    ]
+
+
+def test_production_from_dict_infers_objectscript_send_request_targets_from_source(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "Router.cls").write_text(
+        """
+Class Demo.Router Extends Ens.BusinessProcess
+{
+
+Property TargetConfigName As %String [ InitialExpression = "ArchiveOperation" ];
+
+Method OnRequest(request As Ens.Request) As %Status
+{
+    Do ..SendRequestSync("OrderOperation", request)
+    Do ..SendRequestAsync(..TargetConfigName, request)
+    Quit $$$OK
+}
+
+}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "Router", "@ClassName": "Demo.Router"},
+                    {"@Name": "OrderOperation", "@ClassName": "Demo.OrderOperation"},
+                    {
+                        "@Name": "ArchiveOperation",
+                        "@ClassName": "Demo.ArchiveOperation",
+                    },
+                ]
+            }
+        }
+    )
+
+    edges = {
+        (edge["source_item"], edge["target"]): edge
+        for edge in prod.graph().to_dict()["edges"]
+    }
+
+    assert edges[("Router", "OrderOperation")]["metadata"] == {
+        "source": "ObjectScript source",
+        "detail": "SendRequestSync literal",
+    }
+    assert edges[("Router", "OrderOperation")]["interaction"] == "sync"
+    assert edges[("Router", "ArchiveOperation")]["metadata"] == {
+        "source": "ObjectScript source",
+        "detail": "SendRequestAsync ..TargetConfigName",
+    }
+    assert edges[("Router", "ArchiveOperation")]["interaction"] == "async"
+
+    text = prod.to_mermaid()
+    assert 'node_Router <-- "(runtime) | inferred | sync" --> node_OrderOperation' in text
+    assert (
+        'node_Router -- "(runtime) | inferred | async" --> node_ArchiveOperation'
+        in text
+    )
+
+
+def test_production_from_dict_enriches_runtime_edges_with_source_interaction(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "Router.cls").write_text(
+        """
+Class Demo.Router Extends Ens.BusinessProcess
+{
+
+Method OnRequest(request As Ens.Request) As %Status
+{
+    Do ..SendRequestSync("OrderOperation", request)
+    Quit $$$OK
+}
+
+}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "Demo.Production": {
+                "Item": [
+                    {"@Name": "Router", "@ClassName": "Demo.Router"},
+                    {"@Name": "OrderOperation", "@ClassName": "Demo.OrderOperation"},
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {"item": "Router", "connections": ["OrderOperation"]},
+                {"item": "OrderOperation", "connections": []},
+            ]
+        },
+    )
+
+    edges = prod.graph().to_dict()["edges"]
+
+    assert len(edges) == 1
+    assert edges[0]["origin"] == "runtime"
+    assert edges[0]["interaction"] == "sync"
+    assert edges[0]["metadata"] == {
+        "source": "ObjectScript source",
+        "detail": "SendRequestSync literal",
+    }
+
+
 def test_production_to_class_renders_declarative_draft():
     prod = Production("Demo.DeclarativeProduction", testing_enabled=True)
     file_input = prod.service(
@@ -333,7 +757,7 @@ def test_production_to_class_warns_for_string_python_proxies():
     ast.parse(text)
     assert "replace Python.* string class names" in text
     assert "replace this proxy class name with the Python" in text
-    assert "ComponentItem(" in text
+    assert "ServiceItem(" in text
 
 
 def test_declarative_production_string_class_names_match_instance_shape():
@@ -736,15 +1160,15 @@ def test_progressive_authoring_api_matches_deployable_shape():
     assert graph_edge["target"] == "OrderOperation"
 
 
-def test_progressive_component_connect_add_appends_fanout_targets():
+def test_progressive_component_connect_appends_fanout_targets():
     prod = Production("Demo.Production")
     first = prod.operation("FirstOrderOperation", OrderOperation)
     second = prod.operation("SecondOrderOperation", class_name="Demo.SecondOperation")
 
     file = (
         prod.service("FileInput", FileService)
-        .connect_add("Output", first)
-        .connect_add("Output", second)
+        .connect("Output", first)
+        .connect("Output", second, mode="add")
     )
 
     assert file.host_settings["Output"] == ("FirstOrderOperation,SecondOrderOperation")
@@ -754,6 +1178,25 @@ def test_progressive_component_connect_add_appends_fanout_targets():
     ]
     with pytest.raises(ValueError, match="ambiguous"):
         file.Output.resolve()
+
+
+def test_production_connect_can_remove_one_or_all_targets():
+    prod = Production("Demo.Production")
+    first = prod.operation("FirstOrderOperation", OrderOperation)
+    second = prod.operation("SecondOrderOperation", class_name="Demo.SecondOperation")
+    file = prod.service("FileInput", FileService)
+    prod.connect(file.Output, first)
+    prod.connect(file.Output, second, mode="add")
+
+    prod.connect(file.Output, first, mode="remove")
+
+    assert file.host_settings["Output"] == "SecondOrderOperation"
+    assert [edge.target for edge in prod.graph().edges] == ["SecondOrderOperation"]
+
+    prod.connect(file.Output, mode="remove")
+
+    assert "Output" not in file.host_settings
+    assert prod.graph().edges == ()
 
 
 def test_production_validate_warns_and_strict_raises_for_unknown_public_attr():

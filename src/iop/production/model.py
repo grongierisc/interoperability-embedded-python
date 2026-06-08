@@ -607,7 +607,9 @@ class Production(_DeclarativeProductionMixin):
     def connect(
         self,
         source: TargetSettingRef,
-        target_component: ComponentRef | str,
+        target_component: ComponentRef | str | None = None,
+        *,
+        mode: str = "replace",
     ) -> None:
         if not isinstance(source, TargetSettingRef):
             raise TypeError(
@@ -616,47 +618,72 @@ class Production(_DeclarativeProductionMixin):
         if source.production is not self:
             raise ValueError("source target setting belongs to a different Production")
 
+        mode = _connection_mode(mode)
+        if mode == "remove":
+            self._remove_connection(source, target_component)
+            return
+        if target_component is None:
+            raise ValueError("target_component is required unless mode='remove'")
+
         target_name = self._component_name(target_component)
-        source.component.set_host_setting(source.name, target_name)
+        if mode == "replace":
+            source.component.set_host_setting(source.name, target_name)
+        else:
+            existing = source.component.host_settings.get(source.name, "")
+            existing_targets = [t.strip() for t in existing.split(",") if t.strip()]
+            if target_name not in existing_targets:
+                source.component.host_settings[source.name] = ",".join(
+                    existing_targets + [target_name]
+                )
         source.component.target_setting_names.add(source.name)
         self._register_connection(
             source.item_name,
             source.name,
             target_name,
-            replace_target_setting=True,
+            replace_target_setting=mode == "replace",
         )
 
-    def connect_add(
+    def _remove_connection(
         self,
         source: TargetSettingRef,
-        target_component: ComponentRef | str,
+        target_component: ComponentRef | str | None,
     ) -> None:
-        """Append a fan-out target without replacing existing targets.
+        if target_component is None:
+            self.disconnect(source)
+            return
 
-        The IRIS host setting value becomes a comma-separated list of target names.
-        Use instead of ``connect()`` when a single target setting should route to
-        multiple components.
-        """
-        if not isinstance(source, TargetSettingRef):
-            raise TypeError(
-                "source must be a TargetSettingRef returned from a ComponentRef"
-            )
-        if source.production is not self:
-            raise ValueError("source target setting belongs to a different Production")
         target_name = self._component_name(target_component)
-        existing = source.component.host_settings.get(source.name, "")
-        existing_targets = [t.strip() for t in existing.split(",") if t.strip()]
-        if target_name not in existing_targets:
-            source.component.host_settings[source.name] = ",".join(
-                existing_targets + [target_name]
-            )
-        source.component.target_setting_names.add(source.name)
-        self._register_connection(
-            source.item_name,
-            source.name,
-            target_name,
-            replace_target_setting=False,
+        key = (source.item_name, source.name)
+        targets = self._connections.get(key, [])
+        edge_exists = any(
+            edge.source_item == source.item_name
+            and edge.source_target_setting == source.name
+            and edge.target == target_name
+            for edge in self._edges
         )
+        if target_name not in targets and not edge_exists:
+            raise ValueError(
+                "Production target setting is not connected: "
+                f"{source.path} -> {target_name}"
+            )
+
+        remaining_targets = [target for target in targets if target != target_name]
+        if remaining_targets:
+            self._connections[key] = remaining_targets
+            source.component.host_settings[source.name] = ",".join(remaining_targets)
+        else:
+            self._connections.pop(key, None)
+            source.component.host_settings.pop(source.name, None)
+
+        self._edges = [
+            edge
+            for edge in self._edges
+            if not (
+                edge.source_item == source.item_name
+                and edge.source_target_setting == source.name
+                and edge.target == target_name
+            )
+        ]
 
     def resolve_target_setting_ref(self, target_setting_ref: TargetSettingRef) -> str:
         if target_setting_ref.production is not self:
@@ -1063,3 +1090,17 @@ class Production(_DeclarativeProductionMixin):
             if _edge_identity(existing) != edge_key
         ]
         self._edges.append(edge)
+
+
+def _connection_mode(mode: str) -> str:
+    normalized = str(mode or "").strip().lower()
+    if normalized in {"replace", "set"}:
+        return "replace"
+    if normalized in {"add", "append"}:
+        return "add"
+    if normalized in {"remove", "delete", "disconnect"}:
+        return "remove"
+    raise ValueError(
+        "Unsupported connection mode: "
+        f"{mode!r}. Expected 'replace', 'add', or 'remove'."
+    )

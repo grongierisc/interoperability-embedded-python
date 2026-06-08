@@ -467,8 +467,8 @@ For brownfield modernization, export a readable Python draft:
 iop -e IoP.Production --format python > production_settings.py
 ```
 
-The generated file uses the `Production` DSL with `component(...)`,
-`connect(...)`, and `connect_add(...)` calls. Review it before migration because
+The generated file uses the `Production` DSL with `component(...)` and
+`connect(...)` calls. Review it before migration because
 IRIS export cannot fully recover original Python classes, variable names,
 persistent message declarations, or every dynamic runtime route.
 
@@ -496,6 +496,9 @@ To export the same reconstructed draft graph as Mermaid flowchart text:
 ```bash
 iop -e IoP.Production --format mermaid > production_graph.mmd
 ```
+
+Mermaid export groups known services, processes, and operations from left to
+right.
 
 ## status
 
