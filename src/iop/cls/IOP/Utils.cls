@@ -869,6 +869,18 @@ ClassMethod ProductionItemIsIOP(pClassName As %String) As %Boolean [ Internal, P
 		}
 	} Catch ex {
 	}
+	Try {
+		Set class = ##class(%Dictionary.ClassDefinition).%OpenId(pClassName)
+		If $IsObject(class) {
+			If class.GeneratedBy = $CLASSNAME() {
+				Return 1
+			}
+			If class.Super [ "IOP." {
+				Return 1
+			}
+		}
+	} Catch exClass {
+	}
 	Quit 0
 }
 

@@ -118,6 +118,8 @@ def _apply_runtime_item_metadata(production, connections: Any) -> None:
         kind = _normalize_component_kind(metadata.get("kind", ""))
         if kind:
             ref.kind = kind
+        if "iop" in metadata:
+            ref.runtime_metadata["iop"] = metadata["iop"]
         for setting_name in ("%module", "%classname", "%classpaths"):
             setting_value = metadata.get(setting_name, "")
             if setting_value and setting_name not in ref.host_settings:
@@ -244,7 +246,11 @@ def _infer_connections_from_source(production) -> None:
         for edge in production._edges
     }
     for ref in production._items:
-        for connection in infer_source_connections(ref.class_name, ref.host_settings):
+        for connection in infer_source_connections(
+            ref.class_name,
+            ref.host_settings,
+            iop=_truthy(ref.runtime_metadata.get("iop")),
+        ):
             target_name = connection.target
             if target_name not in production._items_by_name:
                 continue
@@ -299,3 +305,9 @@ def _apply_source_connection_interaction(
         for existing in production._edges
     ]
     return updated
+
+
+def _truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}

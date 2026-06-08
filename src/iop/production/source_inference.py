@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import re
 from dataclasses import dataclass
 from functools import lru_cache
@@ -60,6 +61,7 @@ def infer_source_connections(
     class_name: str,
     host_settings: dict[str, Any],
     *,
+    iop: bool = False,
     root: Path | None = None,
 ) -> list[SourceConnection]:
     """Infer static request targets from local Python or ObjectScript source."""
@@ -67,24 +69,24 @@ def infer_source_connections(
     if not normalized_class_name:
         return []
 
-    source_root = root or Path.cwd()
-    source = _objectscript_source_index(_root_key(source_root)).get(
-        normalized_class_name
-    )
+    source_roots = _source_roots(root or Path.cwd(), host_settings)
+    source = _find_objectscript_source(normalized_class_name, source_roots)
     python_class_name = _iop_python_class_name(
+        normalized_class_name,
         host_settings,
         source,
+        iop=iop,
     )
     if python_class_name:
         return _infer_python_connections(
             python_class_name,
             host_settings,
-            source_root,
+            source_roots,
         )
     return _infer_objectscript_connections(
         normalized_class_name,
         host_settings,
-        source_root,
+        source_roots[0],
         source=source,
     )
 
@@ -92,17 +94,26 @@ def infer_source_connections(
 def _infer_python_connections(
     class_name: str,
     _host_settings: dict[str, Any],
-    root: Path,
+    roots: tuple[Path, ...],
 ) -> list[SourceConnection]:
-    candidates = [
-        info
-        for info in _python_source_index(_root_key(root))
-        if _python_class_matches(class_name, info.class_name, info.module_hint)
-    ]
-    candidates.sort(key=lambda item: (_source_rank(item.path), item.path, item.class_name))
+    candidates = []
+    for root_index, source_root in enumerate(roots):
+        candidates.extend(
+            (root_index, info)
+            for info in _python_source_index(_root_key(source_root))
+            if _python_class_matches(class_name, info.class_name, info.module_hint)
+        )
+    candidates.sort(
+        key=lambda item: (
+            item[0],
+            _source_rank(item[1].path),
+            item[1].path,
+            item[1].class_name,
+        )
+    )
 
     connections: list[SourceConnection] = []
-    for candidate in candidates[:1]:
+    for _root_index, candidate in candidates[:1]:
         connections.extend(candidate.connections)
     return _unique_connections(connections)
 
@@ -148,8 +159,11 @@ def _infer_objectscript_connections(
 
 
 def _iop_python_class_name(
+    class_name: str,
     host_settings: dict[str, Any],
     source: _ObjectScriptSource | None,
+    *,
+    iop: bool,
 ) -> str:
     defaults = _objectscript_property_defaults(source.text) if source else {}
     if source is not None and not _objectscript_extends_iop(source.text):
@@ -162,7 +176,16 @@ def _iop_python_class_name(
         _string_setting(host_settings, "%classname")
         or _first_default(defaults, "%classname")
     )
+    is_iop = (
+        iop
+        or (source is not None and _objectscript_extends_iop(source.text))
+        or bool(module and classname)
+    )
+    if not is_iop:
+        return ""
     if not module or not classname:
+        if class_name.startswith("Python."):
+            return class_name
         return ""
     return f"Python.{module}.{classname}"
 
@@ -236,6 +259,17 @@ def _objectscript_source_index(root: str) -> dict[str, _ObjectScriptSource]:
     for _, class_name, source in sorted(candidates, key=lambda item: item[0]):
         sources.setdefault(class_name, source)
     return sources
+
+
+def _find_objectscript_source(
+    class_name: str,
+    roots: tuple[Path, ...],
+) -> _ObjectScriptSource | None:
+    for root in roots:
+        source = _objectscript_source_index(_root_key(root)).get(class_name)
+        if source is not None:
+            return source
+    return None
 
 
 def _python_class_connections(class_node: ast.ClassDef) -> list[SourceConnection]:
@@ -570,6 +604,34 @@ def _split_targets(value: Any) -> list[str]:
         for target in str(value).split(",")
         if target and target.strip()
     ]
+
+
+def _source_roots(root: Path, host_settings: dict[str, Any]) -> tuple[Path, ...]:
+    candidates: list[Path] = []
+    for classpath in _classpath_parts(host_settings.get("%classpaths", "")):
+        path = Path(classpath).expanduser()
+        if not path.is_absolute():
+            path = root / path
+        candidates.append(path)
+    candidates.append(root)
+
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for path in candidates:
+        key = _root_key(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        roots.append(path)
+    return tuple(roots)
+
+
+def _classpath_parts(value: Any) -> list[str]:
+    text = str(value or "").strip()
+    if not text:
+        return []
+    separator = "|" if "|" in text else os.pathsep
+    return [part.strip() for part in text.split(separator) if part.strip()]
 
 
 def _iter_source_files(root: Path, pattern: str):

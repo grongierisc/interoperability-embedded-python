@@ -580,6 +580,117 @@ class SourceProcess:
     ]
 
 
+def test_production_from_dict_uses_iop_flag_for_python_class_name_fallback(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "bs.py").write_text(
+        """
+class RedditService:
+    def on_poll(self):
+        self.send_request_sync("Python.FilterPostRoutingRule", object())
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "PEX.Production": {
+                "Item": [
+                    {
+                        "@Name": "Python.RedditService",
+                        "@ClassName": "Python.RedditService",
+                    },
+                    {
+                        "@Name": "Python.FilterPostRoutingRule",
+                        "@ClassName": "Python.FilterPostRoutingRule",
+                    },
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {"item": "Python.RedditService", "iop": True, "connections": []},
+                {"item": "Python.FilterPostRoutingRule", "connections": []},
+            ]
+        },
+    )
+
+    edges = prod.graph().to_dict()["edges"]
+
+    assert edges == [
+        {
+            "source": "Python.RedditService",
+            "source_item": "Python.RedditService",
+            "source_target_setting": "",
+            "target": "Python.FilterPostRoutingRule",
+            "origin": "inferred",
+            "interaction": "sync",
+            "metadata": {
+                "source": "Python source",
+                "detail": "send_request_sync literal",
+            },
+            "inferred": True,
+        }
+    ]
+
+
+def test_production_from_dict_uses_runtime_classpaths_for_python_source(
+    tmp_path,
+    monkeypatch,
+):
+    source_dir = tmp_path / "python"
+    source_dir.mkdir()
+    (source_dir / "bs.py").write_text(
+        """
+class RedditService:
+    def on_poll(self):
+        self.send_request_sync("Python.FilterPostRoutingRule", object())
+""",
+        encoding="utf-8",
+    )
+    cwd = tmp_path / "elsewhere"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+
+    prod = Production.from_dict(
+        {
+            "PEX.Production": {
+                "Item": [
+                    {
+                        "@Name": "Python.RedditService",
+                        "@ClassName": "Python.RedditService",
+                    },
+                    {
+                        "@Name": "Python.FilterPostRoutingRule",
+                        "@ClassName": "Python.FilterPostRoutingRule",
+                    },
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {
+                    "item": "Python.RedditService",
+                    "iop": True,
+                    "module": "bs",
+                    "classname": "RedditService",
+                    "classpaths": str(source_dir),
+                    "connections": [],
+                },
+                {"item": "Python.FilterPostRoutingRule", "connections": []},
+            ]
+        },
+    )
+
+    edges = prod.graph().to_dict()["edges"]
+
+    assert edges[0]["source_item"] == "Python.RedditService"
+    assert edges[0]["target"] == "Python.FilterPostRoutingRule"
+    assert edges[0]["interaction"] == "sync"
+
+
 def test_production_from_dict_infers_objectscript_send_request_targets_from_source(
     tmp_path,
     monkeypatch,

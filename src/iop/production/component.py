@@ -37,6 +37,7 @@ class ComponentRef:
     adapter_settings: dict[str, Any] = field(default_factory=dict)
     other_settings: list[dict[str, Any]] = field(default_factory=list)
     target_setting_names: set[str] = field(default_factory=set)
+    runtime_metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.class_name is None:
