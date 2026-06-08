@@ -218,17 +218,24 @@ def _infer_connections_from_host_settings(
     runtime_sources_with_targets: set[str],
 ) -> None:
     for ref in production._items:
-        if ref.name in runtime_sources_with_targets:
-            continue
         for setting_name, value in ref.host_settings.items():
             if str(setting_name).startswith("%"):
+                continue
+            has_runtime_targets = ref.name in runtime_sources_with_targets
+            if has_runtime_targets and not _is_target_config_setting(setting_name):
                 continue
             for target_name in _setting_targets(value):
                 if target_name not in production._items_by_name:
                     continue
+                if _has_connection(production, ref.name, setting_name, target_name):
+                    continue
                 ref.target_setting_names.add(setting_name)
                 metadata = {"source": "Host setting fallback"}
-                if ref.name in runtime_sources:
+                if has_runtime_targets:
+                    metadata["reason"] = (
+                        "runtime discovery did not report this target setting"
+                    )
+                elif ref.name in runtime_sources:
                     metadata["reason"] = "runtime discovery returned no targets"
                 production._register_connection(
                     ref.name,
@@ -238,6 +245,27 @@ def _infer_connections_from_host_settings(
                     metadata=metadata,
                     validate_target=False,
                 )
+
+
+def _is_target_config_setting(setting_name: Any) -> bool:
+    normalized = str(setting_name or "").strip().lower()
+    return normalized.endswith("targetconfigname") or normalized.endswith(
+        "targetconfignames"
+    )
+
+
+def _has_connection(
+    production,
+    source_item: str,
+    source_target_setting: str,
+    target_name: str,
+) -> bool:
+    return any(
+        edge.source_item == source_item
+        and edge.source_target_setting == source_target_setting
+        and edge.target == target_name
+        for edge in production._edges
+    )
 
 
 def _infer_connections_from_source(production) -> None:

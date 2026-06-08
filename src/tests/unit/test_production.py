@@ -1877,6 +1877,82 @@ def test_production_from_dict_falls_back_when_runtime_has_only_internal_targets(
     ]
 
 
+def test_production_from_dict_infers_target_config_when_runtime_has_trace_target():
+    exported = {
+        "Demo.Production": {
+            "Item": [
+                {
+                    "@Name": "InteropService",
+                    "@ClassName": "HS.FHIRServer.Interop.Service",
+                    "Setting": [
+                        {
+                            "@Target": "Host",
+                            "@Name": "TargetConfigName",
+                            "#text": "FHIR_MAIN",
+                        },
+                        {
+                            "@Target": "Host",
+                            "@Name": "TraceOperations",
+                            "#text": "*FULL*",
+                        },
+                    ],
+                },
+                {
+                    "@Name": "FHIR_MAIN",
+                    "@ClassName": "Python.EAI.bp.FhirMainProcess",
+                },
+                {
+                    "@Name": "HS.Util.Trace.Operations",
+                    "@ClassName": "HS.Util.Trace.Operations",
+                },
+            ],
+        }
+    }
+    connections = {
+        "items": [
+            {
+                "item": "InteropService",
+                "connections": ["Ens.Alert", "HS.Util.Trace.Operations"],
+            },
+        ],
+    }
+
+    prod = Production.from_dict(exported, connections=connections)
+
+    assert prod.graph().to_dict()["edges"] == [
+        {
+            "source": "InteropService",
+            "source_item": "InteropService",
+            "source_target_setting": "",
+            "target": "HS.Util.Trace.Operations",
+            "origin": "runtime",
+            "interaction": "request",
+            "runtime": True,
+        },
+        {
+            "source": "InteropService.TargetConfigName",
+            "source_item": "InteropService",
+            "source_target_setting": "TargetConfigName",
+            "target": "FHIR_MAIN",
+            "origin": "inferred",
+            "interaction": "request",
+            "metadata": {
+                "source": "Host setting fallback",
+                "reason": "runtime discovery did not report this target setting",
+            },
+            "inferred": True,
+        },
+    ]
+    mermaid = prod.to_mermaid()
+    assert (
+        'node_InteropService -- "(runtime) | runtime" '
+        "--> node_HS_Util_Trace_Operations"
+    ) in mermaid
+    assert (
+        'node_InteropService -- "TargetConfigName | inferred" --> node_FHIR_MAIN'
+    ) in mermaid
+
+
 def test_production_from_dict_uses_runtime_adapter_metadata():
     exported = {
         "Demo.Production": {
