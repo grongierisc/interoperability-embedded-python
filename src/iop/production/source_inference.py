@@ -15,6 +15,7 @@ class SourceConnection:
     source: str
     detail: str = ""
     interaction: str = "request"
+    target_reference: str = ""
 
 
 _PYTHON_REQUEST_METHODS = {
@@ -93,7 +94,7 @@ def infer_source_connections(
 
 def _infer_python_connections(
     class_name: str,
-    _host_settings: dict[str, Any],
+    host_settings: dict[str, Any],
     roots: tuple[Path, ...],
 ) -> list[SourceConnection]:
     candidates = []
@@ -114,7 +115,12 @@ def _infer_python_connections(
 
     connections: list[SourceConnection] = []
     for _root_index, candidate in candidates[:1]:
-        connections.extend(candidate.connections)
+        connections.extend(
+            _python_connections_for_host_settings(
+                candidate.connections,
+                host_settings,
+            )
+        )
     return _unique_connections(connections)
 
 
@@ -281,7 +287,7 @@ def _python_class_connections(class_node: ast.ClassDef) -> list[SourceConnection
             continue
         call_name = _python_call_name(node.func)
         if call_name in _PYTHON_REQUEST_METHODS:
-            for target, detail, interaction in _python_request_targets(
+            for target, detail, interaction, target_reference in _python_request_targets(
                 node,
                 string_values,
                 call_name,
@@ -292,10 +298,11 @@ def _python_class_connections(class_node: ast.ClassDef) -> list[SourceConnection
                         source="Python source",
                         detail=detail,
                         interaction=interaction,
+                        target_reference=target_reference,
                     )
                 )
         elif call_name in _PYTHON_MULTI_REQUEST_METHODS:
-            for target, detail, interaction in _python_multi_request_targets(
+            for target, detail, interaction, target_reference in _python_multi_request_targets(
                 node,
                 string_values,
                 call_name,
@@ -306,6 +313,7 @@ def _python_class_connections(class_node: ast.ClassDef) -> list[SourceConnection
                         source="Python source",
                         detail=detail,
                         interaction=interaction,
+                        target_reference=target_reference,
                     )
                 )
     return _unique_connections(connections)
@@ -367,7 +375,7 @@ def _python_request_targets(
     call: ast.Call,
     string_values: dict[str, list[str]],
     call_name: str,
-) -> list[tuple[str, str, str]]:
+) -> list[tuple[str, str, str, str]]:
     target_node = _python_call_target_node(call)
     if target_node is None:
         return []
@@ -383,14 +391,14 @@ def _python_multi_request_targets(
     call: ast.Call,
     string_values: dict[str, list[str]],
     call_name: str,
-) -> list[tuple[str, str, str]]:
+) -> list[tuple[str, str, str, str]]:
     if not call.args:
         return []
     collection = call.args[0]
     if not isinstance(collection, (ast.List, ast.Tuple)):
         return []
 
-    targets: list[tuple[str, str, str]] = []
+    targets: list[tuple[str, str, str, str]] = []
     for item in collection.elts:
         if not isinstance(item, ast.Tuple) or not item.elts:
             continue
@@ -410,18 +418,57 @@ def _resolve_python_targets(
     string_values: dict[str, list[str]],
     call_name: str,
     interaction: str,
-) -> list[tuple[str, str, str]]:
+) -> list[tuple[str, str, str, str]]:
     literal = _python_literal_string(node)
     if literal is not None:
-        return [(literal, f"{call_name} literal", interaction)]
+        return [(literal, f"{call_name} literal", interaction, "")]
 
     name = _python_reference_name(node)
     if name is None:
         return []
+    detail = f"{call_name} {name}"
+    values = string_values.get(name, [])
+    if not values:
+        return [("", detail, interaction, name)]
     return [
-        (value, f"{call_name} {name}", interaction)
-        for value in string_values.get(name, [])
+        (value, detail, interaction, name)
+        for value in values
     ]
+
+
+def _python_connections_for_host_settings(
+    connections: tuple[SourceConnection, ...],
+    host_settings: dict[str, Any],
+) -> list[SourceConnection]:
+    resolved: list[SourceConnection] = []
+    for connection in connections:
+        setting_name = _python_reference_setting_name(connection.target_reference)
+        setting_targets = (
+            _split_targets(host_settings.get(setting_name, ""))
+            if setting_name
+            else []
+        )
+        if setting_targets:
+            for target in setting_targets:
+                resolved.append(
+                    SourceConnection(
+                        target=target,
+                        source=connection.source,
+                        detail=connection.detail,
+                        interaction=connection.interaction,
+                        target_reference=connection.target_reference,
+                    )
+                )
+            continue
+        if connection.target:
+            resolved.append(connection)
+    return resolved
+
+
+def _python_reference_setting_name(reference: str) -> str:
+    if not reference.startswith("self."):
+        return ""
+    return reference.removeprefix("self.")
 
 
 def _python_call_target_node(call: ast.Call) -> ast.AST | None:
@@ -664,15 +711,16 @@ def _root_key(root: Path) -> str:
 
 def _unique_connections(connections: list[SourceConnection]) -> list[SourceConnection]:
     unique: list[SourceConnection] = []
-    seen: set[tuple[str, str, str, str]] = set()
+    seen: set[tuple[str, str, str, str, str]] = set()
     for connection in connections:
-        if not connection.target:
+        if not connection.target and not connection.target_reference:
             continue
         key = (
             connection.target,
             connection.source,
             connection.detail,
             connection.interaction,
+            connection.target_reference,
         )
         if key in seen:
             continue

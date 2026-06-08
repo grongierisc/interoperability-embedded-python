@@ -467,6 +467,110 @@ class FilterPostRoutingRule:
     ]["interaction"] == "sync"
 
 
+def test_production_from_dict_prefers_python_host_setting_over_source_default(
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / "bench_bp.py").write_text(
+        """
+class BenchIoPProcess:
+    target = target()
+
+    def on_init(self):
+        if not hasattr(self, "target"):
+            self.target = "Python.BenchIoPOperation"
+
+    def on_message(self, request):
+        self.send_request_sync(self.target, request)
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    classpaths = str(tmp_path)
+
+    prod = Production.from_dict(
+        {
+            "Bench.Production": {
+                "Item": [
+                    {
+                        "@Name": "Python.BenchIoPProcess",
+                        "@ClassName": "Python.BenchIoPProcess",
+                        "Setting": [
+                            {
+                                "@Target": "Host",
+                                "@Name": "%classpaths",
+                                "#text": classpaths,
+                            },
+                            {
+                                "@Target": "Host",
+                                "@Name": "target",
+                                "#text": "Python.BenchIoPOperation",
+                            },
+                        ],
+                    },
+                    {
+                        "@Name": "Python.BenchIoPProcess.To.Cls",
+                        "@ClassName": "Python.BenchIoPProcess",
+                        "Setting": [
+                            {
+                                "@Target": "Host",
+                                "@Name": "%classpaths",
+                                "#text": classpaths,
+                            },
+                            {
+                                "@Target": "Host",
+                                "@Name": "target",
+                                "#text": "Bench.Operation",
+                            },
+                        ],
+                    },
+                    {
+                        "@Name": "Python.BenchIoPOperation",
+                        "@ClassName": "Python.BenchIoPOperation",
+                    },
+                    {"@Name": "Bench.Operation", "@ClassName": "Bench.Operation"},
+                ]
+            }
+        },
+        connections={
+            "items": [
+                {
+                    "item": "Python.BenchIoPProcess",
+                    "iop": True,
+                    "module": "bench_bp",
+                    "classname": "BenchIoPProcess",
+                    "classpaths": classpaths,
+                    "connections": [],
+                },
+                {
+                    "item": "Python.BenchIoPProcess.To.Cls",
+                    "iop": True,
+                    "module": "bench_bp",
+                    "classname": "BenchIoPProcess",
+                    "classpaths": classpaths,
+                    "connections": [],
+                },
+            ]
+        },
+    )
+
+    edges = {
+        (edge["source_item"], edge["target"]): edge
+        for edge in prod.graph().to_dict()["edges"]
+    }
+
+    assert (
+        "Python.BenchIoPProcess.To.Cls",
+        "Python.BenchIoPOperation",
+    ) not in edges
+    assert edges[
+        ("Python.BenchIoPProcess", "Python.BenchIoPOperation")
+    ]["interaction"] == "sync"
+    assert edges[
+        ("Python.BenchIoPProcess.To.Cls", "Bench.Operation")
+    ]["interaction"] == "sync"
+
+
 def test_production_from_dict_does_not_treat_python_prefix_as_python_source(
     tmp_path,
     monkeypatch,
