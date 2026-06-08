@@ -256,6 +256,9 @@ class Command:
         if export_format == "graph":
             print(production.graph())
             return
+        if export_format == "mermaid":
+            print(production.to_mermaid(), end="")
+            return
         raise ValueError(f"Unsupported export format: {export_format}")
 
     def _handle_migrate(self) -> None:

@@ -328,6 +328,25 @@ class TestIOPCli(unittest.TestCase):
         production.graph.assert_called_once_with()
         self.assertIn("Demo.Production", fake_out.getvalue())
 
+    def test_export_mermaid_format_prints_reconstructed_graph(self):
+        production = MagicMock()
+        production.to_mermaid.return_value = "flowchart LR\n  FileInput --> Order\n"
+        with patch(
+            "iop.cli.main.Production.from_iris",
+            return_value=production,
+        ) as mock_from_iris:
+            with patch("sys.stdout", new=StringIO()) as fake_out:
+                with self.assertRaises(SystemExit) as cm:
+                    main(["--export", "Demo.Production", "--format", "mermaid"])
+                self.assertEqual(cm.exception.code, 0)
+
+        assert mock_from_iris.call_args.args[0] == "Demo.Production"
+        production.to_mermaid.assert_called_once_with()
+        self.assertEqual(
+            fake_out.getvalue(),
+            "flowchart LR\n  FileInput --> Order\n",
+        )
+
     def test_initialization(self):
         """Test initialization command."""
         with patch("iop.migration.utils.setup") as mock_setup:

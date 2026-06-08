@@ -236,6 +236,38 @@ def test_production_to_python_renders_brownfield_draft():
     assert text.endswith("PRODUCTIONS = [prod]\n")
 
 
+def test_production_to_mermaid_renders_draft_graph():
+    prod = Production("Demo.Production")
+    file_input = prod.component(
+        "File Input",
+        class_name="EnsLib.File.PassthroughService",
+    )
+    order_operation = prod.component(
+        "Order & Operation",
+        class_name='Demo.Order"Operation"',
+    )
+    prod.connect(file_input.target_setting("TargetConfigNames"), order_operation)
+
+    text = prod.to_mermaid()
+
+    assert text == prod.graph().to_mermaid()
+    assert text.startswith("flowchart LR\n")
+    assert "%% Production: Demo.Production" in text
+    assert (
+        'node_File_Input["File Input<br/>EnsLib.File.PassthroughService"]'
+        in text
+    )
+    assert (
+        'node_Order_Operation["Order &amp; Operation<br/>'
+        "Demo.Order&quot;Operation&quot;\"]"
+        in text
+    )
+    assert (
+        'node_File_Input -- "TargetConfigNames" --> node_Order_Operation'
+        in text
+    )
+
+
 def test_production_to_class_renders_declarative_draft():
     prod = Production("Demo.DeclarativeProduction", testing_enabled=True)
     file_input = prod.service(

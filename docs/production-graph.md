@@ -42,7 +42,9 @@ Implemented graph import and display:
 - `Production.diff(other=None)`
 - `Production.graph_diff(other=None)`
 - `ProductionGraph.to_dict()`
+- `ProductionGraph.to_mermaid()`
 - printable graph text through `str(prod.graph())`
+- Mermaid graph text through `prod.to_mermaid()` or `prod.graph().to_mermaid()`
 
 `str(target_setting_ref)` returns the stable authoring identity, such as
 `FileInput.Output`. Runtime dispatch uses explicit target setting resolution.

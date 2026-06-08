@@ -729,6 +729,9 @@ class Production(_DeclarativeProductionMixin):
     def to_class(self) -> str:
         return production_to_class(self)
 
+    def to_mermaid(self, *, direction: str = "LR") -> str:
+        return self.graph().to_mermaid(direction=direction)
+
     def graph(self) -> ProductionGraph:
         return production_graph(self)
 

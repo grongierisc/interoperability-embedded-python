@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import html
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any, overload
 
@@ -186,6 +188,57 @@ class ProductionGraph:
             lines.extend(f"    {warning}" for warning in self.warnings)
         return "\n".join(lines)
 
+    def to_mermaid(self, *, direction: str = "LR") -> str:
+        """Render the production topology as a Mermaid flowchart."""
+        direction = _mermaid_direction(direction)
+        node_ids = _mermaid_node_ids(self.nodes, self.edges)
+        defined_node_names = {node.name for node in self.nodes}
+
+        lines = [
+            f"flowchart {direction}",
+            f"  %% Production: {_mermaid_comment(self.production_name)}",
+        ]
+        for node in self.nodes:
+            lines.append(
+                f"  {node_ids[node.name]}[\"{_mermaid_node_label(node)}\"]"
+            )
+
+        unresolved_names = sorted({
+            name
+            for edge in self.edges
+            for name in (edge.source_item, edge.target)
+            if name not in defined_node_names
+        })
+        for name in unresolved_names:
+            lines.append(
+                f"  {node_ids[name]}[\"{_mermaid_text(name)}<br/>(unresolved)\"]"
+            )
+
+        for edge in sorted(
+            self.edges,
+            key=lambda item: (
+                item.source_item,
+                item.source_target_setting,
+                item.target,
+                item.origin,
+                item.interaction,
+            ),
+        ):
+            lines.append(
+                "  "
+                f"{node_ids[edge.source_item]} "
+                f"-- \"{_mermaid_edge_label(edge)}\" --> "
+                f"{node_ids[edge.target]}"
+            )
+
+        if self.warnings:
+            lines.append("  %% Warnings:")
+            lines.extend(
+                f"  %% - {_mermaid_comment(warning)}"
+                for warning in self.warnings
+            )
+        return "\n".join(lines) + "\n"
+
     def __str__(self) -> str:
         return self.to_text()
 
@@ -305,3 +358,63 @@ def _diff_value_text(value: Any) -> str:
         return json.dumps(value, sort_keys=True)
     except TypeError:
         return repr(value)
+
+
+def _mermaid_direction(value: str) -> str:
+    direction = str(value or "").strip().upper()
+    if direction not in {"TB", "TD", "BT", "RL", "LR"}:
+        raise ValueError(f"Unsupported Mermaid flowchart direction: {value!r}")
+    return direction
+
+
+def _mermaid_node_ids(
+    nodes: tuple[GraphNode, ...],
+    edges: tuple[GraphEdge, ...],
+) -> dict[str, str]:
+    names: list[str] = [node.name for node in nodes]
+    for edge in edges:
+        for name in (edge.source_item, edge.target):
+            if name not in names:
+                names.append(name)
+
+    used: set[str] = set()
+    node_ids: dict[str, str] = {}
+    for name in names:
+        base = re.sub(r"\W+", "_", name).strip("_")
+        if not base:
+            base = "node"
+        base = f"node_{base}"
+        candidate = base
+        index = 2
+        while candidate in used:
+            candidate = f"{base}_{index}"
+            index += 1
+        used.add(candidate)
+        node_ids[name] = candidate
+    return node_ids
+
+
+def _mermaid_node_label(node: GraphNode) -> str:
+    label = _mermaid_text(node.name)
+    if node.class_name:
+        label = f"{label}<br/>{_mermaid_text(node.class_name)}"
+    return label
+
+
+def _mermaid_edge_label(edge: GraphEdge) -> str:
+    parts = [edge.source_target_setting or "(runtime)"]
+    if edge.origin != "authored":
+        parts.append(edge.origin)
+    if edge.interaction not in ("", "request"):
+        parts.append(edge.interaction)
+    return _mermaid_text(" | ".join(parts))
+
+
+def _mermaid_text(value: Any) -> str:
+    text = str(value).replace("\r\n", "\n").replace("\r", "\n")
+    text = " ".join(part.strip() for part in text.split("\n"))
+    return html.escape(text, quote=True)
+
+
+def _mermaid_comment(value: Any) -> str:
+    return str(value).replace("\r\n", " ").replace("\n", " ")

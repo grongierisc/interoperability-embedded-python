@@ -638,6 +638,7 @@ Key methods:
   from an item name, component reference, target setting ref, or
   `"Item.TargetSetting"` path
 - `graph()`: return a printable `ProductionGraph`
+- `to_mermaid()`: export the production graph as Mermaid flowchart text
 - `inspect_component(item)`: return component settings, routes, queue, and
   current runtime production status
 - `start_component(item)`, `stop_component(item)`, `restart_component(item)`:

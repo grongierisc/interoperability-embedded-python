@@ -491,6 +491,12 @@ You can inspect only the reconstructed route graph with:
 iop -e IoP.Production --format graph
 ```
 
+To export the same reconstructed draft graph as Mermaid flowchart text:
+
+```bash
+iop -e IoP.Production --format mermaid > production_graph.mmd
+```
+
 ## status
 
 The status command status a production.
