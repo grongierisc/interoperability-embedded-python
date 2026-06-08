@@ -100,6 +100,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#python-and-objectscript-components">Python And ObjectScript Components</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#mermaid-graphs">Mermaid Graphs</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#roadmap-and-gaps">Roadmap And Gaps</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#phase-1-solidify-graph-import">Phase 1: Solidify Graph Import</a>
@@ -184,12 +186,12 @@ operational import and brownfield compatibility.</p>
 <ul>
 <li><code>Production</code></li>
 <li><code>ComponentRef</code></li>
-<li><code>Port</code></li>
+<li><code>TargetSettingRef</code></li>
 <li><code>target()</code></li>
 <li><code>prod.service(...)</code></li>
 <li><code>prod.process(...)</code></li>
 <li><code>prod.operation(...)</code></li>
-<li><code>prod.connect(source_port, target_component)</code></li>
+<li><code>prod.connect(source_target_setting, target_component)</code></li>
 </ul>
 <p>Implemented graph import and display:</p>
 <ul>
@@ -198,15 +200,19 @@ operational import and brownfield compatibility.</p>
 <li><code>Production.item(name)</code></li>
 <li><code>Production.component_ref(target)</code></li>
 <li><code>Production.get_component(target)</code></li>
-<li><code>ComponentRef.port(name)</code></li>
+<li><code>ComponentRef.target_setting(name)</code></li>
 <li><code>Production.graph()</code></li>
 <li><code>Production.diff(other=None)</code></li>
 <li><code>Production.graph_diff(other=None)</code></li>
 <li><code>ProductionGraph.to_dict()</code></li>
+<li><code>ProductionGraph.to_mermaid()</code></li>
 <li>printable graph text through <code>str(prod.graph())</code></li>
+<li>Mermaid graph text through <code>prod.to_mermaid()</code> or <code>prod.graph().to_mermaid()</code></li>
+<li>Mermaid output groups known services, processes, and operations from left to
+  right</li>
 </ul>
-<p><code>str(port)</code> returns the stable authoring identity, such as <code>FileInput.Output</code>.
-Runtime dispatch uses explicit port resolution.</p>
+<p><code>str(target_setting_ref)</code> returns the stable authoring identity, such as
+<code>FileInput.Output</code>. Runtime dispatch uses explicit target setting resolution.</p>
 <p>Implemented production lifecycle:</p>
 <ul>
 <li><code>prod.start()</code></li>
@@ -229,11 +235,12 @@ Runtime dispatch uses explicit port resolution.</p>
 <p>Lifecycle methods that mutate the current runtime production verify that IRIS
 currently points at the same production object before calling the underlying
 IRIS operation.</p>
-<p><code>prod.test_component("Item.Port", message)</code> resolves from the current Python
+<p><code>prod.test_component("Item.TargetSetting", message)</code> resolves from the current Python
 object graph. It does not silently fall back to IRIS export. Existing deployed
 productions should be reconstructed explicitly with <code>Production.from_iris(...)</code>
-before testing by port path. Runtime status checks fail closed when the current
-production cannot be verified. <code>prod.test(...)</code> remains a compatibility alias.</p>
+before testing by target setting path. Runtime status checks fail closed when the
+current production cannot be verified. <code>prod.test(...)</code> remains a compatibility
+alias.</p>
 <p><code>ComponentRef</code> exposes convenience methods that delegate to its owning
 production: <code>inspect()</code>, <code>start()</code>, <code>stop()</code>, <code>restart()</code>, and <code>test(...)</code>.
 It is a Python handle to a configured production item, not the live IRIS host
@@ -243,7 +250,7 @@ instance.</p>
 <li><code>prod.add_component(...)</code></li>
 <li><code>prod.update_component(...)</code></li>
 <li><code>prod.delete_component(...)</code></li>
-<li><code>prod.disconnect(...)</code></li>
+<li><code>prod.connect(..., mode="remove")</code></li>
 <li><code>prod.sync()</code> for explicit full local IRIS registration</li>
 <li><code>prod.plan(...)</code>, <code>prod.apply(...)</code>, <code>prod.verify(...)</code>, and
   <code>Production.rollback_backup(...)</code> for conservative granular change workflows</li>
@@ -291,7 +298,7 @@ prod.connect(file.Output, orders)
 <pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)
 file = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
 out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
-prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
+prod.connect(file.target_setting(&quot;TargetConfigNames&quot;), out)
 </code></pre>
 <p>Rules:</p>
 <ul>
@@ -305,8 +312,26 @@ prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
 <li><code>class_name</code> string components are not registered as Python components.</li>
 <li>ObjectScript classes must already exist in IRIS or be loaded through existing
   <code>.cls</code> migration support.</li>
-<li>Manual ports are required when Python has no <code>target()</code> descriptor.</li>
+<li>Manual target setting names are required when Python has no <code>target()</code>
+  descriptor.</li>
 </ul>
+<h2 id="mermaid-graphs">Mermaid Graphs</h2>
+<p><code>Production.to_mermaid()</code> renders the current object graph as Mermaid flowchart
+text:</p>
+<pre><code class="language-python">print(prod.to_mermaid())
+</code></pre>
+<p>Mermaid export groups known <code>service</code>, <code>process</code>, and <code>operation</code> items into
+left-to-right Mermaid subgraphs. Items whose role is unknown remain in
+<code>Other Components</code>; this can happen with brownfield IRIS exports where the role
+cannot be reconstructed from the exported production metadata.</p>
+<p>IRIS topology export does not reliably contain the message class exchanged on a
+route. Future message labels should be inferred from the deployed component
+definitions: ObjectScript classes can expose accepted message types through
+<code>XData MessageMap</code>, and IOP Python components can be inspected through their
+Python source and dispatch declarations.</p>
+<p>For a larger runnable example:</p>
+<pre><code class="language-bash">python demo/python/pythonic_productions/mermaid_showcase.py
+</code></pre>
 <h2 id="roadmap-and-gaps">Roadmap And Gaps</h2>
 <h3 id="phase-1-solidify-graph-import">Phase 1: Solidify Graph Import</h3>
 <ul>
@@ -320,7 +345,7 @@ prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
 <p>Persist IOP-owned metadata so Python-to-IRIS-to-Python round trips lose less
 intent:</p>
 <ul>
-<li>declared port names and types</li>
+<li>declared target setting names and types</li>
 <li>richer route intent beyond the current origin/interaction metadata</li>
 <li>Python source module and class origin</li>
 <li>runtime-only edges</li>
@@ -371,8 +396,9 @@ workflows, with IRIS production XML as one generated output.</p>
 <li>IRIS export does not preserve Python class objects.</li>
 <li>IRIS export does not preserve the Python module/class origin unless stored as
   explicit metadata.</li>
-<li><code>OnGetConnections</code> usually returns target names, not always source port names.</li>
-<li>Runtime-discovered edges may not map cleanly to a specific <code>Port</code>.</li>
+<li><code>OnGetConnections</code> usually returns target names, not always source target
+  setting names.</li>
+<li>Runtime-discovered edges may not map cleanly to a specific <code>TargetSettingRef</code>.</li>
 </ul>
 <h3 id="runtime-graph-gaps">Runtime Graph Gaps</h3>
 <ul>
@@ -404,8 +430,8 @@ workflows, with IRIS production XML as one generated output.</p>
 <h3 id="objectscript-gaps">ObjectScript Gaps</h3>
 <ul>
 <li>ObjectScript source code is not reconstructed from production export.</li>
-<li>Built-in and ObjectScript classes need manual ports unless IRIS setting
-  introspection is added.</li>
+<li>Built-in and ObjectScript classes need manual target setting names unless IRIS
+  setting introspection is added.</li>
 <li>Existing ObjectScript classes may implement custom <code>OnGetConnections</code>
   behavior that reports runtime targets without exposing source setting names.</li>
 </ul>

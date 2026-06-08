@@ -484,8 +484,8 @@ artifact.</p>
 <p>For brownfield modernization, export a readable Python draft:</p>
 <pre><code class="language-bash">iop -e IoP.Production --format python &gt; production_settings.py
 </code></pre>
-<p>The generated file uses the <code>Production</code> DSL with <code>component(...)</code>,
-<code>connect(...)</code>, and <code>connect_add(...)</code> calls. Review it before migration because
+<p>The generated file uses the <code>Production</code> DSL with <code>component(...)</code> and
+<code>connect(...)</code> calls. Review it before migration because
 IRIS export cannot fully recover original Python classes, variable names,
 persistent message declarations, or every dynamic runtime route.</p>
 <p>To generate a class-style declarative draft, use:</p>
@@ -500,6 +500,11 @@ TODOs, and inferred routes before migration.</p>
 <p>You can inspect only the reconstructed route graph with:</p>
 <pre><code class="language-bash">iop -e IoP.Production --format graph
 </code></pre>
+<p>To export the same reconstructed draft graph as Mermaid flowchart text:</p>
+<pre><code class="language-bash">iop -e IoP.Production --format mermaid &gt; production_graph.mmd
+</code></pre>
+<p>Mermaid export groups known services, processes, and operations from left to
+right.</p>
 <h2 id="status">status</h2>
 <p>The status command status a production.</p>
 <p>Status command doesn't take an argument because only one production can be running.</p>

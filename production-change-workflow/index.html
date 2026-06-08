@@ -297,7 +297,7 @@ prod = Production(&quot;Demo.Production&quot;)
 file_in = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
 file_out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
 
-prod.connect(file_in.port(&quot;TargetConfigNames&quot;), file_out)
+prod.connect(file_in.target_setting(&quot;TargetConfigNames&quot;), file_out)
 </code></pre>
 <p>Runtime-only routes that cannot be mapped to a Host setting are reported as
 unsupported plan operations and are not mutated.</p>

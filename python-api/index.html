@@ -815,16 +815,18 @@ item. This separation mirrors the instance-style form:
 (<code>FileService.Output</code>) to <code>Route</code>. For built-in IRIS or ObjectScript classes,
 there is no Python descriptor, so pass the IRIS setting name string such as
 <code>"TargetConfigNames"</code>.</p>
-<p><code>Route(port, targets)</code> writes the Host setting for the port and records graph
-edges by calling the same connection API used by instance-style authoring.
+<p><code>Route(target_setting, targets)</code> writes the Host setting for the target setting
+and records graph edges by calling the same connection API used by
+instance-style authoring.
 <code>targets</code> can be an item declaration, a string item name, or a sequence for
 fan-out:</p>
 <pre><code class="language-python">AUDIT = OperationItem(&quot;AuditOperation&quot;, &quot;Demo.AuditOperation&quot;)
 ORDERS = OperationItem(&quot;OrderOperation&quot;, &quot;Demo.OrderOperation&quot;)
 Route(&quot;TargetConfigNames&quot;, (AUDIT, ORDERS))
 </code></pre>
-<p>Use <code>settings</code> or <code>host_settings</code> for non-route Host settings. Route ports
-belong in <code>Route</code>; declaring the same port in Host settings raises an error.
+<p>Use <code>settings</code> or <code>host_settings</code> for non-route Host settings. Route target
+settings belong in <code>Route</code>; declaring the same target setting in Host settings
+raises an error.
 Only known route aliases such as <code>target_config_names</code> are normalized to IRIS
 names such as <code>TargetConfigNames</code>. Other Host and Adapter setting keys are
 emitted exactly as supplied.</p>
@@ -852,7 +854,7 @@ file = (
     .connect(&quot;Output&quot;, orders)
 )
 </code></pre>
-<p>For ObjectScript or built-in IRIS components, use manual port names:</p>
+<p>For ObjectScript or built-in IRIS components, use manual target setting names:</p>
 <pre><code class="language-python">out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
 
 inp = (
@@ -868,7 +870,7 @@ Progressive component methods include <code>pool()</code>, <code>enable()</code>
 <code>run_foreground()</code>, <code>trace()</code>, <code>schedule_on()</code>, <code>comment_as()</code>,
 <code>category_as()</code>, <code>host_setting()</code>, <code>host_settings_update()</code>, <code>setting()</code>,
 <code>settings_update()</code>, <code>adapter_setting()</code>, <code>adapter_settings_update()</code>,
-<code>other_setting()</code>, <code>connect()</code>, and <code>connect_add()</code>.</p>
+<code>other_setting()</code>, and <code>connect()</code>.</p>
 <p><code>host_settings</code>, <code>adapter_settings</code>, and <code>foreground</code> are public data
 attributes on <code>ComponentRef</code>, so their fluent update methods use distinct names
 instead of shadowing those attributes.</p>
@@ -881,11 +883,17 @@ items, not a DAG execution dependency.</p>
 <p>Key methods:</p>
 <ul>
 <li><code>service()</code>, <code>process()</code>, <code>operation()</code>: add components to the Python graph</li>
-<li><code>connect(port, component)</code>: connect a source <code>Port</code> to a target component</li>
+<li><code>connect(target_setting_ref, component, mode="replace")</code>: connect a source
+  <code>TargetSettingRef</code> to a target component. Use <code>mode="add"</code> for fan-out and
+  <code>mode="remove"</code> to remove one target, or omit the component with
+  <code>mode="remove"</code> to remove the whole target setting.</li>
 <li><code>item(name)</code>: return a component reference by production item name</li>
 <li><code>component_ref(target)</code>, <code>get_component(target)</code>: return a <code>ComponentRef</code>
-  from an item name, component reference, port, or <code>"Item.Port"</code> path</li>
+  from an item name, component reference, target setting ref, or
+  <code>"Item.TargetSetting"</code> path</li>
 <li><code>graph()</code>: return a printable <code>ProductionGraph</code></li>
+<li><code>to_mermaid()</code>: export the production graph as Mermaid flowchart text grouped
+  by known service/process/operation roles</li>
 <li><code>inspect_component(item)</code>: return component settings, routes, queue, and
   current runtime production status</li>
 <li><code>start_component(item)</code>, <code>stop_component(item)</code>, <code>restart_component(item)</code>:
@@ -926,9 +934,9 @@ items, not a DAG execution dependency.</p>
 <code>ShutdownTimeout</code>, <code>UpdateTimeout</code>, <code>AlertNotificationManager</code>,
 <code>AlertNotificationOperation</code>, <code>AlertNotificationRecipients</code>, and
 <code>AlertActionWindow</code>.</p>
-<p><code>str(port)</code> returns the stable authoring identity, for example
-<code>FileInput.Output</code>. Use <code>port.resolve()</code> when you explicitly need the current
-IRIS dispatch target string.</p>
+<p><code>str(target_setting_ref)</code> returns the stable authoring identity, for example
+<code>FileInput.Output</code>. Use <code>target_setting_ref.resolve()</code> when you explicitly need
+the current IRIS dispatch target string.</p>
 <p><code>diff()</code> is directional: it reports changes needed to make the current/imported
 state match the Python <code>Production</code> object.</p>
 <pre><code class="language-python">print(prod.diff())
@@ -939,10 +947,10 @@ if delta.has_changes:
     print(delta.to_dict())
 </code></pre>
 <p>ObjectScript and built-in IRIS components can be represented with <code>class_name</code>
-and manual ports:</p>
+and manual target setting names:</p>
 <pre><code class="language-python">file = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
 out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
-prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
+prod.connect(file.target_setting(&quot;TargetConfigNames&quot;), out)
 </code></pre>
 <p>For existing IRIS productions, use the conservative plan workflow instead of
 assuming the Python object is a complete source of truth:</p>
@@ -1006,7 +1014,7 @@ metadata when IRIS can provide it, or inferred from loaded Python host classes.<
 <code>inferred</code>) and <code>interaction</code>. <code>diff()</code> ignores that import metadata when the
 deployable IRIS shape is equivalent; use <code>graph_diff()</code> when you need to compare
 the reconstruction quality or route origin.</p>
-<p><code>prod.test_component("Item.Port", message)</code> resolves from the current
+<p><code>prod.test_component("Item.TargetSetting", message)</code> resolves from the current
 <code>Production</code> object graph only. For an already deployed production, first build
 an operational reconstruction with <code>Production.from_iris(...)</code>, then call
 <code>test_component()</code> on that object. <code>prod.test(...)</code> remains as a compatibility
@@ -1027,8 +1035,9 @@ prod.stop_component(&quot;OrderOperation&quot;)
 prod.start_component(&quot;OrderOperation&quot;)
 prod.restart_component(file.Output)
 </code></pre>
-<p><code>inspect_component(...)</code> can take a component reference, item name, <code>Port</code>, or
-<code>"Item.Port"</code> path. A port resolves to its configured target component.
+<p><code>inspect_component(...)</code> can take a component reference, item name,
+<code>TargetSettingRef</code>, or <code>"Item.TargetSetting"</code> path. A target setting ref resolves
+to its configured target component.
 <code>ComponentRef</code> is a Python handle to the production item, not the live IRIS host
 instance.</p>
 <h3 id="migration-utilities">Migration Utilities</h3>

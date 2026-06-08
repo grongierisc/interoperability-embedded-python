@@ -274,7 +274,7 @@ remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.</p>
 <p>The topology is modeled as a directed multigraph of possible communication
 routes. A route edge is not a DAG execution dependency; it says that a component
-may communicate with another component through a port or runtime route.</p>
+may communicate with another component through a target setting or runtime route.</p>
 <pre><code class="language-python">from dataclasses import dataclass
 from iop import BusinessOperation, Message, PollingBusinessService, Production, target
 
@@ -389,12 +389,12 @@ item. This is the class-style equivalent of <code>prod.connect(file.Output, orde
 <p>For Python component classes, prefer the descriptor form
 <code>Route(FileService.Output, ...)</code>. For existing IRIS classes, use the IRIS
 setting name string, for example <code>Route("TargetConfigNames", "FileOut")</code>.</p>
-<p><code>Route(port, targets)</code> owns the route Host setting and records graph edges.
+<p><code>Route(target_setting, targets)</code> owns the route Host setting and records graph edges.
 <code>targets</code> can be an item declaration, a string item name, or a sequence for
 fan-out.
 Use <code>settings</code> or <code>host_settings</code> only for non-route Host settings. If a route
-port is also present in Host settings, migration raises an error so the route
-stays explicit.</p>
+target setting is also present in Host settings, migration raises an error so
+the route stays explicit.</p>
 <p>Use tuples for class-level <code>services</code>, <code>processes</code>, <code>operations</code>, and route
 lists. Lists still work, but tuples avoid accidental mutation of shared class
 attributes.</p>
@@ -426,7 +426,7 @@ class name. These classes are not registered as Python components.</p>
 file = prod.service(&quot;FileIn&quot;, class_name=&quot;EnsLib.File.PassthroughService&quot;)
 out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
 
-prod.connect(file.port(&quot;TargetConfigNames&quot;), out)
+prod.connect(file.target_setting(&quot;TargetConfigNames&quot;), out)
 </code></pre>
 <p><code>ComponentRef.component_class</code> is the Python business host implementation class.
 Adapter metadata is separate and exposed through <code>adapter_class_name</code>.
@@ -468,7 +468,7 @@ production dictionary: <code>prod.diff(other_prod)</code>.</p>
 metadata when the IRIS settings are equivalent. Use <code>prod.graph_diff(...)</code> to
 compare graph metadata such as whether a route was authored in Python, imported
 from runtime <code>OnGetConnections</code>, or inferred from Host settings.</p>
-<p><code>prod.test_component("Item.Port", message)</code> resolves from the current
+<p><code>prod.test_component("Item.TargetSetting", message)</code> resolves from the current
 <code>Production</code> object graph only. If you want to test a production that already
 exists in IRIS, use <code>Production.from_iris(...)</code> first and call
 <code>test_component()</code> on the imported operational reconstruction. <code>prod.test(...)</code>
