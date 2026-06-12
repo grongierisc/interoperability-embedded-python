@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/fhir-submission-python-client/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Installation - IoP (Interoperability On Python)</title>
+    <title>FHIR Submission with a Python Client - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Installation";
-        var mkdocs_page_input_path = "getting-started/installation.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/getting-started/installation/";
+        var mkdocs_page_name = "FHIR Submission with a Python Client";
+        var mkdocs_page_input_path = "cookbooks/fhir-submission-python-client.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/fhir-submission-python-client/";
       </script>
     
     <!--[if lt IE 9]>
@@ -44,20 +44,12 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Getting Started</span></p>
-              <ul class="current">
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Installation</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#with-pypi">With PyPi</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#with-zpmipm">With ZPM/IPM</a>
-    </li>
-    </ul>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../first-steps/">First Steps</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/first-steps/">First Steps</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../register-component/">Register Component</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/register-component/">Register Component</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../ai-coding/">AI-assisted Coding</a>
                   </li>
@@ -67,26 +59,42 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Cookbooks</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/">Overview</a>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/hello-world-production/">Hello-world Production</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../hello-world-production/">Hello-world Production</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/add-business-operation/">Add a BusinessOperation</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-business-operation/">Add a BusinessOperation</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/add-business-process/">Add a BusinessProcess</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-business-process/">Add a BusinessProcess</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/add-polling-service/">Add a PollingBusinessService</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-polling-service/">Add a PollingBusinessService</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/production-settings-and-targets/">Production Settings and Targets</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-settings-and-targets/">Production Settings and Targets</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/remote-migration/">Remote Migration</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-migration/">Remote Migration</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/hl7v2-native-input/">HL7v2 Native Input</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../hl7v2-native-input/">HL7v2 Native Input</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../cookbooks/fhir-submission-python-client/">FHIR Submission with a Python Client</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">FHIR Submission with a Python Client</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#when-to-use-this">When To Use This</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#files-you-will-touch">Files You Will Touch</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt-to-give-your-agent">Prompt To Give Your Agent</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#expected-implementation">Expected Implementation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#migration-command">Migration Command</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#common-mistakes">Common Mistakes</a>
+    </li>
+    </ul>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">API documentation</span></p>
@@ -155,8 +163,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Getting Started</li>
-      <li class="breadcrumb-item active">Installation</li>
+          <li class="breadcrumb-item">Cookbooks</li>
+      <li class="breadcrumb-item active">FHIR Submission with a Python Client</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -165,33 +173,78 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="installation-guide">Installation Guide</h1>
-<p>Welcome to the installation guide for IoP. This guide will walk you through the steps to install the application on your local machine or in a docker container image.</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<p>Before you begin, ensure you have the following installed:</p>
+                <h1 id="cookbook-fhir-submission-with-a-python-client">Cookbook: FHIR Submission With A Python Client</h1>
+<h2 id="when-to-use-this">When To Use This</h2>
+<p>Use this cookbook when a Python IoP component needs to submit FHIR resources or
+Bundles to an internal or external FHIR endpoint. For ordinary app logic, prefer
+Python HTTP/FHIR client code that is simple to test.</p>
+<p>Use <code>HS.FHIRServer.Interop.HTTPOperation</code> only when the project explicitly
+implements a FHIR facade or proxy production.</p>
+<h2 id="files-you-will-touch">Files You Will Touch</h2>
 <ul>
-<li>Python 3.6 or higher</li>
-<li>IRIS 2021.2 or higher</li>
-<li><a href="https://grongierisc.github.io/iris-embedded-python-wrapper/">Configuring Embedded Python</a></li>
+<li>Python operation or helper module that submits FHIR</li>
+<li>message classes carrying the FHIR resource or Bundle</li>
+<li>configuration or environment documentation for endpoint and credentials</li>
+<li>fixture tests for representative FHIR payloads</li>
 </ul>
-<h2 id="with-pypi">With PyPi</h2>
-<p>To install the application using PyPi, run the following command:</p>
-<pre><code class="language-bash">pip install iris-pex-embedded-python
+<h2 id="prompt-to-give-your-agent">Prompt To Give Your Agent</h2>
+<pre><code class="language-text">Add FHIR submission to this IoP production.
+
+Requirements:
+- Use Python best practices for FHIR resource shaping, validation helpers,
+  mapping code, and fixture-based tests.
+- Use a Python HTTP/FHIR client pattern for ordinary FHIR submission.
+- Use HS.FHIRServer.Interop.HTTPOperation only when the project explicitly
+  implements a FHIR facade or proxy production.
+- Configure the FHIR endpoint through settings or environment variables rather
+  than hard-coding URLs in Python.
+- Keep credentials and OAuth details out of committed source.
+- Include how to test create, update, or transaction Bundle submission.
+- Include how to inspect production messages and query the FHIR endpoint.
 </code></pre>
-<p>Then you can run the application using the following command:</p>
-<pre><code class="language-bash">iop --init
+<h2 id="expected-implementation">Expected Implementation</h2>
+<p>FHIR payload code should stay small and testable:</p>
+<pre><code class="language-python">def validate_resource(resource: dict) -&gt; None:
+    if not resource.get(&quot;resourceType&quot;):
+        raise ValueError(&quot;FHIR resource must include resourceType&quot;)
 </code></pre>
-<p>Check the documentation about the command line interface <a href="/interoperability-embedded-python/command-line">here</a> for more information.</p>
-<h2 id="with-zpmipm">With ZPM/IPM</h2>
-<p>To install the application using ZPM or IPM, run the following command:</p>
-<pre><code class="language-objectscript">zpm &quot;install pex-embbeded-python&quot;
+<p>The operation should read endpoint configuration from settings or environment
+variables and keep credentials out of source code.</p>
+<pre><code class="language-python">from iop import BusinessOperation
+
+
+class FhirSubmitOperation(BusinessOperation):
+    def on_message(self, request):
+        resource = request.resource
+        validate_resource(resource)
+        # Submit with the project's configured Python HTTP/FHIR client.
+        return request
 </code></pre>
+<h2 id="migration-command">Migration Command</h2>
+<pre><code class="language-bash">iop --migrate settings.py --dry-run
+iop --migrate settings.py
+</code></pre>
+<h2 id="verification">Verification</h2>
+<ul>
+<li>Unit-test FHIR resource shaping and validation helpers with fixtures.</li>
+<li>Test create, update, or transaction Bundle submission against a development
+  endpoint.</li>
+<li>Query the FHIR endpoint for the expected result.</li>
+<li>Inspect production messages to confirm the submitted payload and response.</li>
+</ul>
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li>Using <code>HS.FHIRServer.Interop.HTTPOperation</code> for ordinary Python submission.</li>
+<li>Hard-coding endpoints, credentials, OAuth tokens, or environment-specific IDs.</li>
+<li>Building large FHIR resources inline inside orchestration code.</li>
+<li>Skipping fixture tests for representative resources and Bundles.</li>
+</ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../.." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../first-steps/" class="btn btn-neutral float-right" title="First Steps">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../hl7v2-to-fhir-with-fhir-converter/" class="btn btn-neutral float-left" title="HL7v2 to FHIR with fhir-converter"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../command-line/" class="btn btn-neutral float-right" title="Command Line Interface">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -214,10 +267,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../.." style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../hl7v2-to-fhir-with-fhir-converter/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../first-steps/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../../command-line/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

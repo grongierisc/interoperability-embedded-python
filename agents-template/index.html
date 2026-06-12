@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/code-of-conduct/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/agents-template/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Code of Conduct - IoP (Interoperability On Python)</title>
+    <title>Reusable AGENTS.md - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Code of Conduct";
-        var mkdocs_page_input_path = "code-of-conduct.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/code-of-conduct/";
+        var mkdocs_page_name = "Reusable AGENTS.md";
+        var mkdocs_page_input_path = "agents-template.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/agents-template/";
       </script>
     
     <!--[if lt IE 9]>
@@ -44,7 +44,7 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">Getting Started</span></p>
-              <ul>
+              <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
@@ -53,7 +53,9 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ai-coding/">AI-assisted Coding</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../agents-template/">Reusable AGENTS.md</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Reusable AGENTS.md</a>
+    <ul class="current">
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../healthcare-ai-coding/">Healthcare AI-assisted Coding</a>
                   </li>
@@ -109,12 +111,10 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Contributing</span></p>
-              <ul class="current">
+              <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Code of Conduct</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Reference</span></p>
@@ -149,8 +149,8 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Contributing</li>
-      <li class="breadcrumb-item active">Code of Conduct</li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Reusable AGENTS.md</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -159,14 +159,136 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="code-of-conduct">Code of conduct</h1>
-<p>TODO</p>
+                <h1 id="reusable-agentsmd-for-iop-projects">Reusable AGENTS.md For IoP Projects</h1>
+<p>Copy this template into the root of an application repository as <code>AGENTS.md</code>.
+Adjust the project name, commands, component names, and healthcare-specific
+rules to match the application.</p>
+<pre><code class="language-md"># Agent Guide
+
+This project is an IoP application. IoP means Interoperability On Python: a
+Python-first way to build InterSystems IRIS and Health Connect interoperability
+productions.
+
+## Project Goal
+
+Describe the production in one or two sentences:
+
+- What systems send data into this production?
+- What systems receive data from this production?
+- Which standards are involved, such as HL7v2, FHIR, JSON, CSV, TCP, HTTP, or
+  files?
+
+## Read First
+
+Before changing code, read:
+
+- `README.md` for setup and project-specific workflow.
+- `settings.py` for the IoP `Production` graph.
+- the relevant cookbook in this project's documentation, if present.
+- The modules that define components and messages.
+- Existing tests or sample messages before changing behavior.
+
+## Project Map
+
+Update this list for the local project:
+
+- `settings.py`: migration entrypoint with `PRODUCTIONS = [prod]`.
+- `production.py` or `prod.py`: Python production graph definition.
+- `messages.py` or `msg.py`: Python message classes.
+- `bs.py` or `services.py`: Python Business Services.
+- `bp.py` or `processes.py`: Python Business Processes.
+- `bo.py` or `operations.py`: Python Business Operations.
+- `tests/`: local test suite.
+- `data/` or `samples/`: example payloads.
+
+## IoP Rules
+
+- Prefer a Python `Production` object exported through `PRODUCTIONS`.
+- Use `prod.service(...)`, `prod.process(...)`, `prod.operation(...)`, and
+  `prod.connect(...)` to declare topology.
+- Use `target()` on component classes for configurable outbound targets.
+- Do not put component startup logic in `__init__()`. Use `on_init()`.
+- Use `on_tear_down()` for cleanup when a component becomes inactive.
+- Use regular `Message` or `PydanticMessage` classes for Python-only messages.
+- Use `PersistentMessage` only when IRIS needs a native persistent message body.
+- Avoid raw `CLASSES` entries for components already declared in the production
+  graph.
+- Keep executable sample code behind `if __name__ == &quot;__main__&quot;:` when it lives
+  in a migration file.
+- If this project has IoP cookbook documentation, use the relevant cookbook
+  before writing code.
+
+## Production Design Rules
+
+- A production is a message graph.
+- Business Services are inbound entry points or triggers. They may be Python IoP
+  services or native IRIS services.
+- Business Processes orchestrate routing, decisions, transformations, and calls
+  to downstream components.
+- Business Operations isolate outbound side effects such as external APIs,
+  database writes, files, TCP, HTTP, or FHIR endpoints.
+- Components communicate through production messages and targets. Do not
+  instantiate another production component or call its methods directly.
+
+## Healthcare Rules
+
+Keep this section only for healthcare projects:
+
+- Prefer native IRIS or Health Connect components for healthcare transports,
+  parsing, validation, and routing when they exist.
+- Use native FHIR production facade/proxy adapters only when that requirement is
+  explicit.
+- For HL7v2 file or MLLP/TCP input, prefer native HL7 business services such as
+  `EnsLib.HL7.Service.FileService` or `EnsLib.HL7.Service.TCPService`.
+- Keep HL7v2 as `EnsLib.HL7.Message` while using IRIS virtual document routing,
+  schemas, transformations, and Message Viewer.
+- Use Python for project-specific enrichment, mapping, policy checks, and calls
+  that are not covered by native components.
+- Use Python best practices for FHIR resource shaping, validation helpers,
+  mapping code, and fixture-based tests.
+- For non-trivial HL7v2-to-FHIR conversion, prefer
+  `grongierisc/fhir-converter`.
+- Handcraft HL7v2-to-FHIR mapping only for small, explicit flows with a narrow
+  field set and one or two target resources.
+- For ordinary FHIR submission, use Python HTTP/FHIR client code with
+  fixture-based tests.
+- Use `HS.FHIRServer.Interop.HTTPOperation` only when the project explicitly
+  implements a FHIR facade or proxy production.
+- Do not hand-roll healthcare protocol framing, HL7v2 parsing, or FHIR server
+  plumbing unless the project explicitly requires custom behavior.
+
+## Verification
+
+Use the fastest relevant command first:
+
+```bash
+python -m pytest
+iop --migrate settings.py --dry-run
+iop --migrate settings.py
+```
+
+If this repository uses Docker or Compose, add the exact command here:
+
+```bash
+docker compose up --build
+```
+
+## Expected AI Output
+
+When adding or changing behavior, generated output should include:
+
+- Updated component and message code.
+- Updated `settings.py` production graph when topology changes.
+- Tests or sample payloads when behavior changes.
+- The exact migration and verification commands.
+- A short explanation of which native IRIS components are used and why.
+</code></pre>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../contributing/" class="btn btn-neutral float-left" title="Contributing"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../example/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../ai-coding/" class="btn btn-neutral float-left" title="AI-assisted Coding"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../healthcare-ai-coding/" class="btn btn-neutral float-right" title="Healthcare AI-assisted Coding">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -189,10 +311,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../contributing/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../ai-coding/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../example/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../healthcare-ai-coding/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

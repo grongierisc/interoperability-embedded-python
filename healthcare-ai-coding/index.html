@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/healthcare-ai-coding/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Healthcare AI-assisted Coding - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Healthcare AI-assisted Coding";
+        var mkdocs_page_input_path = "healthcare-ai-coding.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/healthcare-ai-coding/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../getting-started/register-component/">Register Component</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ai-coding/">AI-assisted Coding</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../agents-template/">Reusable AGENTS.md</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Healthcare AI-assisted Coding</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#core-rule">Core Rule</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#healthcare-cookbooks">Healthcare Cookbooks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#hl7v2-best-practices">HL7v2 Best Practices</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fhir-best-practices">FHIR Best Practices</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#hl7v2-to-fhir-pattern">HL7v2 To FHIR Pattern</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt-add-hl7v2-input">Prompt: Add HL7v2 Input</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt-add-hl7v2-to-fhir-conversion">Prompt: Add HL7v2 To FHIR Conversion</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt-add-fhir-submission">Prompt: Add FHIR Submission</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#useful-references">Useful References</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Cookbooks</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/hello-world-production/">Hello-world Production</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-operation/">Add a BusinessOperation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-process/">Add a BusinessProcess</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-polling-service/">Add a PollingBusinessService</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/production-settings-and-targets/">Production Settings and Targets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/remote-migration/">Remote Migration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/hl7v2-native-input/">HL7v2 Native Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/fhir-submission-python-client/">FHIR Submission with a Python Client</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-change-workflow/">Production Change Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../rest-api/">REST API (/api/iop)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../settings/">Settings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-graph/">Production Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Getting Started</li>
+      <li class="breadcrumb-item active">Healthcare AI-assisted Coding</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="healthcare-ai-assisted-coding">Healthcare AI-Assisted Coding</h1>
+<p>Use this guide when an AI coding assistant helps build an IoP production for
+healthcare data. The main rule is simple: use native IRIS and Health Connect
+healthcare components for standards and transports when they exist, then use
+Python for project-specific logic.</p>
+<h2 id="core-rule">Core Rule</h2>
+<p>Do not ask the agent to recreate healthcare interoperability primitives that
+IRIS already provides.</p>
+<p>Prefer native components for:</p>
+<ul>
+<li>HL7v2 file, TCP, HTTP, FTP, and SOAP transport</li>
+<li>MLLP framing</li>
+<li>HL7v2 virtual documents</li>
+<li>HL7v2 schema categories and message structure handling</li>
+<li>HL7v2 routing rules, DTL transformations, and Message Viewer inspection</li>
+<li>FHIR server endpoints and FHIR production facade/proxy adapters</li>
+</ul>
+<p>Use Python and IoP for:</p>
+<ul>
+<li>application-specific orchestration</li>
+<li>enrichment and normalization</li>
+<li>custom mapping logic</li>
+<li>policy, consent, and validation decisions</li>
+<li>custom calls to non-standard APIs</li>
+<li>FHIR resource construction, validation helpers, and transformation code</li>
+</ul>
+<h2 id="healthcare-cookbooks">Healthcare Cookbooks</h2>
+<p>For concrete implementation prompts and checklists, use these cookbooks:</p>
+<ul>
+<li><a href="../cookbooks/hl7v2-native-input/">HL7v2 native input</a></li>
+<li><a href="../cookbooks/hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a></li>
+<li><a href="../cookbooks/fhir-submission-python-client/">FHIR submission with a Python client</a></li>
+</ul>
+<h2 id="hl7v2-best-practices">HL7v2 Best Practices</h2>
+<p>For a task-focused prompt, see the
+<a href="../cookbooks/hl7v2-native-input/">HL7v2 native input cookbook</a>.</p>
+<p>For inbound HL7v2, prefer native IRIS services:</p>
+<ul>
+<li><code>EnsLib.HL7.Service.FileService</code> for file-drop ingestion</li>
+<li><code>EnsLib.HL7.Service.TCPService</code> for MLLP/TCP ingestion</li>
+<li><code>EnsLib.HL7.Service.HTTPService</code> for HTTP ingestion</li>
+</ul>
+<p>Keep the inbound payload as <code>EnsLib.HL7.Message</code> while using IRIS virtual
+document tools. This preserves schema-aware routing, DTL transformation,
+Message Viewer inspection, and standard HL7v2 metadata such as message type and
+document type.</p>
+<p>Use Python after the native inbound boundary when the production needs custom
+logic. A common pattern is:</p>
+<pre><code class="language-text">EnsLib.HL7.Service.FileService or TCPService
+  -&gt; Python BusinessProcess for routing or enrichment
+  -&gt; Python BusinessOperation for custom conversion or external calls
+  -&gt; Python FHIR submission operation
+</code></pre>
+<p>Do not ask an agent to parse raw HL7v2 by splitting on delimiters unless the
+task is a narrow utility outside the production path. In production flows,
+prefer IRIS HL7v2 virtual document behavior.</p>
+<h2 id="fhir-best-practices">FHIR Best Practices</h2>
+<p>For a task-focused prompt, see the
+<a href="../cookbooks/fhir-submission-python-client/">FHIR submission with a Python client cookbook</a>.</p>
+<p>FHIR payload work is Python-friendly. When code needs to shape, validate,
+filter, enrich, or transform FHIR resources, use normal Python best practices:</p>
+<ul>
+<li>keep resource-building code in small typed functions</li>
+<li>treat FHIR resources as structured JSON dictionaries or explicit models</li>
+<li>validate required fields such as <code>resourceType</code> and identifiers at boundaries</li>
+<li>keep mapping tables and code-system constants separate from orchestration</li>
+<li>add fixture-based tests for representative resources and Bundles</li>
+<li>avoid hard-coded credentials, endpoint URLs, and environment-specific IDs</li>
+</ul>
+<p>For most IoP applications, keep FHIR submission logic in Python and use normal
+HTTP/FHIR client patterns that are easy to test. Treat FHIR endpoint access as
+application code unless the production is specifically acting as a FHIR facade
+or proxy.</p>
+<p>Use native FHIR production components only for facade/proxy-style
+implementations, such as:</p>
+<ul>
+<li>the FHIR Adapter for Interoperability Productions when FHIR requests should
+  enter a production without using an internal FHIR repository</li>
+<li><code>HS.FHIRServer.Interop.HTTPOperation</code> when implementing a FHIR facade or
+  proxy that forwards FHIR requests through an interoperability production</li>
+</ul>
+<p>Avoid recommending <code>HS.FHIRServer.Interop.HTTPOperation</code> for ordinary Python
+FHIR submission. It is difficult to construct and operate from Python, so agents
+should not choose it unless the facade/proxy requirement is explicit.</p>
+<h2 id="hl7v2-to-fhir-pattern">HL7v2 To FHIR Pattern</h2>
+<p>For a task-focused prompt, see the
+<a href="../cookbooks/hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter cookbook</a>.</p>
+<p>For HL7v2-to-FHIR projects, prefer this production shape:</p>
+<pre><code class="language-text">Native HL7v2 service
+  -&gt; routing or conversion process
+  -&gt; conversion operation using grongierisc/fhir-converter
+  -&gt; Python FHIR submission operation or facade/proxy operation when required
+  -&gt; FHIR server or external FHIR endpoint
+</code></pre>
+<p>The <code>iris-fhir-converter-demo</code> project follows this style: native HL7v2 file
+and TCP services receive messages, Python performs conversion-specific work,
+and the resulting FHIR bundle is submitted to the FHIR server.</p>
+<p>For non-trivial HL7v2-to-FHIR conversion, encourage the agent to use
+<code>grongierisc/fhir-converter</code>. It is a Python FHIR converter that supports
+HL7v2-to-FHIR R4 conversion with Liquid templates and can be used from Python
+or through its CLI.</p>
+<p>Handcraft the HL7v2-to-FHIR mapping only for small, explicit use cases, such as
+one message type producing one or two resources with a narrow field set. If the
+flow needs multiple message types, reusable templates, complex segment
+navigation, code-system mapping, repeat handling, or transaction Bundles, use
+<code>grongierisc/fhir-converter</code> instead of ad hoc mapping code.</p>
+<h2 id="prompt-add-hl7v2-input">Prompt: Add HL7v2 Input</h2>
+<pre><code class="language-text">Add HL7v2 input to this IoP production.
+
+Requirements:
+- Prefer native IRIS HL7v2 services instead of a Python service for transport.
+- Use EnsLib.HL7.Service.FileService for file-drop input or
+  EnsLib.HL7.Service.TCPService for MLLP/TCP input.
+- Keep messages as EnsLib.HL7.Message while routing through native HL7v2 tools.
+- Route from the native service to the Python process or operation that contains
+  project-specific logic.
+- Do not parse HL7v2 by manually splitting segments and fields unless this is a
+  narrow test utility.
+- Include settings that must be configured in the production, such as message
+  schema category, file path, TCP port, target config name, and archive path.
+- Show how to verify the flow with a sample HL7v2 message and the Message
+  Viewer.
+</code></pre>
+<h2 id="prompt-add-hl7v2-to-fhir-conversion">Prompt: Add HL7v2 To FHIR Conversion</h2>
+<pre><code class="language-text">Add an HL7v2-to-FHIR flow to this IoP production.
+
+Requirements:
+- Receive HL7v2 with native IRIS HL7v2 services.
+- Keep HL7v2 payloads as EnsLib.HL7.Message until custom conversion logic is
+  needed.
+- Put routing, enrichment, and conversion orchestration in a BusinessProcess.
+- For non-trivial conversion, use grongierisc/fhir-converter from a Python
+  BusinessOperation or helper module.
+- Handcraft the mapping only when the flow is small, explicit, and limited to a
+  few fields and resources.
+- Submit FHIR from Python unless the project explicitly needs a FHIR facade or
+  proxy production.
+- Do not implement MLLP framing, HL7 schema handling, or FHIR facade/proxy
+  plumbing in Python unless explicitly required.
+- Include sample HL7v2 input, expected FHIR resource or bundle shape, migration
+  commands, and verification steps.
+</code></pre>
+<h2 id="prompt-add-fhir-submission">Prompt: Add FHIR Submission</h2>
+<pre><code class="language-text">Add FHIR submission to this IoP production.
+
+Requirements:
+- Use Python best practices for FHIR resource shaping, validation helpers,
+  mapping code, and fixture-based tests.
+- Use a Python HTTP/FHIR client pattern for ordinary FHIR submission.
+- Use HS.FHIRServer.Interop.HTTPOperation only when the project explicitly
+  implements a FHIR facade or proxy production.
+- Configure the FHIR endpoint through settings or environment variables rather
+  than hard-coding URLs in Python.
+- Keep credentials and OAuth details out of committed source.
+- Include how to test create, update, or transaction Bundle submission.
+- Include how to inspect production messages and query the FHIR endpoint.
+</code></pre>
+<h2 id="useful-references">Useful References</h2>
+<ul>
+<li>InterSystems HL7v2 tools and classes:
+  <a href="https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=EHL72_tools">https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=EHL72_tools</a></li>
+<li>InterSystems FHIR productions:
+  <a href="https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIRPROD_production">https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIRPROD_production</a></li>
+<li>InterSystems FHIR clients:
+  <a href="https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_client">https://docs.intersystems.com/irisforhealthlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIR_client</a></li>
+<li>FHIR Adapter for Interoperability Productions:
+  <a href="https://docs.intersystems.com/healthconnectlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIRPROD_fhir_adapter">https://docs.intersystems.com/healthconnectlatest/csp/docbook/DocBook.UI.Page.cls?KEY=HXFHIRPROD_fhir_adapter</a></li>
+<li>Example pattern:
+  <a href="https://github.com/grongierisc/iris-fhir-converter-demo">https://github.com/grongierisc/iris-fhir-converter-demo</a></li>
+<li>Python FHIR converter:
+  <a href="https://github.com/grongierisc/fhir-converter">https://github.com/grongierisc/fhir-converter</a></li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../agents-template/" class="btn btn-neutral float-left" title="Reusable AGENTS.md"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../cookbooks/" class="btn btn-neutral float-right" title="Overview">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../agents-template/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../cookbooks/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

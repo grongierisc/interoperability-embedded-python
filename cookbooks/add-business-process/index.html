@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/add-business-process/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Add a BusinessProcess - IoP (Interoperability On Python)</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Add a BusinessProcess";
+        var mkdocs_page_input_path = "cookbooks/add-business-process.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/add-business-process/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> IoP (Interoperability On Python)
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Getting Started</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/installation/">Installation</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/first-steps/">First Steps</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../getting-started/register-component/">Register Component</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../ai-coding/">AI-assisted Coding</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../agents-template/">Reusable AGENTS.md</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../healthcare-ai-coding/">Healthcare AI-assisted Coding</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Cookbooks</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hello-world-production/">Hello-world Production</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-business-operation/">Add a BusinessOperation</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Add a BusinessProcess</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#when-to-use-this">When To Use This</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#files-you-will-touch">Files You Will Touch</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#prompt-to-give-your-agent">Prompt To Give Your Agent</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#expected-implementation">Expected Implementation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#migration-command">Migration Command</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#common-mistakes">Common Mistakes</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-polling-service/">Add a PollingBusinessService</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../production-settings-and-targets/">Production Settings and Targets</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../remote-migration/">Remote Migration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hl7v2-native-input/">HL7v2 Native Input</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fhir-submission-python-client/">FHIR Submission with a Python Client</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">API documentation</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../command-line/">Command Line Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../python-api/">Python API</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../production-change-workflow/">Production Change Workflow</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../rest-api/">REST API (/api/iop)</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../component-interaction/">Component Interaction</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../dtl/">DTL Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../logging/">Logging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../debug/">Debugging</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../prod-settings/">Production Settings</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../venv/">Venv Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../wrapper/">Wrapper Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../settings/">Settings</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Contributing</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../contributing/">Contributing</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../code-of-conduct/">Code of Conduct</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../example/">Examples</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../production-graph/">Production Graph</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../useful-links/">Useful Links</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">About</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../changelog/">Changelog</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../credits/">Credits</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../benchmarks/">Benchmarks</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">IoP (Interoperability On Python)</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Cookbooks</li>
+      <li class="breadcrumb-item active">Add a BusinessProcess</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="cookbook-add-a-businessprocess">Cookbook: Add A BusinessProcess</h1>
+<h2 id="when-to-use-this">When To Use This</h2>
+<p>Use this cookbook when a production needs routing, orchestration, decision
+logic, enrichment, or coordination between services and operations.</p>
+<p>Business Processes should not own external side effects directly when a
+Business Operation is the better boundary. Keep the process focused on deciding
+what happens next and sending messages to downstream targets.</p>
+<h2 id="files-you-will-touch">Files You Will Touch</h2>
+<ul>
+<li>the process module, such as <code>bp.py</code> or <code>processes.py</code></li>
+<li>the message module, such as <code>msg.py</code> or <code>messages.py</code></li>
+<li>operation modules only when downstream behavior is missing</li>
+<li><code>settings.py</code></li>
+<li>tests or sample payloads for routing decisions</li>
+</ul>
+<h2 id="prompt-to-give-your-agent">Prompt To Give Your Agent</h2>
+<pre><code class="language-text">Add a new IoP BusinessProcess to this project.
+
+Business goal:
+&lt;describe the routing, orchestration, enrichment, or decision logic&gt;
+
+Implementation requirements:
+- Reuse existing message classes if they already fit.
+- Declare outbound routes with target() attributes on the process class.
+- Route messages with send_request_sync(), send_request_async(), or direct
+  response behavior according to the existing project pattern.
+- Use on_message(self, request) for simple processes, or route by message type
+  with typed one-argument methods or the @handler decorator.
+- Keep external API calls, database writes, file writes, and FHIR submission in
+  BusinessOperation classes.
+- Do not add startup work to __init__(); use on_init() only if startup work is
+  required.
+- Update settings.py so the process is added to the Production graph and its
+  targets are connected.
+- Add or update tests for routing decisions.
+- Show the exact migration and verification commands.
+</code></pre>
+<h2 id="expected-implementation">Expected Implementation</h2>
+<p>A process declares outbound targets and sends messages to them:</p>
+<pre><code class="language-python">from iop import BusinessProcess, Message, handler, target
+
+from messages import OrderRequest, OrderResponse, RejectedOrder
+
+
+class OrderProcess(BusinessProcess):
+    Accepted = target()
+    Rejected = target()
+
+    def on_message(self, request):
+        self.log_warning(f&quot;Unhandled message {type(request).__name__}&quot;)
+        return request
+
+    def route_order(self, request: OrderRequest):
+        if not request.order_id:
+            return self.send_request_sync(self.Rejected, RejectedOrder(reason=&quot;missing id&quot;))
+
+        return self.send_request_sync(self.Accepted, request)
+
+    @handler(RejectedOrder)
+    def route_rejected(self, request):
+        self.log_info(request.reason)
+        return request
+</code></pre>
+<p>IoP dispatches to:</p>
+<ul>
+<li>a method decorated with <code>@handler(MessageType)</code> first</li>
+<li>a typed one-argument method such as <code>route_order(self, request: OrderRequest)</code></li>
+<li><code>on_message(self, request)</code> as the fallback</li>
+</ul>
+<p>Wire the process in <code>settings.py</code>:</p>
+<pre><code class="language-python">process = prod.process(&quot;OrderProcess&quot;, OrderProcess)
+accepted = prod.operation(&quot;AcceptedOperation&quot;, AcceptedOperation)
+rejected = prod.operation(&quot;RejectedOperation&quot;, RejectedOperation)
+
+prod.connect(process.Accepted, accepted)
+prod.connect(process.Rejected, rejected)
+</code></pre>
+<h2 id="migration-command">Migration Command</h2>
+<pre><code class="language-bash">iop --migrate settings.py --dry-run
+iop --migrate settings.py
+</code></pre>
+<h2 id="verification">Verification</h2>
+<ul>
+<li>Unit-test the routing decision with representative messages.</li>
+<li>Dry-run migration shows the process and all target settings.</li>
+<li>The production graph contains every expected process edge.</li>
+<li>Runtime trace shows messages passing from service to process to operation.</li>
+</ul>
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li>Putting external API calls or database writes directly in the process.</li>
+<li>Forgetting <code>target()</code> declarations for outbound routes.</li>
+<li>Returning raw dictionaries instead of message objects when the downstream
+  component expects IoP messages.</li>
+<li>Adding multiple handlers for the same message type without making the
+  intended precedence explicit.</li>
+<li>Calling a downstream component directly instead of sending a production
+  message through a target.</li>
+</ul>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../add-business-operation/" class="btn btn-neutral float-left" title="Add a BusinessOperation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../add-polling-service/" class="btn btn-neutral float-right" title="Add a PollingBusinessService">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../add-business-operation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../add-polling-service/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
