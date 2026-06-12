@@ -47,6 +47,11 @@ zpm "install pex-embbeded-python"
 
 If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation.md). Then, follow the [first steps](getting-started/first-steps.md) to create your first Python-authored production.
 
+If you are using an AI coding assistant, start with [AI-assisted coding with IoP](ai-coding.md).
+For concrete workflows, use the [IoP cookbooks](cookbooks/index.md).
+For application repositories, copy the [reusable AGENTS.md template](agents-template.md).
+For healthcare productions, also see [Healthcare AI-assisted coding](healthcare-ai-coding.md).
+
 For the Pythonic production graph model, see [Production Graph](production-graph.md).
 For safe changes to existing IRIS productions, see the [production change workflow](production-change-workflow.md).
 

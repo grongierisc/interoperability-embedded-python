@@ -9,6 +9,9 @@
 Welcome to the **Interoperability On Python (IoP)** proof of concept! This project demonstrates how the **IRIS Interoperability Framework** can be utilized with a **Python-first approach**.
 
 Documentation can be found [here](https://grongierisc.github.io/interoperability-embedded-python/).
+For prompt-driven workflows, see [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
+For task-oriented examples, see the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
+For application repositories, start from the [reusable AGENTS.md template](https://grongierisc.github.io/interoperability-embedded-python/agents-template/).
 
 ## Example
 
@@ -33,5 +36,9 @@ pip install iris-pex-embedded-python
 ## Getting Started
 
 If you're new to this project, begin by reading the [installation guide](https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation). Then, follow the [first steps](https://grongierisc.github.io/interoperability-embedded-python/getting-started/first-steps) to create your first Python-authored production.
+
+If you are using an AI coding assistant, start with [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
+For concrete workflows, use the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
+For healthcare productions, also see [Healthcare AI-assisted coding](https://grongierisc.github.io/interoperability-embedded-python/healthcare-ai-coding/).
 
 Happy coding!

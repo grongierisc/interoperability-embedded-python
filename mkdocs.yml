@@ -9,6 +9,20 @@ nav:
     - Installation: getting-started/installation.md
     - First Steps: getting-started/first-steps.md
     - Register Component: getting-started/register-component.md
+    - AI-assisted Coding: ai-coding.md
+    - Reusable AGENTS.md: agents-template.md
+    - Healthcare AI-assisted Coding: healthcare-ai-coding.md
+  - Cookbooks:
+    - Overview: cookbooks/index.md
+    - Hello-world Production: cookbooks/hello-world-production.md
+    - Add a BusinessOperation: cookbooks/add-business-operation.md
+    - Add a BusinessProcess: cookbooks/add-business-process.md
+    - Add a PollingBusinessService: cookbooks/add-polling-service.md
+    - Production Settings and Targets: cookbooks/production-settings-and-targets.md
+    - Remote Migration: cookbooks/remote-migration.md
+    - HL7v2 Native Input: cookbooks/hl7v2-native-input.md
+    - HL7v2 to FHIR with fhir-converter: cookbooks/hl7v2-to-fhir-with-fhir-converter.md
+    - FHIR Submission with a Python Client: cookbooks/fhir-submission-python-client.md
   - API documentation:
     - Command Line Interface: command-line.md
     - Python API: python-api.md
