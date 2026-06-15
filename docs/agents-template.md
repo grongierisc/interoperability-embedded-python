@@ -1,8 +1,8 @@
 # Reusable AGENTS.md For IoP Projects
 
 Copy this template into the root of an application repository as `AGENTS.md`.
-Adjust the project name, commands, component names, and healthcare-specific
-rules to match the application.
+Keep it generic. Put project-specific details in the project README or in a
+short project brief section.
 
 ````md
 # Agent Guide
@@ -11,24 +11,34 @@ This project is an IoP application. IoP means Interoperability On Python: a
 Python-first way to build InterSystems IRIS and Health Connect interoperability
 productions.
 
-## Project Goal
+## First Prompt Contract
 
-Describe the production in one or two sentences:
+Before major implementation, make sure the project goal is explicit. If any of
+these details are missing, ask for them or infer only when the repository makes
+the answer clear:
 
-- What systems send data into this production?
-- What systems receive data from this production?
-- Which standards are involved, such as HL7v2, FHIR, JSON, CSV, TCP, HTTP, or
-  files?
+- Business goal:
+- Inbound systems:
+- Outbound systems:
+- Data standards or protocols:
+- Required routing or transformation behavior:
+- Runtime constraints:
+- Acceptance criteria:
 
 ## Read First
 
 Before changing code, read:
 
 - `README.md` for setup and project-specific workflow.
-- `settings.py` for the IoP `Production` graph.
-- the relevant cookbook in this project's documentation, if present.
-- The modules that define components and messages.
-- Existing tests or sample messages before changing behavior.
+- `settings.py`, `production.py`, or `prod.py` for the IoP `Production` graph.
+- the relevant IoP cookbook, if present in this repository.
+- message definitions such as `messages.py` or `msg.py`.
+- components such as `bs.py`, `bp.py`, `bo.py`, `services.py`, `processes.py`,
+  or `operations.py`.
+- existing tests, fixtures, and sample payloads.
+
+If this project does not include local cookbooks, use the public IoP cookbooks:
+<https://grongierisc.github.io/interoperability-embedded-python/cookbooks/>
 
 ## Project Map
 
@@ -57,8 +67,16 @@ Update this list for the local project:
   graph.
 - Keep executable sample code behind `if __name__ == "__main__":` when it lives
   in a migration file.
-- If this project has IoP cookbook documentation, use the relevant cookbook
-  before writing code.
+
+## Dispatch Rules
+
+- Use `on_message(self, request)` as a simple fallback handler.
+- Use typed one-argument methods to route by message type, for example
+  `submit_order(self, request: OrderRequest)`.
+- Use `@handler(MessageType)` when the handler should be explicit or the type
+  annotation is not enough.
+- Avoid duplicate handlers for the same message type unless the intended
+  precedence is clear.
 
 ## Production Design Rules
 
@@ -72,36 +90,23 @@ Update this list for the local project:
 - Components communicate through production messages and targets. Do not
   instantiate another production component or call its methods directly.
 
-## Healthcare Rules
+## Add-ons
 
-Keep this section only for healthcare projects:
+Use add-ons only when the project needs them:
 
-- Prefer native IRIS or Health Connect components for healthcare transports,
-  parsing, validation, and routing when they exist.
-- Use native FHIR production facade/proxy adapters only when that requirement is
-  explicit.
-- For HL7v2 file or MLLP/TCP input, prefer native HL7 business services such as
-  `EnsLib.HL7.Service.FileService` or `EnsLib.HL7.Service.TCPService`.
-- Keep HL7v2 as `EnsLib.HL7.Message` while using IRIS virtual document routing,
-  schemas, transformations, and Message Viewer.
-- Use Python for project-specific enrichment, mapping, policy checks, and calls
-  that are not covered by native components.
-- Use Python best practices for FHIR resource shaping, validation helpers,
-  mapping code, and fixture-based tests.
-- For non-trivial HL7v2-to-FHIR conversion, prefer
-  `grongierisc/fhir-converter`.
-- Handcraft HL7v2-to-FHIR mapping only for small, explicit flows with a narrow
-  field set and one or two target resources.
-- For ordinary FHIR submission, use Python HTTP/FHIR client code with
-  fixture-based tests.
-- Use `HS.FHIRServer.Interop.HTTPOperation` only when the project explicitly
-  implements a FHIR facade or proxy production.
-- Do not hand-roll healthcare protocol framing, HL7v2 parsing, or FHIR server
-  plumbing unless the project explicitly requires custom behavior.
+- Healthcare standards such as HL7v2 or FHIR:
+  <https://grongierisc.github.io/interoperability-embedded-python/healthcare-ai-coding/>
+- HL7v2 native input:
+  <https://grongierisc.github.io/interoperability-embedded-python/cookbooks/hl7v2-native-input/>
+- HL7v2 to FHIR with fhir-converter:
+  <https://grongierisc.github.io/interoperability-embedded-python/cookbooks/hl7v2-to-fhir-with-fhir-converter/>
+- FHIR submission with a Python client:
+  <https://grongierisc.github.io/interoperability-embedded-python/cookbooks/fhir-submission-python-client/>
 
-## Verification
+## Definition Of Done
 
-Use the fastest relevant command first:
+A change is done when the fastest relevant checks pass and the expected
+production behavior is observable. Adapt this list to the local project:
 
 ```bash
 python -m pytest
@@ -115,13 +120,31 @@ If this repository uses Docker or Compose, add the exact command here:
 docker compose up --build
 ```
 
+For production behavior, verify at least one of:
+
+- production starts and reports running status
+- expected output file, API call, database write, FHIR resource, or message is
+  observable
+- logs show service/process/operation execution with no blocking errors
+- Message Viewer or queue status shows the expected flow
+
+## Troubleshooting Prompts
+
+When diagnosing a failure, report:
+
+- exact command that failed
+- traceback or IRIS error
+- files read before changing code
+- smallest suspected failure boundary: Python, migration, IRIS runtime,
+  external dependency, or test data
+
 ## Expected AI Output
 
-When adding or changing behavior, generated output should include:
+For every non-trivial change, include:
 
-- Updated component and message code.
-- Updated `settings.py` production graph when topology changes.
-- Tests or sample payloads when behavior changes.
-- The exact migration and verification commands.
-- A short explanation of which native IRIS components are used and why.
+- updated files list
+- short rationale for behavior change
+- exact commands used to verify
+- test results summary
+- residual risk or follow-up item
 ````

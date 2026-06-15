@@ -47,6 +47,10 @@ class Production(_DeclarativeProductionMixin):
     Python Production is the source of truth for Python-authored topology.
     IRIS remains the runtime source of truth. Imported graphs are operational
     reconstructions until metadata persistence makes round-trip fidelity possible.
+
+    For app-building workflows, see docs/cookbooks/index.md. New applications
+    usually export PRODUCTIONS = [prod] from settings.py and declare topology
+    with service(), process(), operation(), target(), and connect().
     """
 
     def __init__(
@@ -546,12 +550,25 @@ class Production(_DeclarativeProductionMixin):
         ]
 
     def service(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+        """Add a BusinessService item to the production graph.
+
+        See docs/cookbooks/hello-world-production.md and
+        docs/cookbooks/hl7v2-native-input.md.
+        """
         return self.component(name_or_cls, cls, kind="service", **kwargs)
 
     def process(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+        """Add a BusinessProcess item to the production graph.
+
+        See docs/cookbooks/add-business-process.md.
+        """
         return self.component(name_or_cls, cls, kind="process", **kwargs)
 
     def operation(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+        """Add a BusinessOperation item to the production graph.
+
+        See docs/cookbooks/add-business-operation.md.
+        """
         return self.component(name_or_cls, cls, kind="operation", **kwargs)
 
     def message(

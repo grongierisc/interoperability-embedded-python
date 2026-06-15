@@ -15,6 +15,7 @@ Show the migration and verification commands.
 
 ## General Workflows
 
+- [Code index for agents](code-index.md)
 - [Hello-world production](hello-world-production.md)
 - [Add a BusinessOperation](add-business-operation.md)
 - [Add a BusinessProcess](add-business-process.md)

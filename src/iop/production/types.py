@@ -35,7 +35,12 @@ class TargetSetting(Setting):
 
 
 def target(**kwargs: Any) -> TargetSetting:
-    """Declare an outbound target setting on a component class."""
+    """Declare an outbound target setting on a component class.
+
+    Use target() on BusinessService and BusinessProcess classes, then connect
+    the target in a Production graph with prod.connect(...). See
+    docs/cookbooks/production-settings-and-targets.md.
+    """
     return TargetSetting(**kwargs)
 
 

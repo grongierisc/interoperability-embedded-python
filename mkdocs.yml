@@ -14,6 +14,7 @@ nav:
     - Healthcare AI-assisted Coding: healthcare-ai-coding.md
   - Cookbooks:
     - Overview: cookbooks/index.md
+    - Code Index for Agents: cookbooks/code-index.md
     - Hello-world Production: cookbooks/hello-world-production.md
     - Add a BusinessOperation: cookbooks/add-business-operation.md
     - Add a BusinessProcess: cookbooks/add-business-process.md

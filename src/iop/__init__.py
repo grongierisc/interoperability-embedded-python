@@ -117,18 +117,48 @@ class OutboundAdapter(_OutboundAdapter):
 
 
 class BusinessService(_BusinessService):
+    """Inbound production entry point.
+
+    Use for message-driven services or Python services that receive data and
+    send messages into a production. For polling services, prefer
+    PollingBusinessService. For task recipes, see
+    docs/cookbooks/add-polling-service.md and docs/cookbooks/hl7v2-native-input.md.
+    """
+
     pass
 
 
 class PollingBusinessService(_PollingBusinessServiceMixin, BusinessService):
+    """Scheduled inbound service called by the default IRIS inbound adapter.
+
+    Declare outbound routes with target() and send messages with
+    send_request_async(...). Do not put startup work in __init__(); use
+    on_init(). See docs/cookbooks/add-polling-service.md.
+    """
+
     pass
 
 
 class BusinessOperation(_BusinessOperation):
+    """Outbound side-effect boundary for production messages.
+
+    Use operations for external APIs, file writes, database writes, FHIR
+    submission, and other side effects. Dispatch can use on_message(), typed
+    one-argument methods, or @handler(MessageType). See
+    docs/cookbooks/add-business-operation.md.
+    """
+
     pass
 
 
 class BusinessProcess(_BusinessProcess):
+    """Routing, orchestration, decision, and transformation component.
+
+    Declare outbound routes with target() and connect them in a Production
+    graph. Dispatch can use on_message(), typed one-argument methods, or
+    @handler(MessageType). See docs/cookbooks/add-business-process.md.
+    """
+
     pass
 
 

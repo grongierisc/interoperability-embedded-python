@@ -47,6 +47,12 @@ class _DispatchCandidate:
 def handler(message_type: Any) -> Callable[[Callable], Callable]:
     """Declare a method as the handler for a message type.
 
+    Use @handler(MessageType) when a BusinessProcess or BusinessOperation should
+    route a specific message type to a specific method. Typed one-argument
+    methods are also auto-discovered; on_message() remains the fallback.
+    See docs/cookbooks/add-business-process.md and
+    docs/cookbooks/add-business-operation.md.
+
     Args:
         message_type: The message class, fully qualified class name string, or
             IRIS object instance this method handles.

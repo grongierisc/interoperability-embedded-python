@@ -38,6 +38,7 @@ Use the [IoP cookbooks](cookbooks/index.md) for task-specific prompts and
 checklists:
 
 - [Hello-world production](cookbooks/hello-world-production.md)
+- [Code index for agents](cookbooks/code-index.md)
 - [Add a BusinessOperation](cookbooks/add-business-operation.md)
 - [Add a BusinessProcess](cookbooks/add-business-process.md)
 - [Add a PollingBusinessService](cookbooks/add-polling-service.md)
