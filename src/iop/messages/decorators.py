@@ -9,6 +9,7 @@ from .dispatch import handler as handler
 def input_serializer(fonction: Callable) -> Callable:
     """Decorator that serializes all input arguments."""
 
+    @wraps(fonction)
     def _dispatch_serializer(self, *params: Any, **param2: Any) -> Any:
         serialized = [dispatch_serializer(param) for param in params]
         param2 = {key: dispatch_serializer(value) for key, value in param2.items()}
@@ -41,6 +42,7 @@ def input_serializer_param(position: int, name: str) -> Callable:
 def output_deserializer(fonction: Callable) -> Callable:
     """Decorator that deserializes function output."""
 
+    @wraps(fonction)
     def _dispatch_deserializer(self, *params: Any, **param2: Any) -> Any:
         return dispatch_deserializer(fonction(self, *params, **param2))
 
@@ -50,6 +52,7 @@ def output_deserializer(fonction: Callable) -> Callable:
 def input_deserializer(fonction: Callable) -> Callable:
     """Decorator that deserializes all input arguments."""
 
+    @wraps(fonction)
     def _dispatch_deserializer(self, *params: Any, **param2: Any) -> Any:
         serialized = [dispatch_deserializer(param) for param in params]
         param2 = {key: dispatch_deserializer(value) for key, value in param2.items()}
@@ -61,6 +64,7 @@ def input_deserializer(fonction: Callable) -> Callable:
 def output_serializer(fonction: Callable) -> Callable:
     """Decorator that serializes function output."""
 
+    @wraps(fonction)
     def _dispatch_serializer(self, *params: Any, **param2: Any) -> Any:
         return dispatch_serializer(fonction(self, *params, **param2))
 

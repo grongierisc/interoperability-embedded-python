@@ -117,46 +117,137 @@ class OutboundAdapter(_OutboundAdapter):
 
 
 class BusinessService(_BusinessService):
-    """Inbound production entry point.
+    """Purpose:
+        Inbound production entry point for messages entering an IoP production.
 
-    Use for message-driven services or Python services that receive data and
-    send messages into a production. For polling services, prefer
-    PollingBusinessService. For task recipes, see
-    docs/cookbooks/add-polling-service.md and docs/cookbooks/hl7v2-native-input.md.
+    Use when:
+        External data, an adapter, or custom code must send a message into the
+        production graph.
+
+    Lifecycle:
+        IRIS calls on_process_input(); the default implementation delegates to
+        on_process_input(request).
+
+    Best practices:
+        Declare outbound routes with target() and wire them in a Production
+        graph. Use PollingBusinessService for scheduled Python polling.
+
+    Common mistakes:
+        Do not put startup work in __init__(); use on_init(). Do not instantiate
+        downstream components directly.
+
+    Minimal example:
+        class FileIn(BusinessService):
+            Output = target()
+
+            def on_process_input(self, request):
+                self.send_request_async(self.Output, request)
+
+    Related:
+        docs/cookbooks/add-polling-service.md,
+        docs/cookbooks/hl7v2-native-input.md
     """
 
     pass
 
 
 class PollingBusinessService(_PollingBusinessServiceMixin, BusinessService):
-    """Scheduled inbound service called by the default IRIS inbound adapter.
+    """Purpose:
+        Scheduled Python service called by the default IRIS inbound adapter.
 
-    Declare outbound routes with target() and send messages with
-    send_request_async(...). Do not put startup work in __init__(); use
-    on_init(). See docs/cookbooks/add-polling-service.md.
+    Use when:
+        A production must poll an API, directory, queue, database, or other
+        source from Python.
+
+    Lifecycle:
+        IRIS calls on_process_input(); the mixin delegates that call to
+        on_poll().
+
+    Best practices:
+        Put one polling cycle in on_poll(). Declare outbound routes with
+        target() and send messages with send_request_async(...).
+
+    Common mistakes:
+        Do not block forever inside on_poll(). Do not put startup work in
+        __init__(); use on_init().
+
+    Minimal example:
+        class ApiPoller(PollingBusinessService):
+            Output = target()
+
+            def on_poll(self):
+                self.send_request_async(self.Output, MyRequest())
+
+    Related:
+        docs/cookbooks/add-polling-service.md
     """
 
     pass
 
 
 class BusinessOperation(_BusinessOperation):
-    """Outbound side-effect boundary for production messages.
+    """Purpose:
+        Outbound side-effect boundary for production messages.
 
-    Use operations for external APIs, file writes, database writes, FHIR
-    submission, and other side effects. Dispatch can use on_message(), typed
-    one-argument methods, or @handler(MessageType). See
-    docs/cookbooks/add-business-operation.md.
+    Use when:
+        A production must call an external API, write a file, update a database,
+        submit FHIR resources, or perform another side effect.
+
+    Lifecycle:
+        IRIS calls on_message(request). IoP can dispatch to @handler methods,
+        typed one-argument methods, or the on_message fallback.
+
+    Best practices:
+        Keep external-system code here. Return a response message when callers
+        expect synchronous results.
+
+    Common mistakes:
+        Do not put routing orchestration in an operation when a BusinessProcess
+        should own the decision.
+
+    Minimal example:
+        class SubmitOrder(BusinessOperation):
+            def on_message(self, request):
+                return SubmitResult(ok=True)
+
+    Related:
+        docs/cookbooks/add-business-operation.md
     """
 
     pass
 
 
 class BusinessProcess(_BusinessProcess):
-    """Routing, orchestration, decision, and transformation component.
+    """Purpose:
+        Routing, orchestration, decision, and transformation component.
 
-    Declare outbound routes with target() and connect them in a Production
-    graph. Dispatch can use on_message(), typed one-argument methods, or
-    @handler(MessageType). See docs/cookbooks/add-business-process.md.
+    Use when:
+        A production needs branching, enrichment, transformation, fan-out,
+        request/reply orchestration, or response aggregation.
+
+    Lifecycle:
+        IRIS calls on_message(request). For async requests, IRIS can later call
+        on_response(...) and on_complete(...).
+
+    Best practices:
+        Declare outbound routes with target() and wire them with
+        Production.connect(...). Use @handler(MessageType) or typed methods for
+        multiple message types.
+
+    Common mistakes:
+        Do not hard-code target component names when target() can expose a
+        configurable route.
+
+    Minimal example:
+        class Router(BusinessProcess):
+            Accepted = target()
+
+            def on_message(self, request):
+                return self.send_request_sync(self.Accepted, request)
+
+    Related:
+        docs/cookbooks/add-business-process.md,
+        docs/cookbooks/production-settings-and-targets.md
     """
 
     pass
@@ -175,12 +266,34 @@ class DuplexProcess(_PrivateSessionProcess):
 
 
 class Message(_Message):
-    """Python-only JSON-serialized message contract.
+    """Purpose:
+        Python-only JSON-serialized message contract.
 
-    Use @dataclass for ordinary app messages between IoP components. Prefer
-    PersistentMessage only when IRIS needs a native persistent message body. See
-    docs/cookbooks/add-business-process.md and
-    docs/cookbooks/add-business-operation.md.
+    Use when:
+        IoP components exchange structured Python data and IRIS does not need a
+        native persistent message body.
+
+    Lifecycle:
+        IoP serializes dataclass fields into IOP.Message and restores the Python
+        class on receipt.
+
+    Best practices:
+        Decorate subclasses with @dataclass. Use PydanticMessage when runtime
+        validation is more important.
+
+    Common mistakes:
+        Do not use Message without @dataclass. Do not register Message classes
+        in CLASSES; use PersistentMessage for native IRIS message bodies.
+
+    Minimal example:
+        @dataclass
+        class OrderRequest(Message):
+            order_id: str
+
+    Related:
+        docs/cookbooks/add-business-process.md,
+        docs/cookbooks/add-business-operation.md,
+        docs/getting-started/register-component.md
     """
 
     pass

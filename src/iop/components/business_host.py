@@ -108,23 +108,30 @@ class _BusinessHost(_Common):
         timeout: int = -1,
         description: str | None = None,
     ) -> Any:
-        """Send message synchronously to target component.
+        """Purpose:
+            Send a message to a target component and wait for the response.
 
-        Prefer a target() attribute such as self.Output for configurable
-        routing. BusinessProcess examples are in
-        docs/cookbooks/add-business-process.md.
+        Use when:
+            The caller needs the target response before continuing.
 
-        Args:
-            target: Name of target component
-            request: Message to send
-            timeout: Timeout in seconds, -1 means wait forever
-            description: Optional description for logging
+        Lifecycle:
+            IoP serializes request, calls the IRIS synchronous dispatch API, and
+            deserializes the response before returning.
 
-        Returns:
-            Response from target component
+        Best practices:
+            Pass a target() attribute such as self.Output so the route is
+            configurable in the Production graph.
 
-        Raises:
-            TypeError: If request is invalid type
+        Common mistakes:
+            Do not use synchronous calls for long-running work unless the caller
+            really must block.
+
+        Minimal example:
+            response = self.send_request_sync(self.Output, request)
+
+        Related:
+            docs/cookbooks/add-business-process.md,
+            docs/cookbooks/production-settings-and-targets.md
         """
         target = resolve_target(target)
         return self.iris_handle.dispatchSendRequestSync(
@@ -138,19 +145,29 @@ class _BusinessHost(_Common):
         request: Message | Any,
         description: str | None = None,
     ) -> None:
-        """Send message asynchronously to target component.
+        """Purpose:
+            Send a message to a target component without waiting for a response.
 
-        Prefer a target() attribute such as self.Output for configurable
-        routing. Polling service examples are in
-        docs/cookbooks/add-polling-service.md.
+        Use when:
+            A service or operation should enqueue downstream work and continue.
 
-        Args:
-            target: Name of target component
-            request: Message to send
-            description: Optional description for logging
+        Lifecycle:
+            IoP serializes request and calls the IRIS asynchronous dispatch API.
 
-        Raises:
-            TypeError: If request is invalid type
+        Best practices:
+            Pass a target() attribute such as self.Output so the route is
+            configurable in the Production graph.
+
+        Common mistakes:
+            Do not use this helper when the caller requires a response; use
+            send_request_sync(...) or the BusinessProcess async response flow.
+
+        Minimal example:
+            self.send_request_async(self.Output, request)
+
+        Related:
+            docs/cookbooks/add-polling-service.md,
+            docs/cookbooks/production-settings-and-targets.md
         """
         target = resolve_target(target)
         return self.iris_handle.dispatchSendRequestAsync(target, request, description)

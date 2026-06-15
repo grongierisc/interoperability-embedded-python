@@ -42,11 +42,32 @@ class _BusinessService(_BusinessHost):
         return
 
     def on_message(self, request=None):
-        """Handle a message received by the business service.
+        """Purpose:
+            Handle a message received by a BusinessService.
 
-        Override this for message-driven services. Adapter-driven services may
-        still override on_process_input() directly when they need the lower
-        level IRIS ProcessInput hook.
+        Use when:
+            A service receives data from an adapter, Director API call, or
+            custom entry point and should send work into the production graph.
+
+        Lifecycle:
+            The default on_process_input(message_input) implementation delegates
+            to on_message(message_input).
+
+        Best practices:
+            Validate or normalize inbound data, then send a Message to a target
+            declared with target().
+
+        Common mistakes:
+            Do not call downstream component methods directly. Use
+            send_request_async(...) or send_request_sync(...).
+
+        Minimal example:
+            def on_message(self, request):
+                self.send_request_async(self.Output, request)
+
+        Related:
+            docs/cookbooks/add-polling-service.md,
+            docs/cookbooks/hl7v2-native-input.md
         """
         warnings.warn(
             f"{self.__class__.__name__} did not override on_message() or "

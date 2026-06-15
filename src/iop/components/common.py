@@ -225,7 +225,33 @@ class _Common:
 
     # Lifecycle methods
     def on_init(self) -> None:
-        """Initialize component when started."""
+        """Purpose:
+            Component startup hook.
+
+        Use when:
+            A component needs to initialize clients, caches, credentials,
+            counters, or other runtime state after IRIS creates the host.
+
+        Lifecycle:
+            IoP calls on_init() from the internal dispatch startup path. IRIS
+            may allocate the Python object without calling __init__().
+
+        Best practices:
+            Keep initialization idempotent and quick. Read production settings
+            from self inside this method.
+
+        Common mistakes:
+            Do not put component startup work in __init__(); it may not run in
+            the IRIS component lifecycle.
+
+        Minimal example:
+            def on_init(self):
+                self.client = make_client(self.Endpoint)
+
+        Related:
+            docs/ai-coding.md,
+            docs/cookbooks/index.md
+        """
         pass
 
     def on_tear_down(self) -> None:

@@ -35,11 +35,33 @@ class TargetSetting(Setting):
 
 
 def target(**kwargs: Any) -> TargetSetting:
-    """Declare an outbound target setting on a component class.
+    """Purpose:
+        Declare a configurable outbound target setting on a component class.
 
-    Use target() on BusinessService and BusinessProcess classes, then connect
-    the target in a Production graph with prod.connect(...). See
-    docs/cookbooks/production-settings-and-targets.md.
+    Use when:
+        A service or process sends messages to another production component.
+
+    Lifecycle:
+        The descriptor becomes an IRIS production setting. Production.connect(...)
+        binds it to a concrete target component.
+
+    Best practices:
+        Use target() instead of hard-coded component names for routes that
+        should be visible and configurable in the production graph.
+
+    Common mistakes:
+        Do not use setting(...) for outbound routing when target() should expose
+        a production target.
+
+    Minimal example:
+        class Router(BusinessProcess):
+            Output = target()
+
+        prod.connect(router.Output, operation)
+
+    Related:
+        docs/cookbooks/production-settings-and-targets.md,
+        docs/production-graph.md
     """
     return TargetSetting(**kwargs)
 

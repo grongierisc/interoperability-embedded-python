@@ -21,13 +21,32 @@ class _BusinessProcess(_BusinessHost):
     PERSISTENT_PROPERTY_LIST: list[str] | None = None
 
     def on_message(self, request: Any) -> Any:
-        """Handle incoming messages.
+        """Purpose:
+            Handle an incoming message sent to a BusinessProcess.
 
-        Args:
-            request: The incoming message
+        Use when:
+            The process owns routing, orchestration, transformation, or
+            decisions for a request.
 
-        Returns:
-            Response message
+        Lifecycle:
+            IRIS invokes this hook for process requests unless dispatch routes
+            the message to a @handler or typed one-argument method first. The
+            default implementation delegates to on_request(request).
+
+        Best practices:
+            Declare outbound routes with target() and call
+            send_request_sync(...) or send_request_async(...).
+
+        Common mistakes:
+            Do not hide routing in raw strings when target() can make routes
+            configurable in the production graph.
+
+        Minimal example:
+            def on_message(self, request):
+                return self.send_request_sync(self.Output, request)
+
+        Related:
+            docs/cookbooks/add-business-process.md
         """
         return self.on_request(request)
 
@@ -50,29 +69,58 @@ class _BusinessProcess(_BusinessHost):
         call_response: Any,
         completion_key: str,
     ) -> Any:
-        """Handle responses to messages sent by this component.
+        """Purpose:
+            Handle one async response received by a BusinessProcess.
 
-        Args:
-            request: The initial request message
-            response: The response message
-            call_request: The request sent to the target
-            call_response: The incoming response
-            completion_key: The completion key specified in the outgoing SendAsync() method
+        Use when:
+            The process sends async requests and needs to merge, inspect, or
+            transform each returned response.
 
-        Returns:
-            Response message
+        Lifecycle:
+            IRIS calls on_response(...) after an async target response arrives.
+            on_complete(...) can run after all expected responses complete.
+
+        Best practices:
+            Use completion_key to identify which async call returned. Return
+            the accumulated or transformed response state.
+
+        Common mistakes:
+            Do not assume responses arrive in request order.
+
+        Minimal example:
+            def on_response(self, request, response, call_request, call_response, completion_key):
+                return call_response
+
+        Related:
+            docs/cookbooks/add-business-process.md
         """
         return response
 
     def on_complete(self, request: Any, response: Any) -> Any:
-        """Called after all responses to requests sent by this component have been handled.
+        """Purpose:
+            Finish async request orchestration for a BusinessProcess.
 
-        Args:
-            request: The initial request message
-            response: The response message
+        Use when:
+            The process must return or finalize an aggregate response after
+            async sends, timers, or response handling.
 
-        Returns:
-            Response message
+        Lifecycle:
+            IRIS calls on_complete(request, response) after expected async
+            responses have been handled or the completion path is reached.
+
+        Best practices:
+            Return the final response message expected by the original caller.
+
+        Common mistakes:
+            Do not put per-response logic here; use on_response(...) for each
+            individual async response.
+
+        Minimal example:
+            def on_complete(self, request, response):
+                return response
+
+        Related:
+            docs/cookbooks/add-business-process.md
         """
         return response
 
@@ -94,17 +142,31 @@ class _BusinessProcess(_BusinessHost):
         completion_key: str | None = None,
         response_required: bool = True,
     ) -> None:
-        """Send the specified message to the target business process or business operation asynchronously.
+        """Purpose:
+            Send a message asynchronously from a BusinessProcess.
 
-        Args:
-            target: The name of the business process or operation to receive the request
-            request: The message to send to the target
-            description: An optional description property in the message header
-            completion_key: A string that will be returned with the response if the maximum time is exceeded
-            response_required: Whether a response is required
+        Use when:
+            The process should continue without blocking for a target response,
+            or when responses will be handled later by on_response(...).
 
-        Raises:
-            TypeError: If request is not of type Message or IRISObject
+        Lifecycle:
+            IoP serializes request before dispatching to IRIS. IRIS can call
+            on_response(...) and on_complete(...) when response_required is true.
+
+        Best practices:
+            Pass a target() attribute such as self.Output. Use completion_key
+            for fan-out or multiple async calls.
+
+        Common mistakes:
+            Do not pass an unresolved component instance or a hard-coded route
+            when the route should be configurable.
+
+        Minimal example:
+            self.send_request_async(self.Output, request, completion_key="out")
+
+        Related:
+            docs/cookbooks/add-business-process.md,
+            docs/cookbooks/production-settings-and-targets.md
         """
         # Convert boolean to int for Iris API
         if response_required:

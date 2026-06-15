@@ -9,10 +9,30 @@ class _PollingBusinessServiceMixin:
         return "Ens.InboundAdapter"
 
     def on_poll(self):
-        """Run one scheduled polling cycle.
+        """Purpose:
+            Run one scheduled polling cycle.
 
-        Override this for services that are called by the default IRIS inbound
-        adapter and fetch their own external data.
+        Use when:
+            A PollingBusinessService fetches or discovers new work from Python.
+
+        Lifecycle:
+            The default IRIS inbound adapter calls on_process_input(), and this
+            mixin delegates that call to on_poll().
+
+        Best practices:
+            Do a bounded unit of work, then return. Send produced messages with
+            send_request_async(self.Output, message).
+
+        Common mistakes:
+            Do not create an infinite loop inside on_poll(); use the production
+            schedule or call interval for repeated execution.
+
+        Minimal example:
+            def on_poll(self):
+                self.send_request_async(self.Output, PollRequest())
+
+        Related:
+            docs/cookbooks/add-polling-service.md
         """
         warnings.warn(
             f"{self.__class__.__name__} did not override on_poll() or "

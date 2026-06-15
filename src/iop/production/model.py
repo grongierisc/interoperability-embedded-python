@@ -42,15 +42,35 @@ _MISSING = object()
 
 
 class Production(_DeclarativeProductionMixin):
-    """Python authoring DSL for IRIS interoperability production topology.
+    """Purpose:
+        Python authoring DSL for IRIS interoperability production topology.
 
-    Python Production is the source of truth for Python-authored topology.
-    IRIS remains the runtime source of truth. Imported graphs are operational
-    reconstructions until metadata persistence makes round-trip fidelity possible.
+    Use when:
+        A project should declare services, processes, operations, settings, and
+        graph connections in Python.
 
-    For app-building workflows, see docs/cookbooks/index.md. New applications
-    usually export PRODUCTIONS = [prod] from settings.py and declare topology
-    with service(), process(), operation(), target(), and connect().
+    Lifecycle:
+        A settings.py module exports PRODUCTIONS = [prod]. Migration renders the
+        graph to IRIS; IRIS remains the runtime source of truth.
+
+    Best practices:
+        Declare topology with service(), process(), operation(), target(), and
+        connect(). Keep the Production object import-safe.
+
+    Common mistakes:
+        Do not execute migration or runtime side effects at module import time.
+        Do not use raw CLASSES entries for graph components.
+
+    Minimal example:
+        prod = Production("Demo.Production")
+        svc = prod.service("Demo.Service", MyService)
+        op = prod.operation("Demo.Operation", MyOperation)
+        prod.connect(svc.Output, op)
+        PRODUCTIONS = [prod]
+
+    Related:
+        docs/cookbooks/hello-world-production.md,
+        docs/production-graph.md
     """
 
     def __init__(

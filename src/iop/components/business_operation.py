@@ -19,16 +19,31 @@ class _BusinessOperation(_BusinessHost):
     adapter: Any = None
 
     def on_message(self, request: Any) -> Any:
-        """Handle incoming messages.
+        """Purpose:
+            Handle an incoming message sent to a BusinessOperation.
 
-        Process messages received from other production components and either
-        send to external system or forward to another component.
+        Use when:
+            The operation must perform an outbound side effect or submit data to
+            an external system.
 
-        Args:
-            request: The incoming message
+        Lifecycle:
+            IRIS invokes this hook for operation requests unless dispatch routes
+            the message to a @handler or typed one-argument method first.
 
-        Returns:
-            Response message
+        Best practices:
+            Keep side effects isolated here. Return a response message when the
+            caller uses send_request_sync(...).
+
+        Common mistakes:
+            Do not put routing decisions here when a BusinessProcess should
+            orchestrate them.
+
+        Minimal example:
+            def on_message(self, request):
+                return SubmitResult(ok=True)
+
+        Related:
+            docs/cookbooks/add-business-operation.md
         """
         warnings.warn(
             f"{self.__class__.__name__} did not override on_message(); "
