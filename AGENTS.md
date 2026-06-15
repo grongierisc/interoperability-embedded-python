@@ -46,7 +46,8 @@ Before changing code or examples, read:
 - Do not put component startup logic in `__init__()`. IoP/IRIS allocates
   components with `__new__()` and calls `on_init()` as the startup hook.
 - Use `on_tear_down()` for cleanup when a component becomes inactive.
-- Use regular `Message` or `PydanticMessage` classes for Python messages.
+- Use `@dataclass` on regular `Message` classes. Do not decorate
+  `PydanticMessage` classes with `@dataclass`.
 - Use `PersistentMessage` only when a native persistent IRIS message body is
   required.
 - Avoid raw `CLASSES` entries for new production components. Use `CLASSES` only
