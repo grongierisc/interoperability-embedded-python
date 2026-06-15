@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/add-business-process/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/code-index/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Add a BusinessProcess - IoP (Interoperability On Python)</title>
+    <title>Code Index for Agents - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Add a BusinessProcess";
-        var mkdocs_page_input_path = "cookbooks/add-business-process.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/add-business-process/";
+        var mkdocs_page_name = "Code Index for Agents";
+        var mkdocs_page_input_path = "cookbooks/code-index.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/code-index/";
       </script>
     
     <!--[if lt IE 9]>
@@ -62,29 +62,27 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../code-index/">Code Index for Agents</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Code Index for Agents</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#public-api-breadcrumbs">Public API Breadcrumbs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#source-files-agents-usually-read">Source Files Agents Usually Read</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#dispatch-quick-reference">Dispatch Quick Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#message-quick-reference">Message Quick Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#source-first-rule">Source-first Rule</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#healthcare-add-on">Healthcare Add-on</a>
+    </li>
+    </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../hello-world-production/">Hello-world Production</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../add-business-operation/">Add a BusinessOperation</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Add a BusinessProcess</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#when-to-use-this">When To Use This</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#files-you-will-touch">Files You Will Touch</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#prompt-to-give-your-agent">Prompt To Give Your Agent</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#expected-implementation">Expected Implementation</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#migration-command">Migration Command</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#common-mistakes">Common Mistakes</a>
-    </li>
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../add-business-process/">Add a BusinessProcess</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../add-polling-service/">Add a PollingBusinessService</a>
                   </li>
@@ -166,7 +164,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Cookbooks</li>
-      <li class="breadcrumb-item active">Add a BusinessProcess</li>
+      <li class="breadcrumb-item active">Code Index for Agents</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -175,111 +173,172 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="cookbook-add-a-businessprocess">Cookbook: Add A BusinessProcess</h1>
-<h2 id="when-to-use-this">When To Use This</h2>
-<p>Use this cookbook when a production needs routing, orchestration, decision
-logic, enrichment, or coordination between services and operations.</p>
-<p>Business Processes should not own external side effects directly when a
-Business Operation is the better boundary. Keep the process focused on deciding
-what happens next and sending messages to downstream targets.</p>
-<h2 id="files-you-will-touch">Files You Will Touch</h2>
-<ul>
-<li>the process module, such as <code>bp.py</code> or <code>processes.py</code></li>
-<li>the message module, such as <code>msg.py</code> or <code>messages.py</code></li>
-<li>operation modules only when downstream behavior is missing</li>
-<li><code>settings.py</code></li>
-<li>tests or sample payloads for routing decisions</li>
-</ul>
-<h2 id="prompt-to-give-your-agent">Prompt To Give Your Agent</h2>
-<pre><code class="language-text">Add a new IoP BusinessProcess to this project.
-
-Business goal:
-&lt;describe the routing, orchestration, enrichment, or decision logic&gt;
-
-Implementation requirements:
-- Reuse existing message classes if they already fit.
-- Declare outbound routes with target() attributes on the process class.
-- Route messages with send_request_sync(), send_request_async(), or direct
-  response behavior according to the existing project pattern.
-- Use on_message(self, request) for simple processes, or route by message type
-  with typed one-argument methods or the @handler decorator.
-- Keep external API calls, database writes, file writes, and FHIR submission in
-  BusinessOperation classes.
-- Do not add startup work to __init__(); use on_init() only if startup work is
-  required.
-- Update settings.py so the process is added to the Production graph and its
-  targets are connected.
-- Add or update tests for routing decisions.
-- Show the exact migration and verification commands.
-</code></pre>
-<h2 id="expected-implementation">Expected Implementation</h2>
-<p>A process declares outbound targets and sends messages to them:</p>
-<pre><code class="language-python">from iop import BusinessProcess, Message, handler, target
-
-from messages import OrderRequest, OrderResponse, RejectedOrder
-
-
-class OrderProcess(BusinessProcess):
-    Accepted = target()
-    Rejected = target()
-
-    def on_message(self, request):
-        self.log_warning(f&quot;Unhandled message {type(request).__name__}&quot;)
-        return request
-
-    def route_order(self, request: OrderRequest):
-        if not request.order_id:
-            return self.send_request_sync(self.Rejected, RejectedOrder(reason=&quot;missing id&quot;))
-
-        return self.send_request_sync(self.Accepted, request)
-
-    @handler(RejectedOrder)
-    def route_rejected(self, request):
-        self.log_info(request.reason)
-        return request
-</code></pre>
-<p>IoP dispatches to:</p>
-<ul>
-<li>a method decorated with <code>@handler(MessageType)</code> first</li>
+                <h1 id="cookbook-code-index-for-agents">Cookbook: Code Index For Agents</h1>
+<p>Use this page when an AI coding assistant starts from source code instead of
+the docs. The source contains short breadcrumbs; this page maps those symbols to
+the fuller cookbook workflows.</p>
+<h2 id="public-api-breadcrumbs">Public API Breadcrumbs</h2>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>What It Means</th>
+<th>Cookbook</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iop.Production</code></td>
+<td>Python authoring DSL for production topology</td>
+<td><a href="../hello-world-production/">Hello-world production</a>, <a href="../production-settings-and-targets/">Production settings and targets</a></td>
+</tr>
+<tr>
+<td><code>iop.target</code></td>
+<td>Configurable outbound target setting</td>
+<td><a href="../production-settings-and-targets/">Production settings and targets</a></td>
+</tr>
+<tr>
+<td><code>iop.BusinessService</code></td>
+<td>Inbound production entry point</td>
+<td><a href="../hl7v2-native-input/">HL7v2 native input</a> for healthcare transport choices</td>
+</tr>
+<tr>
+<td><code>iop.PollingBusinessService</code></td>
+<td>Scheduled Python inbound service</td>
+<td><a href="../add-polling-service/">Add a PollingBusinessService</a></td>
+</tr>
+<tr>
+<td><code>iop.BusinessProcess</code></td>
+<td>Routing, orchestration, decisions, and transformations</td>
+<td><a href="../add-business-process/">Add a BusinessProcess</a></td>
+</tr>
+<tr>
+<td><code>iop.BusinessOperation</code></td>
+<td>Outbound side-effect boundary</td>
+<td><a href="../add-business-operation/">Add a BusinessOperation</a></td>
+</tr>
+<tr>
+<td><code>iop.handler</code></td>
+<td>Explicit message-type dispatch decorator</td>
+<td><a href="../add-business-process/">Add a BusinessProcess</a>, <a href="../add-business-operation/">Add a BusinessOperation</a></td>
+</tr>
+<tr>
+<td><code>send_request_sync</code>, <code>send_request_async</code></td>
+<td>Send messages to configured production targets</td>
+<td><a href="../production-settings-and-targets/">Production settings and targets</a>, <a href="../add-business-process/">Add a BusinessProcess</a></td>
+</tr>
+<tr>
+<td><code>iop.setting</code>, <code>iop.Setting</code></td>
+<td>Component settings exposed in the IRIS portal</td>
+<td><a href="../production-settings-and-targets/">Production settings and targets</a></td>
+</tr>
+<tr>
+<td><code>iop.Message</code></td>
+<td>Python-only dataclass message contract</td>
+<td><a href="../add-business-operation/">Add a BusinessOperation</a>, <a href="../add-business-process/">Add a BusinessProcess</a></td>
+</tr>
+<tr>
+<td><code>iop.PersistentMessage</code></td>
+<td>Native persistent IRIS message body</td>
+<td><a href="../../getting-started/register-component/">Register Component</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="source-files-agents-usually-read">Source Files Agents Usually Read</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Why It Matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/iop/__init__.py</code></td>
+<td>Public import surface and component class breadcrumbs</td>
+</tr>
+<tr>
+<td><code>src/iop/production/model.py</code></td>
+<td><code>Production</code>, <code>service</code>, <code>process</code>, <code>operation</code>, graph authoring</td>
+</tr>
+<tr>
+<td><code>src/iop/production/types.py</code></td>
+<td><code>target()</code> and graph types</td>
+</tr>
+<tr>
+<td><code>src/iop/components/settings.py</code></td>
+<td><code>setting(...)</code>, <code>Setting</code>, and IRIS editor controls</td>
+</tr>
+<tr>
+<td><code>src/iop/messages/base.py</code></td>
+<td>Python-only message contracts</td>
+</tr>
+<tr>
+<td><code>src/iop/messages/persistent.py</code></td>
+<td>Native persistent IRIS message contracts</td>
+</tr>
+<tr>
+<td><code>src/iop/messages/dispatch.py</code></td>
+<td><code>@handler</code>, typed method dispatch, fallback <code>on_message()</code></td>
+</tr>
+<tr>
+<td><code>src/iop/components/business_process.py</code></td>
+<td>process runtime hooks and request helpers</td>
+</tr>
+<tr>
+<td><code>src/iop/components/business_operation.py</code></td>
+<td>operation runtime dispatch</td>
+</tr>
+<tr>
+<td><code>src/iop/components/business_service.py</code></td>
+<td>service <code>on_message()</code> and <code>on_process_input()</code> hooks</td>
+</tr>
+<tr>
+<td><code>src/iop/components/polling_business_service.py</code></td>
+<td>polling service <code>on_poll()</code> hook</td>
+</tr>
+</tbody>
+</table>
+<h2 id="dispatch-quick-reference">Dispatch Quick Reference</h2>
+<p>For <code>BusinessProcess</code> and <code>BusinessOperation</code>, IoP dispatches incoming messages
+to:</p>
+<ol>
+<li>a method decorated with <code>@handler(MessageType)</code></li>
 <li>a typed one-argument method such as <code>route_order(self, request: OrderRequest)</code></li>
 <li><code>on_message(self, request)</code> as the fallback</li>
-</ul>
-<p>Wire the process in <code>settings.py</code>:</p>
-<pre><code class="language-python">process = prod.process(&quot;OrderProcess&quot;, OrderProcess)
-accepted = prod.operation(&quot;AcceptedOperation&quot;, AcceptedOperation)
-rejected = prod.operation(&quot;RejectedOperation&quot;, RejectedOperation)
+</ol>
+<p>Use <code>@handler(MessageType)</code> when the handler must be explicit. Use typed
+one-argument methods when annotations are enough.</p>
+<h2 id="message-quick-reference">Message Quick Reference</h2>
+<p>Use <code>@dataclass</code> with regular <code>Message</code> classes:</p>
+<pre><code class="language-python">from dataclasses import dataclass
+from iop import Message
 
-prod.connect(process.Accepted, accepted)
-prod.connect(process.Rejected, rejected)
+@dataclass
+class OrderRequest(Message):
+    order_id: str
 </code></pre>
-<h2 id="migration-command">Migration Command</h2>
-<pre><code class="language-bash">iop --migrate settings.py --dry-run
-iop --migrate settings.py
-</code></pre>
-<h2 id="verification">Verification</h2>
+<p>Use <code>PydanticMessage</code> without <code>@dataclass</code>. Use <code>PersistentMessage</code> only when
+IRIS needs a native persistent message body.</p>
+<h2 id="source-first-rule">Source-first Rule</h2>
+<p>When starting from source code, build applications through public imports from
+<code>iop</code> and a <code>Production</code> graph. Do not copy internal runtime classes such as
+<code>_BusinessHost</code> into application code; use them only to understand behavior.</p>
+<h2 id="healthcare-add-on">Healthcare Add-on</h2>
+<p>If the code or task mentions HL7v2, FHIR, Health Connect, FHIR bundles, MLLP,
+or <code>EnsLib.HL7</code>, use the healthcare add-on:</p>
 <ul>
-<li>Unit-test the routing decision with representative messages.</li>
-<li>Dry-run migration shows the process and all target settings.</li>
-<li>The production graph contains every expected process edge.</li>
-<li>Runtime trace shows messages passing from service to process to operation.</li>
-</ul>
-<h2 id="common-mistakes">Common Mistakes</h2>
-<ul>
-<li>Putting external API calls or database writes directly in the process.</li>
-<li>Forgetting <code>target()</code> declarations for outbound routes.</li>
-<li>Returning raw dictionaries instead of message objects when the downstream
-  component expects IoP messages.</li>
-<li>Adding multiple handlers for the same message type without making the
-  intended precedence explicit.</li>
-<li>Calling a downstream component directly instead of sending a production
-  message through a target.</li>
+<li><a href="../../healthcare-ai-coding/">Healthcare AI-assisted coding</a></li>
+<li><a href="../hl7v2-native-input/">HL7v2 native input</a></li>
+<li><a href="../hl7v2-to-fhir-with-fhir-converter/">HL7v2 to FHIR with fhir-converter</a></li>
+<li><a href="../fhir-submission-python-client/">FHIR submission with a Python client</a></li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../add-business-operation/" class="btn btn-neutral float-left" title="Add a BusinessOperation"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../add-polling-service/" class="btn btn-neutral float-right" title="Add a PollingBusinessService">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../hello-world-production/" class="btn btn-neutral float-right" title="Hello-world Production">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -302,10 +361,10 @@ iop --migrate settings.py
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../add-business-operation/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../add-polling-service/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../hello-world-production/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
