@@ -1,12 +1,14 @@
 import dataclasses
 from typing import Any
 
-from .base import BaseModel, _Message, _PickleMessage, _PydanticPickleMessage
+from .base import _Message, _PickleMessage, _PydanticMessage, _PydanticPickleMessage
+
+_PYDANTIC_BASE = _PydanticMessage.__mro__[1]
 
 
 def is_message_instance(obj: Any) -> bool:
     """Check if object is a valid Message instance."""
-    if isinstance(obj, BaseModel):
+    if isinstance(obj, _PYDANTIC_BASE):
         return True
     if is_message_class(type(obj)):
         if not dataclasses.is_dataclass(obj):
@@ -38,15 +40,15 @@ def is_iris_object_instance(obj: Any) -> bool:
 
 def is_message_class(klass: type) -> bool:
     """Check if class is a Message type."""
-    if issubclass(klass, _Message):
-        return True
-    return False
+    try:
+        return issubclass(klass, (_Message, _PYDANTIC_BASE))
+    except TypeError:
+        return False
 
 
 def is_pickle_message_class(klass: type) -> bool:
     """Check if class is a PickleMessage type."""
-    if issubclass(klass, _PickleMessage):
-        return True
-    if issubclass(klass, _PydanticPickleMessage):
-        return True
-    return False
+    try:
+        return issubclass(klass, (_PickleMessage, _PydanticPickleMessage))
+    except TypeError:
+        return False

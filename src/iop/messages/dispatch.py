@@ -7,6 +7,7 @@ from typing import Any
 from .persistent import (
     deserialize_persistent_message,
     get_iris_object_classname,
+    is_persistent_message_class,
     is_persistent_message_instance,
     serialize_persistent_message,
 )
@@ -20,7 +21,9 @@ from .serialization import (
 )
 from .validation import (
     is_iris_object_instance,
+    is_message_class,
     is_message_instance,
+    is_pickle_message_class,
     is_pickle_message_instance,
 )
 
@@ -326,7 +329,23 @@ def _message_class_name(message_type: Any) -> str | None:
     if is_iris_object_instance(message_type):
         return f"{type(message_type).__module__}.{type(message_type).__name__}"
 
+    if message_type is Any or message_type is object:
+        return None
+
     if not isinstance(message_type, type):
         return None
 
+    if not _is_dispatch_message_class(message_type):
+        return None
+
     return f"{message_type.__module__}.{message_type.__name__}"
+
+
+def _is_dispatch_message_class(klass: type) -> bool:
+    if is_message_class(klass):
+        return True
+    if is_pickle_message_class(klass):
+        return True
+    if is_persistent_message_class(klass):
+        return True
+    return klass.__module__.startswith("iris")

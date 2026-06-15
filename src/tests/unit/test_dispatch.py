@@ -2,6 +2,7 @@ import datetime
 import decimal
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
@@ -249,6 +250,41 @@ def test_handler_decorator_has_priority_over_typed_method():
     assert len(logs) == 1
     assert "keeping _explicit from @handler" in logs[0]
     assert "discarding implicit from typed method" in logs[0]
+
+
+def test_typed_method_discovery_ignores_non_message_annotations():
+    logs = []
+
+    class Host:
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_any(self, request: Any):
+            return "any"
+
+        def handle_object(self, request: object):
+            return "object"
+
+        def handle_string(self, request: str):
+            return "string"
+
+        def handle_pydantic(self, request: SimpleModel):
+            return "pydantic"
+
+        def handle_message(self, request: MessageTest):
+            return "message"
+
+        def log_warning(self, message):
+            logs.append(message)
+
+    host = Host()
+    create_dispatch(host)
+
+    assert host.DISPATCH == [
+        (f"{MessageTest.__module__}.{MessageTest.__name__}", "handle_message"),
+        (f"{SimpleModel.__module__}.{SimpleModel.__name__}", "handle_pydantic"),
+    ]
+    assert logs == []
 
 
 def test_duplicate_legacy_mappings_log_discarded_handler():

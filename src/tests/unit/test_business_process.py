@@ -128,6 +128,19 @@ def test_dispatch_methods(process):
     )
     process._dispatch_on_tear_down(mock_host)
 
+
+def test_default_dispatch_does_not_register_framework_methods(process):
+    logs = []
+    mock_host = MagicMock()
+    mock_host.port = 0
+    mock_host.enable = False
+    process.log_warning = logs.append
+
+    process._dispatch_on_init(mock_host)
+
+    assert process.DISPATCH == []
+    assert logs == []
+
 def test_reply(process):
     response = SimpleMessage(integer=1, string='test')
     process.reply(response)
