@@ -175,22 +175,56 @@ class DuplexProcess(_PrivateSessionProcess):
 
 
 class Message(_Message):
+    """Python-only JSON-serialized message contract.
+
+    Use @dataclass for ordinary app messages between IoP components. Prefer
+    PersistentMessage only when IRIS needs a native persistent message body. See
+    docs/cookbooks/add-business-process.md and
+    docs/cookbooks/add-business-operation.md.
+    """
+
     pass
 
 
 class PickleMessage(_PickleMessage):
+    """Python-only pickle-serialized message contract.
+
+    Prefer Message or PydanticMessage for new app code unless JSON-compatible
+    fields cannot represent the payload.
+    """
+
     pass
 
 
 class PydanticMessage(_PydanticMessage):
+    """Python-only Pydantic message contract with validation.
+
+    Use for app messages that benefit from Pydantic validation. Do not decorate
+    PydanticMessage classes with @dataclass and do not put these classes in
+    CLASSES; see docs/getting-started/register-component.md.
+    """
+
     pass
 
 
 class PydanticPickleMessage(_PydanticPickleMessage):
+    """Pydantic message contract serialized through pickle.
+
+    Prefer PydanticMessage unless the payload must preserve Python-only object
+    shapes that JSON serialization cannot represent.
+    """
+
     pass
 
 
 class PersistentMessage(_PersistentMessage):
+    """Native persistent IRIS message body contract.
+
+    Use when IRIS needs a generated message class or persistent message body.
+    Prefer Message or PydanticMessage for Python-only routing. See
+    docs/getting-started/register-component.md and docs/settings.md.
+    """
+
     _iop_persistent_message_abstract = True
 
 

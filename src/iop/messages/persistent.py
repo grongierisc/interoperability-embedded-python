@@ -91,6 +91,14 @@ def _apply_persistent_message_defaults(
 
 
 class _PersistentMessage(Model, metaclass=_PersistentMessageMeta):
+    """Base class for native persistent IRIS message bodies.
+
+    Use PersistentMessage when IRIS needs a generated native message class or
+    persistent message body. Prefer Message or PydanticMessage for Python-only
+    production routing. See docs/getting-started/register-component.md and
+    docs/settings.md.
+    """
+
     _iop_persistent_message_abstract = True
 
     def get_iris_id(self) -> str | None:

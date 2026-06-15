@@ -91,6 +91,9 @@ class _BusinessHost(_Common):
 
     This is a superclass for BusinessService, BusinessProcess, and BusinessOperation that
     defines common functionality like message serialization/deserialization and request handling.
+    App code should normally call send_request_* with target() attributes such
+    as self.Output instead of hard-coded component names. See
+    docs/cookbooks/production-settings-and-targets.md.
     """
 
     buffer: int = 64000
@@ -106,6 +109,10 @@ class _BusinessHost(_Common):
         description: str | None = None,
     ) -> Any:
         """Send message synchronously to target component.
+
+        Prefer a target() attribute such as self.Output for configurable
+        routing. BusinessProcess examples are in
+        docs/cookbooks/add-business-process.md.
 
         Args:
             target: Name of target component
@@ -133,6 +140,10 @@ class _BusinessHost(_Common):
     ) -> None:
         """Send message asynchronously to target component.
 
+        Prefer a target() attribute such as self.Output for configurable
+        routing. Polling service examples are in
+        docs/cookbooks/add-polling-service.md.
+
         Args:
             target: Name of target component
             request: Message to send
@@ -152,6 +163,9 @@ class _BusinessHost(_Common):
         description: str | None = None,
     ) -> Any:
         """Send message asynchronously to target component with asyncio.
+
+        Prefer a target() attribute such as self.Output for configurable
+        routing. Use this helper when the component method is already async.
 
         Args:
             target: Name of target component
@@ -173,6 +187,10 @@ class _BusinessHost(_Common):
         description: str | None = None,
     ) -> _GeneratorRequest:
         """Send message as a generator request to target component.
+
+        Prefer a target() attribute such as self.Output for configurable
+        routing.
+
         Args:
             target: Name of target component
             request: Message to send
@@ -193,6 +211,10 @@ class _BusinessHost(_Common):
         description: str | None = None,
     ) -> list[tuple[str, Message | Any, Any, int]]:
         """Send multiple messages synchronously to target components.
+
+        Each target can be a target() attribute such as self.Accepted or a
+        component name. Prefer target() attributes for configurable production
+        graphs.
 
         Args:
             target_request: List of tuples (target, request) to send

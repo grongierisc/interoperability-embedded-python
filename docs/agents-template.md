@@ -61,7 +61,8 @@ Update this list for the local project:
 - Use `target()` on component classes for configurable outbound targets.
 - Do not put component startup logic in `__init__()`. Use `on_init()`.
 - Use `on_tear_down()` for cleanup when a component becomes inactive.
-- Use regular `Message` or `PydanticMessage` classes for Python-only messages.
+- Use `@dataclass` on regular `Message` classes. Do not decorate
+  `PydanticMessage` classes with `@dataclass`.
 - Use `PersistentMessage` only when IRIS needs a native persistent message body.
 - Avoid raw `CLASSES` entries for components already declared in the production
   graph.

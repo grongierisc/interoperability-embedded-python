@@ -24,7 +24,13 @@ def _string_value(value: Any) -> str:
 
 
 class Setting:
-    """Metadata for an IRIS production setting."""
+    """Metadata for an IRIS production setting.
+
+    Use Setting or setting(...) for configurable component values exposed in
+    the Management Portal. Use iop.target() instead for outbound component
+    routes. See docs/cookbooks/production-settings-and-targets.md and
+    docs/settings.md.
+    """
 
     def __init__(
         self,
@@ -77,6 +83,11 @@ class Setting:
 
 
 def setting(default: Any = _MISSING, **kwargs) -> Setting:
+    """Declare a configurable IRIS production setting on a component class.
+
+    For outbound routing, prefer iop.target() so Production.connect(...) can
+    wire the graph explicitly. See docs/cookbooks/production-settings-and-targets.md.
+    """
     return Setting(default, **kwargs)
 
 
