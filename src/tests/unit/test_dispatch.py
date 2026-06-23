@@ -287,6 +287,40 @@ def test_typed_method_discovery_ignores_non_message_annotations():
     assert logs == []
 
 
+def test_typed_method_discovery_resolves_string_annotations():
+    class Host:
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_message(self, request: "MessageTest"):
+            return "handled"
+
+    host = Host()
+    create_dispatch(host)
+
+    assert host.DISPATCH == [
+        (f"{MessageTest.__module__}.{MessageTest.__name__}", "handle_message")
+    ]
+    assert dispatch_message(host, MessageTest(text="test", number=1)) == "handled"
+
+
+def test_typed_method_discovery_ignores_unresolved_bare_string_annotations():
+    class Host:
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_message(self, request):
+            return "handled"
+
+    Host.handle_message.__annotations__["request"] = "UnknownMessage"
+
+    host = Host()
+    create_dispatch(host)
+
+    assert host.DISPATCH == []
+    assert dispatch_message(host, MessageTest(text="test", number=1)) == "fallback"
+
+
 def test_duplicate_legacy_mappings_log_discarded_handler():
     logs = []
 

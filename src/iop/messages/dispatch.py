@@ -306,8 +306,9 @@ def get_handler_info(host: Any, method_name: str) -> tuple[str, str] | None:
         if len(params) != 1:
             return None
 
+        method = getattr(host, method_name)
         param: Parameter = next(iter(params.values()))
-        annotation = param.annotation
+        annotation = _resolve_annotation(host, method, param.annotation)
 
         if annotation == Parameter.empty:
             return None
@@ -320,6 +321,42 @@ def get_handler_info(host: Any, method_name: str) -> tuple[str, str] | None:
 
     except ValueError:
         return None
+
+
+def _resolve_annotation(host: Any, method: Callable, annotation: Any) -> Any:
+    if not isinstance(annotation, str):
+        return annotation
+
+    globalns = _annotation_globalns(method)
+    localns = _annotation_localns(host)
+
+    try:
+        resolved = eval(annotation, globalns, localns)  # noqa: B307
+    except Exception:
+        resolved = annotation
+
+    if isinstance(resolved, str):
+        # Quoted postponed annotations evaluate to a string first.
+        try:
+            resolved = eval(resolved, globalns, localns)  # noqa: B307
+        except Exception:
+            if "." in resolved:
+                return resolved
+            return Parameter.empty
+
+    return resolved
+
+
+def _annotation_globalns(method: Callable) -> dict[str, Any]:
+    function = getattr(method, "__func__", method)
+    return getattr(function, "__globals__", {})
+
+
+def _annotation_localns(host: Any) -> dict[str, Any]:
+    namespace: dict[str, Any] = {}
+    for klass in reversed(type(host).__mro__):
+        namespace.update(vars(klass))
+    return namespace
 
 
 def _message_class_name(message_type: Any) -> str | None:
