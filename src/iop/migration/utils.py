@@ -546,7 +546,19 @@ def _build_migration_manifest(
 
 
 def _load_settings(filename):
-    """Load settings module from file or default location.
+    """Load a migration settings module.
+
+    Purpose:
+        Resolve settings.py as a file-based module and keep imports local to the
+        settings file directory for this process.
+
+    Best practices:
+        Keep modules imported by settings.py in the same project/package rooted
+        near the settings file. Let IoP manage temporary import path setup.
+
+    Common mistakes:
+        Do not require users to set PYTHONPATH. Do not mutate environment
+        variables to force imports when module/package layout should be fixed.
 
     Returns:
         tuple: (settings_module, path_added_to_sys)
@@ -723,6 +735,20 @@ def _cleanup_sys_path(path):
 
 
 def import_module_from_path(module_name, file_path):
+    """Import one module from an absolute file path.
+
+    Purpose:
+        Execute a specific settings or component module by file location
+        without relying on global PYTHONPATH configuration.
+
+    Best practices:
+        Use absolute paths and stable module/package layout so imports resolve
+        from the project directory containing settings.py.
+
+    Common mistakes:
+        Do not patch PYTHONPATH or sys.path globally to make imports pass.
+        Keep import fixes in project structure and import statements.
+    """
     if not os.path.isabs(file_path):
         raise ValueError("The file path must be absolute")
 
