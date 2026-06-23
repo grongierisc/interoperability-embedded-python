@@ -5,7 +5,9 @@ Python-authored production that registers them with IRIS.
 
 ## Business Operation
 
-Below is an example of a business operation in Python:
+Below is a standalone business operation fragment. A normal application also
+declares a `Production` graph and connects senders with `target()` and
+`prod.connect(...)`.
 
 ```python
 from dataclasses import dataclass
@@ -80,7 +82,8 @@ iop --migrate /path/to/your/project/settings.py
 ```
 
 Use a standalone `CLASSES` entry only when you need to bind a Python component
-without adding it to a Python `Production` graph.
+without adding it to a Python `Production` graph. New graph components belong in
+`PRODUCTIONS`, where migration registers their Python classes automatically.
 
 ## Conservative Production Changes
 
@@ -113,15 +116,15 @@ Two kinds of business services can be created in Python:
 To create a business service, use the following code:
 
 ```python
-from iop import BusinessService
+from iop import BusinessService, target
 
 class MyBusinessService(BusinessService):
+    Output = target()
     
     def on_message(self, message_input: 'MyRequest'):
         # This method is called when the service is called
         self.log_info("[Python] MyBusinessService:on_message() is called with message: " + message_input.request_string)
-        response = MyResponse("MyBusinessService:on_message() echos")
-        return response
+        self.send_request_async(self.Output, message_input)
 ```
 
 ### Polling Business Service
@@ -129,18 +132,21 @@ class MyBusinessService(BusinessService):
 To create a polling business service, use the following code:
 
 ```python
-from iop import PollingBusinessService
+from iop import PollingBusinessService, target
 
 class MyBusinessService(PollingBusinessService):
+    Output = target()
 
     def on_poll(self):
         # This method is called by the scheduler
         self.log_info("[Python] MyBusinessService:on_poll() is called")
+        self.send_request_async(self.Output, MyRequest())
 ```
 
-## Flask app sending a message to an Business Service
+## Flask app sending a message to a Business Service
 
-To send a message to a business service, use the following code:
+To send a message to a deployed business service, use the runtime Director
+rather than instantiating production components directly:
 
 
 ```python
@@ -191,11 +197,12 @@ To make an async call with asyncio, use the following code:
 import asyncio
 import random
 
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyAsyncNGBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
 
@@ -208,8 +215,12 @@ class MyAsyncNGBP(BusinessProcess):
         # create 1 to 10 messages
         tasks = []
         for i in range(random.randint(1, 10)):
-            tasks.append(self.send_request_async_ng("Python.MyAsyncNGBO",
-                                                    MyMessage(message=f"Message {i}")))
+            tasks.append(
+                self.send_request_async_ng(
+                    self.Output,
+                    MyMessage(message=f"Message {i}"),
+                )
+            )
 
         return await asyncio.gather(*tasks)
 ```
@@ -219,18 +230,19 @@ class MyAsyncNGBP(BusinessProcess):
 To make an async call with the native `send_request_async` method, use the following code:
 
 ```python
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message="Message1")
         msg_two = MyMessage(message="Message2")
 
-        self.send_request_async("Python.MyBO", msg_one,completion_key="1")
-        self.send_request_async("Python.MyBO", msg_two,completion_key="2")
+        self.send_request_async(self.Output, msg_one, completion_key="1")
+        self.send_request_async(self.Output, msg_two, completion_key="2")
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         if completion_key == "1":
@@ -248,18 +260,21 @@ class MyBP(BusinessProcess):
 To make an async call with the `send_multi_request_sync` method, use the following code:
 
 ```python
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyMultiBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message="Message1")
         msg_two = MyMessage(message="Message2")
 
-        tuple_responses = self.send_multi_request_sync([("Python.MyMultiBO", msg_one),
-                                                        ("Python.MyMultiBO", msg_two)])
+        tuple_responses = self.send_multi_request_sync([
+            (self.Output, msg_one),
+            (self.Output, msg_two),
+        ])
 
         self.log_info("All requests have been processed")
         for target,request,response,status in tuple_responses:

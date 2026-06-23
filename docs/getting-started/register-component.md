@@ -70,7 +70,7 @@ A migration file can define these sections:
 | Section | Purpose |
 |---------|---------|
 | `PRODUCTIONS` | Preferred way to register Python-authored production graphs |
-| `CLASSES` | Standalone bindings and native `PersistentMessage` registrations |
+| `CLASSES` | Standalone or legacy component bindings and native `PersistentMessage` registrations |
 | `SCHEMAS` | JSON schemas for DTL support |
 | `REMOTE_SETTINGS` | Remote IRIS connection settings |
 
@@ -111,7 +111,8 @@ CLASSES = {
 ## Standalone Bindings
 
 Use `CLASSES` when you need to create an IRIS proxy class without putting the
-component in a Python `Production` graph:
+component in a Python `Production` graph, usually for standalone bindings or
+legacy migration files:
 
 ```python
 from bo import FileOperation
@@ -230,7 +231,9 @@ iop --bindings --unused
 ## Python Shell Utilities
 
 The Python utility functions remain available for scripting standalone
-bindings. The migration-file workflow is preferred for normal projects.
+bindings and legacy/manual registration. The migration-file workflow with a
+`Production` object in `PRODUCTIONS` is preferred for normal projects, and it
+registers graph component classes automatically.
 
 ```python
 from iop import bind_component, register_component

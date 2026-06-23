@@ -27,6 +27,11 @@ To exchange messages between components, you can use the following methods:
 - `send_multi_request_sync`: This method is used to send multiple requests synchronously. It will wait for all responses before continuing.
 - `send_generator_request`: This method is used to send a request synchronously and return a generator.
 
+For new Python-authored productions, pass a `target()` attribute such as
+`self.Output` to these methods and connect it in the `Production` graph with
+`prod.connect(...)`. Hard-coded target component names are mainly for legacy or
+manual code.
+
 ## send_request_sync
 
 This method is used to send a request synchronously. It will wait for a response before continuing.
@@ -34,12 +39,12 @@ This method is used to send a request synchronously. It will wait for a response
 ### Function signature
 
 ```python
-def send_request_sync(self, target: str, request: Union[Message, Any], 
+def send_request_sync(self, target: str | TargetSettingRef, request: Union[Message, Any],
                         timeout: int = -1, description: Optional[str] = None) -> Any:
     """Send message synchronously to target component.
     
     Args:
-        target: Name of target component
+        target: Target setting reference such as self.Output, or a target component name for legacy/manual code
         request: Message to send
         timeout: Timeout in seconds, -1 means wait forever 
         description: Optional description for logging
@@ -56,15 +61,16 @@ def send_request_sync(self, target: str, request: Union[Message, Any],
 ### Example usage
 
 ```python
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 class MyBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg = MyMessage(message="Hello World")
         # Send a synchronous request to the target component
-        response = self.send_request_sync("Python.MyBO", msg)
+        response = self.send_request_sync(self.Output, msg)
         self.log_info(f"Received response: {response}")
 ```
 
@@ -75,12 +81,12 @@ This method is used to send a request asynchronously. It will not wait for a res
 ### Function signature (for BusinessService and BusinessOperation)
 
 ```python
-def send_request_async(self, target: str, request: Union[Message, Any], 
+def send_request_async(self, target: str | TargetSettingRef, request: Union[Message, Any],
                         description: Optional[str] = None) -> None:
     """Send message asynchronously to target component.
     
     Args:
-        target: Name of target component
+        target: Target setting reference such as self.Output, or a target component name for legacy/manual code
         request: Message to send
         description: Optional description for logging
         
@@ -93,15 +99,16 @@ def send_request_async(self, target: str, request: Union[Message, Any],
 ### Example usage (for BusinessService and BusinessOperation)
 
 ```python
-from iop import BusinessService
+from iop import BusinessService, target
 from msg import MyMessage
 
 class MyBS(BusinessService):
+    Output = target()
 
     def on_message(self, request):
         msg = MyMessage(message="Hello World")
         # Send an asynchronous request to the target component
-        self.send_request_async("Python.MyBO", msg)
+        self.send_request_async(self.Output, msg)
         self.log_info("Request sent asynchronously")
 ```
 
@@ -111,11 +118,11 @@ directly. For regular message-driven services, prefer `on_message()`.
 ### Function signature (for BusinessProcess)
 
 ```python
-def send_request_async(self, target: str, request: Any, description: Optional[str]=None, completion_key: Optional[str]=None, response_required: bool=True) -> None:
+def send_request_async(self, target: str | TargetSettingRef, request: Any, description: Optional[str]=None, completion_key: Optional[str]=None, response_required: bool=True) -> None:
     """Send the specified message to the target business process or business operation asynchronously.
     
     Args:
-        target: The name of the business process or operation to receive the request
+        target: Target setting reference such as self.Output, or a target component name for legacy/manual code
         request: The message to send to the target
         description: An optional description property in the message header
         completion_key: A token to identify the completion of the request
@@ -130,17 +137,18 @@ def send_request_async(self, target: str, request: Any, description: Optional[st
 ### Example usage (for BusinessProcess)
 
 ```python
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 class MyBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message="Message1")
         msg_two = MyMessage(message="Message2")
 
-        self.send_request_async("Python.MyBO", msg_one,completion_key="1")
-        self.send_request_async("Python.MyBO", msg_two,completion_key="2")
+        self.send_request_async(self.Output, msg_one, completion_key="1")
+        self.send_request_async(self.Output, msg_two, completion_key="2")
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         if completion_key == "1":
@@ -160,12 +168,12 @@ This method is used to send a request asynchronously using an asyncio implementa
 ### Function signature
 
 ```python
-async def send_request_async_ng(self, target: str, request: Union[Message, Any], 
+async def send_request_async_ng(self, target: str | TargetSettingRef, request: Union[Message, Any],
                                    timeout: int = -1, description: Optional[str] = None) -> Any:
     """Send message asynchronously to target component with asyncio.
     
     Args:
-        target: Name of target component
+        target: Target setting reference such as self.Output, or a target component name for legacy/manual code
         request: Message to send
         timeout: Timeout in seconds, -1 means wait forever 
         description: Optional description for logging
@@ -182,11 +190,12 @@ async def send_request_async_ng(self, target: str, request: Union[Message, Any],
 import asyncio
 import random
 
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyAsyncNGBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
 
@@ -201,8 +210,12 @@ class MyAsyncNGBP(BusinessProcess):
         # create 1 to 10 messages
         tasks = []
         for i in range(random.randint(1, 10)):
-            tasks.append(self.send_request_async_ng("Python.MyAsyncNGBO",
-                                                    MyMessage(message=f"Message {i}")))
+            tasks.append(
+                self.send_request_async_ng(
+                    self.Output,
+                    MyMessage(message=f"Message {i}"),
+                )
+            )
 
         return await asyncio.gather(*tasks)
 
@@ -215,12 +228,12 @@ This method is used to send multiple requests synchronously. It will wait for al
 ### Function signature
 
 ```python
-def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message, Any]]], 
+def send_multi_request_sync(self, target_request: List[Tuple[str | TargetSettingRef, Union[Message, Any]]],
                                timeout: int = -1, description: Optional[str] = None) -> List[Tuple[str, Union[Message, Any], Any, int]]:
     """Send multiple messages synchronously to target components.
     
     Args:
-        target_request: List of tuples (target, request) to send
+        target_request: List of tuples (target setting reference or legacy target name, request) to send
         timeout: Timeout in seconds, -1 means wait forever 
         description: Optional description for logging
         
@@ -237,18 +250,21 @@ def send_multi_request_sync(self, target_request: List[Tuple[str, Union[Message,
 ### Example usage
 
 ```python
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyMultiBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message="Message1")
         msg_two = MyMessage(message="Message2")
 
-        tuple_responses = self.send_multi_request_sync([("Python.MyMultiBO", msg_one),
-                                                        ("Python.MyMultiBO", msg_two)])
+        tuple_responses = self.send_multi_request_sync([
+            (self.Output, msg_one),
+            (self.Output, msg_two),
+        ])
 
         self.log_info("All requests have been processed")
         for target,request,response,status in tuple_responses:
@@ -262,11 +278,11 @@ This method is used to send a request synchronously and return a generator.
 ### Function signature
 
 ```python
-    def send_generator_request(self, target: str, request: Union[Message, Any], 
+    def send_generator_request(self, target: str | TargetSettingRef, request: Union[Message, Any],
                               timeout: int = -1, description: Optional[str] = None) -> _GeneratorRequest:
     """Send message as a generator request to target component.
     Args:
-        target: Name of target component
+        target: Target setting reference such as self.Output, or a target component name for legacy/manual code
         request: Message to send
         timeout: Timeout in seconds, -1 means wait forever
         description: Optional description for logging
@@ -282,15 +298,16 @@ This method is used to send a request synchronously and return a generator.
 
 ```python
 from typing import Any
-from iop import BusinessProcess,BusinessOperation
+from iop import BusinessOperation, BusinessProcess, target
 
 from msg import MyGenerator,MyGeneratorResponse
 
 class MyGeneratorProcess(BusinessProcess):
+    Output = target()
 
     def on_request(self, request: Any) -> Any:
         gen = self.send_generator_request(
-            target="User.MyGeneratorOperation",
+            target=self.Output,
             request=MyGenerator(my_string="Hello, World!"),
             timeout=10,
             description="My generator request")

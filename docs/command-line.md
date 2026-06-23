@@ -209,6 +209,10 @@ The plan uses the same sections as the migration file: `CLASSES`, `SCHEMAS`,
 components or `PersistentMessage` classes. Migration output includes the mode,
 namespace, and a final `Migration succeeded` line when the migration completes.
 
+For new Python-authored production components, prefer `Production` objects in
+`PRODUCTIONS`; use `CLASSES` for standalone bindings, native
+`PersistentMessage` classes, and legacy migration files.
+
 Production validation warns by default. Pass `--strict-production-validation`
 to fail the dry-run or migration when validation reports an issue:
 

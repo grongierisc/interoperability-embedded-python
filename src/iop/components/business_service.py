@@ -20,15 +20,12 @@ def _call_process_input(method, request):
 
 
 class _BusinessService(_BusinessHost):
-    """This class is responsible for receiving the data from external system and sending it to business processes or business operations in the production.
-    The business service can use an adapter to access the external system, which is specified in the InboundAdapter property.
-    There are three ways of implementing a business service:
-    1) Polling business service with an adapter - The production framework at regular intervals calls the adapter's task method,
-        which sends incoming data to the business service process input method.
-    2) Polling business service that uses the default adapter - In this case, the framework calls the default adapter's OnTask method with no data.
-        The on_process_input() method then performs the role of the adapter and is responsible for accessing the external system and receiving the data.
-    3) Nonpolling business service - The production framework does not initiate the business service. Instead custom code in either a long-running process
-        or one that is started at regular intervals initiates the business service through the Director API.
+    """Runtime base for inbound production entry points.
+
+    IRIS invokes on_process_input(...). By default, that hook delegates to
+    on_message(...). Application code should normally subclass iop.BusinessService
+    or iop.PollingBusinessService and wire outbound routes with target() in a
+    Production graph.
     """
 
     Adapter = adapter = None
@@ -79,13 +76,12 @@ class _BusinessService(_BusinessHost):
         return None
 
     def on_process_input(self, message_input=None):
-        """Receives the message from the inbond adapter via the PRocessInput method and is responsible for forwarding it to target business processes or operations.
-        If the business service does not specify an adapter, then the default adapter calls this method with no message
-        and the business service is responsible for receiving the data from the external system and validating it.
+        """Handle IRIS ProcessInput and delegate to on_message(message_input).
 
-        Parameters:
-        message_input: an instance of IRISObject or subclass of Message containing the data that the inbound adapter passes in.
-            The message can have any structure agreed upon by the inbound adapter and the business service.
+        Override this low-level hook only when an inbound adapter or Director
+        call needs custom ProcessInput handling. For simple services, override
+        on_message(...); for scheduled polling, use PollingBusinessService and
+        override on_poll().
         """
         return self.on_message(message_input)
 

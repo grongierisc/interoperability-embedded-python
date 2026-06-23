@@ -31,6 +31,8 @@ the fuller cookbook workflows.
 | `src/iop/messages/base.py` | Python-only message contracts |
 | `src/iop/messages/persistent.py` | Native persistent IRIS message contracts |
 | `src/iop/messages/dispatch.py` | `@handler`, typed method dispatch, fallback `on_message()` |
+| `src/iop/components/common.py` | component lifecycle hooks such as `on_init()` and `on_tear_down()` |
+| `src/iop/components/business_host.py` | shared `send_request_sync(...)` and `send_request_async(...)` helpers |
 | `src/iop/components/business_process.py` | process runtime hooks and request helpers |
 | `src/iop/components/business_operation.py` | operation runtime dispatch |
 | `src/iop/components/business_service.py` | service `on_message()` and `on_process_input()` hooks |
@@ -47,6 +49,10 @@ to:
 
 Use `@handler(MessageType)` when the handler must be explicit. Use typed
 one-argument methods when annotations are enough.
+
+Explicit `DISPATCH` entries are still supported for legacy and advanced code,
+but new application code should prefer `@handler(MessageType)` or typed
+one-argument methods.
 
 ## Message Quick Reference
 

@@ -13,6 +13,7 @@ Read these files first:
 - local AGENTS.md, if this application repository has one
 - docs/ai-coding.md
 - docs/cookbooks/index.md
+- docs/cookbooks/code-index.md, when starting from source code
 - docs/getting-started/first-steps.md
 - docs/getting-started/register-component.md
 - docs/production-graph.md

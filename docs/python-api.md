@@ -61,7 +61,7 @@ class OrderMessage(PersistentMessage):
 
 If no `Meta.classname` is declared, IOP derives a reversible IRIS-safe class name from the Python fully-qualified class name. Underscores are escaped as `zU`, literal `z` as `zz`, and unsupported characters as hexadecimal markers, then decoded again for incoming messages.
 
-For migrations, you can also register the message with the IRIS classname as the `CLASSES` key:
+For migrations, you can also register a native `PersistentMessage` with the IRIS classname as the `CLASSES` key:
 ```python
 import msg
 
@@ -70,7 +70,7 @@ CLASSES = {
 }
 ```
 
-When `CLASSES` is used, migration writes message metadata parameters (`IOP_MESSAGE_KIND`, `IOP_PYTHON_CLASS`, and `IOP_PYTHON_CLASSPATH`) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If `Meta.classname` conflicts with the `CLASSES` key, migration fails.
+When `CLASSES` is used for native persistent messages, migration writes message metadata parameters (`IOP_MESSAGE_KIND`, `IOP_PYTHON_CLASS`, and `IOP_PYTHON_CLASSPATH`) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If `Meta.classname` conflicts with the `CLASSES` key, migration fails. Regular `Message` and `PydanticMessage` classes do not go in `CLASSES`.
 
 ### Message Dispatch
 
@@ -114,8 +114,12 @@ If no `@handler` is declared for a message, IOP keeps the legacy behavior: publi
 Dispatch priority is:
 
 1. `@handler(MessageType)`
-2. Explicit `DISPATCH` entries
+2. Legacy explicit `DISPATCH` entries
 3. Legacy typed-method discovery
+
+New application code should prefer `@handler(MessageType)` or typed
+one-argument methods. Use explicit `DISPATCH` only when maintaining existing
+code that already depends on it.
 
 When more than one mapping targets the same message type, IOP keeps the highest-priority mapping and logs a warning through the component warning logger, so the discarded handler appears in the IRIS logs. Duplicate mappings at the same priority keep the later entry for backward compatibility and log which earlier handler was discarded.
 
@@ -134,34 +138,38 @@ Base class for business services that receive and process incoming data. Busines
     - Low-level IRIS ProcessInput hook
     - By default, delegates to `on_message`
 
-- `send_request_sync(self, target: str, request: Message, timeout: int = -1) -> Message`
+- `send_request_sync(self, target: str | TargetSettingRef, request: Message, timeout: int = -1) -> Message`
     - Sends a synchronous request and waits for response
     - Parameters:
-        - `target`: Name of the target component
+        - `target`: Target setting reference such as `self.Output`, or a target component name for legacy/manual code
         - `request`: Message to send
         - `timeout`: Maximum wait time in seconds (-1 for default)
     - Returns: Response message
 
-- `send_request_async(self, target: str, request: Message) -> None`
+- `send_request_async(self, target: str | TargetSettingRef, request: Message) -> None`
     - Sends an asynchronous request without waiting
     - Parameters:
-        - `target`: Name of the target component
+        - `target`: Target setting reference such as `self.Output`, or a target component name for legacy/manual code
         - `request`: Message to send
     - Returns: None
 
 **Basic Example:**
 ```python
-from iop import BusinessService
+from iop import BusinessService, target
 
 class MyService(BusinessService):
+    Output = target()
+
     def on_message(self, request):
         self.log_info(f"Received: {request}")
+        self.send_request_async(self.Output, request)
 ```
 
 **Polling Example:**
 ```python
-from iop import PollingBusinessService, Message
 from dataclasses import dataclass
+
+from iop import Message, PollingBusinessService, target
 
 @dataclass
 class MyRequest(Message):
@@ -169,13 +177,14 @@ class MyRequest(Message):
     data: str = None
 
 class MyService(PollingBusinessService):
+    Output = target()
     InputFile = "/data/input.txt"
 
     def on_poll(self):
         with open(self.InputFile, 'r') as file:
             data = file.read()
         request = MyRequest(data=data)
-        self.send_request_async("MyBusinessOperation", request)
+        self.send_request_async(self.Output, request)
 ```
 
 `PollingBusinessService` uses the default IRIS inbound adapter. Override
@@ -184,25 +193,19 @@ when you need adapter-level access.
 
 ### Component Settings
 
-Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use `setting(...)` when you want to control how a setting appears in the IRIS production UI.
+Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use `setting(...)` when you want to control how a non-route setting appears in the IRIS production UI. Use `target()` for outbound component routes.
 
 ```python
-from iop import BusinessService, Category, controls, setting
+from iop import BusinessService, Category, controls, setting, target
 
 class FileService(BusinessService):
+    Output = target()
     InputDirectory = setting(
         "/data/in",
         category=Category.CONNECTION,
         required=True,
         description="Directory to scan",
         control=controls.directory(),
-    )
-
-    Target = setting(
-        "",
-        category=Category.BASIC,
-        required=True,
-        control=controls.production_item(),
     )
 ```
 
@@ -266,7 +269,9 @@ Control helpers return the IRIS production setting editor context string used in
 | `controls.schema_category(host)` | `selector?context={Ens.ContextSearch/SchemaCategories?host=<host>}` | Shows schema categories for the specified host. Pass a host expression such as `@currHostId` or a host setting value. |
 | `controls.search_table(host)` | `selector?context={Ens.ContextSearch/SearchTableClasses?host=<host>}` | Shows search table classes for the specified host. Pass a host expression such as `@currHostId` or a host setting value. |
 
-`controls.production_item()` accepts optional arguments:
+For outbound component routes in new Python code, prefer `target()`. Use
+`controls.production_item()` when defining a lower-level manual setting that
+must expose the IRIS production item picker. It accepts optional arguments:
 
 ```python
 Target = setting(
@@ -383,8 +388,9 @@ Base class for business processes that orchestrate message flow between componen
 
 **Example:**
 ```python
-from iop import BusinessProcess, Message
 from dataclasses import dataclass
+
+from iop import BusinessProcess, Message, target
 
 @dataclass
 class MyRequest(Message):
@@ -395,9 +401,11 @@ class MyResponse(Message):
     my_string: str = None
 
 class MyProcess(BusinessProcess):
+    Output = target()
+
     def on_request(self, request):
         self.log_info(f"Received: {request}")
-        self.send_request_async("MyBusinessOperation", request)
+        self.send_request_async(self.Output, request)
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         self.log_info(f"Received: {response}")
@@ -830,7 +838,10 @@ instance.
 ### Migration Utilities
 
 Use `register_component()` or `bind_component()` to create an IRIS proxy class
-binding for a Python component:
+binding for a Python component when you need a standalone binding or manual
+legacy registration. New Python-authored production components should normally
+be declared in a `Production` object exported through `PRODUCTIONS`; migration
+registers those component classes automatically.
 
 ```python
 from iop import bind_component, register_component

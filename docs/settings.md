@@ -15,17 +15,33 @@ does not delete Python source files or production items.
 Create a migration file in your project root:
 
 ```python
-from iop import BusinessOperation, Production
+from dataclasses import dataclass
+
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
 
 
-class MyBusinessOperation(BusinessOperation):
-    def on_message(self, request):
-        self.log_info("Hello from IoP")
+@dataclass
+class HelloRequest(Message):
+    text: str = "Hello from IoP"
+
+
+class HelloService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, HelloRequest())
+
+
+class HelloOperation(BusinessOperation):
+    def on_message(self, request: HelloRequest):
+        self.log_info(request.text)
         return request
 
 
 prod = Production("Demo.Production", testing_enabled=True)
-prod.operation("MyBusinessOperation", MyBusinessOperation)
+service = prod.service("HelloService", HelloService)
+operation = prod.operation("HelloOperation", HelloOperation)
+prod.connect(service.Output, operation)
 
 PRODUCTIONS = [prod]
 ```
@@ -37,8 +53,9 @@ iop --migrate /path/to/your/project/settings.py
 iop --migrate /path/to/your/project/demo.py
 ```
 
-If you bind a Python class to the wrong IRIS proxy class name, remove that
-binding with:
+Migration registers component classes declared in the `Production` graph. If
+you use a standalone binding or legacy `CLASSES` entry with the wrong IRIS proxy
+class name, remove that binding with:
 
 ```bash
 iop --unbind Python.MyBusinessOperation
@@ -83,7 +100,7 @@ The migration file supports four main sections:
 | Section | Purpose |
 |---------|---------|
 | `PRODUCTIONS` | Define Python-authored production graphs with `Production` objects |
-| `CLASSES` | Define standalone component bindings and native `PersistentMessage` classes |
+| `CLASSES` | Define standalone component bindings, native `PersistentMessage` classes, and legacy bindings |
 | `SCHEMAS` | Register message schemas for DTL |
 | `REMOTE_SETTINGS` | Configure remote IRIS connections |
 

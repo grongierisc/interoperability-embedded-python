@@ -193,8 +193,11 @@ def register_component(
     overwrite: int = 1,
     iris_classname: str = "Python",
 ):
-    """
-    It registers a component in the Iris database.
+    """Register a Python component as an IRIS proxy class.
+
+    Prefer a Python Production graph in PRODUCTIONS for new application
+    components. Use register_component() directly for standalone bindings,
+    legacy migration helpers, or manual proxy registration only.
 
     :param module: The name of the module that contains the class
     :type module: str
@@ -239,8 +242,11 @@ def bind_component(
     overwrite: int = 1,
     iris_classname: str = "Python",
 ):
-    """
-    Public alias for registering a Python component as an IRIS proxy class.
+    """Public alias for register_component().
+
+    Prefer a Python Production graph in PRODUCTIONS for new application
+    components. Use bind_component() directly only for standalone bindings,
+    legacy migration helpers, or manual proxy registration.
     """
     return register_component(module, classname, path, overwrite, iris_classname)
 
@@ -436,18 +442,12 @@ def migrate(
     namespace: str | None = None,
     strict_production_validation: bool = False,
 ):
-    """
-    Read the settings.py file and register all the components
-    settings.py file has two dictionaries:
-        * CLASSES
-            * key: the name of the class
-            * value: an instance of the class
-        * PRODUCTIONS
-            list of dictionaries:
-            * key: the name of the production
-            * value: a dictionary containing the settings for the production
-        * SCHEMAS
-            List of classes
+    """Read a migration file and apply its registrations to IRIS.
+
+    New Python-authored applications should normally export Production objects
+    through PRODUCTIONS. CLASSES remains available for standalone bindings,
+    native PersistentMessage classes, and legacy migration files. SCHEMAS
+    registers Message or PydanticMessage schemas for DTL support.
     """
     settings, path = _load_settings(filename)
 

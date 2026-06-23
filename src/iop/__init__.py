@@ -125,8 +125,8 @@ class BusinessService(_BusinessService):
         production graph.
 
     Lifecycle:
-        IRIS calls on_process_input(); the default implementation delegates to
-        on_process_input(request).
+        IRIS calls on_process_input(); the default implementation delegates the
+        incoming request to on_message(request).
 
     Best practices:
         Declare outbound routes with target() and wire them in a Production

@@ -15,14 +15,38 @@ For application repositories, start from the [reusable AGENTS.md template](https
 
 ## Example
 
-Here's a simple example of how a Business Operation can be implemented in Python:
+Here's a tiny Python-authored production:
 
 ```python
-from iop import BusinessOperation
+from dataclasses import dataclass
 
-class MyBo(BusinessOperation):
-    def on_message(self, request):
-        self.log_info("Hello World")
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class HelloRequest(Message):
+    text: str = "Hello World"
+
+
+class HelloService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, HelloRequest())
+
+
+class HelloOperation(BusinessOperation):
+    def on_message(self, request: HelloRequest):
+        self.log_info(request.text)
+        return request
+
+
+prod = Production("HelloWorld.Production", testing_enabled=True)
+service = prod.service("HelloService", HelloService)
+operation = prod.operation("HelloOperation", HelloOperation)
+prod.connect(service.Output, operation)
+
+PRODUCTIONS = [prod]
 ```
 
 ## Installation
