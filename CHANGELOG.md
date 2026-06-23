@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - unreleased
+## [4.0.1] - unreleased
+### Fixed
+- Refactor business process and operation message dispatch around normalized message keys for `@handler`, typed methods, legacy `DISPATCH`, and native IRIS requests.
+
+## [4.0.0] - 2026-06-21
 ### Breaking Changes
 - Remove the legacy `grongier.pex` compatibility package and `Grongier.PEX` ObjectScript classes. Use `iop` and `IOP.*` classes instead.
 - Rename Python component lifecycle hooks to snake_case, including `on_init`, `on_message`, and `on_process_input`.
@@ -45,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix production graph edge assertions and runtime connection handling to match the new graph structure.
 - Fix production lifecycle and migration error handling for local and remote execution paths.
 - Fix component connection discovery so inspection does not execute component initialization hooks.
+- Fix message dispatch for postponed annotations and native IRIS message annotations such as `"iris.Ens.StringRequest"`.
 
 ## [3.7.1] - 2026-05-28
 ### Added
