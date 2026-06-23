@@ -321,6 +321,86 @@ def test_typed_method_discovery_ignores_unresolved_bare_string_annotations():
     assert dispatch_message(host, MessageTest(text="test", number=1)) == "fallback"
 
 
+def test_typed_method_discovery_normalizes_native_iris_annotations():
+    class Host:
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_string_request(self, request):
+            return "handled"
+
+    Host.handle_string_request.__annotations__["request"] = "iris.Ens.StringRequest"
+
+    host = Host()
+    create_dispatch(host)
+
+    assert host.DISPATCH == [("Ens.StringRequest", "handle_string_request")]
+
+
+def test_dispatch_message_matches_native_iris_classname():
+    class NativeStringRequest:
+        __module__ = "iris"
+        StringValue = "hello"
+
+    request = NativeStringRequest()
+    setattr(request, "%ClassName", lambda full=1: "Ens.StringRequest")
+
+    class Host:
+        DISPATCH = [("Ens.StringRequest", "handle_string_request")]
+
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_string_request(self, request):
+            return request.StringValue
+
+    assert dispatch_message(Host(), request) == "hello"
+
+
+def test_dispatch_message_matches_native_iris_module_prefixed_classname():
+    class NativeStringRequest:
+        __module__ = "iris"
+        StringValue = "hello"
+
+    request = NativeStringRequest()
+    setattr(request, "%ClassName", lambda full=1: "Ens.StringRequest")
+
+    class Host:
+        DISPATCH = [("iris.Ens.StringRequest", "handle_string_request")]
+
+        def on_message(self, request):
+            return "fallback"
+
+        def handle_string_request(self, request):
+            return request.StringValue
+
+    assert dispatch_message(Host(), request) == "hello"
+
+
+def test_handler_decorator_normalizes_native_iris_instances():
+    class NativeStringRequest:
+        __module__ = "iris"
+
+        def _IsA(self, class_name):
+            return class_name == "%Persistent"
+
+    request = NativeStringRequest()
+    setattr(request, "%ClassName", lambda full=1: "Ens.StringRequest")
+
+    class Host:
+        def on_message(self, request):
+            return "fallback"
+
+        @handler(request)
+        def handle_string_request(self, request):
+            return "handled"
+
+    host = Host()
+    create_dispatch(host)
+
+    assert host.DISPATCH == [("Ens.StringRequest", "handle_string_request")]
+
+
 def test_duplicate_legacy_mappings_log_discarded_handler():
     logs = []
 

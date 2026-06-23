@@ -1,3 +1,4 @@
+import ast
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -36,6 +37,8 @@ _PICKLE_MESSAGE_CLASSES = {
     "IOP.Generator.Message.StartPickle",
 }
 _HANDLER_ATTRIBUTE = "__iop_handler_message__"
+_IRIS_MODULE_PREFIX = "iris."
+_UNRESOLVED = object()
 
 
 @dataclass(frozen=True)
@@ -60,7 +63,7 @@ def handler(message_type: Any) -> Callable[[Callable], Callable]:
         message_type: The message class, fully qualified class name string, or
             IRIS object instance this method handles.
     """
-    message = _message_class_name(message_type)
+    message = _message_key_from_declared(message_type)
     if message is None:
         raise TypeError("handler() requires a message class or class name")
 
@@ -154,11 +157,10 @@ def dispatch_message(host: Any, request: Any) -> Any:
     """
     call = "on_message"
 
-    module = request.__class__.__module__
-    classname = request.__class__.__name__
+    message_names = _message_keys_from_request(request)
 
     for msg, method in host.DISPATCH:
-        if msg == module + "." + classname:
+        if msg in message_names:
             return getattr(host, method)(request)
 
     return getattr(host, call)(request)
@@ -202,13 +204,22 @@ def create_dispatch(host: Any) -> None:
 
 def _declared_dispatch(host: Any) -> list[tuple[str, str]]:
     if "DISPATCH" in getattr(host, "__dict__", {}):
-        return list(host.__dict__["DISPATCH"])
+        return _normalized_dispatch(host.__dict__["DISPATCH"])
 
     class_dispatch = host.__class__.__dict__.get("DISPATCH")
     if class_dispatch is not None:
-        return list(class_dispatch)
+        return _normalized_dispatch(class_dispatch)
 
     return []
+
+
+def _normalized_dispatch(dispatch: Any) -> list[tuple[str, str]]:
+    entries = []
+    for message, method in dispatch:
+        key = _message_key_from_declared(message)
+        if key is not None:
+            entries.append((key, method))
+    return entries
 
 
 def _decorated_dispatch(host: Any) -> list[tuple[str, str]]:
@@ -308,12 +319,7 @@ def get_handler_info(host: Any, method_name: str) -> tuple[str, str] | None:
 
         method = getattr(host, method_name)
         param: Parameter = next(iter(params.values()))
-        annotation = _resolve_annotation(host, method, param.annotation)
-
-        if annotation == Parameter.empty:
-            return None
-
-        message = _message_class_name(annotation)
+        message = _message_key_from_annotation(host, method, param.annotation)
         if message is None:
             return None
 
@@ -323,28 +329,125 @@ def get_handler_info(host: Any, method_name: str) -> tuple[str, str] | None:
         return None
 
 
-def _resolve_annotation(host: Any, method: Callable, annotation: Any) -> Any:
+def _message_key_from_annotation(
+    host: Any, method: Callable, annotation: Any
+) -> str | None:
+    if annotation == Parameter.empty:
+        return None
+
     if not isinstance(annotation, str):
-        return annotation
+        return _message_key_from_declared(annotation, allow_bare_string=False)
 
-    globalns = _annotation_globalns(method)
-    localns = _annotation_localns(host)
+    value: Any = annotation
+    for _ in range(3):
+        if not isinstance(value, str):
+            return _message_key_from_declared(value, allow_bare_string=False)
 
+        key = _message_key_from_string(value, allow_bare=False)
+        if key is not None:
+            return key
+
+        unquoted = _unquote_string(value)
+        if unquoted is not None and unquoted != value:
+            value = unquoted
+            continue
+
+        value = _lookup_annotation_name(host, method, value)
+        if value is _UNRESOLVED:
+            return None
+
+    return None
+
+
+def _message_keys_from_request(request: Any) -> tuple[str, ...]:
+    module = request.__class__.__module__
+    classname = request.__class__.__name__
+    names = [f"{module}.{classname}"]
+
+    if module.startswith("iris"):
+        native_name = _native_iris_message_key(request)
+        if native_name:
+            names.append(native_name)
+            names.append(f"{_IRIS_MODULE_PREFIX}{native_name}")
+
+    return tuple(dict.fromkeys(names))
+
+
+def _message_key_from_declared(
+    message_type: Any, *, allow_bare_string: bool = True
+) -> str | None:
+    if isinstance(message_type, str):
+        return _message_key_from_string(
+            message_type,
+            allow_bare=allow_bare_string,
+        )
+
+    if is_iris_object_instance(message_type):
+        return _native_iris_message_key(message_type) or _python_class_key(
+            type(message_type)
+        )
+
+    if message_type is Any or message_type is object:
+        return None
+
+    if not isinstance(message_type, type):
+        return None
+
+    if not _is_dispatch_message_class(message_type):
+        return None
+
+    return _python_class_key(message_type)
+
+
+def _message_key_from_string(value: str, *, allow_bare: bool) -> str | None:
+    if not value or _unquote_string(value) is not None:
+        return None
+
+    normalized = _strip_iris_prefix(value)
+    if "." in normalized:
+        return normalized if _looks_like_message_key(normalized) else None
+
+    return normalized if allow_bare else None
+
+
+def _native_iris_message_key(message: Any) -> str | None:
+    iris_classname = get_iris_object_classname(message)
+    if not iris_classname:
+        return None
+    return _strip_iris_prefix(iris_classname)
+
+
+def _python_class_key(klass: type) -> str:
+    return f"{klass.__module__}.{klass.__name__}"
+
+
+def _strip_iris_prefix(value: str) -> str:
+    if value.startswith(_IRIS_MODULE_PREFIX):
+        return value[len(_IRIS_MODULE_PREFIX) :]
+    return value
+
+
+def _looks_like_message_key(value: str) -> bool:
+    return not any(character in value for character in "'\"[](){} ,:")
+
+
+def _unquote_string(value: str) -> str | None:
     try:
-        resolved = eval(annotation, globalns, localns)  # noqa: B307
-    except Exception:
-        resolved = annotation
+        literal = ast.literal_eval(value)
+    except (SyntaxError, ValueError):
+        return None
+    return literal if isinstance(literal, str) else None
 
-    if isinstance(resolved, str):
-        # Quoted postponed annotations evaluate to a string first.
-        try:
-            resolved = eval(resolved, globalns, localns)  # noqa: B307
-        except Exception:
-            if "." in resolved:
-                return resolved
-            return Parameter.empty
 
-    return resolved
+def _lookup_annotation_name(host: Any, method: Callable, name: str) -> Any:
+    if not name.isidentifier():
+        return _UNRESOLVED
+
+    localns = _annotation_localns(host)
+    if name in localns:
+        return localns[name]
+
+    return _annotation_globalns(method).get(name, _UNRESOLVED)
 
 
 def _annotation_globalns(method: Callable) -> dict[str, Any]:
@@ -357,25 +460,6 @@ def _annotation_localns(host: Any) -> dict[str, Any]:
     for klass in reversed(type(host).__mro__):
         namespace.update(vars(klass))
     return namespace
-
-
-def _message_class_name(message_type: Any) -> str | None:
-    if isinstance(message_type, str):
-        return message_type
-
-    if is_iris_object_instance(message_type):
-        return f"{type(message_type).__module__}.{type(message_type).__name__}"
-
-    if message_type is Any or message_type is object:
-        return None
-
-    if not isinstance(message_type, type):
-        return None
-
-    if not _is_dispatch_message_class(message_type):
-        return None
-
-    return f"{message_type.__module__}.{message_type.__name__}"
 
 
 def _is_dispatch_message_class(klass: type) -> bool:
