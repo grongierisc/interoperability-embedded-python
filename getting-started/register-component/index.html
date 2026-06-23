@@ -247,7 +247,7 @@ configured targets are used.</p>
 </tr>
 <tr>
 <td><code>CLASSES</code></td>
-<td>Standalone bindings and native <code>PersistentMessage</code> registrations</td>
+<td>Standalone or legacy component bindings and native <code>PersistentMessage</code> registrations</td>
 </tr>
 <tr>
 <td><code>SCHEMAS</code></td>
@@ -287,7 +287,8 @@ CLASSES = {
 </code></pre>
 <h2 id="standalone-bindings">Standalone Bindings</h2>
 <p>Use <code>CLASSES</code> when you need to create an IRIS proxy class without putting the
-component in a Python <code>Production</code> graph:</p>
+component in a Python <code>Production</code> graph, usually for standalone bindings or
+legacy migration files:</p>
 <pre><code class="language-python">from bo import FileOperation
 from bs import RedditService
 
@@ -371,7 +372,9 @@ iop --bindings --unused
 </code></pre>
 <h2 id="python-shell-utilities">Python Shell Utilities</h2>
 <p>The Python utility functions remain available for scripting standalone
-bindings. The migration-file workflow is preferred for normal projects.</p>
+bindings and legacy/manual registration. The migration-file workflow with a
+<code>Production</code> object in <code>PRODUCTIONS</code> is preferred for normal projects, and it
+registers graph component classes automatically.</p>
 <pre><code class="language-python">from iop import bind_component, register_component
 
 

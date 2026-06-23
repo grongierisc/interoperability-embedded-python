@@ -239,8 +239,8 @@ Update this list for the local project:
 - Use `@dataclass` on regular `Message` classes. Do not decorate
   `PydanticMessage` classes with `@dataclass`.
 - Use `PersistentMessage` only when IRIS needs a native persistent message body.
-- Avoid raw `CLASSES` entries for components already declared in the production
-  graph.
+- Put new graph components in `PRODUCTIONS`; avoid raw `CLASSES` entries for
+  components already declared in the production graph.
 - Keep executable sample code behind `if __name__ == &quot;__main__&quot;:` when it lives
   in a migration file.
 
@@ -251,6 +251,8 @@ Update this list for the local project:
   `submit_order(self, request: OrderRequest)`.
 - Use `@handler(MessageType)` when the handler should be explicit or the type
   annotation is not enough.
+- Avoid explicit `DISPATCH` entries in new code; treat them as legacy or
+  advanced compatibility hooks.
 - Avoid duplicate handlers for the same message type unless the intended
   precedence is clear.
 

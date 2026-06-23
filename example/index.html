@@ -145,7 +145,7 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</a>
+    <li class="toctree-l2"><a class="reference internal" href="#flask-app-sending-a-message-to-a-business-service">Flask app sending a message to a Business Service</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#business-process">Business Process</a>
         <ul>
@@ -205,7 +205,9 @@
 <p>This document provides examples of Python interoperability components and a
 Python-authored production that registers them with IRIS.</p>
 <h2 id="business-operation">Business Operation</h2>
-<p>Below is an example of a business operation in Python:</p>
+<p>Below is a standalone business operation fragment. A normal application also
+declares a <code>Production</code> graph and connects senders with <code>target()</code> and
+<code>prod.connect(...)</code>.</p>
 <pre><code class="language-python">from dataclasses import dataclass
 
 from iop import BusinessOperation, Message
@@ -269,7 +271,8 @@ PRODUCTIONS = [prod]
 <pre><code class="language-bash">iop --migrate /path/to/your/project/settings.py
 </code></pre>
 <p>Use a standalone <code>CLASSES</code> entry only when you need to bind a Python component
-without adding it to a Python <code>Production</code> graph.</p>
+without adding it to a Python <code>Production</code> graph. New graph components belong in
+<code>PRODUCTIONS</code>, where migration registers their Python classes automatically.</p>
 <h2 id="conservative-production-changes">Conservative Production Changes</h2>
 <p>For existing IRIS productions, prefer the plan workflow over full registration:</p>
 <pre><code class="language-bash">iop --plan demo/python/production_change_workflow/settings.py \
@@ -292,28 +295,31 @@ backup files, and rollback command.</p>
 </ul>
 <h3 id="business-service_1">Business Service</h3>
 <p>To create a business service, use the following code:</p>
-<pre><code class="language-python">from iop import BusinessService
+<pre><code class="language-python">from iop import BusinessService, target
 
 class MyBusinessService(BusinessService):
+    Output = target()
 
     def on_message(self, message_input: 'MyRequest'):
         # This method is called when the service is called
         self.log_info(&quot;[Python] MyBusinessService:on_message() is called with message: &quot; + message_input.request_string)
-        response = MyResponse(&quot;MyBusinessService:on_message() echos&quot;)
-        return response
+        self.send_request_async(self.Output, message_input)
 </code></pre>
 <h3 id="polling-business-service">Polling Business Service</h3>
 <p>To create a polling business service, use the following code:</p>
-<pre><code class="language-python">from iop import PollingBusinessService
+<pre><code class="language-python">from iop import PollingBusinessService, target
 
 class MyBusinessService(PollingBusinessService):
+    Output = target()
 
     def on_poll(self):
         # This method is called by the scheduler
         self.log_info(&quot;[Python] MyBusinessService:on_poll() is called&quot;)
+        self.send_request_async(self.Output, MyRequest())
 </code></pre>
-<h2 id="flask-app-sending-a-message-to-an-business-service">Flask app sending a message to an Business Service</h2>
-<p>To send a message to a business service, use the following code:</p>
+<h2 id="flask-app-sending-a-message-to-a-business-service">Flask app sending a message to a Business Service</h2>
+<p>To send a message to a deployed business service, use the runtime Director
+rather than instantiating production components directly:</p>
 <pre><code class="language-python">from flask import Flask, request
 from iop import Director
 
@@ -352,11 +358,12 @@ class MyBusinessProcess(BusinessProcess):
 <pre><code class="language-python">import asyncio
 import random
 
-from iop import BusinessProcess
+from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyAsyncNGBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
 
@@ -369,25 +376,30 @@ class MyAsyncNGBP(BusinessProcess):
         # create 1 to 10 messages
         tasks = []
         for i in range(random.randint(1, 10)):
-            tasks.append(self.send_request_async_ng(&quot;Python.MyAsyncNGBO&quot;,
-                                                    MyMessage(message=f&quot;Message {i}&quot;)))
+            tasks.append(
+                self.send_request_async_ng(
+                    self.Output,
+                    MyMessage(message=f&quot;Message {i}&quot;),
+                )
+            )
 
         return await asyncio.gather(*tasks)
 </code></pre>
 <h4 id="using-the-native-send_request_async-method">Using the native <code>send_request_async</code> method</h4>
 <p>To make an async call with the native <code>send_request_async</code> method, use the following code:</p>
-<pre><code class="language-python">from iop import BusinessProcess
+<pre><code class="language-python">from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message=&quot;Message1&quot;)
         msg_two = MyMessage(message=&quot;Message2&quot;)
 
-        self.send_request_async(&quot;Python.MyBO&quot;, msg_one,completion_key=&quot;1&quot;)
-        self.send_request_async(&quot;Python.MyBO&quot;, msg_two,completion_key=&quot;2&quot;)
+        self.send_request_async(self.Output, msg_one, completion_key=&quot;1&quot;)
+        self.send_request_async(self.Output, msg_two, completion_key=&quot;2&quot;)
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         if completion_key == &quot;1&quot;:
@@ -401,18 +413,21 @@ class MyBP(BusinessProcess):
 </code></pre>
 <h4 id="using-the-send_multi_request_sync-method">Using the <code>send_multi_request_sync</code> method</h4>
 <p>To make an async call with the <code>send_multi_request_sync</code> method, use the following code:</p>
-<pre><code class="language-python">from iop import BusinessProcess
+<pre><code class="language-python">from iop import BusinessProcess, target
 from msg import MyMessage
 
 
 class MyMultiBP(BusinessProcess):
+    Output = target()
 
     def on_message(self, request):
         msg_one = MyMessage(message=&quot;Message1&quot;)
         msg_two = MyMessage(message=&quot;Message2&quot;)
 
-        tuple_responses = self.send_multi_request_sync([(&quot;Python.MyMultiBO&quot;, msg_one),
-                                                        (&quot;Python.MyMultiBO&quot;, msg_two)])
+        tuple_responses = self.send_multi_request_sync([
+            (self.Output, msg_one),
+            (self.Output, msg_two),
+        ])
 
         self.log_info(&quot;All requests have been processed&quot;)
         for target,request,response,status in tuple_responses:

@@ -340,6 +340,9 @@ migration plan without writing to IRIS:</p>
 <code>PRODUCTIONS</code>. Entries in <code>CLASSES</code> are annotated as
 components or <code>PersistentMessage</code> classes. Migration output includes the mode,
 namespace, and a final <code>Migration succeeded</code> line when the migration completes.</p>
+<p>For new Python-authored production components, prefer <code>Production</code> objects in
+<code>PRODUCTIONS</code>; use <code>CLASSES</code> for standalone bindings, native
+<code>PersistentMessage</code> classes, and legacy migration files.</p>
 <p>Production validation warns by default. Pass <code>--strict-production-validation</code>
 to fail the dry-run or migration when validation reports an issue:</p>
 <pre><code class="language-bash">iop -M /tmp/settings.py --strict-production-validation

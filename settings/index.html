@@ -206,17 +206,33 @@ classes, productions, schemas, and remote connection settings.</p>
 does not delete Python source files or production items.</p>
 <h2 id="quick-start">Quick Start</h2>
 <p>Create a migration file in your project root:</p>
-<pre><code class="language-python">from iop import BusinessOperation, Production
+<pre><code class="language-python">from dataclasses import dataclass
+
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
 
 
-class MyBusinessOperation(BusinessOperation):
-    def on_message(self, request):
-        self.log_info(&quot;Hello from IoP&quot;)
+@dataclass
+class HelloRequest(Message):
+    text: str = &quot;Hello from IoP&quot;
+
+
+class HelloService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, HelloRequest())
+
+
+class HelloOperation(BusinessOperation):
+    def on_message(self, request: HelloRequest):
+        self.log_info(request.text)
         return request
 
 
 prod = Production(&quot;Demo.Production&quot;, testing_enabled=True)
-prod.operation(&quot;MyBusinessOperation&quot;, MyBusinessOperation)
+service = prod.service(&quot;HelloService&quot;, HelloService)
+operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
+prod.connect(service.Output, operation)
 
 PRODUCTIONS = [prod]
 </code></pre>
@@ -225,8 +241,9 @@ PRODUCTIONS = [prod]
 # or
 iop --migrate /path/to/your/project/demo.py
 </code></pre>
-<p>If you bind a Python class to the wrong IRIS proxy class name, remove that
-binding with:</p>
+<p>Migration registers component classes declared in the <code>Production</code> graph. If
+you use a standalone binding or legacy <code>CLASSES</code> entry with the wrong IRIS proxy
+class name, remove that binding with:</p>
 <pre><code class="language-bash">iop --unbind Python.MyBusinessOperation
 </code></pre>
 <h2 id="import-behavior">Import Behavior</h2>
@@ -268,7 +285,7 @@ layout or import statements relative to the migration file location.</p>
 </tr>
 <tr>
 <td><code>CLASSES</code></td>
-<td>Define standalone component bindings and native <code>PersistentMessage</code> classes</td>
+<td>Define standalone component bindings, native <code>PersistentMessage</code> classes, and legacy bindings</td>
 </tr>
 <tr>
 <td><code>SCHEMAS</code></td>

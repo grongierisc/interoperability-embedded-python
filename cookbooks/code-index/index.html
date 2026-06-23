@@ -286,6 +286,14 @@ the fuller cookbook workflows.</p>
 <td><code>@handler</code>, typed method dispatch, fallback <code>on_message()</code></td>
 </tr>
 <tr>
+<td><code>src/iop/components/common.py</code></td>
+<td>component lifecycle hooks such as <code>on_init()</code> and <code>on_tear_down()</code></td>
+</tr>
+<tr>
+<td><code>src/iop/components/business_host.py</code></td>
+<td>shared <code>send_request_sync(...)</code> and <code>send_request_async(...)</code> helpers</td>
+</tr>
+<tr>
 <td><code>src/iop/components/business_process.py</code></td>
 <td>process runtime hooks and request helpers</td>
 </tr>
@@ -313,6 +321,9 @@ to:</p>
 </ol>
 <p>Use <code>@handler(MessageType)</code> when the handler must be explicit. Use typed
 one-argument methods when annotations are enough.</p>
+<p>Explicit <code>DISPATCH</code> entries are still supported for legacy and advanced code,
+but new application code should prefer <code>@handler(MessageType)</code> or typed
+one-argument methods.</p>
 <h2 id="message-quick-reference">Message Quick Reference</h2>
 <p>Use <code>@dataclass</code> with regular <code>Message</code> classes:</p>
 <pre><code class="language-python">from dataclasses import dataclass

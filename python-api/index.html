@@ -247,14 +247,14 @@ class OrderMessage(PersistentMessage):
         classname = &quot;Demo.Msg.OrderMessage&quot;
 </code></pre>
 <p>If no <code>Meta.classname</code> is declared, IOP derives a reversible IRIS-safe class name from the Python fully-qualified class name. Underscores are escaped as <code>zU</code>, literal <code>z</code> as <code>zz</code>, and unsupported characters as hexadecimal markers, then decoded again for incoming messages.</p>
-<p>For migrations, you can also register the message with the IRIS classname as the <code>CLASSES</code> key:</p>
+<p>For migrations, you can also register a native <code>PersistentMessage</code> with the IRIS classname as the <code>CLASSES</code> key:</p>
 <pre><code class="language-python">import msg
 
 CLASSES = {
     &quot;Demo.Msg.OrderMessage&quot;: msg.OrderMessage,
 }
 </code></pre>
-<p>When <code>CLASSES</code> is used, migration writes message metadata parameters (<code>IOP_MESSAGE_KIND</code>, <code>IOP_PYTHON_CLASS</code>, and <code>IOP_PYTHON_CLASSPATH</code>) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If <code>Meta.classname</code> conflicts with the <code>CLASSES</code> key, migration fails.</p>
+<p>When <code>CLASSES</code> is used for native persistent messages, migration writes message metadata parameters (<code>IOP_MESSAGE_KIND</code>, <code>IOP_PYTHON_CLASS</code>, and <code>IOP_PYTHON_CLASSPATH</code>) to the generated IRIS class. Incoming native IRIS message bodies use those parameters first, then fall back to the default naming convention when metadata is not present. If <code>Meta.classname</code> conflicts with the <code>CLASSES</code> key, migration fails. Regular <code>Message</code> and <code>PydanticMessage</code> classes do not go in <code>CLASSES</code>.</p>
 <h3 id="message-dispatch">Message Dispatch</h3>
 <p>Business operations and business processes can route different message classes to different methods. Use <code>@handler(MessageType)</code> when you want the mapping to be explicit.</p>
 <pre><code class="language-python">from dataclasses import dataclass
@@ -288,9 +288,12 @@ class OrderOperation(BusinessOperation):
 <p>Dispatch priority is:</p>
 <ol>
 <li><code>@handler(MessageType)</code></li>
-<li>Explicit <code>DISPATCH</code> entries</li>
+<li>Legacy explicit <code>DISPATCH</code> entries</li>
 <li>Legacy typed-method discovery</li>
 </ol>
+<p>New application code should prefer <code>@handler(MessageType)</code> or typed
+one-argument methods. Use explicit <code>DISPATCH</code> only when maintaining existing
+code that already depends on it.</p>
 <p>When more than one mapping targets the same message type, IOP keeps the highest-priority mapping and logs a warning through the component warning logger, so the discarded handler appears in the IRIS logs. Duplicate mappings at the same priority keep the later entry for backward compatibility and log which earlier handler was discarded.</p>
 <h3 id="businessservice">BusinessService 🔄</h3>
 <p>Base class for business services that receive and process incoming data. Business services act as entry points for data into your interoperability solution.</p>
@@ -315,11 +318,11 @@ class OrderOperation(BusinessOperation):
 </ul>
 </li>
 <li>
-<p><code>send_request_sync(self, target: str, request: Message, timeout: int = -1) -&gt; Message</code></p>
+<p><code>send_request_sync(self, target: str | TargetSettingRef, request: Message, timeout: int = -1) -&gt; Message</code></p>
 <ul>
 <li>Sends a synchronous request and waits for response</li>
 <li>Parameters:<ul>
-<li><code>target</code>: Name of the target component</li>
+<li><code>target</code>: Target setting reference such as <code>self.Output</code>, or a target component name for legacy/manual code</li>
 <li><code>request</code>: Message to send</li>
 <li><code>timeout</code>: Maximum wait time in seconds (-1 for default)</li>
 </ul>
@@ -328,11 +331,11 @@ class OrderOperation(BusinessOperation):
 </ul>
 </li>
 <li>
-<p><code>send_request_async(self, target: str, request: Message) -&gt; None</code></p>
+<p><code>send_request_async(self, target: str | TargetSettingRef, request: Message) -&gt; None</code></p>
 <ul>
 <li>Sends an asynchronous request without waiting</li>
 <li>Parameters:<ul>
-<li><code>target</code>: Name of the target component</li>
+<li><code>target</code>: Target setting reference such as <code>self.Output</code>, or a target component name for legacy/manual code</li>
 <li><code>request</code>: Message to send</li>
 </ul>
 </li>
@@ -341,15 +344,19 @@ class OrderOperation(BusinessOperation):
 </li>
 </ul>
 <p><strong>Basic Example:</strong></p>
-<pre><code class="language-python">from iop import BusinessService
+<pre><code class="language-python">from iop import BusinessService, target
 
 class MyService(BusinessService):
+    Output = target()
+
     def on_message(self, request):
         self.log_info(f&quot;Received: {request}&quot;)
+        self.send_request_async(self.Output, request)
 </code></pre>
 <p><strong>Polling Example:</strong></p>
-<pre><code class="language-python">from iop import PollingBusinessService, Message
-from dataclasses import dataclass
+<pre><code class="language-python">from dataclasses import dataclass
+
+from iop import Message, PollingBusinessService, target
 
 @dataclass
 class MyRequest(Message):
@@ -357,35 +364,30 @@ class MyRequest(Message):
     data: str = None
 
 class MyService(PollingBusinessService):
+    Output = target()
     InputFile = &quot;/data/input.txt&quot;
 
     def on_poll(self):
         with open(self.InputFile, 'r') as file:
             data = file.read()
         request = MyRequest(data=data)
-        self.send_request_async(&quot;MyBusinessOperation&quot;, request)
+        self.send_request_async(self.Output, request)
 </code></pre>
 <p><code>PollingBusinessService</code> uses the default IRIS inbound adapter. Override
 <code>on_poll()</code> for scheduled polling, or override <code>on_process_input()</code> directly
 when you need adapter-level access.</p>
 <h3 id="component-settings">Component Settings</h3>
-<p>Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use <code>setting(...)</code> when you want to control how a setting appears in the IRIS production UI.</p>
-<pre><code class="language-python">from iop import BusinessService, Category, controls, setting
+<p>Public class attributes on a component are exposed as IRIS production settings. By default they stay in the generated Python Attributes group. Use <code>setting(...)</code> when you want to control how a non-route setting appears in the IRIS production UI. Use <code>target()</code> for outbound component routes.</p>
+<pre><code class="language-python">from iop import BusinessService, Category, controls, setting, target
 
 class FileService(BusinessService):
+    Output = target()
     InputDirectory = setting(
         &quot;/data/in&quot;,
         category=Category.CONNECTION,
         required=True,
         description=&quot;Directory to scan&quot;,
         control=controls.directory(),
-    )
-
-    Target = setting(
-        &quot;&quot;,
-        category=Category.BASIC,
-        required=True,
-        control=controls.production_item(),
     )
 </code></pre>
 <p>You can also keep normal Python defaults and attach metadata with <code>typing.Annotated</code>:</p>
@@ -534,7 +536,9 @@ ArchiveDirectory = setting(&quot;/archive&quot;, category=&quot;Archiving&quot;)
 </tr>
 </tbody>
 </table>
-<p><code>controls.production_item()</code> accepts optional arguments:</p>
+<p>For outbound component routes in new Python code, prefer <code>target()</code>. Use
+<code>controls.production_item()</code> when defining a lower-level manual setting that
+must expose the IRIS production item picker. It accepts optional arguments:</p>
 <pre><code class="language-python">Target = setting(
     &quot;&quot;,
     control=controls.production_item(
@@ -672,8 +676,9 @@ class MyOperation(BusinessOperation):
 </li>
 </ul>
 <p><strong>Example:</strong></p>
-<pre><code class="language-python">from iop import BusinessProcess, Message
-from dataclasses import dataclass
+<pre><code class="language-python">from dataclasses import dataclass
+
+from iop import BusinessProcess, Message, target
 
 @dataclass
 class MyRequest(Message):
@@ -684,9 +689,11 @@ class MyResponse(Message):
     my_string: str = None
 
 class MyProcess(BusinessProcess):
+    Output = target()
+
     def on_request(self, request):
         self.log_info(f&quot;Received: {request}&quot;)
-        self.send_request_async(&quot;MyBusinessOperation&quot;, request)
+        self.send_request_async(self.Output, request)
 
     def on_response(self, request, response, call_request, call_response, completion_key):
         self.log_info(f&quot;Received: {response}&quot;)
@@ -1074,7 +1081,10 @@ to its configured target component.
 instance.</p>
 <h3 id="migration-utilities">Migration Utilities</h3>
 <p>Use <code>register_component()</code> or <code>bind_component()</code> to create an IRIS proxy class
-binding for a Python component:</p>
+binding for a Python component when you need a standalone binding or manual
+legacy registration. New Python-authored production components should normally
+be declared in a <code>Production</code> object exported through <code>PRODUCTIONS</code>; migration
+registers those component classes automatically.</p>
 <pre><code class="language-python">from iop import bind_component, register_component
 
 register_component(
