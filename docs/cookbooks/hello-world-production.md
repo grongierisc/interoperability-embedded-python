@@ -28,6 +28,8 @@ Requirements:
   the operation.
 - Export PRODUCTIONS = [prod].
 - Do not use __init__() for component startup.
+- Do not use iop --test to test HelloService; use the runtime director or
+  production runtime API for service tests.
 - Show the migration dry-run command and the command to run the production
   migration.
 ```
@@ -99,4 +101,3 @@ iop --migrate settings.py
   `Production` graph.
 - Calling `HelloOperation` directly from `HelloService` instead of sending a
   message through the production target.
-

@@ -53,6 +53,21 @@ Update this list for the local project:
 - `tests/`: local test suite.
 - `data/` or `samples/`: example payloads.
 
+## settings.py Import Rules
+
+- Treat the directory containing `settings.py` as the project import root for
+  migration.
+- Import production graph, message, and component modules from paths reachable
+  relative to `settings.py`.
+- If `production.py` is next to `settings.py`, use
+  `from production import prod`.
+- If the application is packaged under a directory next to `settings.py`, use
+  package imports such as `from myapp.production import prod`.
+- Do not ask users to set `PYTHONPATH` to make migration imports work.
+- Do not patch `os.environ["PYTHONPATH"]` or global `sys.path` in application
+  code to hide import problems.
+- Fix import errors by changing the project layout or import statements.
+
 ## IoP Rules
 
 - Prefer a Python `Production` object exported through `PRODUCTIONS`.
@@ -114,6 +129,10 @@ python -m pytest
 iop --migrate settings.py --dry-run
 iop --migrate settings.py
 ```
+
+Do not use `iop --test` as the normal way to test Business Services. Test
+services through the runtime director or production runtime API so the deployed
+production context, component settings, and configured targets are used.
 
 If this repository uses Docker or Compose, add the exact command here:
 

@@ -70,6 +70,23 @@ When starting from source code, build applications through public imports from
 `iop` and a `Production` graph. Do not copy internal runtime classes such as
 `_BusinessHost` into application code; use them only to understand behavior.
 
+## settings.py Import Quick Reference
+
+Treat the directory containing `settings.py` as the project import root for
+migration. Import the production graph, messages, and components from modules
+reachable relative to that file, such as `from production import prod` or
+`from myapp.production import prod`.
+
+Do not set `PYTHONPATH`, patch `os.environ["PYTHONPATH"]`, or mutate global
+`sys.path` in application code to make migration imports pass. Fix the package
+layout or import statements instead.
+
+## Runtime Test Quick Reference
+
+Do not use `iop --test` as the normal way to test Business Services. Test
+services through the runtime director or production runtime API so the deployed
+production context, component settings, and configured targets are used.
+
 ## Healthcare Add-on
 
 If the code or task mentions HL7v2, FHIR, Health Connect, FHIR bundles, MLLP,

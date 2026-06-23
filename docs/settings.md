@@ -44,6 +44,38 @@ binding with:
 iop --unbind Python.MyBusinessOperation
 ```
 
+## Import Behavior
+
+IoP loads the migration file as a file-based Python module. The directory
+containing that file is temporarily placed first on `sys.path` while the file
+is imported. Treat the directory containing `settings.py` or `demo.py` as the
+project import root for migration.
+
+Keep production code in modules or packages reachable from that directory and
+import it normally:
+
+```python
+# settings.py next to production.py
+from production import prod
+
+PRODUCTIONS = [prod]
+```
+
+For a packaged application, keep the package next to the migration file and use
+package imports:
+
+```python
+# settings.py next to myapp/
+from myapp.production import prod
+
+PRODUCTIONS = [prod]
+```
+
+Do not require users or agents to set `PYTHONPATH` to make migration imports
+work. Do not patch `os.environ["PYTHONPATH"]` or global `sys.path` in
+application code to hide import problems. Fix imports by changing the project
+layout or import statements relative to the migration file location.
+
 ## Configuration Sections
 
 The migration file supports four main sections:
@@ -355,7 +387,8 @@ from runtime `OnGetConnections`, or inferred from Host settings.
 `Production` object graph only. If you want to test a production that already
 exists in IRIS, use `Production.from_iris(...)` first and call
 `test_component()` on the imported operational reconstruction. `prod.test(...)`
-remains available as a compatibility alias.
+remains available as a compatibility alias. For Business Services, use this
+production/director runtime path instead of `iop --test`.
 
 Lifecycle methods are scoped to the production object. `prod.stop()`,
 `prod.restart()`, `prod.kill()`, and `prod.update()` verify that IRIS currently

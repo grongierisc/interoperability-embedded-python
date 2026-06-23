@@ -10,7 +10,7 @@ Ask the tool to read the project guidance before it writes code:
 ```text
 You are helping me build an IoP application.
 Read these files first:
-- AGENTS.md
+- local AGENTS.md, if this application repository has one
 - docs/ai-coding.md
 - docs/cookbooks/index.md
 - docs/getting-started/first-steps.md
@@ -19,15 +19,16 @@ Read these files first:
 
 Use the Python Production graph workflow for new applications.
 Do not put component startup logic in __init__(); use on_init().
+Treat the directory containing settings.py as the project import root.
+Import production modules relative to settings.py; do not modify PYTHONPATH.
+Do not use iop --test to test Business Services; use the runtime director.
 Use the relevant cookbook for the task.
 Show the migration and verification commands.
 ```
 
-On the published docs site, open
-[AGENTS.md](https://github.com/grongierisc/interoperability-embedded-python/blob/master/AGENTS.md)
-from the repository root.
-
-For your own IoP application repository, copy the
+The IoP framework repository root `AGENTS.md` is for framework source
+development, not application guidance. For your own IoP application repository,
+copy the
 [reusable AGENTS.md template](agents-template.md) into the project root and
 adapt it to the local production. For healthcare projects, also read
 [Healthcare AI-assisted coding](healthcare-ai-coding.md).

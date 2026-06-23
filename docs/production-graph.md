@@ -79,7 +79,8 @@ object graph. It does not silently fall back to IRIS export. Existing deployed
 productions should be reconstructed explicitly with `Production.from_iris(...)`
 before testing by target setting path. Runtime status checks fail closed when the
 current production cannot be verified. `prod.test(...)` remains a compatibility
-alias.
+alias. For Business Services, use this production/director runtime path instead
+of `iop --test`.
 
 `ComponentRef` exposes convenience methods that delegate to its owning
 production: `inspect()`, `start()`, `stop()`, `restart()`, and `test(...)`.

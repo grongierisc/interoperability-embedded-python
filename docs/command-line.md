@@ -377,7 +377,12 @@ python3 -m pip install "iris-persistence>=0.1.0"
 
 ## test
 
-The test command allows testing IoP components. You can optionally specify a test name, classname, and body.
+The test command is a low-level helper for testing IoP components. You can
+optionally specify a test name, classname, and body.
+
+Do not use `iop --test` as the normal way to test Business Services. Test
+services through the runtime director or production runtime API so the deployed
+production context, component settings, and configured targets are used.
 
 Basic test:
 ```bash

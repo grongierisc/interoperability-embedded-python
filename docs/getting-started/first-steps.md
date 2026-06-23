@@ -151,4 +151,9 @@ iop --migrate settings.py
 
 This command creates the IRIS proxy classes for the Python components and registers `HelloWorld.Production`.
 
+When you need to test `HelloService` at runtime, do not use `iop --test`.
+Business Service tests should go through the runtime director or production
+runtime API so the deployed production context, component settings, and
+configured targets are used.
+
 More information about registering components can be found [here](register-component.md).

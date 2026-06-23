@@ -7,9 +7,13 @@ Before using a cookbook, give the assistant this context:
 
 ```text
 You are helping me build an IoP application.
-Read AGENTS.md, settings.py, and the relevant cookbook before changing code.
+Read local AGENTS.md if this application has one, settings.py, and the
+relevant cookbook before changing code.
 Use the Python Production graph workflow for new applications.
 Do not put component startup logic in __init__(); use on_init().
+Treat the directory containing settings.py as the project import root.
+Import production modules relative to settings.py; do not modify PYTHONPATH.
+Do not use iop --test to test Business Services; use the runtime director.
 Show the migration and verification commands.
 ```
 

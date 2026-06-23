@@ -58,6 +58,11 @@ Migration registers the generated IRIS proxy classes for `FileService` and
 class. `prod.connect(file.Output, orders)` sets that setting to the destination
 component and records the production graph edge.
 
+When you need to test `FileService` at runtime, do not use `iop --test`.
+Business Service tests should go through the runtime director or production
+runtime API so the deployed production context, component settings, and
+configured targets are used.
+
 ## Settings File Sections
 
 A migration file can define these sections:

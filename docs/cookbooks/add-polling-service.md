@@ -31,6 +31,8 @@ Implementation requirements:
 - Do not put startup code in __init__(); use on_init() only if required.
 - Update settings.py to add the service and connect service.Output to the
   destination component.
+- Do not use iop --test to test the service; use the runtime director or
+  production runtime API for service tests.
 - Include migration dry-run and verification commands.
 ```
 
@@ -68,7 +70,8 @@ iop --migrate settings.py
 - Dry-run migration shows the service, target setting, and destination
   component.
 - Unit tests cover any pure Python polling decisions or message construction.
-- Runtime verification confirms `on_poll()` emits the expected message.
+- Runtime verification confirms `on_poll()` emits the expected message through
+  the deployed production context.
 
 ## Common Mistakes
 
@@ -76,4 +79,3 @@ iop --migrate settings.py
   services.
 - Forgetting to connect `service.Output` to the destination.
 - Putting long-lived connection setup in `__init__()` instead of `on_init()`.
-
