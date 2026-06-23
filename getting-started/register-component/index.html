@@ -227,6 +227,10 @@ PRODUCTIONS = [prod]
 <p><code>target()</code> declares a configurable outbound target setting on the component
 class. <code>prod.connect(file.Output, orders)</code> sets that setting to the destination
 component and records the production graph edge.</p>
+<p>When you need to test <code>FileService</code> at runtime, do not use <code>iop --test</code>.
+Business Service tests should go through the runtime director or production
+runtime API so the deployed production context, component settings, and
+configured targets are used.</p>
 <h2 id="settings-file-sections">Settings File Sections</h2>
 <p>A migration file can define these sections:</p>
 <table>

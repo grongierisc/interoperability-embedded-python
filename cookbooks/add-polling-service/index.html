@@ -203,6 +203,8 @@ Implementation requirements:
 - Do not put startup code in __init__(); use on_init() only if required.
 - Update settings.py to add the service and connect service.Output to the
   destination component.
+- Do not use iop --test to test the service; use the runtime director or
+  production runtime API for service tests.
 - Include migration dry-run and verification commands.
 </code></pre>
 <h2 id="expected-implementation">Expected Implementation</h2>
@@ -230,7 +232,8 @@ iop --migrate settings.py
 <li>Dry-run migration shows the service, target setting, and destination
   component.</li>
 <li>Unit tests cover any pure Python polling decisions or message construction.</li>
-<li>Runtime verification confirms <code>on_poll()</code> emits the expected message.</li>
+<li>Runtime verification confirms <code>on_poll()</code> emits the expected message through
+  the deployed production context.</li>
 </ul>
 <h2 id="common-mistakes">Common Mistakes</h2>
 <ul>

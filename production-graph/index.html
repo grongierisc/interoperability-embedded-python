@@ -271,7 +271,8 @@ object graph. It does not silently fall back to IRIS export. Existing deployed
 productions should be reconstructed explicitly with <code>Production.from_iris(...)</code>
 before testing by target setting path. Runtime status checks fail closed when the
 current production cannot be verified. <code>prod.test(...)</code> remains a compatibility
-alias.</p>
+alias. For Business Services, use this production/director runtime path instead
+of <code>iop --test</code>.</p>
 <p><code>ComponentRef</code> exposes convenience methods that delegate to its owning
 production: <code>inspect()</code>, <code>start()</code>, <code>stop()</code>, <code>restart()</code>, and <code>test(...)</code>.
 It is a Python handle to a configured production item, not the live IRIS host

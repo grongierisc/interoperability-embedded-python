@@ -1049,7 +1049,8 @@ the reconstruction quality or route origin.</p>
 <code>Production</code> object graph only. For an already deployed production, first build
 an operational reconstruction with <code>Production.from_iris(...)</code>, then call
 <code>test_component()</code> on that object. <code>prod.test(...)</code> remains as a compatibility
-alias.</p>
+alias. For Business Services, use this production/director runtime path instead
+of <code>iop --test</code>.</p>
 <p>Lifecycle helpers such as <code>prod.stop()</code>, <code>prod.restart()</code>, <code>prod.kill()</code>, and
 <code>prod.update()</code> verify that IRIS currently points at the same production before
 calling the underlying IRIS lifecycle method.</p>

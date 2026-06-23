@@ -287,6 +287,10 @@ PRODUCTIONS = [prod]
 <pre><code class="language-bash">iop --migrate settings.py
 </code></pre>
 <p>This command creates the IRIS proxy classes for the Python components and registers <code>HelloWorld.Production</code>.</p>
+<p>When you need to test <code>HelloService</code> at runtime, do not use <code>iop --test</code>.
+Business Service tests should go through the runtime director or production
+runtime API so the deployed production context, component settings, and
+configured targets are used.</p>
 <p>More information about registering components can be found <a href="../register-component/">here</a>.</p>
               
             </div>

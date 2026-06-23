@@ -448,7 +448,11 @@ python3 -m pip install iris-pex-embedded-python
 ```</p>
 </blockquote>
 <h2 id="test">test</h2>
-<p>The test command allows testing IoP components. You can optionally specify a test name, classname, and body.</p>
+<p>The test command is a low-level helper for testing IoP components. You can
+optionally specify a test name, classname, and body.</p>
+<p>Do not use <code>iop --test</code> as the normal way to test Business Services. Test
+services through the runtime director or production runtime API so the deployed
+production context, component settings, and configured targets are used.</p>
 <p>Basic test:</p>
 <pre><code class="language-bash">iop -t
 </code></pre>

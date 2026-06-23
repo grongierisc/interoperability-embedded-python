@@ -74,6 +74,10 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#source-first-rule">Source-first Rule</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#settingspy-import-quick-reference">settings.py Import Quick Reference</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#runtime-test-quick-reference">Runtime Test Quick Reference</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#healthcare-add-on">Healthcare Add-on</a>
     </li>
     </ul>
@@ -324,6 +328,18 @@ IRIS needs a native persistent message body.</p>
 <p>When starting from source code, build applications through public imports from
 <code>iop</code> and a <code>Production</code> graph. Do not copy internal runtime classes such as
 <code>_BusinessHost</code> into application code; use them only to understand behavior.</p>
+<h2 id="settingspy-import-quick-reference">settings.py Import Quick Reference</h2>
+<p>Treat the directory containing <code>settings.py</code> as the project import root for
+migration. Import the production graph, messages, and components from modules
+reachable relative to that file, such as <code>from production import prod</code> or
+<code>from myapp.production import prod</code>.</p>
+<p>Do not set <code>PYTHONPATH</code>, patch <code>os.environ["PYTHONPATH"]</code>, or mutate global
+<code>sys.path</code> in application code to make migration imports pass. Fix the package
+layout or import statements instead.</p>
+<h2 id="runtime-test-quick-reference">Runtime Test Quick Reference</h2>
+<p>Do not use <code>iop --test</code> as the normal way to test Business Services. Test
+services through the runtime director or production runtime API so the deployed
+production context, component settings, and configured targets are used.</p>
 <h2 id="healthcare-add-on">Healthcare Add-on</h2>
 <p>If the code or task mentions HL7v2, FHIR, Health Connect, FHIR bundles, MLLP,
 or <code>EnsLib.HL7</code>, use the healthcare add-on:</p>
