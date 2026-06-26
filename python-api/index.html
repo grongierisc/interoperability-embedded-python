@@ -920,6 +920,9 @@ Progressive component methods include <code>pool()</code>, <code>enable()</code>
 <p><code>host_settings</code>, <code>adapter_settings</code>, and <code>foreground</code> are public data
 attributes on <code>ComponentRef</code>, so their fluent update methods use distinct names
 instead of shadowing those attributes.</p>
+<p>Declared target settings are available as dynamic <code>ComponentRef</code> attributes,
+such as <code>rest.my_target</code>, and are exposed through <code>dir(rest)</code> for runtime
+autocomplete.</p>
 <p>Python <code>Production</code> is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.</p>
