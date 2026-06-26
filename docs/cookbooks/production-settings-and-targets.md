@@ -24,7 +24,7 @@ Implementation requirements:
 - Add services with prod.service(...), processes with prod.process(...), and
   operations with prod.operation(...).
 - Use target() attributes on component classes for outbound routing.
-- Use prod.connect(source.TargetName, destination) for graph edges.
+- Use component.connect(ComponentClass.TargetName, destination) for graph edges.
 - Keep PRODUCTIONS = [prod] as the migration entrypoint.
 - Do not add raw CLASSES entries for components already declared in the
   Production graph.
@@ -51,8 +51,8 @@ process = prod.process("RouteProcess", RouteProcess)
 accepted = prod.operation("AcceptedOperation", AcceptedOperation)
 rejected = prod.operation("RejectedOperation", RejectedOperation)
 
-prod.connect(process.Accepted, accepted)
-prod.connect(process.Rejected, rejected)
+process.connect(RouteProcess.Accepted, accepted)
+process.connect(RouteProcess.Rejected, rejected)
 ```
 
 When a route should have a conventional default, pass the target item name to

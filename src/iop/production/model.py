@@ -219,10 +219,10 @@ class Production(_DeclarativeProductionMixin):
 
     def _resolve_production_name(self, name: str | object) -> str:
         if name is not _MISSING:
-            return name  # type: ignore[return-value]
+            return str(name)
         class_name = getattr(type(self), "name", _MISSING)
         if class_name is not _MISSING:
-            return class_name
+            return str(class_name)
         return f"{type(self).__module__}.{type(self).__name__}"
 
     def _production_default(
@@ -570,7 +570,12 @@ class Production(_DeclarativeProductionMixin):
             )
         ]
 
-    def service(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+    def service(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef:
         """Add a BusinessService item to the production graph.
 
         See docs/cookbooks/hello-world-production.md and
@@ -578,14 +583,24 @@ class Production(_DeclarativeProductionMixin):
         """
         return self.component(name_or_cls, cls, kind="service", **kwargs)
 
-    def process(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+    def process(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef:
         """Add a BusinessProcess item to the production graph.
 
         See docs/cookbooks/add-business-process.md.
         """
         return self.component(name_or_cls, cls, kind="process", **kwargs)
 
-    def operation(self, name_or_cls: str | type, cls: type | None = None, **kwargs):
+    def operation(
+        self,
+        name_or_cls: str | type,
+        cls: type | None = None,
+        **kwargs: Any,
+    ) -> ComponentRef:
         """Add a BusinessOperation item to the production graph.
 
         See docs/cookbooks/add-business-operation.md.
@@ -650,6 +665,12 @@ class Production(_DeclarativeProductionMixin):
         mode: str = "replace",
     ) -> None:
         if not isinstance(source, TargetSettingRef):
+            if isinstance(source, TargetSetting):
+                raise TypeError(
+                    "source must be bound to a production item. Use "
+                    "component.connect(ComponentClass.Target, target_component) "
+                    "or prod.connect(component.Target, target_component)."
+                )
             raise TypeError(
                 "source must be a TargetSettingRef returned from a ComponentRef"
             )

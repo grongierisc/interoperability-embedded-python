@@ -93,7 +93,8 @@ If another component sends to the operation, declare a `target()` setting on the
 sender and connect it:
 
 ```python
-prod.connect(process.Orders, operation)
+process = prod.process("OrderProcess", OrderProcess)
+process.connect(OrderProcess.Orders, operation)
 ```
 
 ## Migration Command

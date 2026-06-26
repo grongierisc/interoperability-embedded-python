@@ -53,6 +53,7 @@ exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.cls", "cls/**/*.cls"]
+"iop" = ["py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "class"

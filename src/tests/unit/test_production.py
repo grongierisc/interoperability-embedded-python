@@ -138,6 +138,36 @@ def test_target_default_does_not_override_explicit_host_setting():
     assert prod.graph().edges == ()
 
 
+def test_production_validate_warns_missing_target_setting_value():
+    class TypoTargetService(PollingBusinessService):
+        Output = target("MissingOperation")
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    prod.service("FileInput", TypoTargetService)
+
+    with pytest.warns(ProductionValidationWarning, match="MissingOperation"):
+        report = prod.validate()
+
+    assert report.issues[0].kind == "route"
+    assert report.issues[0].path == "items.FileInput.settings.Host.Output"
+
+    with pytest.raises(ProductionValidationError, match="MissingOperation"):
+        prod.validate(strict=True)
+
+
+def test_production_validate_warns_explicit_missing_target_setting_value():
+    class RoutingService(PollingBusinessService):
+        Output = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    prod.service("FileInput", RoutingService, settings={"Output": "MissingOperation"})
+
+    with pytest.warns(ProductionValidationWarning, match="MissingOperation"):
+        report = prod.validate()
+
+    assert report.issues[0].kind == "route"
+
+
 def test_explicit_connect_replaces_target_default():
     prod = Production("Demo.Production", testing_enabled=True)
     service = prod.service("FileInput", DefaultTargetService)
@@ -165,6 +195,56 @@ def test_component_ref_dir_includes_target_settings_for_completion():
     native.target_setting("TargetConfigNames")
 
     assert "TargetConfigNames" in dir(native)
+
+
+def test_component_ref_connect_accepts_target_setting_descriptor():
+    class Rest(PollingBusinessService):
+        my_target = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    rest_a = prod.service("RestA", Rest)
+    rest_b = prod.service("RestB", Rest)
+    operation_a = prod.operation("OperationA", OrderOperation)
+    operation_b = prod.operation("OperationB", OrderOperation)
+
+    rest_a.connect(Rest.my_target, operation_a)
+    rest_b.connect(Rest.my_target, operation_b)
+
+    assert rest_a.host_settings["my_target"] == "OperationA"
+    assert rest_b.host_settings["my_target"] == "OperationB"
+    assert [
+        (edge.source_item, edge.source_target_setting, edge.target)
+        for edge in prod.graph().edges
+    ] == [
+        ("RestA", "my_target", "OperationA"),
+        ("RestB", "my_target", "OperationB"),
+    ]
+
+
+def test_component_ref_connect_rejects_descriptor_from_other_component():
+    class Rest(PollingBusinessService):
+        my_target = target()
+
+    class OtherRest(PollingBusinessService):
+        other_target = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    rest = prod.service(Rest)
+    operation = prod.operation("Operation", OrderOperation)
+
+    with pytest.raises(ValueError, match="belongs to"):
+        rest.connect(OtherRest.other_target, operation)
+
+
+def test_production_connect_rejects_unbound_target_setting_descriptor():
+    class Rest(PollingBusinessService):
+        my_target = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    operation = prod.operation("Operation", OrderOperation)
+
+    with pytest.raises(TypeError, match="component.connect"):
+        prod.connect(Rest.my_target, operation)
 
 
 def test_production_to_dict_with_auto_names_settings_and_connection():
@@ -318,10 +398,7 @@ def test_production_to_python_renders_brownfield_draft():
     assert "'Limit': '10'" in text
     assert "'TargetConfigNames':" not in text
     assert "adapter_settings={" in text
-    assert (
-        "prod.connect(file_input.target_setting('TargetConfigNames'), order_operation)"
-        in text
-    )
+    assert "file_input.connect('TargetConfigNames', order_operation)" in text
     assert text.endswith("PRODUCTIONS = [prod]\n")
 
 
@@ -1385,7 +1462,7 @@ def test_declarative_production_to_python_keeps_existing_instance_style():
     assert "ServiceItem" not in text
     assert "class DeclarativeProduction" not in text
     assert "prod = Production('Demo.DeclarativeProduction')" in text
-    assert "prod.connect(fileinput.target_setting('TargetConfigNames'), fileout)" in text
+    assert "fileinput.connect('TargetConfigNames', fileout)" in text
 
 
 def test_progressive_authoring_api_matches_deployable_shape():

@@ -85,8 +85,8 @@ process = prod.process("OrderProcess", OrderProcess)
 accepted = prod.operation("AcceptedOperation", AcceptedOperation)
 rejected = prod.operation("RejectedOperation", RejectedOperation)
 
-prod.connect(process.Accepted, accepted)
-prod.connect(process.Rejected, rejected)
+process.connect(OrderProcess.Accepted, accepted)
+process.connect(OrderProcess.Rejected, rejected)
 ```
 
 ## Migration Command
@@ -113,4 +113,3 @@ iop --migrate settings.py
   intended precedence explicit.
 - Calling a downstream component directly instead of sending a production
   message through a target.
-

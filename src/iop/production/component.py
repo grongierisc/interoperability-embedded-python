@@ -168,7 +168,7 @@ class ComponentRef:
 
     def connect(
         self,
-        target_setting: str | TargetSettingRef,
+        target_setting: str | TargetSetting | TargetSettingRef,
         target_component: ComponentRef | str | None = None,
         **kwargs: Any,
     ) -> ComponentRef:
@@ -178,7 +178,7 @@ class ComponentRef:
 
     def _coerce_target_setting_ref(
         self,
-        target_setting: str | TargetSettingRef,
+        target_setting: str | TargetSetting | TargetSettingRef,
     ) -> TargetSettingRef:
         if isinstance(target_setting, TargetSettingRef):
             if target_setting.production is not self.production:
@@ -190,6 +190,28 @@ class ComponentRef:
                     "source target setting belongs to a different component"
                 )
             return target_setting
+        if isinstance(target_setting, TargetSetting):
+            owner = target_setting.owner
+            if owner is None or not target_setting.name:
+                raise ValueError(
+                    "target setting must be declared on a component class"
+                )
+            if self.component_class is None or not issubclass(
+                self.component_class,
+                owner,
+            ):
+                owner_name = f"{owner.__module__}.{owner.__qualname__}"
+                component_name = (
+                    f"{self.component_class.__module__}."
+                    f"{self.component_class.__qualname__}"
+                    if self.component_class is not None
+                    else self.class_name
+                )
+                raise ValueError(
+                    f"target setting {target_setting.name!r} belongs to "
+                    f"{owner_name}, not {component_name}"
+                )
+            return self.target_setting(target_setting.name)
         return self.target_setting(str(target_setting))
 
     def inspect(self, *, refresh: bool = True) -> dict[str, Any]:

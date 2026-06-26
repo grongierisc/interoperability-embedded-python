@@ -12,7 +12,7 @@ from ..components.settings import Category, Setting, controls
 class TargetSetting(Setting):
     """Production target setting descriptor created by target()."""
 
-    def __init__(self, default: Any = "", **kwargs: Any):
+    def __init__(self, default: str = "", **kwargs: Any):
         kwargs.setdefault("iris_type", "Ens.DataType.ConfigName")
         kwargs.setdefault("category", Category.BASIC)
         kwargs.setdefault("control", controls.production_item())
@@ -34,7 +34,7 @@ class TargetSetting(Setting):
         return super().__get__(instance, owner)
 
 
-def target(default: Any = "", **kwargs: Any) -> TargetSetting:
+def target(default: str = "", **kwargs: Any) -> TargetSetting:
     """Purpose:
         Declare a configurable outbound target setting on a component class.
 

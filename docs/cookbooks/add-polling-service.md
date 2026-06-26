@@ -55,7 +55,7 @@ In `settings.py`:
 ```python
 service = prod.service("FilePollService", FilePollService)
 operation = prod.operation("TargetOperation", TargetOperation)
-prod.connect(service.Output, operation)
+service.connect(FilePollService.Output, operation)
 ```
 
 ## Migration Command

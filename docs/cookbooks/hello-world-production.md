@@ -74,7 +74,7 @@ prod = Production("HelloWorld.Production", testing_enabled=True)
 
 service = prod.service("HelloService", HelloService)
 operation = prod.operation("HelloOperation", HelloOperation)
-prod.connect(service.Output, operation)
+service.connect(HelloService.Output, operation)
 
 PRODUCTIONS = [prod]
 ```

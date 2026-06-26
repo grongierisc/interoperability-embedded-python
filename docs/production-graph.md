@@ -145,8 +145,24 @@ Python-authored components use Python classes:
 prod = Production("Demo.Production")
 file = prod.service("FileInput", FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 ```
+
+For static autocomplete, bind through the component ref and pass the descriptor
+from the component class:
+
+```python
+first = prod.service("FirstInput", FileService)
+second = prod.service("SecondInput", FileService)
+orders = prod.operation(OrderOperation)
+
+first.connect(FileService.Output, orders)
+second.connect(FileService.Output, orders)
+```
+
+The left-side `ComponentRef` selects the production item instance, so both
+connections bind the same class-declared target setting to different configured
+items.
 
 For a conventional route, the target can be defaulted on the component class:
 

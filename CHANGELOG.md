@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.0.1] - unreleased
 ### Added
 - Add default target support to `target(...)`, allowing `target("OperationName")` to populate the generated setting initial expression, production Host setting, and graph edge once the named target item exists.
+- Allow `ComponentRef.connect(...)` to accept class-declared `target()` descriptors, supporting static-friendly calls such as `rest.connect(Rest.Output, operation)`.
+- Add package typing metadata with `py.typed` and explicit `ComponentRef` return annotations for production factory methods.
 
 ### Fixed
 - Expose declared and manual target settings through `dir(ComponentRef)` so `rest.my_target` style graph handles are discoverable by runtime autocomplete.
+- Validate target setting values that reference missing production items.
+- Render generated instance-style Python routes with `component.connect(...)`.
 - Refactor business process and operation message dispatch around normalized message keys for `@handler`, typed methods, legacy `DISPATCH`, and native IRIS requests.
 
 ## [4.0.0] - 2026-06-21

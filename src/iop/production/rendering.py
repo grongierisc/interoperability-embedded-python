@@ -465,9 +465,7 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
     for source_item, source_target_setting in sorted(grouped):
         targets = grouped[(source_item, source_target_setting)]
         source_var = variables[source_item]
-        source_expr = (
-            f"{source_var}.target_setting({_literal(source_target_setting)})"
-        )
+        source_expr = _literal(source_target_setting)
         valid_targets = [target for target in targets if target in variables]
         invalid_targets = [target for target in targets if target not in variables]
         for target in invalid_targets:
@@ -476,15 +474,16 @@ def _connection_lines(production, variables: dict[str, str], item_names: set[str
             continue
         if len(valid_targets) == 1:
             lines.append(
-                f"prod.connect({source_expr}, {variables[valid_targets[0]]})"
+                f"{source_var}.connect({source_expr}, {variables[valid_targets[0]]})"
             )
         else:
             lines.append(
-                f"prod.connect({source_expr}, {variables[valid_targets[0]]})"
+                f"{source_var}.connect({source_expr}, {variables[valid_targets[0]]})"
             )
             for target in valid_targets[1:]:
                 lines.append(
-                    f"prod.connect({source_expr}, {variables[target]}, mode='add')"
+                    f"{source_var}.connect({source_expr}, {variables[target]}, "
+                    "mode='add')"
                 )
 
     for edge in production.edges:

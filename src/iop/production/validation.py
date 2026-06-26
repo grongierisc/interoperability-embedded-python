@@ -10,6 +10,7 @@ from .common import (
     SETTING_NAME_ALIASES,
 )
 from .import_ import _as_list, _production_payload, _split_settings
+from .types import TargetSetting
 
 _PRODUCTION_PUBLIC_FIELDS = {
     "name",
@@ -150,6 +151,8 @@ def _build_production_object_report(production: Any) -> ProductionValidationRepo
 
     for item in getattr(production, "items", ()):
         issues.extend(_validate_component_ref(item))
+
+    issues.extend(_validate_target_setting_values(production))
 
     return ProductionValidationReport(production_name, tuple(issues))
 
@@ -334,9 +337,65 @@ def _local_setting_names(cls: type) -> set[str] | None:
     if not callable(getter):
         return None
     try:
-        return {str(prop[0]) for prop in getter() if prop}
+        properties = getter()
     except Exception:
         return None
+    if not isinstance(properties, (list, tuple)):
+        return None
+    names: set[str] = set()
+    for prop in properties:
+        if isinstance(prop, (list, tuple)) and prop:
+            names.add(str(prop[0]))
+    return names
+
+
+def _validate_target_setting_values(production: Any) -> list[ProductionValidationIssue]:
+    items = tuple(getattr(production, "items", ()) or ())
+    item_names = {str(getattr(item, "name", "")) for item in items}
+    issues: list[ProductionValidationIssue] = []
+    for item in items:
+        item_name = str(getattr(item, "name", ""))
+        host_settings = dict(getattr(item, "host_settings", {}) or {})
+        for setting_name in _target_setting_names(item):
+            if setting_name not in host_settings:
+                continue
+            for target_name in _target_names(host_settings[setting_name]):
+                if target_name in item_names:
+                    continue
+                issues.append(
+                    ProductionValidationIssue(
+                        kind="route",
+                        path=f"items.{item_name}.settings.Host.{setting_name}",
+                        message=(
+                            f"Target setting references missing production item "
+                            f"{target_name!r}."
+                        ),
+                        suggestion=(
+                            f"Add a production item named {target_name!r}, "
+                            "or update/remove this target setting."
+                        ),
+                    )
+                )
+    return issues
+
+
+def _target_setting_names(item: Any) -> set[str]:
+    names = {str(name) for name in getattr(item, "target_setting_names", set())}
+    component_class = getattr(item, "component_class", None)
+    if isinstance(component_class, type):
+        for base in reversed(component_class.__mro__):
+            for name, value in base.__dict__.items():
+                if isinstance(value, TargetSetting):
+                    names.add(str(name))
+    return names
+
+
+def _target_names(value: Any) -> tuple[str, ...]:
+    return tuple(
+        target
+        for target in (part.strip() for part in str(value or "").split(","))
+        if target
+    )
 
 
 def _validate_names_with_known_set(
@@ -394,7 +453,7 @@ def _adapter_class_name_from_host(host_class_name: str) -> str:
         return ""
 
 
-def _iris_module():
+def _iris_module() -> Any:
     try:
         import iris  # type: ignore
     except Exception:

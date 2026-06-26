@@ -40,7 +40,7 @@ class OrderOperation(BusinessOperation):
 prod = Production("Demo.Production", testing_enabled=True)
 file = prod.service("FileInput", FileService)
 orders = prod.operation("OrderOperation", OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 
 PRODUCTIONS = [prod]
 ```
@@ -55,7 +55,7 @@ Migration registers the generated IRIS proxy classes for `FileService` and
 `OrderOperation`, then saves `Demo.Production`.
 
 `target()` declares a configurable outbound target setting on the component
-class. `prod.connect(file.Output, orders)` sets that setting to the destination
+class. `file.connect(FileService.Output, orders)` sets that setting to the destination
 component and records the production graph edge.
 
 When you need to test `FileService` at runtime, do not use `iop --test`.

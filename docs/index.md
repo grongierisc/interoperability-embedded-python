@@ -8,16 +8,45 @@
 
 Welcome to the **Interoperability On Python (IoP)** proof of concept! This project demonstrates how the **IRIS Interoperability Framework** can be utilized with a **Python-first approach**.
 
+Documentation can be found [here](https://grongierisc.github.io/interoperability-embedded-python/).
+For prompt-driven workflows, see [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
+For task-oriented examples, see the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
+For application repositories, start from the [reusable AGENTS.md template](https://grongierisc.github.io/interoperability-embedded-python/agents-template/).
+
 ## Example
 
-Here's a simple example of how a Business Operation can be implemented in Python:
+Here's a tiny Python-authored production:
 
 ```python
-from iop import BusinessOperation
+from dataclasses import dataclass
 
-class MyBo(BusinessOperation):
-    def on_message(self, request):
-        self.log_info("Hello World")
+from iop import BusinessOperation, Message, PollingBusinessService, Production, target
+
+
+@dataclass
+class HelloRequest(Message):
+    text: str = "Hello World"
+
+
+class HelloService(PollingBusinessService):
+    Output = target()
+
+    def on_poll(self):
+        self.send_request_async(self.Output, HelloRequest())
+
+
+class HelloOperation(BusinessOperation):
+    def on_message(self, request: HelloRequest):
+        self.log_info(request.text)
+        return request
+
+
+prod = Production("HelloWorld.Production", testing_enabled=True)
+service = prod.service("HelloService", HelloService)
+operation = prod.operation("HelloOperation", HelloOperation)
+service.connect(HelloService.Output, operation)
+
+PRODUCTIONS = [prod]
 ```
 
 ## Installation
@@ -28,31 +57,12 @@ To start using this proof of concept, install it using pip:
 pip install iris-pex-embedded-python
 ```
 
-with zpm/ipm:
-
-install zpm : 
-
-```objectscript
-set r = ##class(%Net.HttpRequest).%New(),r.Server="pm.community.intersystems.com",r.SSLConfiguration="ISC.FeatureTracker.SSL.Config" d r.Get("/packages/zpm/0.9.0/installer"),$system.OBJ.LoadStream(r.HttpResponse.Data,"c") 
-```
-
-Then install the package:
-
-```objectscript
-zpm "install pex-embbeded-python"
-```
-
-
 ## Getting Started
 
-If you're new to this proof of concept, begin by reading the [installation guide](getting-started/installation.md). Then, follow the [first steps](getting-started/first-steps.md) to create your first Python-authored production.
+If you're new to this project, begin by reading the [installation guide](https://grongierisc.github.io/interoperability-embedded-python/getting-started/installation). Then, follow the [first steps](https://grongierisc.github.io/interoperability-embedded-python/getting-started/first-steps) to create your first Python-authored production.
 
-If you are using an AI coding assistant, start with [AI-assisted coding with IoP](ai-coding.md).
-For concrete workflows, use the [IoP cookbooks](cookbooks/index.md).
-For application repositories, copy the [reusable AGENTS.md template](agents-template.md).
-For healthcare productions, also see [Healthcare AI-assisted coding](healthcare-ai-coding.md).
-
-For the Pythonic production graph model, see [Production Graph](production-graph.md).
-For safe changes to existing IRIS productions, see the [production change workflow](production-change-workflow.md).
+If you are using an AI coding assistant, start with [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
+For concrete workflows, use the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
+For healthcare productions, also see [Healthcare AI-assisted coding](https://grongierisc.github.io/interoperability-embedded-python/healthcare-ai-coding/).
 
 Happy coding!

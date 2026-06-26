@@ -41,7 +41,7 @@ class HelloOperation(BusinessOperation):
 prod = Production("Demo.Production", testing_enabled=True)
 service = prod.service("HelloService", HelloService)
 operation = prod.operation("HelloOperation", HelloOperation)
-prod.connect(service.Output, operation)
+service.connect(HelloService.Output, operation)
 
 PRODUCTIONS = [prod]
 ```
@@ -201,13 +201,13 @@ class OrderOperation(BusinessOperation):
 prod = Production("Demo.Production", testing_enabled=True)
 file = prod.service("FileInput", FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 
 PRODUCTIONS = [prod]
 ```
 
 `target()` declares an outbound target setting on the component class.
-`prod.connect()` sets that setting to the destination component and
+`component.connect(ComponentClass.Target, destination)` sets that setting to the destination component and
 records graph edges available to Python.
 
 Pass a production item name as the first `target()` argument when a route should
@@ -310,7 +310,7 @@ PRODUCTIONS = [FileProduction()]
 
 `target()` declares the outbound target setting on the Python component class.
 `Route(FileService.Output, ORDER_OPERATION)` wires that setting to a production
-item. This is the class-style equivalent of `prod.connect(file.Output, orders)`.
+item. This is the class-style equivalent of `file.connect(FileService.Output, orders)`.
 
 For Python component classes, prefer the descriptor form
 `Route(FileService.Output, ...)`. For existing IRIS classes, use the IRIS
@@ -617,7 +617,7 @@ feed = (
     .host_setting("Limit", int(os.environ.get("REDDIT_LIMIT", "10")))
 )
 exporter = prod.operation("FileExporter", FileOperation)
-prod.connect(feed.Output, exporter)
+feed.connect(RedditService.Output, exporter)
 
 PRODUCTIONS = [prod]
 ```

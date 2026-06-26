@@ -504,7 +504,7 @@ class OrderOperation(BusinessOperation):
 prod = Production("Demo.Production")
 file = prod.service("FileInput", FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 ```
 
 The same topology can be declared as a production subclass. Instantiating the
@@ -561,7 +561,7 @@ class FileProduction(Production):
 `target()` declares a configurable outbound target setting on `FileService`.
 `Route(FileService.Output, ORDER_OPERATION)` wires that setting to a production
 item. This separation mirrors the instance-style form:
-`prod.connect(file.Output, orders)`.
+`file.connect(FileService.Output, orders)`.
 
 For Python component classes, prefer passing the descriptor
 (`FileService.Output`) to `Route`. For built-in IRIS or ObjectScript classes,
@@ -615,6 +615,19 @@ file = (
 )
 ```
 
+For Python components, `ComponentRef.connect(...)` also accepts the `target()`
+descriptor from the component class. This keeps the left-side production item
+instance explicit while giving static tools autocomplete on the class:
+
+```python
+first = prod.service("FirstInput", FileService)
+second = prod.service("SecondInput", FileService)
+orders = prod.operation(OrderOperation)
+
+first.connect(FileService.Output, orders)
+second.connect(FileService.Output, orders)
+```
+
 For ObjectScript or built-in IRIS components, use manual target setting names:
 
 ```python
@@ -642,7 +655,9 @@ instead of shadowing those attributes.
 
 Declared target settings are available as dynamic `ComponentRef` attributes,
 such as `rest.my_target`, and are exposed through `dir(rest)` for runtime
-autocomplete.
+autocomplete. For Pylance, mypy, and other static tools, prefer
+`rest.connect(Rest.my_target, operation)` because completion happens on the
+component class.
 
 Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
