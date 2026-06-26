@@ -219,6 +219,21 @@ rejected = prod.operation(&quot;RejectedOperation&quot;, RejectedOperation)
 prod.connect(process.Accepted, accepted)
 prod.connect(process.Rejected, rejected)
 </code></pre>
+<p>When a route should have a conventional default, pass the target item name to
+<code>target()</code>:</p>
+<pre><code class="language-python">class RouteProcess(BusinessProcess):
+    Accepted = target(&quot;AcceptedOperation&quot;)
+    Rejected = target(&quot;RejectedOperation&quot;)
+
+
+process = prod.process(&quot;RouteProcess&quot;, RouteProcess)
+accepted = prod.operation(&quot;AcceptedOperation&quot;, AcceptedOperation)
+rejected = prod.operation(&quot;RejectedOperation&quot;, RejectedOperation)
+</code></pre>
+<p>The default target is written to the generated setting initial expression and
+to the production Host setting. IoP records the graph edge when the named target
+item exists. Use <code>prod.connect(...)</code> when the production should override the
+class default.</p>
 <h2 id="migration-command">Migration Command</h2>
 <pre><code class="language-bash">iop --migrate settings.py --dry-run
 </code></pre>

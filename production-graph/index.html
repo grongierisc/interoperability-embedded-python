@@ -244,6 +244,10 @@ operational import and brownfield compatibility.</p>
 </ul>
 <p><code>str(target_setting_ref)</code> returns the stable authoring identity, such as
 <code>FileInput.Output</code>. Runtime dispatch uses explicit target setting resolution.</p>
+<p><code>target("OperationName")</code> declares a default target. The default is used as the
+generated IRIS property initial expression, applied to the component Host
+setting, and registered as a graph edge once the target item exists. Explicit
+Host settings and <code>prod.connect(...)</code> override the class default.</p>
 <p>Implemented production lifecycle:</p>
 <ul>
 <li><code>prod.start()</code></li>
@@ -325,6 +329,15 @@ as a compatibility alias.</p>
 file = prod.service(&quot;FileInput&quot;, FileService)
 orders = prod.operation(OrderOperation)
 prod.connect(file.Output, orders)
+</code></pre>
+<p>For a conventional route, the target can be defaulted on the component class:</p>
+<pre><code class="language-python">class FileService(PollingBusinessService):
+    Output = target(&quot;OrderOperation&quot;)
+
+
+prod = Production(&quot;Demo.Production&quot;)
+file = prod.service(&quot;FileInput&quot;, FileService)
+orders = prod.operation(&quot;OrderOperation&quot;, OrderOperation)
 </code></pre>
 <p>ObjectScript and built-in IRIS components use <code>class_name</code>:</p>
 <pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)

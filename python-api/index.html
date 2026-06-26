@@ -390,6 +390,14 @@ class FileService(BusinessService):
         control=controls.directory(),
     )
 </code></pre>
+<p>Pass a target item name to <code>target()</code> to declare a default route:</p>
+<pre><code class="language-python">class FileService(BusinessService):
+    Output = target(&quot;OrderOperation&quot;)
+</code></pre>
+<p>The default is used as the generated IRIS property initial expression and as the
+production Host setting. If the named item is present in the <code>Production</code>, IoP
+also records the graph edge. An explicit Host setting or <code>prod.connect(...)</code>
+overrides the default.</p>
 <p>You can also keep normal Python defaults and attach metadata with <code>typing.Annotated</code>:</p>
 <pre><code class="language-python">from typing import Annotated
 from iop import BusinessService, Category, Setting, controls

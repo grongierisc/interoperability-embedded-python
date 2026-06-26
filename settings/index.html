@@ -382,6 +382,20 @@ PRODUCTIONS = [prod]
 <p><code>target()</code> declares an outbound target setting on the component class.
 <code>prod.connect()</code> sets that setting to the destination component and
 records graph edges available to Python.</p>
+<p>Pass a production item name as the first <code>target()</code> argument when a route should
+have a default target without an explicit <code>prod.connect(...)</code> call:</p>
+<pre><code class="language-python">class FileService(PollingBusinessService):
+    Output = target(&quot;OrderOperation&quot;)
+
+
+prod = Production(&quot;Demo.Production&quot;, testing_enabled=True)
+file = prod.service(&quot;FileInput&quot;, FileService)
+orders = prod.operation(&quot;OrderOperation&quot;, OrderOperation)
+</code></pre>
+<p>The default becomes the generated IRIS property initial expression, populates
+the component Host setting, and is recorded as a graph edge once the named
+target item exists. An explicit Host setting or <code>prod.connect(...)</code> overrides
+the class default.</p>
 <p>You can also write the same production as a class declaration. The class is a
 template; put an instance in <code>PRODUCTIONS</code>.</p>
 <pre><code class="language-python">from dataclasses import dataclass
