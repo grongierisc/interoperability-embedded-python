@@ -151,6 +151,22 @@ def test_explicit_connect_replaces_target_default():
     assert [edge.target for edge in prod.graph().edges] == ["OtherOperation"]
 
 
+def test_component_ref_dir_includes_target_settings_for_completion():
+    class Rest(PollingBusinessService):
+        my_target = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    rest = prod.service(Rest)
+
+    assert "my_target" in dir(rest)
+    assert rest.my_target.path == "Rest.my_target"
+
+    native = prod.service("NativeFile", class_name="EnsLib.File.PassthroughService")
+    native.target_setting("TargetConfigNames")
+
+    assert "TargetConfigNames" in dir(native)
+
+
 def test_production_to_dict_with_auto_names_settings_and_connection():
     prod = Production("Demo.Production", testing_enabled=True)
     file = prod.service(

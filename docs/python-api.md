@@ -640,6 +640,10 @@ Progressive component methods include `pool()`, `enable()`, `disable()`,
 attributes on `ComponentRef`, so their fluent update methods use distinct names
 instead of shadowing those attributes.
 
+Declared target settings are available as dynamic `ComponentRef` attributes,
+such as `rest.my_target`, and are exposed through `dir(rest)` for runtime
+autocomplete.
+
 Python `Production` is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.

@@ -66,6 +66,13 @@ class ComponentRef:
             return self.target_setting(name)
         raise AttributeError(name)
 
+    def __dir__(self) -> list[str]:
+        names = set(super().__dir__())
+        if self.component_class is not None:
+            names.update(_target_setting_names(self.component_class))
+        names.update(self.target_setting_names)
+        return sorted(names)
+
     def target_setting(self, name: str) -> TargetSettingRef:
         self.target_setting_names.add(name)
         return TargetSettingRef(
@@ -232,3 +239,12 @@ class ComponentRef:
             item["Setting"] = settings
 
         return item
+
+
+def _target_setting_names(component_class: type) -> tuple[str, ...]:
+    names: dict[str, None] = {}
+    for base in reversed(component_class.__mro__):
+        for name, value in base.__dict__.items():
+            if isinstance(value, TargetSetting):
+                names[name] = None
+    return tuple(names)
