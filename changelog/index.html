@@ -452,6 +452,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <ul>
 <li>Expose declared and manual target settings through <code>dir(ComponentRef)</code> so <code>rest.my_target</code> style graph handles are discoverable by runtime autocomplete.</li>
 <li>Validate target setting values that reference missing production items.</li>
+<li>Normalize <code>setting(...)</code> and <code>target(...)</code> descriptors used as production setting keys before validation and IRIS rendering.</li>
 <li>Render generated instance-style Python routes with <code>component.connect(...)</code>.</li>
 <li>Refactor business process and operation message dispatch around normalized message keys for <code>@handler</code>, typed methods, legacy <code>DISPATCH</code>, and native IRIS requests.</li>
 </ul>
