@@ -239,7 +239,7 @@ prod = Production(&quot;HelloWorld.Production&quot;, testing_enabled=True)
 
 service = prod.service(&quot;HelloService&quot;, HelloService)
 operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
-prod.connect(service.Output, operation)
+service.connect(HelloService.Output, operation)
 
 PRODUCTIONS = [prod]
 </code></pre>

@@ -252,7 +252,8 @@ class OrderOperation(BusinessOperation):
 </code></pre>
 <p>If another component sends to the operation, declare a <code>target()</code> setting on the
 sender and connect it:</p>
-<pre><code class="language-python">prod.connect(process.Orders, operation)
+<pre><code class="language-python">process = prod.process(&quot;OrderProcess&quot;, OrderProcess)
+process.connect(OrderProcess.Orders, operation)
 </code></pre>
 <h2 id="migration-command">Migration Command</h2>
 <pre><code class="language-bash">iop --migrate settings.py --dry-run

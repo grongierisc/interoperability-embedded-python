@@ -249,8 +249,8 @@ class OrderProcess(BusinessProcess):
 accepted = prod.operation(&quot;AcceptedOperation&quot;, AcceptedOperation)
 rejected = prod.operation(&quot;RejectedOperation&quot;, RejectedOperation)
 
-prod.connect(process.Accepted, accepted)
-prod.connect(process.Rejected, rejected)
+process.connect(OrderProcess.Accepted, accepted)
+process.connect(OrderProcess.Rejected, rejected)
 </code></pre>
 <h2 id="migration-command">Migration Command</h2>
 <pre><code class="language-bash">iop --migrate settings.py --dry-run

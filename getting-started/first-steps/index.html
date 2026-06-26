@@ -269,7 +269,7 @@ prod = Production(&quot;HelloWorld.Production&quot;, testing_enabled=True)
 
 service = prod.service(&quot;HelloService&quot;, HelloService)
 operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
-prod.connect(service.Output, operation)
+service.connect(HelloService.Output, operation)
 
 PRODUCTIONS = [prod]
 </code></pre>
@@ -278,7 +278,7 @@ PRODUCTIONS = [prod]
 <li><code>Production("HelloWorld.Production")</code> declares the IRIS production class.</li>
 <li><code>prod.service("HelloService", HelloService)</code> adds one service item.</li>
 <li><code>prod.operation("HelloOperation", HelloOperation)</code> adds one operation item.</li>
-<li><code>prod.connect(service.Output, operation)</code> sets the service <code>Output</code> target to <code>HelloOperation</code> and records the production graph edge.</li>
+<li><code>service.connect(HelloService.Output, operation)</code> sets the service <code>Output</code> target to <code>HelloOperation</code> and records the production graph edge.</li>
 <li><code>PRODUCTIONS = [prod]</code> tells IoP what to migrate.</li>
 </ul>
 <p>You do not need a separate <code>CLASSES</code> dictionary for these production components. IoP registers Python component classes from the <code>Production</code> graph during migration.</p>

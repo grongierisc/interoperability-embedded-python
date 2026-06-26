@@ -806,7 +806,7 @@ class OrderOperation(BusinessOperation):
 prod = Production(&quot;Demo.Production&quot;)
 file = prod.service(&quot;FileInput&quot;, FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 </code></pre>
 <p>The same topology can be declared as a production subclass. Instantiating the
 class returns a normal <code>Production</code> object, so <code>to_dict()</code>, <code>diff()</code>, <code>sync()</code>,
@@ -856,7 +856,7 @@ class FileProduction(Production):
 <p><code>target()</code> declares a configurable outbound target setting on <code>FileService</code>.
 <code>Route(FileService.Output, ORDER_OPERATION)</code> wires that setting to a production
 item. This separation mirrors the instance-style form:
-<code>prod.connect(file.Output, orders)</code>.</p>
+<code>file.connect(FileService.Output, orders)</code>.</p>
 <p>For Python component classes, prefer passing the descriptor
 (<code>FileService.Output</code>) to <code>Route</code>. For built-in IRIS or ObjectScript classes,
 there is no Python descriptor, so pass the IRIS setting name string such as
@@ -900,6 +900,16 @@ file = (
     .connect(&quot;Output&quot;, orders)
 )
 </code></pre>
+<p>For Python components, <code>ComponentRef.connect(...)</code> also accepts the <code>target()</code>
+descriptor from the component class. This keeps the left-side production item
+instance explicit while giving static tools autocomplete on the class:</p>
+<pre><code class="language-python">first = prod.service(&quot;FirstInput&quot;, FileService)
+second = prod.service(&quot;SecondInput&quot;, FileService)
+orders = prod.operation(OrderOperation)
+
+first.connect(FileService.Output, orders)
+second.connect(FileService.Output, orders)
+</code></pre>
 <p>For ObjectScript or built-in IRIS components, use manual target setting names:</p>
 <pre><code class="language-python">out = prod.operation(&quot;FileOut&quot;, class_name=&quot;EnsLib.File.PassthroughOperation&quot;)
 
@@ -922,7 +932,9 @@ attributes on <code>ComponentRef</code>, so their fluent update methods use dist
 instead of shadowing those attributes.</p>
 <p>Declared target settings are available as dynamic <code>ComponentRef</code> attributes,
 such as <code>rest.my_target</code>, and are exposed through <code>dir(rest)</code> for runtime
-autocomplete.</p>
+autocomplete. For Pylance, mypy, and other static tools, prefer
+<code>rest.connect(Rest.my_target, operation)</code> because completion happens on the
+component class.</p>
 <p>Python <code>Production</code> is the source of truth for Python-authored topology. IRIS
 remains the runtime source of truth. Imported graphs are operational
 reconstructions until metadata persistence makes round-trip fidelity possible.</p>

@@ -328,8 +328,20 @@ as a compatibility alias.</p>
 <pre><code class="language-python">prod = Production(&quot;Demo.Production&quot;)
 file = prod.service(&quot;FileInput&quot;, FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 </code></pre>
+<p>For static autocomplete, bind through the component ref and pass the descriptor
+from the component class:</p>
+<pre><code class="language-python">first = prod.service(&quot;FirstInput&quot;, FileService)
+second = prod.service(&quot;SecondInput&quot;, FileService)
+orders = prod.operation(OrderOperation)
+
+first.connect(FileService.Output, orders)
+second.connect(FileService.Output, orders)
+</code></pre>
+<p>The left-side <code>ComponentRef</code> selects the production item instance, so both
+connections bind the same class-declared target setting to different configured
+items.</p>
 <p>For a conventional route, the target can be defaulted on the component class:</p>
 <pre><code class="language-python">class FileService(PollingBusinessService):
     Output = target(&quot;OrderOperation&quot;)

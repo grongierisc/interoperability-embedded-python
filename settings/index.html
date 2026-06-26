@@ -232,7 +232,7 @@ class HelloOperation(BusinessOperation):
 prod = Production(&quot;Demo.Production&quot;, testing_enabled=True)
 service = prod.service(&quot;HelloService&quot;, HelloService)
 operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
-prod.connect(service.Output, operation)
+service.connect(HelloService.Output, operation)
 
 PRODUCTIONS = [prod]
 </code></pre>
@@ -375,12 +375,12 @@ class OrderOperation(BusinessOperation):
 prod = Production(&quot;Demo.Production&quot;, testing_enabled=True)
 file = prod.service(&quot;FileInput&quot;, FileService)
 orders = prod.operation(OrderOperation)
-prod.connect(file.Output, orders)
+file.connect(FileService.Output, orders)
 
 PRODUCTIONS = [prod]
 </code></pre>
 <p><code>target()</code> declares an outbound target setting on the component class.
-<code>prod.connect()</code> sets that setting to the destination component and
+<code>component.connect(ComponentClass.Target, destination)</code> sets that setting to the destination component and
 records graph edges available to Python.</p>
 <p>Pass a production item name as the first <code>target()</code> argument when a route should
 have a default target without an explicit <code>prod.connect(...)</code> call:</p>
@@ -472,7 +472,7 @@ PRODUCTIONS = [FileProduction()]
 </code></pre>
 <p><code>target()</code> declares the outbound target setting on the Python component class.
 <code>Route(FileService.Output, ORDER_OPERATION)</code> wires that setting to a production
-item. This is the class-style equivalent of <code>prod.connect(file.Output, orders)</code>.</p>
+item. This is the class-style equivalent of <code>file.connect(FileService.Output, orders)</code>.</p>
 <p>For Python component classes, prefer the descriptor form
 <code>Route(FileService.Output, ...)</code>. For existing IRIS classes, use the IRIS
 setting name string, for example <code>Route("TargetConfigNames", "FileOut")</code>.</p>
@@ -727,7 +727,7 @@ feed = (
     .host_setting(&quot;Limit&quot;, int(os.environ.get(&quot;REDDIT_LIMIT&quot;, &quot;10&quot;)))
 )
 exporter = prod.operation(&quot;FileExporter&quot;, FileOperation)
-prod.connect(feed.Output, exporter)
+feed.connect(RedditService.Output, exporter)
 
 PRODUCTIONS = [prod]
 </code></pre>

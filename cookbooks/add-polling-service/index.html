@@ -221,7 +221,7 @@ class FilePollService(PollingBusinessService):
 <p>In <code>settings.py</code>:</p>
 <pre><code class="language-python">service = prod.service(&quot;FilePollService&quot;, FilePollService)
 operation = prod.operation(&quot;TargetOperation&quot;, TargetOperation)
-prod.connect(service.Output, operation)
+service.connect(FilePollService.Output, operation)
 </code></pre>
 <h2 id="migration-command">Migration Command</h2>
 <pre><code class="language-bash">iop --migrate settings.py --dry-run
