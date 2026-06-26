@@ -209,6 +209,18 @@ class FileService(BusinessService):
     )
 ```
 
+Pass a target item name to `target()` to declare a default route:
+
+```python
+class FileService(BusinessService):
+    Output = target("OrderOperation")
+```
+
+The default is used as the generated IRIS property initial expression and as the
+production Host setting. If the named item is present in the `Production`, IoP
+also records the graph edge. An explicit Host setting or `prod.connect(...)`
+overrides the default.
+
 You can also keep normal Python defaults and attach metadata with `typing.Annotated`:
 
 ```python

@@ -34,6 +34,7 @@ from .types import (
     PersistentMessageRegistration,
     ProductionDiff,
     ProductionGraph,
+    TargetSetting,
     TargetSettingRef,
     _edge_identity,
 )
@@ -1055,6 +1056,35 @@ class Production(_DeclarativeProductionMixin):
                     )
         self._items.append(ref)
         self._items_by_name[ref.name] = ref
+        self._apply_target_defaults()
+
+    def _apply_target_defaults(self) -> None:
+        for ref in self._items:
+            for setting_name, target_name in self._target_default_routes(ref):
+                if setting_name not in ref.host_settings:
+                    if setting_name in ref.target_setting_names:
+                        continue
+                    ref.host_settings[setting_name] = target_name
+                ref.target_setting_names.add(setting_name)
+                if str(ref.host_settings[setting_name]) != target_name:
+                    continue
+                if target_name not in self._items_by_name:
+                    continue
+                self._register_connection(
+                    ref.name,
+                    setting_name,
+                    target_name,
+                )
+
+    def _target_default_routes(self, ref: ComponentRef) -> tuple[tuple[str, str], ...]:
+        if ref.component_class is None:
+            return ()
+        routes: list[tuple[str, str]] = []
+        for setting_name, descriptor in _target_settings(ref.component_class):
+            target_name = _target_default_name(descriptor.default)
+            if target_name:
+                routes.append((setting_name, target_name))
+        return tuple(routes)
 
     def _diff_current(
         self,
@@ -1141,3 +1171,21 @@ def _connection_mode(mode: str) -> str:
         "Unsupported connection mode: "
         f"{mode!r}. Expected 'replace', 'add', or 'remove'."
     )
+
+
+def _target_settings(
+    component_class: type,
+) -> tuple[tuple[str, TargetSetting], ...]:
+    descriptors: dict[str, TargetSetting] = {}
+    for base in reversed(component_class.__mro__):
+        for name, value in base.__dict__.items():
+            if isinstance(value, TargetSetting):
+                descriptors[name] = value
+    return tuple(descriptors.items())
+
+
+def _target_default_name(value: Any) -> str:
+    if value is None:
+        return ""
+    name = getattr(value, "name", value)
+    return str(name).strip()

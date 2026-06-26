@@ -45,6 +45,10 @@ class FileService(PollingBusinessService):
     Output = target()
 
 
+class DefaultTargetService(PollingBusinessService):
+    Output = target("OrderOperation")
+
+
 class OrderProcess(BusinessProcess):
     Output = target()
 
@@ -80,6 +84,71 @@ def test_target_declares_config_name_setting_metadata():
         "",
         controls.production_item(),
     ]
+
+
+def test_target_accepts_default_target_metadata():
+    assert _property(DefaultTargetService, "Output") == [
+        "Output",
+        "Ens.DataType.ConfigName",
+        "OrderOperation",
+        False,
+        "Basic",
+        "",
+        controls.production_item(),
+    ]
+
+    class KeywordDefaultService(PollingBusinessService):
+        Output = target(default="KeywordOperation")
+
+    assert _property(KeywordDefaultService, "Output")[2] == "KeywordOperation"
+
+
+def test_target_default_wires_host_setting_and_graph_when_target_is_added_later():
+    prod = Production("Demo.Production", testing_enabled=True)
+    service = prod.service("FileInput", DefaultTargetService)
+
+    assert service.host_settings["Output"] == "OrderOperation"
+    assert prod.graph().edges == ()
+
+    prod.operation("OrderOperation", OrderOperation)
+
+    assert prod.resolve_target(service.Output) == "OrderOperation"
+    assert prod.graph().to_dict()["edges"] == [
+        {
+            "source": "FileInput.Output",
+            "source_item": "FileInput",
+            "source_target_setting": "Output",
+            "target": "OrderOperation",
+            "origin": "authored",
+            "interaction": "request",
+        }
+    ]
+
+
+def test_target_default_does_not_override_explicit_host_setting():
+    prod = Production("Demo.Production", testing_enabled=True)
+    service = prod.service(
+        "FileInput",
+        DefaultTargetService,
+        settings={"Output": "OtherOperation"},
+    )
+    prod.operation("OrderOperation", OrderOperation)
+
+    assert service.host_settings["Output"] == "OtherOperation"
+    assert prod.graph().edges == ()
+
+
+def test_explicit_connect_replaces_target_default():
+    prod = Production("Demo.Production", testing_enabled=True)
+    service = prod.service("FileInput", DefaultTargetService)
+    prod.operation("OrderOperation", OrderOperation)
+    other = prod.operation("OtherOperation", OrderOperation)
+
+    prod.connect(service.Output, other)
+
+    assert service.host_settings["Output"] == "OtherOperation"
+    assert prod.resolve_target(service.Output) == "OtherOperation"
+    assert [edge.target for edge in prod.graph().edges] == ["OtherOperation"]
 
 
 def test_production_to_dict_with_auto_names_settings_and_connection():

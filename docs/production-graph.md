@@ -51,6 +51,11 @@ Implemented graph import and display:
 `str(target_setting_ref)` returns the stable authoring identity, such as
 `FileInput.Output`. Runtime dispatch uses explicit target setting resolution.
 
+`target("OperationName")` declares a default target. The default is used as the
+generated IRIS property initial expression, applied to the component Host
+setting, and registered as a graph edge once the target item exists. Explicit
+Host settings and `prod.connect(...)` override the class default.
+
 Implemented production lifecycle:
 
 - `prod.start()`
@@ -141,6 +146,18 @@ prod = Production("Demo.Production")
 file = prod.service("FileInput", FileService)
 orders = prod.operation(OrderOperation)
 prod.connect(file.Output, orders)
+```
+
+For a conventional route, the target can be defaulted on the component class:
+
+```python
+class FileService(PollingBusinessService):
+    Output = target("OrderOperation")
+
+
+prod = Production("Demo.Production")
+file = prod.service("FileInput", FileService)
+orders = prod.operation("OrderOperation", OrderOperation)
 ```
 
 ObjectScript and built-in IRIS components use `class_name`:

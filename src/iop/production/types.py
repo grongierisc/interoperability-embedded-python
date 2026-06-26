@@ -12,11 +12,11 @@ from ..components.settings import Category, Setting, controls
 class TargetSetting(Setting):
     """Production target setting descriptor created by target()."""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, default: Any = "", **kwargs: Any):
         kwargs.setdefault("iris_type", "Ens.DataType.ConfigName")
         kwargs.setdefault("category", Category.BASIC)
         kwargs.setdefault("control", controls.production_item())
-        super().__init__("", **kwargs)
+        super().__init__(default, **kwargs)
 
     @overload
     def __get__(self, instance: None, owner: type | None = None) -> TargetSetting: ...
@@ -34,12 +34,15 @@ class TargetSetting(Setting):
         return super().__get__(instance, owner)
 
 
-def target(**kwargs: Any) -> TargetSetting:
+def target(default: Any = "", **kwargs: Any) -> TargetSetting:
     """Purpose:
         Declare a configurable outbound target setting on a component class.
 
     Use when:
         A service or process sends messages to another production component.
+
+        Pass a target item name as the first argument when the route should have
+        a default target even without an explicit Production.connect(...) call.
 
     Lifecycle:
         The descriptor becomes an IRIS production setting. Production.connect(...)
@@ -59,11 +62,14 @@ def target(**kwargs: Any) -> TargetSetting:
 
         prod.connect(router.Output, operation)
 
+        class DefaultRouter(BusinessProcess):
+            Output = target("DefaultOperation")
+
     Related:
         docs/cookbooks/production-settings-and-targets.md,
         docs/production-graph.md
     """
-    return TargetSetting(**kwargs)
+    return TargetSetting(default, **kwargs)
 
 
 @dataclass
