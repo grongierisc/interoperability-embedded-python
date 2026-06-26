@@ -9,6 +9,7 @@ from .common import (
     _adapter_type_from_component_class,
     _apply_settings_update,
     _auto_proxy_class_name,
+    _normalize_settings_mapping,
 )
 from .component import ComponentRef
 from .declarative import _DeclarativeProductionMixin
@@ -432,8 +433,8 @@ class Production(_DeclarativeProductionMixin):
             comment=comment,
             log_trace_events=log_trace_events,
             schedule=schedule,
-            host_settings=dict(settings or {}),
-            adapter_settings=dict(adapter_settings or {}),
+            host_settings=_normalize_settings_mapping(settings),
+            adapter_settings=_normalize_settings_mapping(adapter_settings),
         )
         self._add_item(ref)
         return ref

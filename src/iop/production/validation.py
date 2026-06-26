@@ -8,6 +8,7 @@ from .common import (
     PRODUCTION_SETTING_FIELDS_BY_IRIS,
     PRODUCTION_SETTING_NAMES,
     SETTING_NAME_ALIASES,
+    _normalize_settings_mapping,
 )
 from .import_ import _as_list, _production_payload, _split_settings
 from .types import TargetSetting
@@ -183,14 +184,18 @@ def _validate_component_ref(item: Any) -> list[ProductionValidationIssue]:
 
     issues.extend(
         _validate_settings(
-            settings=dict(getattr(item, "host_settings", {}) or {}),
+            settings=_normalize_settings_mapping(
+                getattr(item, "host_settings", {}) or {}
+            ),
             path_prefix=f"items.{item_name}.settings.Host",
             local_class=component_class,
             iris_class_name=class_name,
         )
     )
 
-    adapter_settings = dict(getattr(item, "adapter_settings", {}) or {})
+    adapter_settings = _normalize_settings_mapping(
+        getattr(item, "adapter_settings", {}) or {}
+    )
     if str(getattr(item, "kind", "")) == "process" and adapter_settings:
         issues.append(
             ProductionValidationIssue(
@@ -355,7 +360,9 @@ def _validate_target_setting_values(production: Any) -> list[ProductionValidatio
     issues: list[ProductionValidationIssue] = []
     for item in items:
         item_name = str(getattr(item, "name", ""))
-        host_settings = dict(getattr(item, "host_settings", {}) or {})
+        host_settings = _normalize_settings_mapping(
+            getattr(item, "host_settings", {}) or {}
+        )
         for setting_name in _target_setting_names(item):
             if setting_name not in host_settings:
                 continue

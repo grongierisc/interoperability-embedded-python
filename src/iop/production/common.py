@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+from ..components.settings import Setting
+
 PRODUCTION_SETTING_FIELDS: dict[str, tuple[str, Any]] = {
     "shutdown_timeout": ("ShutdownTimeout", 120),
     "update_timeout": ("UpdateTimeout", 10),
@@ -83,11 +85,21 @@ def _adapter_type_from_class_name(class_name: str | None) -> str:
     return _adapter_type_from_component_class(component_class)
 
 
+def _setting_name(name: Any) -> str:
+    if isinstance(name, Setting) and name.name:
+        return name.name
+    return str(name)
+
+
+def _normalize_settings_mapping(values: Any) -> dict[str, Any]:
+    return {_setting_name(key): value for key, value in dict(values or {}).items()}
+
+
 def _settings_to_iris(target_name: str, values: dict[str, Any]) -> list[dict[str, str]]:
     return [
         {
             "@Target": target_name,
-            "@Name": name,
+            "@Name": _setting_name(name),
             "#text": _text_value(value),
         }
         for name, value in values.items()
@@ -97,6 +109,7 @@ def _settings_to_iris(target_name: str, values: dict[str, Any]) -> list[dict[str
 def _apply_settings_update(target: dict[str, Any], updates: Any) -> None:
     """Merge *updates* into *target*, treating ``None`` values as removals."""
     for key, value in (updates or {}).items():
+        key = _setting_name(key)
         if value is None:
             target.pop(key, None)
         else:

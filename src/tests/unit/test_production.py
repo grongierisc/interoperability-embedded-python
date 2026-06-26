@@ -168,6 +168,29 @@ def test_production_validate_warns_explicit_missing_target_setting_value():
     assert report.issues[0].kind == "route"
 
 
+def test_target_setting_descriptor_keys_are_normalized_in_host_settings():
+    class RoutingService(PollingBusinessService):
+        Output = target()
+
+    prod = Production("Demo.Production", testing_enabled=True)
+    service = prod.service(
+        "FileInput",
+        RoutingService,
+        settings={RoutingService.Output: "OrderOperation"},
+    )
+    prod.operation("OrderOperation", OrderOperation)
+
+    assert service.host_settings == {"Output": "OrderOperation"}
+    assert service.to_dict()["Setting"] == [
+        {"@Target": "Host", "@Name": "Output", "#text": "OrderOperation"}
+    ]
+    assert prod.validate().issues == ()
+
+    service.host_setting(RoutingService.Output, "OtherOperation")
+
+    assert service.host_settings == {"Output": "OtherOperation"}
+
+
 def test_explicit_connect_replaces_target_default():
     prod = Production("Demo.Production", testing_enabled=True)
     service = prod.service("FileInput", DefaultTargetService)

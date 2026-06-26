@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Expose declared and manual target settings through `dir(ComponentRef)` so `rest.my_target` style graph handles are discoverable by runtime autocomplete.
 - Validate target setting values that reference missing production items.
+- Normalize `setting(...)` and `target(...)` descriptors used as production setting keys before validation and IRIS rendering.
 - Render generated instance-style Python routes with `component.connect(...)`.
 - Refactor business process and operation message dispatch around normalized message keys for `@handler`, typed methods, legacy `DISPATCH`, and native IRIS requests.
 

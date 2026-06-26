@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Protocol
+from typing import Any, ClassVar, Protocol, cast
 
-from .common import SETTING_NAME_ALIASES
+from .common import SETTING_NAME_ALIASES, _normalize_settings_mapping
 from .types import TargetSetting
 
 
@@ -36,7 +36,9 @@ class Route:
             targets = (self.targets,)
         else:
             try:
-                targets = tuple(self.targets)
+                targets = tuple(
+                    cast(Iterable[str | _NamedRouteTarget], self.targets)
+                )
             except TypeError as exc:
                 raise TypeError(
                     f"Route {self.target_setting_name!r} targets must be an item name, "
@@ -174,7 +176,7 @@ def _mapping(
     item_name: str,
 ) -> dict[str, Any]:
     try:
-        return dict(values or {})
+        return _normalize_settings_mapping(values)
     except (TypeError, ValueError) as exc:
         raise TypeError(
             f"Production item {item_name!r} {field_name} must be a mapping"
