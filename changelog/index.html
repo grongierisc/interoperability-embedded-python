@@ -130,7 +130,7 @@
               <ul class="current">
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Changelog</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#401-unreleased">[4.0.1] - unreleased</a>
+    <li class="toctree-l2"><a class="reference internal" href="#401-2026-06-29">[4.0.1] - 2026-06-29</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#added">Added</a>
     </li>
@@ -441,7 +441,7 @@
 <p>All notable changes to this project will be documented in this file.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
-<h2 id="401-unreleased">[4.0.1] - unreleased</h2>
+<h2 id="401-2026-06-29">[4.0.1] - 2026-06-29</h2>
 <h3 id="added">Added</h3>
 <ul>
 <li>Add default target support to <code>target(...)</code>, allowing <code>target("OperationName")</code> to populate the generated setting initial expression, production Host setting, and graph edge once the named target item exists.</li>
@@ -453,6 +453,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>Expose declared and manual target settings through <code>dir(ComponentRef)</code> so <code>rest.my_target</code> style graph handles are discoverable by runtime autocomplete.</li>
 <li>Validate target setting values that reference missing production items.</li>
 <li>Normalize <code>setting(...)</code> and <code>target(...)</code> descriptors used as production setting keys before validation and IRIS rendering.</li>
+<li>Improve component registration failures during migration with targeted guidance for missing IoP support classes and container startup races.</li>
 <li>Render generated instance-style Python routes with <code>component.connect(...)</code>.</li>
 <li>Refactor business process and operation message dispatch around normalized message keys for <code>@handler</code>, typed methods, legacy <code>DISPATCH</code>, and native IRIS requests.</li>
 </ul>
