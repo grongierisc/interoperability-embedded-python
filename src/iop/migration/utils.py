@@ -186,6 +186,69 @@ def _get_python_path() -> str:
     return ""
 
 
+def _migration_namespace_hint() -> str:
+    namespace = os.environ.get("IRISNAMESPACE") or os.environ.get("IOP_NAMESPACE")
+    if namespace:
+        return f"namespace {namespace!r}"
+    return "the target namespace"
+
+
+def _looks_like_missing_iris_class_error(exc: RuntimeError) -> bool:
+    message = str(exc).lower()
+    return "error finding class" in message or "iop.utils" in message
+
+
+def _format_register_component_error(
+    exc: RuntimeError,
+    *,
+    module: str,
+    classname: str,
+    path: str,
+    iris_classname: str,
+) -> str:
+    namespace_hint = _migration_namespace_hint()
+    lines = [
+        (
+            f"Could not register IRIS proxy class {iris_classname!r} "
+            f"for Python component {module}.{classname}."
+        )
+    ]
+
+    if _looks_like_missing_iris_class_error(exc):
+        lines.extend(
+            [
+                "",
+                "IRIS could not find a class required during component registration.",
+                (
+                    "Most often this means the IoP support classes "
+                    f"(`IOP.Utils`, `IOP.BusinessService`, etc.) are not loaded in "
+                    f"{namespace_hint} yet, or migration ran before `iop --init` "
+                    "completed."
+                ),
+                "",
+                "Fix:",
+                f"  1. Run `iop --init` in {namespace_hint}.",
+                "  2. Re-run `iop --migrate <settings.py>`.",
+                (
+                    "  3. In containers, wait for IRIS with "
+                    "`/usr/irissys/dev/Container/waitReady.sh` before `iop --init`."
+                ),
+            ]
+        )
+
+    lines.extend(
+        [
+            "",
+            "Registration details:",
+            f"  IRIS proxy class: {iris_classname}",
+            f"  Python component: {module}.{classname}",
+            f"  Python class path: {path}",
+            f"  Original IRIS error: {exc}",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def register_component(
     module: str,
     classname: str,
@@ -228,10 +291,13 @@ def register_component(
         )
     except RuntimeError as e:
         raise RuntimeError(
-            "Could not register component "
-            f"{iris_classname} from {module}.{classname}. "
-            "If IRIS reports that IOP.Utils is missing, initialize the IRIS "
-            f"support classes with `iop --init`. Original IRIS error: {e}"
+            _format_register_component_error(
+                e,
+                module=module,
+                classname=classname,
+                path=path,
+                iris_classname=iris_classname,
+            )
         ) from e
 
 

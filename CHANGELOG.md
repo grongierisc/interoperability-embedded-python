@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.0.1] - unreleased
+## [4.0.1] - 2026-06-29
 ### Added
 - Add default target support to `target(...)`, allowing `target("OperationName")` to populate the generated setting initial expression, production Host setting, and graph edge once the named target item exists.
 - Allow `ComponentRef.connect(...)` to accept class-declared `target()` descriptors, supporting static-friendly calls such as `rest.connect(Rest.Output, operation)`.
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expose declared and manual target settings through `dir(ComponentRef)` so `rest.my_target` style graph handles are discoverable by runtime autocomplete.
 - Validate target setting values that reference missing production items.
 - Normalize `setting(...)` and `target(...)` descriptors used as production setting keys before validation and IRIS rendering.
+- Improve component registration failures during migration with targeted guidance for missing IoP support classes and container startup races.
 - Render generated instance-style Python routes with `component.connect(...)`.
 - Refactor business process and operation message dispatch around normalized message keys for `@handler`, typed methods, legacy `DISPATCH`, and native IRIS requests.
 

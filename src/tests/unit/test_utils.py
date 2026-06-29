@@ -49,12 +49,22 @@ class TestComponentRegistration:
         assert unbind_component is migration_utils.unbind_component
         assert list_bindings is migration_utils.list_bindings
 
-    def test_register_component_fails_on_iris_error(self, register_path):
-        with patch("iris.cls", side_effect=RuntimeError):
-            with pytest.raises(RuntimeError):
+    def test_register_component_fails_on_iris_error(self, register_path, monkeypatch):
+        monkeypatch.setenv("IRISNAMESPACE", "IRISAPP")
+        with patch("iris.cls", side_effect=RuntimeError("iris.cls: error finding class")):
+            with pytest.raises(RuntimeError) as exc_info:
                 migration_utils.register_component(
                     "bo", "EmailOperation", register_path, 1, "UnitTest.EmailOperation"
                 )
+
+        message = str(exc_info.value)
+        assert "Could not register IRIS proxy class 'UnitTest.EmailOperation'" in message
+        assert "for Python component bo.EmailOperation" in message
+        assert "IoP support classes" in message
+        assert "are not loaded in namespace 'IRISAPP'" in message
+        assert "Run `iop --init`" in message
+        assert "waitReady.sh" in message
+        assert "Original IRIS error: iris.cls: error finding class" in message
 
     def test_unregister_component_deletes_proxy_class(self):
         iris = MagicMock()
@@ -240,9 +250,14 @@ class TestSchemaOperations:
             migration_utils.register_message_schema(FailMessage)
 
     def test_register_schema(self):
-        with patch("iris.cls") as mock_cls:
+        iris = MagicMock()
+        iris.system.Status.IsError.return_value = False
+
+        with patch.object(migration_utils._iris, "get_iris", return_value=iris):
             migration_utils.register_schema("test.schema", "{}", "test")
-            mock_cls.return_value.Import.assert_called_once()
+
+        iris.cls.assert_called_once_with("IOP.Message.JSONSchema")
+        iris.cls.return_value.Import.assert_called_once_with("{}", "test", "test.schema")
 
 
 class TestMigrationPlan:
