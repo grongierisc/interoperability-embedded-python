@@ -185,7 +185,8 @@
 source .venv/bin/activate
 </code></pre>
 <h3 id="install-the-dependencies">Install the dependencies.</h3>
-<pre><code class="language-bash">pip install -r requirements-dev.txt
+<pre><code class="language-bash">python -m pip install -e &quot;.[dev]&quot;
+tox
 </code></pre>
 <h3 id="have-a-running-iris-instance">Have a running IRIS instance.</h3>
 <p>Here you can choose between:</p>
@@ -208,7 +209,7 @@ source .venv/bin/activate
 <pre><code class="language-bash">ln -s &lt;your_git_dir&gt;/src/iop $IRISINSTALLDIR/python/iop
 </code></pre>
 <h5 id="run-the-unit-tests_1">Run the unit tests.</h5>
-<pre><code class="language-bash">pytest
+<pre><code class="language-bash">tox -e py
 </code></pre>
 <h4 id="docker-installation-of-iris">Docker installation of IRIS</h4>
 <p>No prerequisites are needed. Just run the following command:</p>
