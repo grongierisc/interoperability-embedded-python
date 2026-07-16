@@ -3,10 +3,13 @@ import os
 import runpy
 import tempfile
 import unittest
+from importlib import import_module
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
 from iop.cli.main import _format_test_response, main
+
+cli_main_module = import_module("iop.cli.main")
 
 
 class TestIOPCli(unittest.TestCase):
@@ -15,8 +18,8 @@ class TestIOPCli(unittest.TestCase):
     def setUp(self):
         # Force local mode regardless of any IOP_URL / IOP_SETTINGS env vars
         # that may be set by a parallel e2e test session.
-        self._remote_patcher = patch(
-            "iop.cli.main.get_remote_settings", return_value=None
+        self._remote_patcher = patch.object(
+            cli_main_module, "get_remote_settings", return_value=None
         )
         self._remote_patcher.start()
 
@@ -24,7 +27,7 @@ class TestIOPCli(unittest.TestCase):
         self._remote_patcher.stop()
 
     def test_module_entrypoint_calls_cli_main(self):
-        with patch("iop.cli.main.main") as mock_main:
+        with patch.object(cli_main_module, "main") as mock_main:
             runpy.run_module("iop", run_name="__main__")
 
         mock_main.assert_called_once_with()
@@ -275,8 +278,9 @@ class TestIOPCli(unittest.TestCase):
     def test_export_python_format_uses_production_reconstruction(self):
         production = MagicMock()
         production.to_python.return_value = "from iop import Production\n"
-        with patch(
-            "iop.cli.main.Production.from_iris",
+        with patch.object(
+            cli_main_module.Production,
+            "from_iris",
             return_value=production,
         ) as mock_from_iris:
             with patch("sys.stdout", new=StringIO()) as fake_out:
@@ -294,8 +298,9 @@ class TestIOPCli(unittest.TestCase):
     def test_export_class_format_uses_production_reconstruction(self):
         production = MagicMock()
         production.to_class.return_value = "from iop import Production, ServiceItem\n"
-        with patch(
-            "iop.cli.main.Production.from_iris",
+        with patch.object(
+            cli_main_module.Production,
+            "from_iris",
             return_value=production,
         ) as mock_from_iris:
             with patch("sys.stdout", new=StringIO()) as fake_out:
@@ -316,8 +321,9 @@ class TestIOPCli(unittest.TestCase):
     def test_export_graph_format_prints_reconstructed_graph(self):
         production = MagicMock()
         production.graph.return_value = "Demo.Production\n  FileInput"
-        with patch(
-            "iop.cli.main.Production.from_iris",
+        with patch.object(
+            cli_main_module.Production,
+            "from_iris",
             return_value=production,
         ):
             with patch("sys.stdout", new=StringIO()) as fake_out:
@@ -331,8 +337,9 @@ class TestIOPCli(unittest.TestCase):
     def test_export_mermaid_format_prints_reconstructed_graph(self):
         production = MagicMock()
         production.to_mermaid.return_value = "flowchart LR\n  FileInput --> Order\n"
-        with patch(
-            "iop.cli.main.Production.from_iris",
+        with patch.object(
+            cli_main_module.Production,
+            "from_iris",
             return_value=production,
         ) as mock_from_iris:
             with patch("sys.stdout", new=StringIO()) as fake_out:

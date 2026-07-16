@@ -9,7 +9,10 @@ iris_start () {
 
 iris_stop () {
   echo "Stopping IRIS"
-  iris stop iris quietly
+  if ! iris stop iris quietly; then
+    echo "Warning: IRIS did not stop cleanly; container cleanup will terminate it." >&2
+  fi
+  return 0
 }
 
 exit_on_error () {
@@ -37,7 +40,7 @@ exit_on_error
 
 # Unit and local IRIS tests. Remote API tests run in their dedicated CI job.
 cd ..
-python3 -m pytest src/tests/unit src/tests/e2e/local
+python3 scripts/run_pytest.py src/tests/unit src/tests/e2e/local
 exit_on_error
 
 # Integration tests

@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update the default `PersistentMessage` schema mode from `extend` to `managed`
   for compatibility with `iris-persistence` 0.3.
 
+### Fixed
+- Make CLI mocks resolve consistently on Python 3.10 when `iop.cli.main` is
+  also exposed as the public CLI function.
+- Preserve pytest's real exit status when preview IRIS changes the process
+  status during Embedded Python interpreter shutdown.
+
 ### Internal
 - Add wheel-content and installed-ObjectScript validation.
 - Refactor persistent-message resolution and production/migration internals
