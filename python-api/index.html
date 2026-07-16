@@ -227,7 +227,10 @@ class MyRequest(PydanticMessage):
 </code></pre>
 <h3 id="persistentmessage">PersistentMessage 📦</h3>
 <p>Base class for native IRIS message body classes backed by <code>iris-persistence</code>. Fields are declared directly on the Python class.</p>
-<p>By default, a <code>PersistentMessage</code> generates an IRIS class that extends <code>Ens.MessageBody</code>, uses schema mode <code>extend</code>, and enables runtime auto-sync in extend mode.</p>
+<p>By default, a <code>PersistentMessage</code> generates an IRIS class that extends
+<code>Ens.MessageBody</code>, uses schema mode <code>managed</code>, and enables runtime auto-sync in
+managed mode. This is the replacement for the <code>extend</code> mode removed in
+<code>iris-persistence</code> 0.3.</p>
 <p><strong>Example:</strong></p>
 <pre><code class="language-python">from iop import Field, Model, PersistentMessage
 
