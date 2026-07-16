@@ -104,6 +104,9 @@ class MessageSerializer:
                 f"Failed to load class {serial.classname}: {str(e)}"
             ) from e
 
+        if not isinstance(msg_class, type):
+            raise SerializationError(f"Class {msg_class} must be a class")
+
         if is_dataclass(msg_class) and issubclass(msg_class, BaseModel):
             raise SerializationError(
                 f"Class '{msg_class.__name__}' combines @dataclass with PydanticMessage, which are incompatible. "

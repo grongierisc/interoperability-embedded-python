@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Changed
+- Move remote debugging support to the optional `debug` extra. Install
+  `iris-pex-embedded-python[debug]` before enabling debugpy integration.
+- Standardize contributor verification through the `dev` extra and tox.
+- Publish packages only from explicit releases after verification.
+
+### Internal
+- Add wheel-content and installed-ObjectScript validation.
+- Refactor persistent-message resolution and production/migration internals
+  without changing their public interfaces.
+
 ## [4.0.1] - 2026-06-29
 ### Added
 - Add default target support to `target(...)`, allowing `target("OperationName")` to populate the generated setting initial expression, production Host setting, and graph edge once the named target item exists.

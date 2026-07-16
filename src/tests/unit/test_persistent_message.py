@@ -295,3 +295,100 @@ def test_deserializes_iris_originated_message_with_class_parameters(tmp_path):
         sys.modules.pop("msg", None)
         while str(app_dir) in sys.path:
             sys.path.remove(str(app_dir))
+
+
+def _native_for(classname: str, object_id: str = ""):
+    class FakeNative:
+        def _Id(self):
+            return object_id
+
+    native = FakeNative()
+    setattr(native, "%ClassName", lambda full=1: classname)
+    return native
+
+
+def test_unmapped_native_message_passes_through():
+    native = _native_for("missing.module.Message")
+
+    assert deserialize_persistent_message(native) is native
+
+
+def test_invalid_strict_mapping_reports_missing_python_class():
+    native = _native_for("Demo.Msg.Renamed")
+    parameters = {
+        "IOP_MESSAGE_KIND": "PersistentMessage",
+        "IOP_PYTHON_CLASS": "missing.module.RenamedMessage",
+    }
+
+    with patch(
+        "iop.messages.persistent.get_iris_class_parameter",
+        side_effect=lambda _classname, parameter: parameters.get(parameter),
+    ):
+        with pytest.raises(
+            persistent_message_module.PersistentMessageError,
+            match="could not be imported",
+        ):
+            deserialize_persistent_message(native)
+
+
+def test_invalid_strict_mapping_rejects_non_persistent_class():
+    native = _native_for("Demo.Msg.NotPersistent")
+    parameters = {
+        "IOP_MESSAGE_KIND": "PersistentMessage",
+        "IOP_PYTHON_CLASS": "builtins.str",
+    }
+
+    with patch(
+        "iop.messages.persistent.get_iris_class_parameter",
+        side_effect=lambda _classname, parameter: parameters.get(parameter),
+    ):
+        with pytest.raises(
+            persistent_message_module.PersistentMessageError,
+            match="not a PersistentMessage subclass",
+        ):
+            deserialize_persistent_message(native)
+
+
+def test_non_strict_convention_for_wrong_class_passes_through():
+    native = _native_for("builtins.str")
+
+    assert deserialize_persistent_message(native) is native
+
+
+def test_cache_remapping_invalidates_both_directions_and_class_cache():
+    persistent_message_module._cache_mapping(
+        "app.Message",
+        "Demo.OldMessage",
+        python_classpath="/old",
+        message_class=NativeOrderMessage,
+    )
+    persistent_message_module._cache_mapping(
+        "app.Message",
+        "Demo.NewMessage",
+        python_classpath="/new",
+        message_class=ConventionOrderMessage,
+    )
+
+    assert "Demo.OldMessage" not in persistent_message_module._IRIS_TO_PYTHON_CACHE
+    assert "Demo.OldMessage" not in persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE
+    assert persistent_message_module._PYTHON_TO_IRIS_CACHE["app.Message"] == (
+        "Demo.NewMessage"
+    )
+    assert persistent_message_module._IRIS_TO_MESSAGE_CLASS_CACHE[
+        "Demo.NewMessage"
+    ] is ConventionOrderMessage
+
+
+def test_empty_native_object_id_is_normalized_to_unset():
+    register_persistent_message_class(
+        NativeOrderMessage,
+        "Demo.Msg.NativeOrderMessage",
+        sync_schema=False,
+    )
+    native = _native_for("Demo.Msg.NativeOrderMessage")
+    native.OrderId = "A-4"
+    native.Amount = 1.0
+
+    message = deserialize_persistent_message(native)
+
+    assert message.get_iris_id() is None

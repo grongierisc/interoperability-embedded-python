@@ -6,7 +6,7 @@
 [![PyPI - License](https://img.shields.io/pypi/l/iris-pex-embedded-python)](https://pypi.org/project/iris-pex-embedded-python/)
 ![GitHub last commit](https://img.shields.io/github/last-commit/grongierisc/interoperability-embedded-python)
 
-Welcome to the **Interoperability On Python (IoP)** proof of concept! This project demonstrates how the **IRIS Interoperability Framework** can be utilized with a **Python-first approach**.
+Welcome to **Interoperability On Python (IoP)**, a production-stable Python-first toolkit for building on the **IRIS Interoperability Framework**.
 
 Documentation can be found [here](https://grongierisc.github.io/interoperability-embedded-python/).
 For prompt-driven workflows, see [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
@@ -51,7 +51,7 @@ PRODUCTIONS = [prod]
 
 ## Installation
 
-To start using this proof of concept, install it using pip:
+Install the production-stable package using pip:
 
 ```bash
 pip install iris-pex-embedded-python
@@ -66,3 +66,22 @@ For concrete workflows, use the [IoP cookbooks](https://grongierisc.github.io/in
 For healthcare productions, also see [Healthcare AI-assisted coding](https://grongierisc.github.io/interoperability-embedded-python/healthcare-ai-coding/).
 
 Happy coding!
+
+## Compatibility and support
+
+IoP supports Python 3.10 through 3.14 and InterSystems IRIS 2021.2 or newer.
+Changes follow semantic versioning:
+backward-compatible features and deprecations ship in minor releases, while
+removals are reserved for major releases and are announced in the changelog.
+IRIS compatibility is continuously checked against the latest Community image;
+the preview image is tested nightly to identify upcoming incompatibilities.
+
+## Contributing
+
+Create a Python 3.10 or newer virtual environment, then install and verify the
+development environment with:
+
+```bash
+python -m pip install -e ".[dev]"
+tox
+```

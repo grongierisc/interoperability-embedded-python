@@ -5,9 +5,6 @@ COPY --chown=irisowner:irisowner . /irisdev/app
 
 WORKDIR /irisdev/app
 
-# map the source code of iop into iris python lib
-RUN ln -s /irisdev/app/src/iop /usr/irissys/mgr/python/iop
-
 ## Python stuff
 ARG IRISUSERNAME
 ARG IRISPASSWORD
@@ -15,9 +12,13 @@ ENV IRISUSERNAME=${IRISUSERNAME}
 ENV IRISPASSWORD=${IRISPASSWORD}
 ENV IRISNAMESPACE="IRISAPP"
 ENV PYTHON_PATH=/usr/irissys/bin/
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin
 ENV PATH="/home/irisowner/.local/bin:/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
-RUN pip install -r requirements-dev.txt
+RUN pip install build
+RUN python3 -m build --wheel
+RUN WHEEL=$(find dist -name '*.whl' -print -quit) && \
+    pip install --force-reinstall "${WHEEL}[dev]"
 
 ENTRYPOINT [ "/irisdev/app/test-in-docker.sh" ]

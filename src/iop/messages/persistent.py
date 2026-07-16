@@ -4,6 +4,8 @@ import importlib
 import inspect
 import os
 import sys
+from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 import iris_persistence
@@ -28,10 +30,24 @@ _IRIS_TO_PYTHON_STRICT_CACHE: dict[str, bool] = {}
 _IRIS_TO_MESSAGE_CLASS_CACHE: dict[str, type] = {}
 _IRIS_PARAMETER_CACHE: dict[tuple[str, str], str | None] = {}
 _AUTO_SYNCED: set[tuple[type, str]] = set()
+_CACHE_VALUE_UNSET = object()
 
 
 class PersistentMessageError(Exception):
     """Raised when a native persistent message cannot be materialized."""
+
+
+class _PersistentMessageResolutionState(Enum):
+    UNMAPPED = "unmapped"
+    RESOLVED = "resolved"
+    INVALID = "invalid"
+
+
+@dataclass(frozen=True)
+class _PersistentMessageResolution:
+    state: _PersistentMessageResolutionState
+    message_class: type | None = None
+    error: PersistentMessageError | None = None
 
 
 class _PersistentMessageMeta(ModelMeta):
@@ -215,36 +231,14 @@ def deserialize_persistent_message(
     if not iris_classname:
         return serial
 
-    msg_cls = _IRIS_TO_MESSAGE_CLASS_CACHE.get(iris_classname)
-    if msg_cls is None:
-        python_classname, python_classpath, strict = _resolve_python_message_metadata(
-            iris_classname
-        )
-        if not python_classname:
-            return serial
-
-        try:
-            msg_cls = load_python_class(python_classname, python_classpath)
-        except (AttributeError, ModuleNotFoundError, PersistentMessageError) as exc:
-            if strict:
-                raise PersistentMessageError(
-                    f"IRIS class {iris_classname!r} is marked as a PersistentMessage for "
-                    f"Python class {python_classname!r}, but that Python class could not "
-                    "be imported. Ensure the message class is importable, or register it "
-                    "through CLASSES so migration writes IOP_PYTHON_CLASSPATH."
-                ) from exc
-            return serial
-
-        if not is_persistent_message_class(msg_cls):
-            if strict:
-                raise PersistentMessageError(
-                    f"IRIS class {iris_classname!r} maps to {python_classname!r}, "
-                    "but that class is not a PersistentMessage subclass."
-                )
-            return serial
-
-        _prepare_message_class(msg_cls, iris_classname, registered=False)
-        _IRIS_TO_MESSAGE_CLASS_CACHE[iris_classname] = msg_cls
+    resolution = _resolve_persistent_message_class(iris_classname)
+    if resolution.state is _PersistentMessageResolutionState.UNMAPPED:
+        return serial
+    if resolution.state is _PersistentMessageResolutionState.INVALID:
+        assert resolution.error is not None
+        raise resolution.error
+    msg_cls = resolution.message_class
+    assert msg_cls is not None
 
     known_pk = _safe_get_object_id(serial)
     return msg_cls.from_iris(serial, known_pk=known_pk or "")
@@ -372,8 +366,12 @@ def _prepare_message_class(
     if registered:
         msg_cls._iop_registered_classname = iris_classname
     _set_message_parameters(msg_cls)
-    _cache_mapping(get_python_classname(msg_cls), iris_classname)
-    _IRIS_TO_MESSAGE_CLASS_CACHE[iris_classname] = msg_cls
+    _cache_mapping(
+        get_python_classname(msg_cls),
+        iris_classname,
+        python_classpath=get_python_classpath(msg_cls),
+        message_class=msg_cls,
+    )
 
 
 def _set_message_parameters(msg_cls: type) -> None:
@@ -388,10 +386,37 @@ def _set_message_parameters(msg_cls: type) -> None:
     msg_cls._parameters = parameters
 
 
-def _cache_mapping(python_classname: str, iris_classname: str) -> None:
+def _cache_mapping(
+    python_classname: str,
+    iris_classname: str,
+    *,
+    python_classpath: str | None | object = _CACHE_VALUE_UNSET,
+    strict: bool = True,
+    message_class: type | None = None,
+) -> None:
+    previous_iris = _PYTHON_TO_IRIS_CACHE.get(python_classname)
+    if previous_iris and previous_iris != iris_classname:
+        _IRIS_TO_PYTHON_CACHE.pop(previous_iris, None)
+        _IRIS_TO_PYTHON_CLASSPATH_CACHE.pop(previous_iris, None)
+        _IRIS_TO_PYTHON_STRICT_CACHE.pop(previous_iris, None)
+        _IRIS_TO_MESSAGE_CLASS_CACHE.pop(previous_iris, None)
+
+    previous_python = _IRIS_TO_PYTHON_CACHE.get(iris_classname)
+    if previous_python and previous_python != python_classname:
+        if _PYTHON_TO_IRIS_CACHE.get(previous_python) == iris_classname:
+            _PYTHON_TO_IRIS_CACHE.pop(previous_python, None)
+        _IRIS_TO_MESSAGE_CLASS_CACHE.pop(iris_classname, None)
+
     _PYTHON_TO_IRIS_CACHE[python_classname] = iris_classname
     _IRIS_TO_PYTHON_CACHE[iris_classname] = python_classname
-    _IRIS_TO_PYTHON_STRICT_CACHE[iris_classname] = True
+    _IRIS_TO_PYTHON_STRICT_CACHE[iris_classname] = strict
+    if python_classpath is not _CACHE_VALUE_UNSET:
+        if python_classpath:
+            _IRIS_TO_PYTHON_CLASSPATH_CACHE[iris_classname] = str(python_classpath)
+        else:
+            _IRIS_TO_PYTHON_CLASSPATH_CACHE.pop(iris_classname, None)
+    if message_class is not None:
+        _IRIS_TO_MESSAGE_CLASS_CACHE[iris_classname] = message_class
 
 
 def _resolve_python_message_metadata(
@@ -416,11 +441,71 @@ def _resolve_python_message_metadata(
         python_classname = iris_classname_to_python_classname(iris_classname)
 
     if python_classname and strict:
-        _cache_mapping(python_classname, iris_classname)
-        if python_classpath:
-            _IRIS_TO_PYTHON_CLASSPATH_CACHE[iris_classname] = python_classpath
+        _cache_mapping(
+            python_classname,
+            iris_classname,
+            python_classpath=python_classpath,
+            strict=strict,
+        )
 
     return python_classname, python_classpath, strict
+
+
+def _resolve_persistent_message_class(
+    iris_classname: str,
+) -> _PersistentMessageResolution:
+    cached = _IRIS_TO_MESSAGE_CLASS_CACHE.get(iris_classname)
+    if cached is not None:
+        return _PersistentMessageResolution(
+            _PersistentMessageResolutionState.RESOLVED,
+            message_class=cached,
+        )
+
+    python_classname, python_classpath, strict = _resolve_python_message_metadata(
+        iris_classname
+    )
+    if not python_classname:
+        return _PersistentMessageResolution(
+            _PersistentMessageResolutionState.UNMAPPED
+        )
+
+    try:
+        msg_cls = load_python_class(python_classname, python_classpath)
+    except (AttributeError, ModuleNotFoundError, PersistentMessageError) as exc:
+        if not strict:
+            return _PersistentMessageResolution(
+                _PersistentMessageResolutionState.UNMAPPED
+            )
+        error = PersistentMessageError(
+            f"IRIS class {iris_classname!r} is marked as a PersistentMessage for "
+            f"Python class {python_classname!r}, but that Python class could not "
+            "be imported. Ensure the message class is importable, or register it "
+            "through CLASSES so migration writes IOP_PYTHON_CLASSPATH."
+        )
+        error.__cause__ = exc
+        return _PersistentMessageResolution(
+            _PersistentMessageResolutionState.INVALID,
+            error=error,
+        )
+
+    if not is_persistent_message_class(msg_cls):
+        if not strict:
+            return _PersistentMessageResolution(
+                _PersistentMessageResolutionState.UNMAPPED
+            )
+        return _PersistentMessageResolution(
+            _PersistentMessageResolutionState.INVALID,
+            error=PersistentMessageError(
+                f"IRIS class {iris_classname!r} maps to {python_classname!r}, "
+                "but that class is not a PersistentMessage subclass."
+            ),
+        )
+
+    _prepare_message_class(msg_cls, iris_classname, registered=False)
+    return _PersistentMessageResolution(
+        _PersistentMessageResolutionState.RESOLVED,
+        message_class=msg_cls,
+    )
 
 
 def get_iris_class_parameter(

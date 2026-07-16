@@ -127,7 +127,10 @@ def debugpython(self, host_object: Any) -> None:
         return
 
     if not is_debugpy_installed():
-        self.log_alert("Debugpy is not installed.")
+        self.log_alert(
+            "Debugpy is not installed. Install iris-pex-embedded-python[debug] "
+            "to enable remote debugging."
+        )
         return
 
     # Configure Python interpreter
@@ -167,7 +170,10 @@ def debugpy_in_iris(iris_dir, port) -> bool:
         os.__file__ = __file__
 
     if not is_debugpy_installed():
-        print("debugpy is not installed.")
+        print(
+            "debugpy is not installed. Install iris-pex-embedded-python[debug] "
+            "to enable remote debugging."
+        )
         return False
     if not iris_dir:
         print("IRIS directory is not specified.")

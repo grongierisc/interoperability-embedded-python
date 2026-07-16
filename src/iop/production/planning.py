@@ -6,7 +6,7 @@ import json
 import os
 import socket
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -339,7 +339,7 @@ class ProductionVerifyResult:
 def build_change_plan(desired, current) -> ProductionChangePlan:
     diff = desired.diff_deployable(current)
     operations = tuple(_operation_from_diff(index, change) for index, change in enumerate(diff.changes, start=1))
-    created_at = datetime.now(UTC).isoformat()
+    created_at = datetime.now(timezone.utc).isoformat()
     source_fingerprint = production_fingerprint(current)
     desired_fingerprint = production_fingerprint(desired)
     plan_id = _plan_id(
@@ -380,7 +380,7 @@ def create_backup(
     connections: Any,
     queues: Any,
 ) -> Path:
-    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     backup_path = Path(backup_dir) / f"{timestamp}-{plan.id[:12]}"
     backup_path.mkdir(parents=True, exist_ok=False)
     _write_json(backup_path / "production.json", current_export)
@@ -392,7 +392,7 @@ def create_backup(
         backup_path / "metadata.json",
         {
             "backup_id": backup_path.name,
-            "created_at": datetime.now(UTC).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "user": getpass.getuser(),
             "host": socket.gethostname(),
             "namespace": plan.namespace,

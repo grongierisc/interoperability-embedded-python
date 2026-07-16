@@ -10,11 +10,10 @@ ENV IRISUSERNAME=${IRISUSERNAME}
 ENV IRISPASSWORD=${IRISPASSWORD}
 ENV IRISNAMESPACE="IRISAPP"
 ENV PYTHON_PATH=/usr/irissys/bin/
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 ENV LD_LIBRARY_PATH=${ISC_PACKAGE_INSTALLDIR}/bin:${LD_LIBRARY_PATH}
 ENV PATH "/home/irisowner/.local/bin:/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
 COPY . .
 
-RUN pip install -r requirements-dev.txt
-
-
+RUN pip install -e ".[dev]"

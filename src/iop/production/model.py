@@ -3,7 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 from ..runtime.protocol import DirectorProtocol as _DirectorProtocol
-from . import actions as _actions
+from ._authoring_methods import (
+    _ProductionAuthoringMixin,
+)
+from ._authoring_methods import (
+    connection_mode as _connection_mode,
+)
+from ._runtime_methods import _ProductionRuntimeMixin
 from .common import (
     PRODUCTION_SETTING_FIELDS,
     _adapter_type_from_component_class,
@@ -14,11 +20,8 @@ from .common import (
 from .component import ComponentRef
 from .declarative import _DeclarativeProductionMixin
 from .diff import _diff_productions
-from .inspection import component_runtime_info, inspect_component
 from .planning import (
-    ProductionApplyResult,
     ProductionChangePlan,
-    ProductionVerifyResult,
     build_change_plan,
 )
 from .reconstruction import production_from_dict
@@ -37,13 +40,16 @@ from .types import (
     ProductionGraph,
     TargetSetting,
     TargetSettingRef,
-    _edge_identity,
 )
 
 _MISSING = object()
 
 
-class Production(_DeclarativeProductionMixin):
+class Production(
+    _ProductionRuntimeMixin,
+    _ProductionAuthoringMixin,
+    _DeclarativeProductionMixin,
+):
     """Purpose:
         Python authoring DSL for IRIS interoperability production topology.
 
@@ -885,229 +891,6 @@ class Production(_DeclarativeProductionMixin):
 
         return validate_production(self, strict=strict, warn=not strict)
 
-    def start(self, detach: bool = True) -> None:
-        _actions.start(self, detach=detach)
-
-    def stop(self) -> None:
-        _actions.stop(self)
-
-    def restart(self) -> None:
-        _actions.restart(self)
-
-    def kill(self) -> None:
-        _actions.kill(self)
-
-    def status(self) -> dict:
-        return _actions.status(self)
-
-    def queue(self, *, refresh: bool = True) -> dict[str, dict[str, Any]]:
-        return _actions.queue(self, refresh=refresh)
-
-    def queue_info(self, *, refresh: bool = True) -> dict[str, dict[str, Any]]:
-        return self.queue(refresh=refresh)
-
-    def update(self) -> None:
-        _actions.update(self)
-
-    def inspect_component(
-        self,
-        component: ComponentRef | TargetSettingRef | str,
-        *,
-        refresh: bool = True,
-    ) -> dict[str, Any]:
-        return inspect_component(self, component, refresh=refresh)
-
-    def start_component(self, component: ComponentRef | TargetSettingRef | str) -> None:
-        _actions.start_component(self, component)
-
-    def stop_component(self, component: ComponentRef | TargetSettingRef | str) -> None:
-        _actions.stop_component(self, component)
-
-    def restart_component(
-        self,
-        component: ComponentRef | TargetSettingRef | str,
-    ) -> None:
-        _actions.restart_component(self, component)
-
-    def export(self) -> dict:
-        return _actions.export(self)
-
-    def set_default(self) -> None:
-        _actions.set_default(self)
-
-    def sync(self, *, root_path: str | None = None, update: bool = True) -> None:
-        _actions.sync(self, root_path=root_path, update_runtime=update)
-
-    def apply(
-        self,
-        plan: ProductionChangePlan | None = None,
-        *,
-        allow_destructive: bool = False,
-        backup_dir: str = ".iop/backups",
-        root_path: str | None = None,
-        update: bool = True,
-    ) -> ProductionApplyResult:
-        return _actions.apply(
-            self,
-            plan=plan,
-            allow_destructive=allow_destructive,
-            backup_dir=backup_dir,
-            root_path=root_path,
-            update_runtime=update,
-        )
-
-    def verify(self, plan: ProductionChangePlan) -> ProductionVerifyResult:
-        return _actions.verify(self, plan)
-
-    @staticmethod
-    def rollback_backup(
-        backup_path: str,
-        *,
-        director: _DirectorProtocol | None = None,
-        namespace: str | None = None,
-        allow_destructive: bool = False,
-        update: bool = True,
-    ) -> ProductionVerifyResult:
-        return _actions.rollback_backup(
-            backup_path,
-            director=director,
-            namespace=namespace,
-            allow_destructive=allow_destructive,
-            update_runtime=update,
-        )
-
-    def log(self, top: int | None = None) -> None:
-        _actions.log(self, top)
-
-    def test_component(
-        self,
-        target_or_ref: str | TargetSettingRef | ComponentRef,
-        message: Any = None,
-        classname: str | None = None,
-        body: str | dict | None = None,
-    ) -> Any:
-        return _actions.test_component(
-            self,
-            target_or_ref,
-            message=message,
-            classname=classname,
-            body=body,
-        )
-
-    def test(
-        self,
-        target_or_ref: str | TargetSettingRef | ComponentRef,
-        message: Any = None,
-        classname: str | None = None,
-        body: str | dict | None = None,
-    ) -> Any:
-        return self.test_component(
-            target_or_ref,
-            message=message,
-            classname=classname,
-            body=body,
-        )
-
-    def _raise_if_existing_production_not_running(self, director: Any) -> None:
-        _actions.raise_if_existing_production_not_running(self, director)
-
-    def _require_current_production(self, director: Any, action: str) -> None:
-        _actions.require_current_production(self, director, action)
-
-    def _require_current_runtime(self, director: Any, action: str) -> None:
-        _actions.require_current_runtime(self, director, action)
-
-    def _read_status(self, director: Any, action: str) -> tuple[str, str]:
-        return _actions.read_status(self, director, action)
-
-    def _switch_running_production_message(self, current_production: str) -> str:
-        return _actions.switch_running_production_message(self, current_production)
-
-    def _component_runtime_info(self, component_name: str) -> dict[str, Any]:
-        return component_runtime_info(self, component_name)
-
-    def _component_name(self, target_component: ComponentRef | str) -> str:
-        if isinstance(target_component, ComponentRef):
-            if target_component.production is not self:
-                raise ValueError("target component belongs to a different Production")
-            return target_component.name
-        target_name = str(target_component)
-        if target_name not in self._items_by_name:
-            raise ValueError(f"Production item does not exist: {target_name}")
-        return target_name
-
-    def _runtime_component_name(
-        self,
-        component: ComponentRef | TargetSettingRef | str,
-    ) -> str:
-        if isinstance(component, TargetSettingRef):
-            component_name = self.resolve_target_setting_ref(component)
-        elif isinstance(component, ComponentRef):
-            component_name = self._component_name(component)
-        else:
-            component_name = self.resolve_target(str(component))
-        if component_name not in self._items_by_name:
-            raise ValueError(f"Production item does not exist: {component_name}")
-        return component_name
-
-    def _component_ref(self, item: ComponentRef | str) -> ComponentRef:
-        if isinstance(item, ComponentRef):
-            if item.production is not self:
-                raise ValueError("component belongs to a different Production")
-            return item
-        return self.item(str(item))
-
-    def _add_item(self, ref: ComponentRef) -> None:
-        if not ref.name:
-            raise ValueError("Production item name is required")
-        if ref.name in self._items_by_name:
-            raise ValueError(f"Production item already exists: {ref.name}")
-        if ref.component_class is not None:
-            for existing in self._items:
-                if (
-                    existing.component_class is not None
-                    and existing.component_class is not ref.component_class
-                    and existing.class_name == ref.class_name
-                ):
-                    raise ValueError(
-                        f"Python classes {existing.component_class.__qualname__!r} and "
-                        f"{ref.component_class.__qualname__!r} produce the same IRIS "
-                        f"proxy class name {ref.class_name!r}. Rename one of the "
-                        "Python classes or supply an explicit class_name= to resolve "
-                        "the collision."
-                    )
-        self._items.append(ref)
-        self._items_by_name[ref.name] = ref
-        self._apply_target_defaults()
-
-    def _apply_target_defaults(self) -> None:
-        for ref in self._items:
-            for setting_name, target_name in self._target_default_routes(ref):
-                if setting_name not in ref.host_settings:
-                    if setting_name in ref.target_setting_names:
-                        continue
-                    ref.host_settings[setting_name] = target_name
-                ref.target_setting_names.add(setting_name)
-                if str(ref.host_settings[setting_name]) != target_name:
-                    continue
-                if target_name not in self._items_by_name:
-                    continue
-                self._register_connection(
-                    ref.name,
-                    setting_name,
-                    target_name,
-                )
-
-    def _target_default_routes(self, ref: ComponentRef) -> tuple[tuple[str, str], ...]:
-        if ref.component_class is None:
-            return ()
-        routes: list[tuple[str, str]] = []
-        for setting_name, descriptor in _target_settings(ref.component_class):
-            target_name = _target_default_name(descriptor.default)
-            if target_name:
-                routes.append((setting_name, target_name))
-        return tuple(routes)
-
     def _diff_current(
         self,
         other: Production | dict[str, Any] | None,
@@ -1127,87 +910,3 @@ class Production(_DeclarativeProductionMixin):
                 director=self._director,
             )
         raise TypeError("other must be a Production, production dictionary, or None")
-
-    def _register_connection(
-        self,
-        source_item: str,
-        source_target_setting: str,
-        target_name: str,
-        *,
-        origin: str = "authored",
-        interaction: str = "request",
-        metadata: dict[str, Any] | None = None,
-        replace_target_setting: bool = False,
-        validate_target: bool = True,
-    ) -> None:
-        if source_item not in self._items_by_name:
-            raise ValueError(f"Production item does not exist: {source_item}")
-        if validate_target and target_name not in self._items_by_name:
-            raise ValueError(f"Production item does not exist: {target_name}")
-        if source_target_setting:
-            key = (source_item, source_target_setting)
-            if replace_target_setting:
-                self._connections[key] = [target_name]
-            else:
-                self._connections.setdefault(key, [])
-                if target_name not in self._connections[key]:
-                    self._connections[key].append(target_name)
-
-        edge = GraphEdge(
-            source_item=source_item,
-            source_target_setting=source_target_setting,
-            target=target_name,
-            origin=origin,
-            interaction=interaction,
-            metadata=dict(metadata or {}),
-        )
-
-        if replace_target_setting and source_target_setting:
-            self._edges = [
-                existing
-                for existing in self._edges
-                if not (
-                    existing.source_item == source_item
-                    and existing.source_target_setting == source_target_setting
-                )
-            ]
-
-        edge_key = _edge_identity(edge)
-        self._edges = [
-            existing
-            for existing in self._edges
-            if _edge_identity(existing) != edge_key
-        ]
-        self._edges.append(edge)
-
-
-def _connection_mode(mode: str) -> str:
-    normalized = str(mode or "").strip().lower()
-    if normalized in {"replace", "set"}:
-        return "replace"
-    if normalized in {"add", "append"}:
-        return "add"
-    if normalized in {"remove", "delete", "disconnect"}:
-        return "remove"
-    raise ValueError(
-        "Unsupported connection mode: "
-        f"{mode!r}. Expected 'replace', 'add', or 'remove'."
-    )
-
-
-def _target_settings(
-    component_class: type,
-) -> tuple[tuple[str, TargetSetting], ...]:
-    descriptors: dict[str, TargetSetting] = {}
-    for base in reversed(component_class.__mro__):
-        for name, value in base.__dict__.items():
-            if isinstance(value, TargetSetting):
-                descriptors[name] = value
-    return tuple(descriptors.items())
-
-
-def _target_default_name(value: Any) -> str:
-    if value is None:
-        return ""
-    name = getattr(value, "name", value)
-    return str(name).strip()

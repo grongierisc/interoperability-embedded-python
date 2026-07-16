@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any
+from typing import Any, cast
 
 
 def format_test_response(response: Any) -> str:
@@ -41,5 +41,5 @@ def format_test_response(response: Any) -> str:
             return response
 
     if dataclasses.is_dataclass(response):
-        return json.dumps(dataclasses.asdict(response), indent=4)
+        return json.dumps(dataclasses.asdict(cast(Any, response)), indent=4)
     return str(response)

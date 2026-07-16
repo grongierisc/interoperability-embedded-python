@@ -31,11 +31,31 @@ dependencies = [
     "iris-embedded-python-wrapper>=0.5.0",
     "iris-persistence>=0.1.1",
     "jsonpath-ng>=1.7.0",
-    "debugpy>=1.8.0",
     "requests>=2.24.0"
 ]
 
 license = { file = "LICENSE" }
+
+[project.optional-dependencies]
+debug = [
+    "debugpy>=1.8.0",
+]
+dev = [
+    "build",
+    "dataclasses-json",
+    "intersystems-irispython",
+    "mkdocs",
+    "mkdocs-gen-files",
+    "pymdown-extensions",
+    "pyright",
+    "pytest",
+    "pytest-asyncio",
+    "python-dotenv",
+    "ruff",
+    "tox>=4",
+    "twine",
+    "wheel",
+]
 
 [project.urls]
 homepage = "https://github.com/grongierisc/interoperability-embedded-python"
@@ -66,10 +86,12 @@ markers = [
 
 [tool.pyright]
 pythonVersion = "3.10"
+include = ["src/iop"]
 
 [tool.ruff]
 target-version = "py310"
 line-length = 88
+exclude = ["src/tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

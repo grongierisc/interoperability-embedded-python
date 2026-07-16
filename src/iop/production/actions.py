@@ -153,6 +153,7 @@ def apply(
 
     if plan is None:
         plan = production.plan()
+    assert plan is not None
     if plan.production_name != production.name:
         raise ValueError(
             f"Plan targets {plan.production_name!r}, not {production.name!r}."

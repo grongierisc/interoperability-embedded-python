@@ -522,10 +522,10 @@ class MigrationManifestBuilder:
         return registrations
 
     @staticmethod
-    def _class_path(cls: type, root_path: str | None) -> str:
+    def _class_path(klass: type, root_path: str | None) -> str:
         if root_path:
             return root_path
-        return os.path.dirname(inspect.getfile(cls))
+        return os.path.dirname(inspect.getfile(klass))
 
     @staticmethod
     def _module_path(module, root_path: str | None) -> str:

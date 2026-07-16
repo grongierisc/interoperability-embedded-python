@@ -153,7 +153,7 @@ And select the virtual environment in VsCode.
 4. Install the dependencies.
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -e ".[debug]"
 ```
 
 5. Run the code in debug mode.
@@ -219,4 +219,3 @@ With tracebacks enabled:
 With tracebacks disabled:
 
 ![Traceback disabled](./img/traceback_disable.png)
-

@@ -20,19 +20,17 @@ from ..messages.persistent import (
 from ..production.validation import validate_production_entry
 from ..runtime import iris as _iris
 from ..runtime.environment import remove_sys_path, temporary_sys_path
-from .io import (
-    dict_to_xml as _dict_to_xml,
-)
-from .io import (
+from . import _production_io, _registration, _settings
+from ._conversion import (
     guess_path as _guess_path,
 )
-from .io import (
+from ._conversion import (
     stream_to_string as _stream_to_string,
 )
-from .io import (
+from ._conversion import (
     string_to_stream as _string_to_stream,
 )
-from .io import (
+from ._conversion import (
     xml_to_json as _xml_to_json,
 )
 from .manifest import (
@@ -629,29 +627,11 @@ def _load_settings(filename):
     Returns:
         tuple: (settings_module, path_added_to_sys)
     """
-    path_added = None
-
-    if filename:
-        # check if the filename is absolute or relative
-        if not os.path.isabs(filename):
-            raise ValueError("The filename must be absolute")
-
-        # add the path to the system path to the beginning
-        path_added = os.path.normpath(os.path.dirname(filename))
-        sys.path.insert(0, path_added)
-        # import the specified file using its real module stem. This keeps
-        # component classes defined in demo.py as demo.ClassName instead of
-        # rewriting them to settings.ClassName.
-        settings = import_module_from_path(_module_name_from_file(filename), filename)
-    else:
-        # import settings from the settings module
-        import settings  # type: ignore
-
-    return settings, path_added
+    return _settings.load_settings(filename)
 
 
 def _module_name_from_file(filename: str) -> str:
-    return os.path.splitext(os.path.basename(filename))[0]
+    return _settings.module_name_from_file(filename)
 
 
 def _get_folder_path(filename, path_added_to_sys):
@@ -664,10 +644,7 @@ def _get_folder_path(filename, path_added_to_sys):
     Returns:
         str: Folder path to use for migration
     """
-    if filename:
-        return os.path.dirname(filename)
-    else:
-        return os.getcwd()
+    return _settings.folder_path(filename, path_added_to_sys)
 
 
 def _classify_class_setting(value, root_path=None):
@@ -721,27 +698,18 @@ def _execute_migration_manifest(
     persistent_registry: dict[str, tuple[type, bool]] | None = None,
     strict_production_validation: bool = False,
 ) -> None:
-    for registration in manifest.class_registrations:
-        _execute_class_registration(
-            registration,
-            persistent_registry=persistent_registry,
-        )
-
-    for production in manifest.production_registrations:
-        for registration in production.class_registrations:
-            _execute_class_registration(
-                registration,
-                persistent_registry=persistent_registry,
-            )
-        validate_production_entry(
-            production.validation_subject,
+    _registration.execute_manifest(
+        manifest,
+        persistent_registry=persistent_registry,
+        execute_class=_execute_class_registration,
+        validate_production=lambda subject: validate_production_entry(
+            subject,
             strict=strict_production_validation,
             warn=True,
-        )
-        register_production_definition(production.name, production.definition)
-
-    for registration in manifest.schema_registrations:
-        register_message_schema(registration.schema_class)
+        ),
+        register_production=register_production_definition,
+        register_schema=register_message_schema,
+    )
 
 
 def _execute_class_registration(
@@ -749,46 +717,15 @@ def _execute_class_registration(
     *,
     persistent_registry: dict[str, tuple[type, bool]] | None = None,
 ) -> None:
-    if registration.action == "persistent_message":
-        _register_persistent_message_once(
-            registration.cls,
-            registration.iris_classname,
-            sync_schema=registration.sync_schema,
-            persistent_registry=persistent_registry,
-        )
-    elif registration.action in {"component_class", "component_descriptor"}:
-        register_component(
-            registration.module,
-            registration.classname,
-            registration.path,
-            1,
-            registration.iris_classname,
-        )
-    elif registration.action == "module_file":
-        _register_file(
-            registration.file,
-            registration.path,
-            1,
-            registration.iris_classname,
-        )
-    elif registration.action == "package":
-        register_package(
-            registration.package,
-            registration.path,
-            1,
-            registration.iris_classname,
-        )
-    elif registration.action == "file":
-        _register_file(
-            registration.file,
-            registration.path,
-            1,
-            registration.iris_classname,
-        )
-    elif registration.action == "folder":
-        register_folder(registration.path, 1, registration.iris_classname)
-    else:
-        raise ValueError(f"Invalid migration class action: {registration.action}.")
+    _registration.execute_class_registration(
+        registration,
+        persistent_registry=persistent_registry,
+        register_persistent=_register_persistent_message_once,
+        register_component=register_component,
+        register_file=_register_file,
+        register_package=register_package,
+        register_folder=register_folder,
+    )
 
 
 def _cleanup_sys_path(path):
@@ -815,21 +752,7 @@ def import_module_from_path(module_name, file_path):
         Do not patch PYTHONPATH or sys.path globally to make imports pass.
         Keep import fixes in project structure and import statements.
     """
-    if not os.path.isabs(file_path):
-        raise ValueError("The file path must be absolute")
-
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot find module named {module_name} at {file_path}")
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    except Exception:
-        sys.modules.pop(module_name, None)
-        raise
-    return module
+    return _settings.import_module_from_path(module_name, file_path)
 
 
 def set_classes_settings(class_items, root_path=None, persistent_registry=None):
@@ -1012,29 +935,11 @@ def handle_items(production, root_path=None):
 
 
 def dict_to_xml(json):
-    return _dict_to_xml(json)
+    return _production_io.dict_to_xml(json)
 
 
 def register_production(production_name, xml):
-    """
-    It takes a production name and an xml and registers the production
-
-    :param production_name: the name of the production
-    :type production_name: str
-    :param xml: the xml of the production
-    :type xml: str
-    """
-    # split the production name in the package name and the production name
-    # the production name is the last part of the string
-    package = ".".join(production_name.split(".")[:-1])
-    production_name = production_name.split(".")[-1]
-    stream = string_to_stream(xml)
-    # register the production
-    raise_on_error(
-        _iris.get_iris()
-        .cls("IOP.Utils")
-        .CreateProduction(package, production_name, stream)
-    )
+    return _production_io.register_production(production_name, xml)
 
 
 def register_production_definition(production_name: str, production: dict):
@@ -1044,36 +949,19 @@ def register_production_definition(production_name: str, production: dict):
     :param production_name: full IRIS production class name
     :param production: normalized {"Production": {...}} dictionary
     """
-    try:
-        raise_on_error(
-            _iris.get_iris()
-            .cls("IOP.Utils")
-            .CreateProductionFromJSON(production_name, json.dumps(production))
-        )
-    except RuntimeError as exc:
-        if not _is_missing_production_class_error(exc, production_name):
-            raise
-        register_production(production_name, dict_to_xml(production))
+    return _production_io.register_production_definition(
+        production_name,
+        production,
+        xml_fallback=register_production,
+    )
 
 
 def _is_missing_production_class_error(exc: RuntimeError, production_name: str) -> bool:
-    message = str(exc)
-    return "CLASS DOES NOT EXIST" in message and production_name in message
+    return _production_io.is_missing_production_class_error(exc, production_name)
 
 
 def export_production(production_name):
-    """
-    It takes a production name and exports the production
-
-    :param production_name: the name of the production
-    :type production_name: str
-    """
-    # export the production
-    xdata = _iris.get_iris().cls("IOP.Utils").ExportProduction(production_name)
-    # for each chunk of 1024 characters
-    string = stream_to_string(xdata)
-    # convert the xml to a dictionary
-    return xml_to_json(string)
+    return _production_io.export_production(production_name)
 
 
 def export_production_connections(production_name):
@@ -1083,43 +971,21 @@ def export_production_connections(production_name):
     The IRIS helper calls OnGetConnections for each production item and
     returns a JSON-compatible graph payload.
     """
-    data = (
-        _iris.get_iris().cls("IOP.Utils").ExportProductionConnections(production_name)
-    )
-    if isinstance(data, dict):
-        return data
-    return json.loads(data)
+    return _production_io.export_production_connections(production_name)
 
 
 def export_production_queue_info(production_name):
     """
     Export queue counters for production items.
     """
-    data = _iris.get_iris().cls("IOP.Utils").ExportProductionQueueInfo(production_name)
-    if isinstance(data, dict):
-        return data
-    return json.loads(data)
+    return _production_io.export_production_queue_info(production_name)
 
 
 def apply_production_plan(plan: dict, allow_destructive: bool = False) -> dict:
     """
     Apply a conservative granular production change plan locally in IRIS.
     """
-    production_name = plan.get("production") or plan.get("production_name")
-    if not production_name:
-        raise ValueError("Production plan is missing the production name.")
-    data = (
-        _iris.get_iris()
-        .cls("IOP.Utils")
-        .ApplyProductionPlan(
-            production_name,
-            json.dumps(plan),
-            1 if allow_destructive else 0,
-        )
-    )
-    if isinstance(data, dict):
-        return data
-    return json.loads(data)
+    return _production_io.apply_production_plan(plan, allow_destructive)
 
 
 def xml_to_json(xml_string: str) -> str:

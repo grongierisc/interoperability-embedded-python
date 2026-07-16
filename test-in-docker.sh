@@ -32,9 +32,12 @@ python3 -c "import iris; print(iris.system.Version.GetVersion())"
 python3 -m iop --init
 exit_on_error
 
-# Unit tests
+python3 ../scripts/verify_installed_objectscript.py
+exit_on_error
+
+# Unit and local IRIS tests. Remote API tests run in their dedicated CI job.
 cd ..
-python3 -m pytest
+python3 -m pytest src/tests/unit src/tests/e2e/local
 exit_on_error
 
 # Integration tests

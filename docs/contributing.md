@@ -14,7 +14,8 @@ source .venv/bin/activate
 ### Install the dependencies.
 
 ```bash
-pip install -r requirements-dev.txt
+python -m pip install -e ".[dev]"
+tox
 ```
 
 ### Have a running IRIS instance.
@@ -45,7 +46,7 @@ ln -s <your_git_dir>/src/iop $IRISINSTALLDIR/python/iop
 ##### Run the unit tests.
 
 ```bash
-pytest
+tox -e py
 ```
 
 #### Docker installation of IRIS

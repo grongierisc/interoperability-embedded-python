@@ -201,7 +201,12 @@ class _RemoteDirector(_RemoteClient, _DirectorProtocol):
             return self._check_error(self._post("/test", payload))
         except requests.exceptions.HTTPError as exc:
             try:
-                err_msg = exc.response.json().get("error", str(exc))
+                response = exc.response
+                err_msg = (
+                    response.json().get("error", str(exc))
+                    if response is not None
+                    else str(exc)
+                )
             except Exception:
                 err_msg = str(exc)
             raise RuntimeError(err_msg) from exc

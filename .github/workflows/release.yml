@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -e ".[dev]"
+      - name: Verify tag version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os, tomllib
+          expected = os.environ["RELEASE_TAG"].removeprefix("v")
+          with open("pyproject.toml", "rb") as stream:
+              actual = tomllib.load(stream)["project"]["version"]
+          if actual != expected:
+              raise SystemExit(f"release tag {expected!r} does not match package {actual!r}")
+          PY
+      - run: python -m pytest src/tests/unit
+      - run: ruff check src scripts
+      - run: pyright
+      - run: mkdocs build --strict
+      - run: python -m build --wheel
+      - run: python -m twine check dist/*.whl
+      - run: python scripts/check_wheel_contents.py dist/*.whl
+      - name: Test the release wheel
+        run: |
+          WHEEL=$(find dist -name '*.whl' -print -quit)
+          python -m venv .wheel-test
+          .wheel-test/bin/python -m pip install "${WHEEL}[dev]"
+          .wheel-test/bin/python -m pytest src/tests/unit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/*.whl
+          if-no-files-found: error
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/iris-pex-embedded-python
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-distributions
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

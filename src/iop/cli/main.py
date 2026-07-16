@@ -241,6 +241,8 @@ class Command:
             if self.args.export == "not_set"
             else self.args.export
         )
+        if not export_name:
+            raise ValueError("No production name was provided or configured.")
         export_format = self.args.export_format or "json"
         if export_format == "json":
             print(json.dumps(self.director.export_production(export_name), indent=4))
