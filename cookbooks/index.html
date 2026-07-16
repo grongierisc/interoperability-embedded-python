@@ -53,6 +53,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ai-coding/">AI-assisted Coding</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../agent-guidance/">Agent Guidance And Skills</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../agents-template/">Reusable AGENTS.md</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../healthcare-ai-coding/">Healthcare AI-assisted Coding</a>
@@ -170,6 +172,12 @@
                 <h1 id="iop-cookbooks">IoP Cookbooks</h1>
 <p>These cookbooks are task-oriented prompts and checklists for building IoP
 applications with an AI coding assistant.</p>
+<p>Install version-matched offline copies together with the IoP application skills:</p>
+<pre><code class="language-bash">iop --install-agent-guidance
+</code></pre>
+<p>The <code>build-iop-app</code> skill selects and loads the relevant installed cookbook. See
+<a href="../agent-guidance/">IoP Agent Guidance And Skills</a> for other projects and
+agent-specific installation.</p>
 <p>Before using a cookbook, give the assistant this context:</p>
 <pre><code class="language-text">You are helping me build an IoP application.
 Read local AGENTS.md if this application has one, settings.py, and the

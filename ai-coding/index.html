@@ -53,6 +53,8 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">AI-assisted Coding</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#install-project-guidance">Install Project Guidance</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#start-here">Start Here</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#cookbooks">Cookbooks</a>
@@ -62,6 +64,8 @@
     <li class="toctree-l2"><a class="reference internal" href="#useful-commands">Useful Commands</a>
     </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../agent-guidance/">Agent Guidance And Skills</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../agents-template/">Reusable AGENTS.md</a>
                   </li>
@@ -172,6 +176,14 @@
                 <h1 id="ai-assisted-coding-with-iop">AI-Assisted Coding With IoP</h1>
 <p>Use this guide when you want to vibe code with IoP while still getting
 production-shaped, reviewable Python interoperability code.</p>
+<h2 id="install-project-guidance">Install Project Guidance</h2>
+<p>IoP can install version-matched guidance, Agent Skills, and offline cookbooks in
+any application repository, whether or not it uses the IoP template:</p>
+<pre><code class="language-bash">iop --install-agent-guidance
+</code></pre>
+<p>This configures Codex, Claude Code, and Gemini CLI by default. See
+<a href="../agent-guidance/">IoP Agent Guidance And Skills</a> for agent selection, updates,
+conflict handling, and direct installation from GitHub.</p>
 <h2 id="start-here">Start Here</h2>
 <p>Ask the tool to read the project guidance before it writes code:</p>
 <pre><code class="language-text">You are helping me build an IoP application.
@@ -194,9 +206,9 @@ Show the migration and verification commands.
 </code></pre>
 <p>The IoP framework repository root <code>AGENTS.md</code> is for framework source
 development, not application guidance. For your own IoP application repository,
-copy the
-<a href="../agents-template/">reusable AGENTS.md template</a> into the project root and
-adapt it to the local production. For healthcare projects, also read
+prefer <code>iop --install-agent-guidance</code>; the
+<a href="../agents-template/">reusable AGENTS.md template</a> remains available for manual
+setup. For healthcare projects, also read
 <a href="../healthcare-ai-coding/">Healthcare AI-assisted coding</a>.</p>
 <h2 id="cookbooks">Cookbooks</h2>
 <p>Use the <a href="../cookbooks/">IoP cookbooks</a> for task-specific prompts and
@@ -248,7 +260,7 @@ docker run -i --rm pytest-iris
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../getting-started/register-component/" class="btn btn-neutral float-left" title="Register Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../agents-template/" class="btn btn-neutral float-right" title="Reusable AGENTS.md">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../agent-guidance/" class="btn btn-neutral float-right" title="Agent Guidance And Skills">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -274,7 +286,7 @@ docker run -i --rm pytest-iris
       <span><a href="../getting-started/register-component/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../agents-template/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../agent-guidance/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

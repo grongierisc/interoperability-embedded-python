@@ -53,6 +53,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../ai-coding/">AI-assisted Coding</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../agent-guidance/">Agent Guidance And Skills</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../agents-template/">Reusable AGENTS.md</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../healthcare-ai-coding/">Healthcare AI-assisted Coding</a>
@@ -88,6 +90,8 @@
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Command Line Interface</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#terminology">Terminology</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#install-agent-guidance">install agent guidance</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#help">help</a>
     </li>
@@ -259,6 +263,23 @@ default production: IoP.Production
 <li><code>unbind</code> or <code>unregister</code>: remove an IOP-generated IRIS proxy class binding.
   This does not delete Python source files or production items.</li>
 </ul>
+<h2 id="install-agent-guidance">install agent guidance</h2>
+<p>Install version-matched IoP project guidance, Agent Skills, and offline
+cookbooks without connecting to IRIS:</p>
+<pre><code class="language-bash">iop --install-agent-guidance
+</code></pre>
+<p>The current directory and all supported agents are the defaults. Select clients
+or another project directory explicitly when needed:</p>
+<pre><code class="language-bash">iop --install-agent-guidance /path/to/project --agent codex
+iop --install-agent-guidance --agent claude --agent gemini
+</code></pre>
+<p>The command preserves content outside its marked blocks in root instruction
+files. It refuses to replace changed IoP-managed assets unless explicitly
+requested:</p>
+<pre><code class="language-bash">iop --install-agent-guidance --force-agent-guidance
+</code></pre>
+<p>See <a href="../agent-guidance/">IoP Agent Guidance And Skills</a> for the installed layout
+and direct skill installation.</p>
 <h2 id="help">help</h2>
 <p>The help command display the help and the default production name.</p>
 <pre><code class="language-bash">iop -h
