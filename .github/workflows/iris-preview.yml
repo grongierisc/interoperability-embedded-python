@@ -14,7 +14,7 @@ jobs:
     env:
       IMAGE: intersystemsdc/iris-community:preview
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: docker pull "$IMAGE"
       - run: |
           docker build --build-arg BASE="$IMAGE" \

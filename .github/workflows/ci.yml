@@ -18,7 +18,7 @@ jobs:
       matrix:
         python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
@@ -29,7 +29,7 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
@@ -42,7 +42,7 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
@@ -63,7 +63,7 @@ jobs:
     env:
       IMAGE: intersystemsdc/iris-community:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: docker pull "$IMAGE"
       - run: |
           docker build --build-arg BASE="$IMAGE" \
@@ -83,7 +83,7 @@ jobs:
       IOP_PASSWORD: ${{ secrets.IRIS_PASSWORD || 'SYS' }}
       IOP_NAMESPACE: IRISAPP
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: docker pull "$IMAGE"
       - run: |
           docker build --build-arg BASE="$IMAGE" \
