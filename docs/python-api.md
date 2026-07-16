@@ -35,7 +35,10 @@ class MyRequest(PydanticMessage):
 
 Base class for native IRIS message body classes backed by `iris-persistence`. Fields are declared directly on the Python class.
 
-By default, a `PersistentMessage` generates an IRIS class that extends `Ens.MessageBody`, uses schema mode `extend`, and enables runtime auto-sync in extend mode.
+By default, a `PersistentMessage` generates an IRIS class that extends
+`Ens.MessageBody`, uses schema mode `managed`, and enables runtime auto-sync in
+managed mode. This is the replacement for the `extend` mode removed in
+`iris-persistence` 0.3.
 
 **Example:**
 ```python

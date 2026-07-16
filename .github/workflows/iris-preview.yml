@@ -3,6 +3,8 @@ name: IRIS preview
 on:
   # schedule:
   #   - cron: "17 3 * * *"
+  push:
+    branches: [master]
   workflow_dispatch:
 
 permissions:

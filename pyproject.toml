@@ -29,7 +29,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "xmltodict>=0.12.0",
     "iris-embedded-python-wrapper>=0.5.0",
-    "iris-persistence>=0.1.1",
+    "iris-persistence>=0.3.0",
     "jsonpath-ng>=1.7.0",
     "requests>=2.24.0"
 ]

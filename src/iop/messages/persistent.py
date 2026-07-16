@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-import iris_persistence
 from iris_persistence import Field as Field
 from iris_persistence import Model as _PersistenceModel
 from iris_persistence.models import ModelMeta
@@ -17,7 +16,7 @@ from iris_persistence.runtime import get_runtime
 from ..runtime.environment import prepend_sys_path
 
 DEFAULT_SUPERCLASS = "Ens.MessageBody"
-DEFAULT_SYNC_MODE = "extend"
+DEFAULT_SYNC_MODE = "managed"
 MESSAGE_KIND_PARAMETER = "IOP_MESSAGE_KIND"
 MESSAGE_KIND_VALUE = "PersistentMessage"
 PYTHON_CLASS_PARAMETER = "IOP_PYTHON_CLASS"
@@ -234,8 +233,7 @@ def serialize_persistent_message(
     iris_classname = resolve_iris_classname(msg_cls)
     _ensure_schema(msg_cls, iris_classname)
 
-    iris_obj = iris_persistence.materialize(
-        message,
+    iris_obj = message.to_iris(
         auto_sync=False,
         validate=False,
     )
@@ -366,7 +364,7 @@ def _ensure_schema(msg_cls: type, iris_classname: str) -> None:
         raise PersistentMessageError(
             f"{get_python_classname(msg_cls)} has auto_sync=True but mode="
             f"{getattr(msg_cls, '_sync_mode', None)!r}. Runtime auto-sync is only allowed "
-            "with mode='extend'."
+            "with mode='managed'."
         )
 
     _prepare_message_class(msg_cls, iris_classname, registered=False)

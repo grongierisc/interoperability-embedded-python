@@ -2,7 +2,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from iris_persistence.runtime import configure_default_runtime
+from iris_persistence.runtime import get_runtime, install_runtime
 from iris_persistence.testing import InMemoryAdapter
 
 from iop import Field, Model, PersistentMessage
@@ -22,7 +22,8 @@ from iop.migration import utils as migration_utils
 
 @pytest.fixture(autouse=True)
 def fake_runtime():
-    configure_default_runtime(InMemoryAdapter())
+    previous_runtime = get_runtime()
+    install_runtime(InMemoryAdapter())
     persistent_message_module._PYTHON_TO_IRIS_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_CACHE.clear()
     persistent_message_module._IRIS_TO_PYTHON_CLASSPATH_CACHE.clear()
@@ -33,7 +34,7 @@ def fake_runtime():
     migration_utils._persistent_message_registry.clear()
     yield
     migration_utils._persistent_message_registry.clear()
-    configure_default_runtime(None)
+    install_runtime(previous_runtime)
 
 
 class NativeOrderMessage(PersistentMessage):
@@ -48,7 +49,7 @@ class ConventionOrderMessage(PersistentMessage):
 
 def test_persistent_message_defaults():
     assert NativeOrderMessage._superclasses == "Ens.MessageBody"
-    assert NativeOrderMessage._sync_mode == "extend"
+    assert NativeOrderMessage._sync_mode == "managed"
     assert NativeOrderMessage._auto_sync is True
 
 

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `iris-pex-embedded-python[debug]` before enabling debugpy integration.
 - Standardize contributor verification through the `dev` extra and tox.
 - Publish packages only from explicit releases after verification.
+- Update the default `PersistentMessage` schema mode from `extend` to `managed`
+  for compatibility with `iris-persistence` 0.3.
 
 ### Internal
 - Add wheel-content and installed-ObjectScript validation.
