@@ -1,4 +1,5 @@
 """Unit tests for _BusinessHost — no live IRIS instance required."""
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,8 +24,14 @@ def business_host():
 
 class TestBusinessHostAsync:
     @pytest.mark.asyncio
+    @patch('iop.components.async_request._iris.get_iris')
+    @patch('iop.components.async_request.dispatch_serializer')
     @patch('iop.components.async_request.dispatch_deserializer')
-    async def test_send_request_async_ng(self, mock_deserializer, business_host):
+    async def test_send_request_async_ng(
+        self, mock_deserializer, mock_serializer, mock_get_iris, business_host
+    ):
+        mock_get_iris.return_value.ref.return_value = MagicMock(value=None)
+        mock_serializer.return_value = MagicMock()
         business_host.iris_handle.dispatchSendRequestAsyncNG = MagicMock()
         business_host.iris_handle.dispatchIsRequestDone.return_value = 2
         mock_deserializer.return_value = MyResponse(value='test')
@@ -33,6 +40,24 @@ class TestBusinessHostAsync:
 
         assert result == MyResponse(value='test')
         mock_deserializer.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch(
+        'iop.components.async_request._iris.get_iris',
+        side_effect=RuntimeError('IRIS unavailable'),
+    )
+    async def test_send_request_async_ng_propagates_background_failure(
+        self, mock_get_iris, business_host
+    ):
+        with pytest.raises(RuntimeError, match='IRIS unavailable'):
+            await asyncio.wait_for(
+                business_host.send_request_async_ng(
+                    'test', SimpleMessage(integer=1, string='test')
+                ),
+                timeout=1,
+            )
+
+        mock_get_iris.assert_called_once()
 
 
 class TestGeneratorRequest:

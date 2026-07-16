@@ -30,37 +30,48 @@ class AsyncRequest(asyncio.Future):
         if host is None:
             raise ValueError("host parameter cannot be None")
         self._iris_handle = host.iris_handle
-        asyncio.create_task(self.send())
+        self._message_header_id = 0
+        self._queue_name = ""
+        self._end_time = 0
+        self._response = None
+        self._done = False
+        self._send_task = asyncio.create_task(self.send())
 
     async def send(self) -> None:
-        # init parameters
-        iris = _iris.get_iris()
-        message_header_id = iris.ref()
-        queue_name = iris.ref()
-        end_time = iris.ref()
-        request = dispatch_serializer(self.request)
+        try:
+            iris = _iris.get_iris()
+            message_header_id = iris.ref()
+            queue_name = iris.ref()
+            end_time = iris.ref()
+            request = dispatch_serializer(self.request)
 
-        # send request
-        self._iris_handle.dispatchSendRequestAsyncNG(
-            self.target,
-            request,
-            self.timeout,
-            self.description,
-            message_header_id,
-            queue_name,
-            end_time,
-        )
+            self._iris_handle.dispatchSendRequestAsyncNG(
+                self.target,
+                request,
+                self.timeout,
+                self.description,
+                message_header_id,
+                queue_name,
+                end_time,
+            )
 
-        # get byref values
-        self._message_header_id = message_header_id.value
-        self._queue_name = queue_name.value
-        self._end_time = end_time.value
+            self._message_header_id = message_header_id.value
+            self._queue_name = queue_name.value
+            self._end_time = end_time.value
 
-        while not self._done:
-            await asyncio.sleep(0.1)
-            self.is_done()
+            while not self._done:
+                await asyncio.sleep(0.1)
+                self.is_done()
 
-        self.set_result(self._response)
+            if not self.done():
+                self.set_result(self._response)
+        except asyncio.CancelledError:
+            if not self.done():
+                self.cancel()
+            raise
+        except Exception as exc:
+            if not self.done():
+                self.set_exception(exc)
 
     def is_done(self) -> None:
         iris = _iris.get_iris()

@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 import functools
+import inspect
 import signal
 import warnings
 from dataclasses import dataclass
@@ -347,7 +348,7 @@ def test_component(target, message=None, classname=None, body=None):
 
 def _deprecated_static(name: str):
     target = globals()[name]
-    if asyncio.iscoroutinefunction(target):
+    if inspect.iscoroutinefunction(target):
 
         @wraps(target)
         async def async_wrapper(*args, **kwargs):

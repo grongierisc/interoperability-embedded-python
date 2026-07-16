@@ -51,7 +51,9 @@ class TestComponentRegistration:
 
     def test_register_component_fails_on_iris_error(self, register_path, monkeypatch):
         monkeypatch.setenv("IRISNAMESPACE", "IRISAPP")
-        with patch("iris.cls", side_effect=RuntimeError("iris.cls: error finding class")):
+        iris = MagicMock()
+        iris.cls.side_effect = RuntimeError("iris.cls: error finding class")
+        with patch.object(migration_utils._iris, "get_iris", return_value=iris):
             with pytest.raises(RuntimeError) as exc_info:
                 migration_utils.register_component(
                     "bo", "EmailOperation", register_path, 1, "UnitTest.EmailOperation"

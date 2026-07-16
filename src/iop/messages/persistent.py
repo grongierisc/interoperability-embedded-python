@@ -10,7 +10,7 @@ from typing import Any
 
 import iris_persistence
 from iris_persistence import Field as Field
-from iris_persistence import Model
+from iris_persistence import Model as _PersistenceModel
 from iris_persistence.models import ModelMeta
 from iris_persistence.runtime import get_runtime
 
@@ -50,7 +50,26 @@ class _PersistentMessageResolution:
     error: PersistentMessageError | None = None
 
 
-class _PersistentMessageMeta(ModelMeta):
+def _materialize_deferred_annotations(namespace: dict) -> None:
+    """Expose Python 3.14 deferred annotations to iris-persistence."""
+    if "__annotations__" in namespace:
+        return
+    annotate = namespace.get("__annotate_func__")
+    if annotate is not None:
+        namespace["__annotations__"] = annotate(1)
+
+
+class _ModelMeta(ModelMeta):
+    def __new__(mcs, name: str, bases: tuple, namespace: dict, **kwargs: Any):
+        _materialize_deferred_annotations(namespace)
+        return super().__new__(mcs, name, bases, namespace, **kwargs)
+
+
+class Model(_PersistenceModel, metaclass=_ModelMeta):
+    """Python 3.10–3.14 compatible public persistence model base."""
+
+
+class _PersistentMessageMeta(_ModelMeta):
     def __init__(cls, name: str, bases: tuple, namespace: dict, **kwargs: Any):
         super().__init__(name, bases, namespace, **kwargs)
 
