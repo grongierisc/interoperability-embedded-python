@@ -71,6 +71,34 @@ The CLI uses these terms consistently:
 - `unbind` or `unregister`: remove an IOP-generated IRIS proxy class binding.
   This does not delete Python source files or production items.
 
+## install agent guidance
+
+Install version-matched IoP project guidance, Agent Skills, and offline
+cookbooks without connecting to IRIS:
+
+```bash
+iop --install-agent-guidance
+```
+
+The current directory and all supported agents are the defaults. Select clients
+or another project directory explicitly when needed:
+
+```bash
+iop --install-agent-guidance /path/to/project --agent codex
+iop --install-agent-guidance --agent claude --agent gemini
+```
+
+The command preserves content outside its marked blocks in root instruction
+files. It refuses to replace changed IoP-managed assets unless explicitly
+requested:
+
+```bash
+iop --install-agent-guidance --force-agent-guidance
+```
+
+See [IoP Agent Guidance And Skills](agent-guidance.md) for the installed layout
+and direct skill installation.
+
 ## help
 
 The help command display the help and the default production name.

@@ -11,7 +11,15 @@ Welcome to **Interoperability On Python (IoP)**, a production-stable Python-firs
 Documentation can be found [here](https://grongierisc.github.io/interoperability-embedded-python/).
 For prompt-driven workflows, see [AI-assisted coding with IoP](https://grongierisc.github.io/interoperability-embedded-python/ai-coding/).
 For task-oriented examples, see the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
-For application repositories, start from the [reusable AGENTS.md template](https://grongierisc.github.io/interoperability-embedded-python/agents-template/).
+For any application repository, install version-matched agent guidance, skills,
+and offline cookbooks with:
+
+```bash
+iop --install-agent-guidance
+```
+
+See [IoP Agent Guidance And Skills](https://grongierisc.github.io/interoperability-embedded-python/agent-guidance/)
+for Codex, Claude Code, Gemini CLI, and direct Agent Skills installation.
 
 ## Example
 

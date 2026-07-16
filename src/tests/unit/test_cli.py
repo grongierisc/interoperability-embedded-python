@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from importlib import import_module
 from io import StringIO
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from iop.cli.main import _format_test_response, main
@@ -54,6 +55,28 @@ class TestIOPCli(unittest.TestCase):
                     main(["-n"])
                 self.assertEqual(cm.exception.code, 0)
                 self.assertEqual(fake_out.getvalue().strip(), "TESTNS")
+
+    def test_install_agent_guidance_skips_iris_director(self):
+        with tempfile.TemporaryDirectory() as target:
+            with patch.object(
+                cli_main_module,
+                "_LocalDirector",
+                side_effect=AssertionError("director must not be initialized"),
+            ):
+                with patch("sys.stdout", new=StringIO()) as fake_out:
+                    with self.assertRaises(SystemExit) as cm:
+                        main(
+                            [
+                                "--install-agent-guidance",
+                                target,
+                                "--agent",
+                                "claude",
+                            ]
+                        )
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn("for: claude", fake_out.getvalue())
+            self.assertTrue(Path(target, "CLAUDE.md").is_file())
+            self.assertFalse(Path(target, "AGENTS.md").exists())
 
     def test_namespace_with_value_prints_help(self):
         """Test namespace assignment prints help when no other command is provided."""

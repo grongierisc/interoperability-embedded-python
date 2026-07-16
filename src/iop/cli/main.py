@@ -8,6 +8,7 @@ from importlib.metadata import version
 
 import requests
 
+from ..ai import install_agent_guidance
 from ..migration import utils as migration_utils
 from ..production import Production, ProductionChangePlan
 from ..runtime.local import _LocalDirector
@@ -482,6 +483,22 @@ def main(argv=None) -> None:
     cmd_args = CommandArgs(**vars(args))
 
     try:
+        if cmd_args.install_agent_guidance is not None:
+            result = install_agent_guidance(
+                cmd_args.install_agent_guidance,
+                agents=cmd_args.agent,
+                force=cmd_args.force_agent_guidance,
+            )
+            configured = ", ".join(result.agents)
+            print(
+                f"Installed IoP agent guidance in {result.target} "
+                f"for: {configured}."
+            )
+            print(
+                f"Updated {len(result.written)} file(s); "
+                f"{len(result.unchanged)} already current."
+            )
+            sys.exit(0)
         command = Command(cmd_args)
         command.execute()
     except requests.exceptions.ConnectionError as exc:

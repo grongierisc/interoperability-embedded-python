@@ -3,6 +3,19 @@
 Use this guide when you want to vibe code with IoP while still getting
 production-shaped, reviewable Python interoperability code.
 
+## Install Project Guidance
+
+IoP can install version-matched guidance, Agent Skills, and offline cookbooks in
+any application repository, whether or not it uses the IoP template:
+
+```bash
+iop --install-agent-guidance
+```
+
+This configures Codex, Claude Code, and Gemini CLI by default. See
+[IoP Agent Guidance And Skills](agent-guidance.md) for agent selection, updates,
+conflict handling, and direct installation from GitHub.
+
 ## Start Here
 
 Ask the tool to read the project guidance before it writes code:
@@ -29,9 +42,9 @@ Show the migration and verification commands.
 
 The IoP framework repository root `AGENTS.md` is for framework source
 development, not application guidance. For your own IoP application repository,
-copy the
-[reusable AGENTS.md template](agents-template.md) into the project root and
-adapt it to the local production. For healthcare projects, also read
+prefer `iop --install-agent-guidance`; the
+[reusable AGENTS.md template](agents-template.md) remains available for manual
+setup. For healthcare projects, also read
 [Healthcare AI-assisted coding](healthcare-ai-coding.md).
 
 ## Cookbooks

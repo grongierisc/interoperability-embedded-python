@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Add `iop --install-agent-guidance` to install version-matched IoP guidance,
+  skills, and offline cookbooks into existing application repositories for
+  Codex, Claude Code, and Gemini CLI.
+- Add portable `build-iop-app` and `validate-iop-app` Agent Skills that can also
+  be installed directly from the framework repository.
+- Preserve existing project instructions through idempotent managed blocks,
+  with agent selection, conflict preflight, and explicit forced refresh support.
+
+### Changed
+- Make the packaged Agent Skill references the source of truth for IoP
+  cookbooks and related AI guidance; MkDocs pages include them using the same
+  snippet pattern as the changelog.
+
 ## [4.1.0] - 2026-07-16
 ### Changed
 - Move remote debugging support to the optional `debug` extra. Install

@@ -75,6 +75,13 @@ def create_parser() -> argparse.ArgumentParser:
         "--rollback-backup",
         help="restore a production from a plan/apply backup directory",
     )
+    parser.add_argument(
+        "--install-agent-guidance",
+        help="install IoP guides and skills into a project directory (default: .)",
+        nargs="?",
+        const=".",
+        metavar="PATH",
+    )
 
     start = main_parser.add_argument_group("start arguments")
     start.add_argument(
@@ -110,6 +117,19 @@ def create_parser() -> argparse.ArgumentParser:
         "--strict-production-validation",
         help="fail migration when production validation reports issues",
         action="store_true",
+    )
+
+    agent_guidance = main_parser.add_argument_group("agent guidance arguments")
+    agent_guidance.add_argument(
+        "--agent",
+        choices=("codex", "claude", "gemini"),
+        action="append",
+        help="agent to configure; repeat as needed (default: all)",
+    )
+    agent_guidance.add_argument(
+        "--force-agent-guidance",
+        action="store_true",
+        help="replace conflicting IoP-managed guidance files",
     )
 
     export = main_parser.add_argument_group("export arguments")

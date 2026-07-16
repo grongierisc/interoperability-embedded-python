@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 
 [project]
 name = "iris_pex_embedded_python"
-version = "4.1.0"
+version = "4.1.1b1"
 description = "Iris Interoperability based on Embedded Python"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -74,7 +74,7 @@ exclude = ["tests*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.cls", "cls/**/*.cls"]
-"iop" = ["py.typed"]
+"iop" = ["py.typed", "ai/**/*.md"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "class"

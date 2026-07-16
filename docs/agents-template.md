@@ -1,8 +1,10 @@
 # Reusable AGENTS.md For IoP Projects
 
-Copy this template into the root of an application repository as `AGENTS.md`.
-Keep it generic. Put project-specific details in the project README or in a
-short project brief section.
+Prefer `iop --install-agent-guidance` to configure Codex, Claude Code, Gemini
+CLI, portable skills, and offline cookbooks together. Copy this fallback
+template into an application repository as `AGENTS.md` only when the installer
+cannot be used. Keep it generic and put project-specific details in the project
+README or a short project brief section.
 
 ````md
 # Agent Guide

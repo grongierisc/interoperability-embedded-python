@@ -71,3 +71,6 @@ class CommandArgs:
     settings: str | None = None
     backup_dir: str = ".iop/backups"
     allow_destructive: bool = False
+    install_agent_guidance: str | None = None
+    agent: list[str] | None = None
+    force_agent_guidance: bool = False

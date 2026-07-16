@@ -10,6 +10,7 @@ nav:
     - First Steps: getting-started/first-steps.md
     - Register Component: getting-started/register-component.md
     - AI-assisted Coding: ai-coding.md
+    - Agent Guidance And Skills: agent-guidance.md
     - Reusable AGENTS.md: agents-template.md
     - Healthcare AI-assisted Coding: healthcare-ai-coding.md
   - Cookbooks:

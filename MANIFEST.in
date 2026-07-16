@@ -3,3 +3,4 @@ include LICENSE
 include AGENTS.md
 include mkdocs.yml
 recursive-include docs *.md
+recursive-include src/iop/ai *.md
