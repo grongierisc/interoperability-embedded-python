@@ -21,13 +21,21 @@ changes in application code.
 
 ## Runtime Checks
 
-Only perform live migration or runtime mutation when the user requests it and
-the target IRIS environment is known. Verify at least one observable result:
+Use a repository-owned disposable Docker or Compose environment for runtime
+verification when it is available. Only mutate a shared, remote, or otherwise
+non-disposable IRIS environment when the user requests it and the target is
+known. Verify at least one observable result:
 
 - production and component status;
 - expected output file, API request, database write, or FHIR resource;
 - production logs without blocking errors;
 - Message Viewer flow or queue state.
+
+Container health is not production health. Confirm initialization and migration
+completed, use `iop --status` to verify the intended production is running, then
+trigger or wait for a Business Service and inspect an actual destination effect.
+Prefer `iop` commands for migration, start, status, logs, and queues. Do not use
+an ObjectScript terminal when the IoP CLI supports the operation.
 
 Do not use `iop --test` as the normal way to test a Business Service. Use the
 production runtime or director path so deployed settings, targets, and runtime

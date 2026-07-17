@@ -17,6 +17,7 @@ nav:
     - Overview: cookbooks/index.md
     - Code Index for Agents: cookbooks/code-index.md
     - Hello-world Production: cookbooks/hello-world-production.md
+    - Ingestion Pipeline: cookbooks/ingestion-pipeline.md
     - Add a BusinessOperation: cookbooks/add-business-operation.md
     - Add a BusinessProcess: cookbooks/add-business-process.md
     - Add a PollingBusinessService: cookbooks/add-polling-service.md

@@ -101,6 +101,47 @@ def test_packaged_skills_follow_common_agent_skill_frontmatter():
         assert "description: " in frontmatter
 
 
+def test_ingestion_pipeline_guidance_encodes_regression_requirements():
+    root = Path(__file__).resolve().parents[3]
+    ai_root = root / "src" / "iop" / "ai"
+    build_skill = (ai_root / "skills" / "build-iop-app" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    validate_skill = (
+        ai_root / "skills" / "validate-iop-app" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+    pipeline = (
+        ai_root
+        / "skills"
+        / "build-iop-app"
+        / "references"
+        / "cookbooks"
+        / "ingestion-pipeline.md"
+    ).read_text(encoding="utf-8")
+    evaluation = (
+        root / "src" / "tests" / "fixtures" / "ai_guidance" / "ingestion_pipeline.md"
+    ).read_text(encoding="utf-8")
+
+    assert "read every cookbook implicated" in build_skill
+    assert "service -> process -> operation" in build_skill
+    assert "Preserve existing container" in build_skill
+    assert "disposable local Docker or Compose" in validate_skill
+    assert "Do not use an ObjectScript terminal" in validate_skill
+    assert "Container health alone is not production health" in validate_skill
+
+    for requirement in (
+        "The service performs acquisition",
+        "The process validates",
+        "The operation receives processed data",
+        "query an actual destination record",
+        "never replace setup with a keep-alive loop",
+    ):
+        assert requirement in pipeline
+
+    assert "rotten tomatos" in evaluation
+    assert "An evaluation fails when any hard gate is absent" in evaluation
+
+
 def test_documentation_pages_include_packaged_ai_references():
     root = Path(__file__).resolve().parents[3]
     references = (

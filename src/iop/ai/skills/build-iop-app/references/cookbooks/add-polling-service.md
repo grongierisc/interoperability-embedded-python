@@ -6,6 +6,11 @@ Use this cookbook when a production needs a Python-triggered polling entry
 point. For healthcare HL7v2 file or TCP input, prefer native IRIS HL7v2 services
 instead of a Python polling service.
 
+The service owns acquisition from the source it polls. For example, a service
+polling an HTTP feed performs that HTTP read and emits the fetched data in a
+message. It should not emit an empty "fetch this" command that moves source
+acquisition into the persistence operation.
+
 ## Files You Will Touch
 
 - the service module, such as `bs.py` or `services.py`
@@ -24,8 +29,9 @@ Business goal:
 Implementation requirements:
 - Define the outbound route as Output = target().
 - Implement on_poll(self).
-- Create a request Message dataclass if needed.
-- Send the request with self.send_request_async(self.Output, request).
+- Fetch from the configured source in the service.
+- Create a data-bearing Message dataclass for the acquired records.
+- Send the acquired data with self.send_request_async(self.Output, message).
 - Keep configuration as component settings or class attributes, following the
   existing project pattern.
 - Do not put startup code in __init__(); use on_init() only if required.
@@ -39,23 +45,34 @@ Implementation requirements:
 ## Expected Implementation
 
 ```python
+from dataclasses import dataclass
+
 from iop import Message, PollingBusinessService, target
+
+
+@dataclass
+class SourceRecord(Message):
+    source_id: str
+    payload: str
 
 
 class FilePollService(PollingBusinessService):
     Output = target()
 
     def on_poll(self):
-        request = Message()
-        self.send_request_async(self.Output, request)
+        for record in read_source_records():
+            self.send_request_async(
+                self.Output,
+                SourceRecord(source_id=record.id, payload=record.payload),
+            )
 ```
 
 In `settings.py`:
 
 ```python
 service = prod.service("FilePollService", FilePollService)
-operation = prod.operation("TargetOperation", TargetOperation)
-service.connect(FilePollService.Output, operation)
+process = prod.process("RecordProcess", RecordProcess)
+service.connect(FilePollService.Output, process)
 ```
 
 ## Migration Command
@@ -78,4 +95,6 @@ iop --migrate settings.py
 - Polling healthcare HL7v2 files in Python instead of using native HL7 file
   services.
 - Forgetting to connect `service.Output` to the destination.
+- Emitting an empty trigger and performing the configured source read in the
+  persistence operation.
 - Putting long-lived connection setup in `__init__()` instead of `on_init()`.

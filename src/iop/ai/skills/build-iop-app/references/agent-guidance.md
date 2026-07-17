@@ -61,7 +61,8 @@ guidance; use the IoP installer when those entrypoints are wanted.
   cookbook, and guides message, component, production graph, sample, and test
   changes.
 - `validate-iop-app` runs project tests and strict migration dry-run first, then
-  guides optional runtime verification against an identified IRIS environment.
+  requires container-backed runtime verification when the project provides a
+  disposable environment, while protecting shared or remote IRIS instances.
 
 The skill files use the shared Agent Skills `SKILL.md` format with only portable
 frontmatter. Client-specific wrappers contain no duplicated IoP policy; the

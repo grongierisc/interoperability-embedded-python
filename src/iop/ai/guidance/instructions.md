@@ -12,9 +12,9 @@ constraints, and acceptance criteria. Infer facts from the repository before
 asking the user.
 
 Read the project README, `settings.py`, the production graph, message and
-component modules, tests, fixtures, and sample payloads. Use the bundled
-`build-iop-app` skill for implementation workflows and `validate-iop-app` for
-verification.
+component modules, tests, fixtures, sample payloads, dependency files, and
+available Docker or Compose lifecycle. Use the bundled `build-iop-app` skill
+for implementation workflows and `validate-iop-app` for verification.
 
 ## IoP Rules
 
@@ -47,9 +47,17 @@ application code.
 
 ## Production Design
 
-- Business Services are inbound entry points and triggers.
+- Business Services are inbound entry points and triggers. A polling service
+  owns acquisition from the source it polls, including an HTTP, file, or
+  database read, and emits a data-bearing message.
 - Business Processes own routing, decisions, transformations, and orchestration.
-- Business Operations isolate outbound side effects.
+- Business Operations isolate destination side effects such as persistence,
+  file writes, submissions, and API calls made after processing. An API lookup
+  requested by a process is also an operation; acquisition by a polling service
+  from its configured source remains service work.
+- Model a complete source-to-destination ingestion flow as `service -> process
+  -> operation` by default. Omit the process only for a genuinely trivial
+  pass-through and state why no orchestration boundary is needed.
 - Prefer native IRIS or Health Connect components for established healthcare
   standards and transports, then use Python for application-specific logic.
 
@@ -59,6 +67,6 @@ do not treat an imported graph as a lossless reconstruction of deployed intent.
 
 ## Completion
 
-Add or update focused tests and sample payloads when behavior changes. Run the
-`validate-iop-app` skill and report commands, results, and remaining runtime
-verification clearly.
+Add or update focused tests, declare direct dependencies, and preserve working
+project lifecycle automation when behavior changes. Run the `validate-iop-app`
+skill and report commands, results, and remaining runtime verification clearly.

@@ -2,9 +2,11 @@
 
 ## When To Use This
 
-Use this cookbook when a production needs an outbound side-effect boundary:
-calling an API, writing a file, submitting FHIR, storing data, or wrapping a
-technical operation behind a production message.
+Use this cookbook when a production needs a destination side-effect boundary:
+calling a downstream API, writing a file, submitting FHIR, storing data, or
+wrapping a technical operation behind a production message. Acquisition from
+the configured source of a `PollingBusinessService` remains in that service;
+the operation receives the acquired or processed data.
 
 ## Files You Will Touch
 
@@ -118,6 +120,8 @@ pure Python transformation or validation logic.
 ## Common Mistakes
 
 - Creating an operation but not adding it to `settings.py`.
+- Combining source acquisition, orchestration, and destination persistence in
+  one operation.
 - Calling another production component as a normal Python object.
 - Hiding connection names in strings instead of using `target()` and
   `prod.connect(...)`.

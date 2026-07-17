@@ -1,0 +1,1 @@
+--8<-- "src/iop/ai/skills/build-iop-app/references/cookbooks/ingestion-pipeline.md"

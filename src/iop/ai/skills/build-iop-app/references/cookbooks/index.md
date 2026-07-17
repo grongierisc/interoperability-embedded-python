@@ -9,9 +9,9 @@ Install version-matched offline copies together with the IoP application skills:
 iop --install-agent-guidance
 ```
 
-The `build-iop-app` skill selects and loads the relevant installed cookbook. See
-[IoP Agent Guidance And Skills](../agent-guidance.md) for other projects and
-agent-specific installation.
+The `build-iop-app` skill selects and loads every installed cookbook implicated
+by a requested flow. See [IoP Agent Guidance And Skills](../agent-guidance.md)
+for other projects and agent-specific installation.
 
 The current Skills CLI requires Node.js 22.20.0 or newer. Check the active
 version before installing:
@@ -49,8 +49,8 @@ Before using a cookbook, give the assistant this context:
 
 ```text
 You are helping me build an IoP application.
-Read local AGENTS.md if this application has one, settings.py, and the
-relevant cookbook before changing code.
+Read local AGENTS.md if this application has one, settings.py, and every
+applicable cookbook before changing code.
 Use the Python Production graph workflow for new applications.
 Do not put component startup logic in __init__(); use on_init().
 Treat the directory containing settings.py as the project import root.
@@ -63,6 +63,7 @@ Show the migration and verification commands.
 
 - [Code index for agents](code-index.md)
 - [Hello-world production](hello-world-production.md)
+- [Build a source-to-destination ingestion pipeline](ingestion-pipeline.md)
 - [Add a BusinessOperation](add-business-operation.md)
 - [Add a BusinessProcess](add-business-process.md)
 - [Add a PollingBusinessService](add-polling-service.md)

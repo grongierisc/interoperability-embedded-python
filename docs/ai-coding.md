@@ -36,7 +36,7 @@ Do not put component startup logic in __init__(); use on_init().
 Treat the directory containing settings.py as the project import root.
 Import production modules relative to settings.py; do not modify PYTHONPATH.
 Do not use iop --test to test Business Services; use the runtime director.
-Use the relevant cookbook for the task.
+Use every cookbook implicated by the task.
 Show the migration and verification commands.
 ```
 
@@ -53,6 +53,7 @@ Use the [IoP cookbooks](cookbooks/index.md) for task-specific prompts and
 checklists:
 
 - [Hello-world production](cookbooks/hello-world-production.md)
+- [Build a source-to-destination ingestion pipeline](cookbooks/ingestion-pipeline.md)
 - [Code index for agents](cookbooks/code-index.md)
 - [Add a BusinessOperation](cookbooks/add-business-operation.md)
 - [Add a BusinessProcess](cookbooks/add-business-process.md)

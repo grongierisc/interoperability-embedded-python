@@ -18,14 +18,15 @@ _AGENT_PATHS = {
 _SKILL_DESCRIPTIONS = {
     "build-iop-app": (
         "Build or modify an IoP application using production graphs, messages, "
-        "components, tests, and the relevant bundled cookbook. Use for new or "
+        "components, tests, and all applicable bundled cookbooks. Use for new or "
         "changed Business Services, Business Processes, Business Operations, "
         "routes, settings, healthcare flows, or complete productions."
     ),
     "validate-iop-app": (
         "Validate an IoP application with unit tests, strict migration dry-run, "
-        "and optional IRIS runtime checks. Use after changing messages, components, "
-        "production topology, settings, migration files, or runtime behavior."
+        "and container-backed IRIS runtime checks when available. Use after changing "
+        "messages, components, production topology, settings, migration files, "
+        "container lifecycle, or runtime behavior."
     ),
 }
 
