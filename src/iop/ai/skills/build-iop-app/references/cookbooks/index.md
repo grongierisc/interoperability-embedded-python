@@ -13,6 +13,38 @@ The `build-iop-app` skill selects and loads the relevant installed cookbook. See
 [IoP Agent Guidance And Skills](../agent-guidance.md) for other projects and
 agent-specific installation.
 
+The current Skills CLI requires Node.js 22.20.0 or newer. Check the active
+version before installing:
+
+```bash
+node --version
+```
+
+To install only the portable skills in the current project, run:
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app
+```
+
+Add `--global` to make the skills available to supported agents across all
+projects:
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app \
+  --global
+```
+
+Prefer the project-local installation when its skills must remain aligned with
+that project's IoP version. Global installation is convenient when working
+across many IoP repositories. Neither direct Skills CLI installation adds the
+always-on project guides installed by `iop --install-agent-guidance`.
+
 Before using a cookbook, give the assistant this context:
 
 ```text

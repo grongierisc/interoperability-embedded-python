@@ -13,6 +13,32 @@ For prompt-driven workflows, see [AI-assisted coding with IoP](https://grongieri
 For task-oriented examples, see the [IoP cookbooks](https://grongierisc.github.io/interoperability-embedded-python/cookbooks/).
 For application repositories, start from the [reusable AGENTS.md template](https://grongierisc.github.io/interoperability-embedded-python/agents-template/).
 
+
+Install only the portable IoP skills in the current project with the Skills
+CLI:
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app
+```
+
+Or make the skills available to supported agents across all your projects:
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app \
+  --global
+```
+
+Project-local installation is recommended when the skills must stay aligned
+with a project's IoP version. The global installation is convenient when you
+work across many IoP repositories.
+
+
 ## Example
 
 Here's a tiny Python-authored production:

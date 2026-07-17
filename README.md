@@ -21,6 +21,34 @@ iop --install-agent-guidance
 See [IoP Agent Guidance And Skills](https://grongierisc.github.io/interoperability-embedded-python/agent-guidance/)
 for Codex, Claude Code, Gemini CLI, and direct Agent Skills installation.
 
+Install only the portable IoP skills in the current project with the Skills
+CLI. The current Skills CLI requires Node.js 22.20.0 or newer:
+
+```bash
+node --version
+```
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app
+```
+
+Or make the skills available to supported agents across all your projects:
+
+```bash
+npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app \
+  --global
+```
+
+Project-local installation is recommended when the skills must stay aligned
+with a project's IoP version. The global installation is convenient when you
+work across many IoP repositories.
+
 ## Example
 
 Here's a tiny Python-authored production:
