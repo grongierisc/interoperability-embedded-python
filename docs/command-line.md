@@ -21,7 +21,7 @@ optional arguments:
                         set the default production
   -l, --list           list productions
   -s START, --start START
-                        start a production
+                        start a production and stream logs unless --detach is used
   -S, --stop           stop a production
   -k, --kill           kill a production
   -r, --restart        restart a production
@@ -31,7 +31,8 @@ optional arguments:
   -e EXPORT, --export EXPORT
                         export a production
   -v, --version        display version
-  -L, --log           display log
+  -L [LOG], --log [LOG]
+                        stream logs, or pass a count for finite output
   -q [QUEUE], --queue [QUEUE]
                         display runtime queue information
   -i INIT, --init INIT
@@ -54,6 +55,14 @@ bindings arguments:
   --unused            with --bindings, show only proxy classes unused by productions
 
 default production: IoP.Production
+```
+
+For scripts and agent-driven validation, use detached startup and a finite log
+snapshot so the command returns control:
+
+```bash
+iop --start <production-name> --detach
+iop --log 50
 ```
 
 ## Terminology

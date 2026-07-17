@@ -26,9 +26,12 @@ migration, Docker or Compose, and production lifecycle entrypoints.
    settings file, and starts the intended production. Do not replace lifecycle
    steps with a keep-alive loop.
 5. Prefer repository scripts and `iop` commands for migration, start, status,
-   logs, and queues. Do not use an ObjectScript terminal for an operation the
-   IoP CLI supports. Use ObjectScript only when no public IoP path exists and
-   report why it was necessary.
+   logs, and queues. Automated validation commands must return control: use
+   `iop --start <production-name> --detach` and a finite log snapshot such as
+   `iop --log 50`. Bare `iop --start` streams logs; bare `iop --log` follows
+   logs until interrupted. Do not use an ObjectScript terminal for an operation
+   the IoP CLI supports. Use ObjectScript only when no public IoP path exists
+   and report why it was necessary.
 6. Verify both production status and an observable end-to-end effect: trigger or
    wait for the Business Service through the runtime, trace a message across the
    expected graph, and inspect the output, persisted row, API effect, or FHIR

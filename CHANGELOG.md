@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cookbooks and related AI guidance; MkDocs pages include them using the same
   snippet pattern as the changelog.
 - Strengthen application skills with a complete ingestion-pipeline architecture,
-  container-backed runtime verification, and IoP CLI-first operational checks.
+  container-backed runtime verification, non-blocking start and log commands,
+  and IoP CLI-first operational checks.
 
 ## [4.1.0] - 2026-07-16
 ### Changed

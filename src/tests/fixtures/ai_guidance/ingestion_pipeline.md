@@ -20,6 +20,9 @@ and store them in iris using iris-persistence
 - The agent rebuilds and runs the disposable container, confirms the production
   is running with the IoP CLI, exercises the polling flow, and verifies at least
   one persisted movie.
+- Production startup uses `iop --start <production-name> --detach`, and log
+  inspection requests a finite count such as `iop --log 50`; neither command
+  leaves the validation agent following logs indefinitely.
 - Standard lifecycle checks use repository scripts or the IoP CLI rather than
   raw ObjectScript commands.
 

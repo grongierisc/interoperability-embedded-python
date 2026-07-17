@@ -24,8 +24,17 @@ When `Dockerfile`, `docker-compose.yml`, or `compose.yaml` is present:
    commonly `docker compose up --build -d`.
 3. Confirm initialization, migration, and production startup completed. Do not
    accept a healthy IRIS container as proof that the production is running.
-4. Use `iop --status`, `iop --log`, and `iop --queue` before reaching for an
-   ObjectScript session.
+4. Use non-blocking IoP commands before reaching for an ObjectScript session:
+
+   ```bash
+   iop --start <production-name> --detach
+   iop --status
+   iop --log 50
+   iop --queue
+   ```
+
+   Bare `iop --start` starts and streams logs; bare `iop --log` follows logs
+   until interrupted. Never use either bare form in automated validation.
 5. Trigger or wait for the service through the production runtime and verify a
    message crosses every expected edge.
 6. Inspect the destination effect, such as an actual persisted row. Mock-only

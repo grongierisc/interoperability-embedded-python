@@ -24,7 +24,11 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-l", "--list", help="list productions", action="store_true")
     parser.add_argument(
-        "-s", "--start", help="start a production", nargs="?", const="not_set"
+        "-s",
+        "--start",
+        help="start a production and stream logs unless --detach is used",
+        nargs="?",
+        const="not_set",
     )
     parser.add_argument("-S", "--stop", help="stop a production", action="store_true")
     parser.add_argument("-k", "--kill", help="kill a production", action="store_true")
@@ -40,7 +44,13 @@ def create_parser() -> argparse.ArgumentParser:
         "-e", "--export", help="export a production", nargs="?", const="not_set"
     )
     parser.add_argument("-v", "--version", help="display version", action="store_true")
-    parser.add_argument("-L", "--log", help="display log", nargs="?", const="not_set")
+    parser.add_argument(
+        "-L",
+        "--log",
+        help="stream logs, or pass a count for finite output",
+        nargs="?",
+        const="not_set",
+    )
     parser.add_argument(
         "-q",
         "--queue",

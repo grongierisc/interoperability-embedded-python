@@ -35,7 +35,10 @@ Container health is not production health. Confirm initialization and migration
 completed, use `iop --status` to verify the intended production is running, then
 trigger or wait for a Business Service and inspect an actual destination effect.
 Prefer `iop` commands for migration, start, status, logs, and queues. Do not use
-an ObjectScript terminal when the IoP CLI supports the operation.
+an ObjectScript terminal when the IoP CLI supports the operation. Automated
+checks must return control: use `iop --start <production-name> --detach` and a
+finite log snapshot such as `iop --log 50`. Bare `--start` and bare `--log`
+stream logs until interrupted.
 
 Do not use `iop --test` as the normal way to test a Business Service. Use the
 production runtime or director path so deployed settings, targets, and runtime

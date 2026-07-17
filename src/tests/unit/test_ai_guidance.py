@@ -128,6 +128,10 @@ def test_ingestion_pipeline_guidance_encodes_regression_requirements():
     assert "disposable local Docker or Compose" in validate_skill
     assert "Do not use an ObjectScript terminal" in validate_skill
     assert "Container health alone is not production health" in validate_skill
+    assert "iop --start <production-name> --detach" in validate_skill
+    assert "iop --log 50" in validate_skill
+    assert "Bare `iop --start` streams" in validate_skill
+    assert "bare `iop --log` follows" in validate_skill
 
     for requirement in (
         "The service performs acquisition",
@@ -139,6 +143,7 @@ def test_ingestion_pipeline_guidance_encodes_regression_requirements():
         assert requirement in pipeline
 
     assert "rotten tomatos" in evaluation
+    assert "neither command" in evaluation
     assert "An evaluation fails when any hard gate is absent" in evaluation
 
 
