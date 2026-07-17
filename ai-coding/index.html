@@ -80,6 +80,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/hello-world-production/">Hello-world Production</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/ingestion-pipeline/">Ingestion Pipeline</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-operation/">Add a BusinessOperation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-process/">Add a BusinessProcess</a>
@@ -201,7 +203,7 @@ Do not put component startup logic in __init__(); use on_init().
 Treat the directory containing settings.py as the project import root.
 Import production modules relative to settings.py; do not modify PYTHONPATH.
 Do not use iop --test to test Business Services; use the runtime director.
-Use the relevant cookbook for the task.
+Use every cookbook implicated by the task.
 Show the migration and verification commands.
 </code></pre>
 <p>The IoP framework repository root <code>AGENTS.md</code> is for framework source
@@ -215,6 +217,7 @@ setup. For healthcare projects, also read
 checklists:</p>
 <ul>
 <li><a href="../cookbooks/hello-world-production/">Hello-world production</a></li>
+<li><a href="../cookbooks/ingestion-pipeline/">Build a source-to-destination ingestion pipeline</a></li>
 <li><a href="../cookbooks/code-index/">Code index for agents</a></li>
 <li><a href="../cookbooks/add-business-operation/">Add a BusinessOperation</a></li>
 <li><a href="../cookbooks/add-business-process/">Add a BusinessProcess</a></li>

@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/hello-world-production/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="grongier@intersystems.com" /><link rel="canonical" href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/ingestion-pipeline/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Hello-world Production - IoP (Interoperability On Python)</title>
+    <title>Ingestion Pipeline - IoP (Interoperability On Python)</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Hello-world Production";
-        var mkdocs_page_input_path = "cookbooks/hello-world-production.md";
-        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/hello-world-production/";
+        var mkdocs_page_name = "Ingestion Pipeline";
+        var mkdocs_page_input_path = "cookbooks/ingestion-pipeline.md";
+        var mkdocs_page_url = "/interoperability-embedded-python/cookbooks/ingestion-pipeline/";
       </script>
     
     <!--[if lt IE 9]>
@@ -66,25 +66,23 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../code-index/">Code Index for Agents</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Hello-world Production</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../hello-world-production/">Hello-world Production</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Ingestion Pipeline</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#when-to-use-this">When To Use This</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#files-you-will-touch">Files You Will Touch</a>
+    <li class="toctree-l2"><a class="reference internal" href="#required-architecture">Required Architecture</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#prompt-to-give-your-agent">Prompt To Give Your Agent</a>
+    <li class="toctree-l2"><a class="reference internal" href="#implementation-workflow">Implementation Workflow</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#expected-implementation">Expected Implementation</a>
+    <li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#migration-command">Migration Command</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#verification">Verification</a>
+    <li class="toctree-l2"><a class="reference internal" href="#completion-evidence">Completion Evidence</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#common-mistakes">Common Mistakes</a>
     </li>
     </ul>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../ingestion-pipeline/">Ingestion Pipeline</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../add-business-operation/">Add a BusinessOperation</a>
                   </li>
@@ -170,7 +168,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
           <li class="breadcrumb-item">Cookbooks</li>
-      <li class="breadcrumb-item active">Hello-world Production</li>
+      <li class="breadcrumb-item active">Ingestion Pipeline</li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
@@ -179,100 +177,99 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="cookbook-hello-world-production">Cookbook: Hello-World Production</h1>
+                <h1 id="cookbook-build-a-source-to-destination-ingestion-pipeline">Cookbook: Build A Source-To-Destination Ingestion Pipeline</h1>
 <h2 id="when-to-use-this">When To Use This</h2>
-<p>Use this cookbook when starting a new IoP application or when testing that a
-development environment can migrate and run a Python-authored production.</p>
-<h2 id="files-you-will-touch">Files You Will Touch</h2>
+<p>Use this cookbook for a complete production that polls or receives data from a
+source, applies application logic, and writes or submits it to a destination.
+Read the polling-service, business-process, and business-operation cookbooks as
+well; this workflow spans all three boundaries.</p>
+<h2 id="required-architecture">Required Architecture</h2>
+<p>Model the default graph as:</p>
+<pre><code class="language-text">PollingBusinessService -&gt; BusinessProcess -&gt; BusinessOperation
+source acquisition        validation,        destination effect
+and data message           transform, route   such as persistence
+</code></pre>
 <ul>
-<li><code>hello_world/components.py</code></li>
-<li><code>hello_world/__init__.py</code></li>
-<li><code>settings.py</code></li>
+<li>The service performs acquisition from the source it is configured to poll.
+  HTTP scraping, file reads, and source-database reads belong here.</li>
+<li>The service emits a data-bearing <code>Message</code>, not an empty command asking a
+  downstream operation to fetch.</li>
+<li>The process validates, normalizes, transforms, deduplicates, or routes the
+  acquired data.</li>
+<li>The operation receives processed data and owns destination effects such as an
+  <code>iris-persistence</code> write.</li>
+<li>A direct <code>service -&gt; operation</code> graph is acceptable only for a genuinely
+  trivial pass-through. State the reason when omitting the process.</li>
 </ul>
-<h2 id="prompt-to-give-your-agent">Prompt To Give Your Agent</h2>
-<pre><code class="language-text">Create a minimal IoP hello-world production.
-
-Requirements:
-- Define one Message dataclass named HelloRequest with a text field.
-- Define one PollingBusinessService named HelloService.
-- Define one BusinessOperation named HelloOperation.
-- HelloService must declare Output = target() and send HelloRequest to Output
-  from on_poll().
-- HelloOperation must log request.text and return the request.
-- Create settings.py with Production(&quot;HelloWorld.Production&quot;, testing_enabled=True).
-- Add the service and operation to the production and connect service.Output to
-  the operation.
-- Export PRODUCTIONS = [prod].
-- Do not use __init__() for component startup.
-- Do not use iop --test to test HelloService; use the runtime director or
-  production runtime API for service tests.
-- Show the migration dry-run command and the command to run the production
-  migration.
-</code></pre>
-<h2 id="expected-implementation">Expected Implementation</h2>
-<p>The component module should contain the message, service, and operation:</p>
-<pre><code class="language-python">from dataclasses import dataclass
-
-from iop import BusinessOperation, Message, PollingBusinessService, target
-
-
-@dataclass
-class HelloRequest(Message):
-    text: str = &quot;Hello World&quot;
-
-
-class HelloService(PollingBusinessService):
-    Output = target()
-
-    def on_poll(self):
-        self.send_request_async(self.Output, HelloRequest())
-
-
-class HelloOperation(BusinessOperation):
-    def on_message(self, request: HelloRequest):
-        self.log_info(request.text)
-        return request
-</code></pre>
-<p>The migration entrypoint should define the production graph:</p>
-<pre><code class="language-python">from iop import Production
-
-from hello_world.components import HelloOperation, HelloService
-
-
-prod = Production(&quot;HelloWorld.Production&quot;, testing_enabled=True)
-
-service = prod.service(&quot;HelloService&quot;, HelloService)
-operation = prod.operation(&quot;HelloOperation&quot;, HelloOperation)
-service.connect(HelloService.Output, operation)
-
-PRODUCTIONS = [prod]
-</code></pre>
-<h2 id="migration-command">Migration Command</h2>
-<pre><code class="language-bash">iop --migrate settings.py --dry-run
-iop --migrate settings.py
-</code></pre>
-<h2 id="verification">Verification</h2>
+<h2 id="implementation-workflow">Implementation Workflow</h2>
+<ol>
+<li>Inspect the existing graph, dependency manifest, tests, Docker or Compose
+   files, initialization entrypoint, and documented run commands.</li>
+<li>Write down the source, destination, component roles, messages, graph edges,
+   and observable end-to-end result.</li>
+<li>Define typed messages for acquired and processed data.</li>
+<li>Implement the polling service so <code>on_poll()</code> reads the source and sends the
+   acquired message through a <code>target()</code>.</li>
+<li>Implement a process with a target for the destination operation. Keep source
+   and destination I/O out of its routing and transformation logic.</li>
+<li>Implement the operation so it performs only the destination effect. For
+   persistence, initialize or synchronize the schema through the operation
+   lifecycle and write the records received in the message.</li>
+<li>Register all three components and both edges in <code>settings.py</code>.</li>
+<li>Declare direct third-party dependencies, including <code>iris-persistence</code> when
+   the application imports it.</li>
+<li>Preserve the repository's working initialization, migration, production
+   startup, and container health lifecycle. Update paths and production names;
+   never replace setup with a keep-alive loop.</li>
+</ol>
+<h2 id="testing">Testing</h2>
+<p>Add focused tests for:</p>
 <ul>
-<li>The dry run shows one production with one service and one operation.</li>
-<li>Migration succeeds without a raw <code>CLASSES</code> section.</li>
-<li>The production graph contains one edge from <code>HelloService.Output</code> to
-  <code>HelloOperation</code>.</li>
+<li>source response parsing and service message construction;</li>
+<li>process validation, transformation, and routing;</li>
+<li>operation persistence behavior;</li>
+<li>graph nodes and <code>service -&gt; process -&gt; operation</code> edges.</li>
+</ul>
+<p>For a repository-owned disposable container, unit tests are not completion.
+Rebuild and start the environment, migrate and start the production, trigger or
+wait for the polling service through the runtime, trace the message flow, and
+query an actual destination record.</p>
+<p>Prefer repository scripts and these IoP CLI capabilities over raw ObjectScript:</p>
+<pre><code class="language-bash">iop --migrate settings.py --dry-run --strict-production-validation
+iop --migrate settings.py
+iop --start &lt;production-name&gt; --detach
+iop --status
+iop --log
+iop --queue
+</code></pre>
+<p>Use an ObjectScript terminal only when the IoP public API does not expose the
+required observation, and state that reason in the verification report.</p>
+<h2 id="completion-evidence">Completion Evidence</h2>
+<ul>
+<li>Unit tests and strict migration validation pass.</li>
+<li>Container initialization completes without disabling existing setup steps.</li>
+<li>The intended production, not only the IRIS container, is running.</li>
+<li>Runtime evidence shows messages crossing both graph edges.</li>
+<li>The destination contains the expected record or external effect.</li>
+<li>Exact commands, results, skipped checks, and residual risks are reported.</li>
 </ul>
 <h2 id="common-mistakes">Common Mistakes</h2>
 <ul>
-<li>Putting startup logic in <code>__init__()</code> instead of <code>on_init()</code>.</li>
-<li>Forgetting <code>Output = target()</code> on the service.</li>
-<li>Adding raw <code>CLASSES</code> entries for components already declared in the
-  <code>Production</code> graph.</li>
-<li>Calling <code>HelloOperation</code> directly from <code>HelloService</code> instead of sending a
-  message through the production target.</li>
+<li>Emitting an empty message from the service and fetching in the persistence
+  operation.</li>
+<li>Omitting the process without considering validation or transformation.</li>
+<li>Mocking both source and destination and calling that end-to-end validation.</li>
+<li>Checking container health without checking production status.</li>
+<li>Removing initialization, migration, or startup commands to keep the container
+  alive.</li>
+<li>Using ObjectScript for status or logs when an <code>iop</code> command exists.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../code-index/" class="btn btn-neutral float-left" title="Code Index for Agents"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../ingestion-pipeline/" class="btn btn-neutral float-right" title="Ingestion Pipeline">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../hello-world-production/" class="btn btn-neutral float-left" title="Hello-world Production"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../add-business-operation/" class="btn btn-neutral float-right" title="Add a BusinessOperation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -295,10 +292,10 @@ iop --migrate settings.py
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../code-index/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../hello-world-production/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../ingestion-pipeline/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../add-business-operation/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

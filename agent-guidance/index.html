@@ -76,6 +76,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/hello-world-production/">Hello-world Production</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../cookbooks/ingestion-pipeline/">Ingestion Pipeline</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-operation/">Add a BusinessOperation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../cookbooks/add-business-process/">Add a BusinessProcess</a>
@@ -211,7 +213,8 @@ guidance; use the IoP installer when those entrypoints are wanted.</p>
   cookbook, and guides message, component, production graph, sample, and test
   changes.</li>
 <li><code>validate-iop-app</code> runs project tests and strict migration dry-run first, then
-  guides optional runtime verification against an identified IRIS environment.</li>
+  requires container-backed runtime verification when the project provides a
+  disposable environment, while protecting shared or remote IRIS instances.</li>
 </ul>
 <p>The skill files use the shared Agent Skills <code>SKILL.md</code> format with only portable
 frontmatter. Client-specific wrappers contain no duplicated IoP policy; the

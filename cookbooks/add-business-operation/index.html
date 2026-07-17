@@ -68,6 +68,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../hello-world-production/">Hello-world Production</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../ingestion-pipeline/">Ingestion Pipeline</a>
+                  </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">Add a BusinessOperation</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#when-to-use-this">When To Use This</a>
@@ -179,9 +181,11 @@
               
                 <h1 id="cookbook-add-a-businessoperation">Cookbook: Add A BusinessOperation</h1>
 <h2 id="when-to-use-this">When To Use This</h2>
-<p>Use this cookbook when a production needs an outbound side-effect boundary:
-calling an API, writing a file, submitting FHIR, storing data, or wrapping a
-technical operation behind a production message.</p>
+<p>Use this cookbook when a production needs a destination side-effect boundary:
+calling a downstream API, writing a file, submitting FHIR, storing data, or
+wrapping a technical operation behind a production message. Acquisition from
+the configured source of a <code>PollingBusinessService</code> remains in that service;
+the operation receives the acquired or processed data.</p>
 <h2 id="files-you-will-touch">Files You Will Touch</h2>
 <ul>
 <li>the operation module, such as <code>bo.py</code> or <code>operations.py</code></li>
@@ -270,6 +274,8 @@ pure Python transformation or validation logic.</p>
 <h2 id="common-mistakes">Common Mistakes</h2>
 <ul>
 <li>Creating an operation but not adding it to <code>settings.py</code>.</li>
+<li>Combining source acquisition, orchestration, and destination persistence in
+  one operation.</li>
 <li>Calling another production component as a normal Python object.</li>
 <li>Hiding connection names in strings instead of using <code>target()</code> and
   <code>prod.connect(...)</code>.</li>
@@ -281,7 +287,7 @@ pure Python transformation or validation logic.</p>
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../hello-world-production/" class="btn btn-neutral float-left" title="Hello-world Production"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../ingestion-pipeline/" class="btn btn-neutral float-left" title="Ingestion Pipeline"><span class="icon icon-circle-arrow-left"></span> Previous</a>
         <a href="../add-business-process/" class="btn btn-neutral float-right" title="Add a BusinessProcess">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
@@ -305,7 +311,7 @@ pure Python transformation or validation logic.</p>
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href="../hello-world-production/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../ingestion-pipeline/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
       <span><a href="../add-business-process/" style="color: #fcfcfc">Next &raquo;</a></span>

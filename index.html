@@ -76,6 +76,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cookbooks/hello-world-production/">Hello-world Production</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="cookbooks/ingestion-pipeline/">Ingestion Pipeline</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="cookbooks/add-business-operation/">Add a BusinessOperation</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="cookbooks/add-business-process/">Add a BusinessProcess</a>
@@ -179,6 +181,23 @@
 For prompt-driven workflows, see <a href="https://grongierisc.github.io/interoperability-embedded-python/ai-coding/">AI-assisted coding with IoP</a>.
 For task-oriented examples, see the <a href="https://grongierisc.github.io/interoperability-embedded-python/cookbooks/">IoP cookbooks</a>.
 For application repositories, start from the <a href="https://grongierisc.github.io/interoperability-embedded-python/agents-template/">reusable AGENTS.md template</a>.</p>
+<p>Install only the portable IoP skills in the current project with the Skills
+CLI:</p>
+<pre><code class="language-bash">npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app
+</code></pre>
+<p>Or make the skills available to supported agents across all your projects:</p>
+<pre><code class="language-bash">npx skills add \
+  https://github.com/grongierisc/interoperability-embedded-python/tree/master/src/iop/ai/skills \
+  --skill build-iop-app \
+  --skill validate-iop-app \
+  --global
+</code></pre>
+<p>Project-local installation is recommended when the skills must stay aligned
+with a project's IoP version. The global installation is convenient when you
+work across many IoP repositories.</p>
 <h2 id="example">Example</h2>
 <p>Here's a tiny Python-authored production:</p>
 <pre><code class="language-python">from dataclasses import dataclass
@@ -269,5 +288,5 @@ For healthcare productions, also see <a href="https://grongierisc.github.io/inte
 
 <!--
 MkDocs version : 1.6.1
-Build Date UTC : 2026-07-16 13:50:33.494208+00:00
+Build Date UTC : 2026-07-17 08:53:31.557122+00:00
 -->
