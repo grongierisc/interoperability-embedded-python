@@ -3078,7 +3078,7 @@ def test_business_host_request_helpers_resolve_target_setting_refs():
 
     assert host.send_request_sync(file.Output, "") == "ok"
     host.iris_handle.dispatchSendRequestSync.assert_called_once_with(
-        "OrderOperation", "", -1, None
+        "OrderOperation", "", -1, '_BusinessHost -> OrderOperation'
     )
 
 
@@ -3107,5 +3107,5 @@ def test_business_process_send_request_async_resolves_target_setting_refs():
     process.send_request_async(file.Output, "", response_required=False)
 
     process.iris_handle.dispatchSendRequestAsync.assert_called_once_with(
-        "OrderOperation", "", 0, None, None
+        "OrderOperation", "", 0, None, 'BusinessProcess -> OrderOperation'
     )

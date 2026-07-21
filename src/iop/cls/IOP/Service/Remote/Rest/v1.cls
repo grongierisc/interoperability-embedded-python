@@ -327,7 +327,11 @@ ClassMethod GetLog() As %Status
 			Set entry.type = $CASE(tType, 1:"Assert", 2:"Error", 3:"Warning", 4:"Info", 5:"Trace", 6:"Alert", :"Unknown")
 			Do result.%Push(entry)
 		}
-		Return ..%WriteResponse(result.%ToJSON())
+		// Stream JSON to the device: result can exceed the string length limit (<MAXSTRING>)
+		Set %response.ContentType = "application/json"
+		Set %response.Status = "200 OK"
+		Do result.%ToJSON()
+		Return $$$OK
 	} Catch ex {
 		Return ..%WriteErrorResponse(ex.DisplayString())
 	}
