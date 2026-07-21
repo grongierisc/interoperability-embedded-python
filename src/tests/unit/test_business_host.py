@@ -59,6 +59,26 @@ class TestBusinessHostAsync:
 
         mock_get_iris.assert_called_once()
 
+    @pytest.mark.asyncio
+    @patch('iop.components.async_request._iris.get_iris')
+    @patch('iop.components.async_request.dispatch_serializer')
+    @patch('iop.components.async_request.dispatch_deserializer')
+    async def test_send_request_async_ng_only_deserializes_matching_response(
+        self, mock_deserializer, mock_serializer, mock_get_iris, business_host
+    ):
+        mock_get_iris.return_value.ref.return_value = MagicMock(value=None)
+        mock_serializer.return_value = MagicMock()
+        business_host.iris_handle.dispatchIsRequestDone.side_effect = [1, 1, 2]
+        mock_deserializer.return_value = MyResponse(value='matched')
+
+        result = await business_host.send_request_async_ng(
+            'test', SimpleMessage(integer=1, string='test')
+        )
+
+        assert result == MyResponse(value='matched')
+        assert business_host.iris_handle.dispatchIsRequestDone.call_count == 3
+        mock_deserializer.assert_called_once_with(None)
+
 
 class TestGeneratorRequest:
     @patch('iop.components.business_host._iris.get_iris')

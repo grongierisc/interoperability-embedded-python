@@ -416,43 +416,45 @@ Method dispatchIsRequestDone(
 
     set tSC=$$$OK
     try {
-        set tTimeout=$s(pTimeout=-1:-1,1:pEndTime-$zh)
-
-        set tSC = ##class(Ens.Queue).DeQueue($$$queueSyncCallQueueName,.tResponseHeader,tTimeout,.tIsTimedOut,0) Quit:$$$ISERR(tSC)
-
-        quit:$IsObject(tResponseHeader)=0
-
-        set tFound = $select(tResponseHeader.CorrespondingMessageId: pMessageHeaderId=tResponseHeader.CorrespondingMessageId, 1: 0)
-        if tFound=0 {
-
-            set tSC = ##class(Ens.Queue).EnQueue(tResponseHeader)
-            Kill $$$EnsActiveMessage($$$SystemName_":"_$Job)
+        if pTimeout'=-1 {
+            set tTimeout=pEndTime-$zh
+            if tTimeout'>0 return $$$ERROR($$$EnsErrFailureTimeout,0,$$$StatusDisplayString(tSC),$$$CurrentClass)
         }
-        else {
 
-            if tIsTimedOut || ((pTimeout'=-1)&&(tTimeout<0)) {
+        // Every concurrent async request shares this return queue. Inspect only
+        // the messages present when this poll starts, so each caller can find
+        // its response without blocking or cycling one unmatched message.
+        set tQueueCount=##class(Ens.Queue).GetCount(pQueueName)
+        for tQueueIndex=1:1:tQueueCount {
+            set tResponseHeader=$$$NULLOREF,tIsTimedOut=0
+            set tSC=##class(Ens.Queue).DeQueue(pQueueName,.tResponseHeader,0,.tIsTimedOut,0) quit:$$$ISERR(tSC)
+            quit:'$IsObject(tResponseHeader)
 
-                do tResponseHeader.SetStatus($$$eMessageStatusDiscarded)
-                return $$$ERROR($$$EnsErrFailureTimeout, tTimeout, $$$StatusDisplayString(tSC), $$$CurrentClass)
-            }
-            if tResponseHeader.IsError {
-
-                do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
-                return $$$EnsError($$$EnsErrGeneral,"Error message received: "_tResponseHeader.ErrorText)
-                
-            }
-            if tResponseHeader.MessageBodyClassName'="" {
-
-                set tResponse = $classmethod(tResponseHeader.MessageBodyClassName,"%OpenId",tResponseHeader.MessageBodyId,,.tSC)
-                if '$IsObject(tResponse) return $$$EnsError($$$EnsErrGeneral,"Could not open MessageBody "_tResponseHeader.MessageBodyId_" for MessageHeader #"_tResponseHeader.%Id()_" with body class "_tResponseHeader.MessageBodyClassName_":"_$$$StatusDisplayString(tSC)) 
+            set tFound=$select(tResponseHeader.CorrespondingMessageId:pMessageHeaderId=tResponseHeader.CorrespondingMessageId,1:0)
+            if 'tFound {
+                set tSC=##class(Ens.Queue).EnQueue(tResponseHeader)
+                Kill $$$EnsActiveMessage($$$SystemName_":"_$Job)
+                quit:$$$ISERR(tSC)
             } else {
+                if tResponseHeader.IsError {
 
-                set tResponse=$$$NULLOREF
+                    do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
+                    return $$$EnsError($$$EnsErrGeneral,"Error message received: "_tResponseHeader.ErrorText)
+
+                }
+                if tResponseHeader.MessageBodyClassName'="" {
+
+                    set tResponse = $classmethod(tResponseHeader.MessageBodyClassName,"%OpenId",tResponseHeader.MessageBodyId,,.tSC)
+                    if '$IsObject(tResponse) return $$$EnsError($$$EnsErrGeneral,"Could not open MessageBody "_tResponseHeader.MessageBodyId_" for MessageHeader #"_tResponseHeader.%Id()_" with body class "_tResponseHeader.MessageBodyClassName_":"_$$$StatusDisplayString(tSC))
+                } else {
+
+                    set tResponse=$$$NULLOREF
+                }
+                set pResponse=tResponse
+                do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
+                set tSC = 2
+                quit
             }
-            set pResponse=tResponse
-            do tResponseHeader.SetStatus($$$eMessageStatusCompleted)
-            set tSC = 2
-
         }
     }
 	catch ex {

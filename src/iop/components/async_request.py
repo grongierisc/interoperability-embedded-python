@@ -84,9 +84,8 @@ class AsyncRequest(asyncio.Future):
             response,
         )
 
-        self._response = dispatch_deserializer(response.value)
-
         if status == 2:  # message found
+            self._response = dispatch_deserializer(response.value)
             self._done = True
         elif status == 1:  # message not found
             pass

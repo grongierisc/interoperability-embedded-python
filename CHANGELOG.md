@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   container-backed runtime verification, non-blocking start and log commands,
   and IoP CLI-first operational checks.
 
+### Fixed
+- Prevent concurrent `send_request_async_ng()` calls from livelocking when
+  fast responses arrive together by scanning a bounded snapshot of the shared
+  response queue with non-blocking dequeue operations.
+- Deserialize asynchronous responses only after they have been correlated with
+  the matching request.
+
 ## [4.1.0] - 2026-07-16
 ### Changed
 - Move remote debugging support to the optional `debug` extra. Install
