@@ -239,9 +239,12 @@ query an actual destination record.</p>
 iop --migrate settings.py
 iop --start &lt;production-name&gt; --detach
 iop --status
-iop --log
+iop --log 50
 iop --queue
 </code></pre>
+<p>The <code>--detach</code> flag is required for automated validation because bare
+<code>iop --start</code> starts the production and streams logs. Always pass a count to
+<code>iop --log</code>; without one it follows logs until interrupted.</p>
 <p>Use an ObjectScript terminal only when the IoP public API does not expose the
 required observation, and state that reason in the verification report.</p>
 <h2 id="completion-evidence">Completion Evidence</h2>
@@ -260,6 +263,7 @@ required observation, and state that reason in the verification report.</p>
 <li>Omitting the process without considering validation or transformation.</li>
 <li>Mocking both source and destination and calling that end-to-end validation.</li>
 <li>Checking container health without checking production status.</li>
+<li>Running bare <code>iop --start</code> or <code>iop --log</code> and blocking the validation agent.</li>
 <li>Removing initialization, migration, or startup commands to keep the container
   alive.</li>
 <li>Using ObjectScript for status or logs when an <code>iop</code> command exists.</li>
