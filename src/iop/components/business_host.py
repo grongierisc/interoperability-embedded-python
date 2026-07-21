@@ -134,6 +134,8 @@ class _BusinessHost(_Common):
             docs/cookbooks/production-settings-and-targets.md
         """
         target = resolve_target(target)
+        if description is None:
+            description = f"{self.__class__.__name__} -> {target}"
         return self.iris_handle.dispatchSendRequestSync(
             target, request, timeout, description
         )
@@ -170,6 +172,8 @@ class _BusinessHost(_Common):
             docs/cookbooks/production-settings-and-targets.md
         """
         target = resolve_target(target)
+        if description is None:
+            description = f"{self.__class__.__name__} -> {target}"
         return self.iris_handle.dispatchSendRequestAsync(target, request, description)
 
     async def send_request_async_ng(
@@ -194,6 +198,8 @@ class _BusinessHost(_Common):
             Response from target component
         """
         target = cast(str, resolve_target(target))
+        if description is None:
+            description = f"{self.__class__.__name__} -> {target}"
         return await AsyncRequest(target, request, timeout, description, self)
 
     def send_generator_request(
@@ -219,6 +225,8 @@ class _BusinessHost(_Common):
             TypeError: If request is not of type Message
         """
         target = cast(str, resolve_target(target))
+        if description is None:
+            description = f"{self.__class__.__name__} -> {target}"
         return _GeneratorRequest(self, target, request, timeout, description)
 
     def send_multi_request_sync(

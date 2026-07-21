@@ -174,6 +174,8 @@ class _BusinessProcess(_BusinessHost):
         else:
             response_required = 0  # type: ignore
         target = resolve_target(target)
+        if description is None:
+            description = f"{self.__class__.__name__} -> {target}"
         return self.iris_handle.dispatchSendRequestAsync(
             target, request, response_required, completion_key, description
         )

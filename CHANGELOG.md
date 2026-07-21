@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Strengthen application skills with a complete ingestion-pipeline architecture,
   container-backed runtime verification, non-blocking start and log commands,
   and IoP CLI-first operational checks.
+- Default description values for `send_request_sync()`, `send_request_async()`,
+  `send_request_async_ng()`, and `send_generator_request()` to include the
+  calling component class name and target name.
 
 ### Fixed
 - Prevent concurrent `send_request_async_ng()` calls from livelocking when
