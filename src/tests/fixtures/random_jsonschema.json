@@ -1,0 +1,72 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "title": "PostMessage",
+    "properties": {
+        "post": {
+            "allOf": [
+                {
+                    "$ref": "#/$defs/PostClass"
+                }
+            ]
+        },
+        "to_email_address": {
+            "type": "string",
+            "default": null
+        },
+        "my_list": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "found": {
+            "type": "string",
+            "default": null
+        },
+        "list_of_post": {
+            "type": "array",
+            "items": {
+                "allOf": [
+                    {
+                        "$ref": "#/$defs/PostClass"
+                    }
+                ]
+            }
+        }
+    },
+    "$defs": {
+        "PostClass": {
+            "type": "object",
+            "title": "PostClass",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "selftext": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "created_utc": {
+                    "type": "number"
+                },
+                "original_json": {
+                    "type": "string",
+                    "default": null
+                }
+            },
+            "required": [
+                "title",
+                "selftext",
+                "author",
+                "url",
+                "created_utc"
+            ]
+        }
+    }
+}

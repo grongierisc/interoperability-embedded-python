@@ -346,7 +346,7 @@ ClassMethod EnumerateTypeCategoriesExecute(
     Set rs = stmt.%Execute()
 
     While rs.%Next() {
-        Set category = rs.%Get(1)
+        Set category = rs.%Get("Category")
         // Format: Category, Description, IsStandard, Base
         Set qHandle($I(qHandle)) = $LB(category, "JSON Schema category", "IsStandard", "Base")
     }

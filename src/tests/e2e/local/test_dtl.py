@@ -9,6 +9,9 @@ from iop.migration import utils as migration_utils
 
 # Constants
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "cls")
+JSON_SCHEMA_FIXTURE = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../fixtures/random_jsonschema.json")
+)
 
 
 # Fixtures
@@ -103,6 +106,45 @@ class TestMessageSchema:
         assert iop_schema is not None
         assert iop_schema.Category == expected_name
         assert iop_schema.Name == expected_name
+
+    def test_import_from_file_is_available_to_dtl(self):
+        schema_name = "Demo.RandomJSONSchema"
+        schema_category = "Demo"
+        schema_class = iris.cls("IOP.Message.JSONSchema")
+
+        migration_utils.raise_on_error(
+            schema_class.ImportFromFile(
+                JSON_SCHEMA_FIXTURE,
+                schema_category,
+                schema_name,
+            )
+        )
+
+        categories = list(
+            iris.sql.exec(
+                "SELECT Category FROM IOP_Message.JSONSchema WHERE Name = ?",
+                schema_name,
+            )
+        )
+        assert categories == [[schema_category]]
+
+        category_query_handle = iris.ref(None)
+        migration_utils.raise_on_error(
+            iris.cls("IOP.Message").EnumerateTypeCategoriesExecute(
+                category_query_handle,
+                "",
+            )
+        )
+        category_row = iris.ref(None)
+        at_end = iris.ref(0)
+        migration_utils.raise_on_error(
+            iris.cls("IOP.Message").EnumerateTypeCategoriesFetch(
+                category_query_handle,
+                category_row,
+                at_end,
+            )
+        )
+        assert schema_category in category_row.value
 
 
 class TestMessageOperations:
