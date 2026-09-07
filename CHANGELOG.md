@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+
+- Import json schema for DTL from ObjectScript command line fixed for IRIS 2026.1+
+
 ## [4.1.1] - 2026-07-22
 ### Added
 - Add `iop --install-agent-guidance` to install version-matched IoP guidance,
