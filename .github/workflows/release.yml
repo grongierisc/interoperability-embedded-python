@@ -44,7 +44,7 @@ jobs:
           python -m venv .wheel-test
           .wheel-test/bin/python -m pip install "${WHEEL}[dev]"
           .wheel-test/bin/python -m pytest src/tests/unit
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-distributions
           path: dist/*.whl
